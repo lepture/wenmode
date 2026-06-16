@@ -14,9 +14,11 @@ from wenmode.nodes import (
     Html,
     Image,
     InlineCode,
+    InlineMath,
     Link,
     List,
     ListItem,
+    Math,
     Node,
     Paragraph,
     Root,
@@ -169,6 +171,12 @@ def render_code(renderer: MarkdownRenderer, node: Code) -> str:
     return f'{fence}{info}\n{value}{fence}\n\n'
 
 
+@MarkdownRenderer.register('math')
+def render_math(renderer: MarkdownRenderer, node: Math) -> str:
+    value = node.value if node.value.endswith('\n') else node.value + '\n'
+    return f'$$\n{value}$$\n\n'
+
+
 @MarkdownRenderer.register('thematicBreak')
 def render_thematic_break(renderer: MarkdownRenderer, node: ThematicBreak) -> str:
     return '---\n\n'
@@ -194,6 +202,11 @@ def render_inline_code(renderer: MarkdownRenderer, node: InlineCode) -> str:
     if needs_padding:
         return f'{fence} {node.value} {fence}'
     return f'{fence}{node.value}{fence}'
+
+
+@MarkdownRenderer.register('inlineMath')
+def render_inline_math(renderer: MarkdownRenderer, node: InlineMath) -> str:
+    return f'${node.value}$'
 
 
 @MarkdownRenderer.register('strong')

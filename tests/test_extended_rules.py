@@ -6,8 +6,8 @@ from typing import TypedDict
 
 import pytest
 
-from wenmode import HTMLRenderer, Wenmode
-from wenmode.rules import Blockquote, Emphasis, Footnote, Link
+from wenmode import HTMLRenderer, Wenmode, commonmark, github
+from wenmode.rules import Blockquote, Emphasis, Footnote, InlineCode, InlineMath, Link, MathBlock
 
 FIXTURES_DIR = Path(__file__).parent / 'fixtures'
 
@@ -35,3 +35,21 @@ def test_footnote_examples(example: ExtendedRuleExample) -> None:
     parser = Wenmode([Footnote, Emphasis, Blockquote, Link])
 
     assert render(parser, example['markdown']) == example['html']
+
+
+@pytest.mark.parametrize(
+    'example',
+    load_examples('math.json'),
+    ids=lambda example: example['name'],
+)
+def test_math_examples(example: ExtendedRuleExample) -> None:
+    parser = Wenmode([MathBlock, InlineCode, InlineMath])
+
+    assert render(parser, example['markdown']) == example['html']
+
+
+def test_math_is_not_enabled_by_presets() -> None:
+    markdown = '$x$\n\n$$\nx\n$$\n'
+
+    assert render(Wenmode(commonmark), markdown) == '<p>$x$</p>\n<p>$$\nx\n$$</p>\n'
+    assert render(Wenmode(github), markdown) == '<p>$x$</p>\n<p>$$\nx\n$$</p>\n'

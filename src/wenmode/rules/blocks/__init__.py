@@ -7,6 +7,7 @@ from .heading import AtxHeading, SetextHeading
 from .html import HtmlBlock
 from .indented_code import IndentedCode
 from .list import List
+from .math import MathBlock
 from .thematic_break import ThematicBreak
 
 __all__ = [
@@ -17,6 +18,7 @@ __all__ = [
     'HtmlBlock',
     'IndentedCode',
     'List',
+    'MathBlock',
     'SetextHeading',
     'ThematicBreak',
 ]

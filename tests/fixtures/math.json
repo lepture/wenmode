@@ -1,0 +1,37 @@
+[
+  {
+    "name": "inline math",
+    "markdown": "area is $a < b$.\n",
+    "html": "<p>area is <span class=\"math math-inline\">a &lt; b</span>.</p>\n"
+  },
+  {
+    "name": "display math",
+    "markdown": "$$\na < b\n$$\n",
+    "html": "<div class=\"math math-display\">a &lt; b\n</div>\n"
+  },
+  {
+    "name": "escaped dollar is text",
+    "markdown": "\\$x$\n",
+    "html": "<p>\\$x$</p>\n"
+  },
+  {
+    "name": "empty inline math is text",
+    "markdown": "$ $\n",
+    "html": "<p>$ $</p>\n"
+  },
+  {
+    "name": "unmatched inline math is text",
+    "markdown": "$x\n",
+    "html": "<p>$x</p>\n"
+  },
+  {
+    "name": "double dollars are not inline math",
+    "markdown": "a $$x$$\n",
+    "html": "<p>a $$x$$</p>\n"
+  },
+  {
+    "name": "inline code containing dollars",
+    "markdown": "`$x$` and $y$\n",
+    "html": "<p><code>$x$</code> and <span class=\"math math-inline\">y</span></p>\n"
+  }
+]

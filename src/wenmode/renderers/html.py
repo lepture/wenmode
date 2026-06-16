@@ -15,9 +15,11 @@ from wenmode.nodes import (
     Html,
     HtmlAttrValue,
     Image,
+    InlineMath,
     Link,
     List,
     ListItem,
+    Math,
     Node,
     Paragraph,
     Root,
@@ -262,6 +264,11 @@ def render_code(renderer: HTMLRenderer, node: Code) -> str:
     return f'<pre><code{lang}>{renderer.escape_html(node.value)}</code></pre>\n'
 
 
+@HTMLRenderer.register('math')
+def render_math(renderer: HTMLRenderer, node: Math) -> str:
+    return f'<div class="math math-display">{renderer.escape_html(node.value)}</div>\n'
+
+
 @HTMLRenderer.register('html')
 def render_html(renderer: HTMLRenderer, node: Html) -> str:
     return renderer.escape(node.value)
@@ -270,6 +277,11 @@ def render_html(renderer: HTMLRenderer, node: Html) -> str:
 @HTMLRenderer.register('text')
 def render_text(renderer: HTMLRenderer, node: Text) -> str:
     return renderer.escape_html(SOFT_BREAK_SPACE_RE.sub('', node.value))
+
+
+@HTMLRenderer.register('inlineMath')
+def render_inline_math(renderer: HTMLRenderer, node: InlineMath) -> str:
+    return f'<span class="math math-inline">{renderer.escape_html(node.value)}</span>'
 
 
 @HTMLRenderer.register('link')

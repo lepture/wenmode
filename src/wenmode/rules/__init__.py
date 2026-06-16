@@ -7,6 +7,7 @@ from .blocks.heading import AtxHeading, SetextHeading
 from .blocks.html import HtmlBlock
 from .blocks.indented_code import IndentedCode
 from .blocks.list import List
+from .blocks.math import MathBlock
 from .blocks.table import Table
 from .blocks.thematic_break import ThematicBreak
 from .footnotes import Footnote
@@ -15,6 +16,7 @@ from .inlines.emphasis import Emphasis
 from .inlines.extended_autolink import ExtendedAutolink
 from .inlines.html import Autolink, RawHtml
 from .inlines.link import Image, Link
+from .inlines.math import InlineMath
 from .inlines.strikethrough import Strikethrough
 from .inlines.text import BackslashEscape, CharacterReference, HardBreak
 
@@ -34,8 +36,10 @@ __all__ = [
     'Image',
     'IndentedCode',
     'InlineCode',
+    'InlineMath',
     'Link',
     'List',
+    'MathBlock',
     'RawHtml',
     'SetextHeading',
     'Strikethrough',

@@ -16,10 +16,12 @@ from wenmode.nodes import (
     HtmlAttrValue,
     Image,
     InlineCode,
+    InlineMath,
     Link,
     List,
     ListItem,
     Literal,
+    Math,
     Node,
     Paragraph,
     Parent,
@@ -29,7 +31,8 @@ from wenmode.nodes import (
     ThematicBreak,
 )
 from wenmode.renderers import BaseRenderer
-from wenmode.rules import Footnote
+from wenmode.rules import Footnote, MathBlock
+from wenmode.rules import InlineMath as InlineMathRule
 
 
 @dataclass
@@ -372,6 +375,43 @@ def test_markdown_renderer_round_trips_footnotes_to_equivalent_html() -> None:
     html_renderer = HTMLRenderer()
     markdown_renderer = MarkdownRenderer()
     markdown = 'a[^one]\n\n[^one]: first\n  \n  second\n'
+
+    html = html_renderer.render(parser.parse(markdown))
+    rendered_markdown = markdown_renderer.render(parser.parse(markdown))
+
+    assert html_renderer.render(parser.parse(rendered_markdown)) == html
+
+
+def test_html_renderer_outputs_math_nodes() -> None:
+    node = Root(
+        children=[
+            Paragraph(children=[Text(value='a '), InlineMath(value='x < y')]),
+            Math(value='x & y\n'),
+        ]
+    )
+
+    assert HTMLRenderer().render(node) == (
+        '<p>a <span class="math math-inline">x &lt; y</span></p>\n'
+        '<div class="math math-display">x &amp; y\n</div>\n'
+    )
+
+
+def test_markdown_renderer_outputs_math_nodes() -> None:
+    node = Root(
+        children=[
+            Paragraph(children=[Text(value='a '), InlineMath(value='x + y')]),
+            Math(value='z = 1\n'),
+        ]
+    )
+
+    assert MarkdownRenderer().render(node) == 'a $x + y$\n\n$$\nz = 1\n$$\n'
+
+
+def test_markdown_renderer_round_trips_math_to_equivalent_html() -> None:
+    parser = Wenmode([MathBlock, InlineMathRule])
+    html_renderer = HTMLRenderer()
+    markdown_renderer = MarkdownRenderer()
+    markdown = 'inline $x < y$\n\n$$\na & b\n$$\n'
 
     html = html_renderer.render(parser.parse(markdown))
     rendered_markdown = markdown_renderer.render(parser.parse(markdown))

@@ -97,6 +97,12 @@ class Code(Literal):
 
 
 @dataclass
+class Math(Literal):
+    block: ClassVar[bool] = True
+    type: str = 'math'
+
+
+@dataclass
 class ThematicBreak(Node):
     html_tag: ClassVar[str | None] = 'hr'
     html_void: ClassVar[bool] = True
@@ -119,6 +125,11 @@ class Text(Literal):
 class InlineCode(Literal):
     html_tag: ClassVar[str | None] = 'code'
     type: str = 'inlineCode'
+
+
+@dataclass
+class InlineMath(Literal):
+    type: str = 'inlineMath'
 
 
 @dataclass
