@@ -7,7 +7,6 @@ from .blocks.heading import AtxHeading, SetextHeading
 from .blocks.html import HtmlBlock
 from .blocks.indented_code import IndentedCode
 from .blocks.list import List
-from .blocks.paragraph import Paragraph
 from .blocks.table import Table
 from .blocks.thematic_break import ThematicBreak
 from .inlines.code import InlineCode
@@ -35,7 +34,6 @@ __all__ = [
     'InlineCode',
     'Link',
     'List',
-    'Paragraph',
     'RawHtml',
     'SetextHeading',
     'Strikethrough',

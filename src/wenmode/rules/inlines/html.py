@@ -26,7 +26,7 @@ HTML_RE = rf'<!--(?!>|->)[\s\S]*?-->|<!---?>|<\?.*?\?>|<![A-Z]+[^>]*>|<!\[CDATA\
 
 class Autolink(InlineRule):
     def __init__(self) -> None:
-        super().__init__('autolink', rf'{URI_RE}|{EMAIL_RE}')
+        super().__init__('autolink', rf'{URI_RE}|{EMAIL_RE}', '<')
 
     def parse(
         self, parser: Wenmode, text: str, match: re.Match[str], state: BlockState | None = None
@@ -41,7 +41,7 @@ class Autolink(InlineRule):
 
 class RawHtml(InlineRule):
     def __init__(self, disallowed_tags: Sequence[str] = ()) -> None:
-        super().__init__('raw_html', HTML_RE)
+        super().__init__('raw_html', HTML_RE, '<')
         self.disallowed_tags = tuple(disallowed_tags)
 
     def parse(

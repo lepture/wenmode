@@ -22,7 +22,7 @@ class Image(InlineRule):
     has_references = True
 
     def __init__(self) -> None:
-        super().__init__('image', r'!\[')
+        super().__init__('image', r'!\[', '!')
 
     def parse(
         self, parser: Wenmode, text: str, match: re.Match[str], state: BlockState | None = None
@@ -39,7 +39,7 @@ class Link(InlineRule):
     has_references = True
 
     def __init__(self) -> None:
-        super().__init__('link', r'\[')
+        super().__init__('link', r'\[', '[')
 
     def parse(
         self, parser: Wenmode, text: str, match: re.Match[str], state: BlockState | None = None
@@ -127,6 +127,8 @@ def find_closing_bracket(text: str, start: int) -> int | None:
 
 
 def label_contains_link(parser: Wenmode, label: str, state: BlockState | None) -> bool:
+    if '[' not in label:
+        return False
     return any(contains_link(node) for node in parser.parse_inlines(label, state))
 
 

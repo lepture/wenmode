@@ -18,7 +18,7 @@ NUMERIC_CHARACTER_REFERENCE_RE = re.compile(r'&#(?P<base>[xX]?)(?P<digits>[0-9A-
 
 class BackslashEscape(InlineRule):
     def __init__(self) -> None:
-        super().__init__('backslash_escape', rf'\\(?=[{ESCAPABLE}])')
+        super().__init__('backslash_escape', rf'\\(?=[{ESCAPABLE}])', '\\')
 
     def parse(
         self, parser: Wenmode, text: str, match: re.Match[str], state: BlockState | None = None
@@ -28,7 +28,7 @@ class BackslashEscape(InlineRule):
 
 class CharacterReference(InlineRule):
     def __init__(self) -> None:
-        super().__init__('character_reference', r'&(?:#[xX][0-9A-Fa-f]+|#[0-9]+|[A-Za-z][A-Za-z0-9]{1,31});')
+        super().__init__('character_reference', r'&(?:#[xX][0-9A-Fa-f]+|#[0-9]+|[A-Za-z][A-Za-z0-9]{1,31});', '&')
 
     def parse(
         self, parser: Wenmode, text: str, match: re.Match[str], state: BlockState | None = None
@@ -47,7 +47,7 @@ class CharacterReference(InlineRule):
 
 class HardBreak(InlineRule):
     def __init__(self) -> None:
-        super().__init__('hard_break', r'(?:\\| {2,})\r?\n')
+        super().__init__('hard_break', r'(?:\\| {2,})\r?\n', '\\ ')
 
     def parse(
         self, parser: Wenmode, text: str, match: re.Match[str], state: BlockState | None = None

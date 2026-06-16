@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, ClassVar
 
 from wenmode.nodes import Node
@@ -33,7 +33,8 @@ class BlockRule(Rule):
 @dataclass
 class InlineRule(Rule):
     pattern: str
-    compiled: re.Pattern[str] = None  # type: ignore[assignment]
+    trigger_chars: str = ''
+    compiled: re.Pattern[str] = field(init=False)
 
     def __post_init__(self) -> None:
         self.compiled = re.compile(self.pattern)

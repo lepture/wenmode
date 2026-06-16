@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import string
 from collections.abc import Iterable
 from typing import Any
 
@@ -16,6 +17,7 @@ LIST_MARKER_RE = re.compile(
 )
 HTML_TAG_START_RE = re.compile(r'</?[A-Za-z]')
 HTML_PARAGRAPH_INTERRUPT_RE = re.compile(r'(?i)<(?:script|pre|style|textarea)(?:\s|>|$)')
+PUNCTUATION = set(string.punctuation)
 
 
 class Wenmode:
@@ -28,6 +30,10 @@ class Wenmode:
         self.rules = {rule.name: rule for rule in rules}
         self.block_rules = [rule for rule in rules if isinstance(rule, BlockRule)]
         self.inline_rules = [rule for rule in rules if isinstance(rule, InlineRule)]
+        self._emphasis_enabled = 'emphasis' in self.rules
+        self._inline_rule_order = {rule.name: index for index, rule in enumerate(self.inline_rules)}
+        self._triggered_inline_rules, self._search_inline_rules = self._prepare_inline_dispatch(self.inline_rules)
+        self._inline_trigger_re = self._compile_inline_trigger_re(self._triggered_inline_rules)
         self._block_openers = self._compile_block_openers(self.block_rules)
 
     def parse(self, text: str) -> Root:
@@ -48,6 +54,10 @@ class Wenmode:
         while not state.done:
             if state.line.strip() == '':
                 state.advance()
+                continue
+
+            if self._is_plain_paragraph_start(state.line):
+                children.append(self._parse_paragraph(state))
                 continue
 
             match = self._block_openers.match(state.line) if self._block_openers else None
@@ -75,17 +85,9 @@ class Wenmode:
 
         nodes: list[Node] = []
         pos = 0
-        emphasis_enabled = 'emphasis' in self.rules
-        inline_rules = [rule for rule in self.inline_rules if rule.name != 'emphasis']
 
         while pos < len(text):
-            found: tuple[int, InlineRule, re.Match[str]] | None = None
-            for rule in inline_rules:
-                match = rule.compiled.search(text, pos)
-                if match is None:
-                    continue
-                if found is None or match.start() < found[0]:
-                    found = (match.start(), rule, match)
+            found = self._find_inline_match(text, pos)
 
             if found is None:
                 nodes.append(Text(value=text[pos:]))
@@ -104,9 +106,46 @@ class Wenmode:
                 pos = end
 
         nodes = merge_text(nodes)
-        if emphasis_enabled:
+        if self._emphasis_enabled and contains_emphasis_marker(nodes):
             nodes = parse_emphasis_nodes(nodes)
         return merge_text(nodes)
+
+    def _find_inline_match(self, text: str, pos: int) -> tuple[int, InlineRule, re.Match[str]] | None:
+        found = self._find_search_inline_match(text, pos)
+        limit = found[0] if found is not None else len(text)
+        if self._inline_trigger_re is None:
+            return found
+
+        trigger_match = self._inline_trigger_re.search(text, pos)
+        while trigger_match is not None and trigger_match.start() <= limit:
+            start = trigger_match.start()
+            for rule in self._triggered_inline_rules[text[start]]:
+                match = rule.compiled.match(text, start)
+                if match is None:
+                    continue
+                candidate = (start, rule, match)
+                if found is None or self._inline_candidate_before(candidate, found):
+                    return candidate
+            trigger_match = self._inline_trigger_re.search(text, start + 1)
+        return found
+
+    def _find_search_inline_match(self, text: str, pos: int) -> tuple[int, InlineRule, re.Match[str]] | None:
+        found: tuple[int, InlineRule, re.Match[str]] | None = None
+        for rule in self._search_inline_rules:
+            match = rule.compiled.search(text, pos)
+            if match is None:
+                continue
+            candidate = (match.start(), rule, match)
+            if found is None or self._inline_candidate_before(candidate, found):
+                found = candidate
+        return found
+
+    def _inline_candidate_before(
+        self, candidate: tuple[int, InlineRule, re.Match[str]], current: tuple[int, InlineRule, re.Match[str]]
+    ) -> bool:
+        if candidate[0] != current[0]:
+            return candidate[0] < current[0]
+        return self._inline_rule_order[candidate[1].name] < self._inline_rule_order[current[1].name]
 
     def _parse_paragraph(self, state: BlockState) -> Node:
         lines: list[str] = []
@@ -174,10 +213,38 @@ class Wenmode:
             return False
         return state.depth >= self.max_container_depth
 
+    def _is_plain_paragraph_start(self, line: str) -> bool:
+        if 'table' in self.rules and '|' in line:
+            return False
+        char = line[0]
+        return not char.isspace() and not char.isdigit() and char not in PUNCTUATION
+
     @staticmethod
     def _compile_block_openers(rules: list[BlockRule]) -> re.Pattern[str] | None:
         patterns = [f'(?P<{rule.name}>{rule.pattern})' for rule in rules]
         return re.compile('|'.join(patterns)) if patterns else None
+
+    @staticmethod
+    def _prepare_inline_dispatch(
+        rules: list[InlineRule],
+    ) -> tuple[dict[str, list[InlineRule]], list[InlineRule]]:
+        triggered: dict[str, list[InlineRule]] = {}
+        search: list[InlineRule] = []
+        for rule in rules:
+            if rule.name == 'emphasis':
+                continue
+            if not rule.trigger_chars:
+                search.append(rule)
+                continue
+            for char in rule.trigger_chars:
+                triggered.setdefault(char, []).append(rule)
+        return triggered, search
+
+    @staticmethod
+    def _compile_inline_trigger_re(rules: dict[str, list[InlineRule]]) -> re.Pattern[str] | None:
+        if not rules:
+            return None
+        return re.compile(f'[{re.escape("".join(rules))}]')
 
 
 def merge_text(nodes: list[Node]) -> list[Node]:
@@ -197,3 +264,10 @@ def merge_text(nodes: list[Node]) -> list[Node]:
 
 def parse_emphasis_nodes(nodes: list[Node]) -> list[Node]:
     return parse_emphasis_sequence(nodes)
+
+
+def contains_emphasis_marker(nodes: list[Node]) -> bool:
+    for node in nodes:
+        if isinstance(node, Text) and node._parse_emphasis and ('*' in node.value or '_' in node.value):
+            return True
+    return False

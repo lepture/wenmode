@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 class Strikethrough(InlineRule):
     def __init__(self) -> None:
-        super().__init__('strikethrough', r'~{1,2}')
+        super().__init__('strikethrough', r'~{1,2}', '~')
 
     def parse(
         self, parser: Wenmode, text: str, match: re.Match[str], state: BlockState | None = None

@@ -17,7 +17,7 @@ CODE_LINE_ENDING_RE = re.compile(r'\r\n?|\n')
 
 class InlineCode(InlineRule):
     def __init__(self) -> None:
-        super().__init__('inline_code', r'`+')
+        super().__init__('inline_code', r'`+', '`')
 
     def parse(
         self, parser: Wenmode, text: str, match: re.Match[str], state: BlockState | None = None
