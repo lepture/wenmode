@@ -1,0 +1,43 @@
+from __future__ import annotations
+
+from .rules import (
+    AtxHeading,
+    Autolink,
+    BackslashEscape,
+    Blockquote,
+    CharacterReference,
+    Emphasis,
+    FencedCode,
+    HardBreak,
+    HtmlBlock,
+    Image,
+    IndentedCode,
+    InlineCode,
+    Link,
+    List,
+    RawHtml,
+    SetextHeading,
+    Strong,
+    ThematicBreak,
+)
+
+COMMON_MARK = [
+    ThematicBreak,
+    FencedCode,
+    IndentedCode,
+    HtmlBlock,
+    List,
+    AtxHeading,
+    SetextHeading,
+    Blockquote,
+    HardBreak,
+    Autolink,
+    RawHtml,
+    BackslashEscape,
+    CharacterReference,
+    Image,
+    Link,
+    InlineCode,
+    Strong,
+    Emphasis,
+]
