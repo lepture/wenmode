@@ -45,7 +45,7 @@ class CustomElement(Parent):
     type: str = 'customElement'
 
     def get_html_attrs(self) -> dict[str, HtmlAttrValue]:
-        return {'data-custom': 'yes', 'hidden': False}
+        return {'data-custom': 'yes', 'hidden': False, 'href': 'javascript:alert(1)'}
 
 
 @dataclass
@@ -74,7 +74,8 @@ def test_html_renderer_uses_node_html_tag_and_attrs_without_registration() -> No
     )
 
     assert HTMLRenderer().render(node) == (
-        '<p><mark data-custom="yes">marked</mark><custom-void checked label="&lt;x&gt;" /></p>\n'
+        '<p><mark data-custom="yes" href="javascript:alert(1)">marked</mark>'
+        '<custom-void checked label="&lt;x&gt;" /></p>\n'
     )
 
 
@@ -120,6 +121,37 @@ def test_html_renderer_escapes_raw_html_by_default() -> None:
         '<h1>h1</h1>\n&lt;div&gt;div&lt;/div&gt;\n<p>a &lt;span&gt;b&lt;/span&gt;</p>\n'
     )
     assert HTMLRenderer(escape=False).render(node) == '<h1>h1</h1>\n<div>div</div>\n<p>a <span>b</span></p>\n'
+
+
+def test_html_renderer_sanitizes_link_and_image_urls_by_default() -> None:
+    node = Root(
+        children=[
+            Paragraph(
+                children=[
+                    Link(url='javascript:alert(1)', children=[Text(value='bad link')]),
+                    Text(value=' '),
+                    Image(url='java\nscript:alert(1)', alt='bad image'),
+                    Text(value=' '),
+                    Link(url='/safe?x=1&y=2', children=[Text(value='relative')]),
+                    Text(value=' '),
+                    Link(url='mailto:me@example.com', children=[Text(value='mail')]),
+                ]
+            ),
+        ]
+    )
+
+    assert HTMLRenderer().render(node) == (
+        '<p><a>bad link</a> '
+        '<img alt="bad image" /> '
+        '<a href="/safe?x=1&amp;y=2">relative</a> '
+        '<a href="mailto:me@example.com">mail</a></p>\n'
+    )
+
+
+def test_html_renderer_can_disable_url_sanitization() -> None:
+    node = Paragraph(children=[Link(url='javascript:alert(1)', children=[Text(value='bad')])])
+
+    assert HTMLRenderer(sanitize_urls=False).render(node) == '<p><a href="javascript:alert(1)">bad</a></p>\n'
 
 
 def test_base_renderer_unknown_nodes_fall_back_to_children_or_value() -> None:

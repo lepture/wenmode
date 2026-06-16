@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Mapping
+from urllib.parse import urlsplit
 
 from wenmode.nodes import (
     Blockquote,
@@ -9,6 +10,8 @@ from wenmode.nodes import (
     Code,
     Html,
     HtmlAttrValue,
+    Image,
+    Link,
     List,
     ListItem,
     Node,
@@ -21,8 +24,11 @@ from .base import BaseRenderer
 
 
 class HTMLRenderer(BaseRenderer):
-    def __init__(self, escape: bool = True) -> None:
+    allowed_url_schemes = frozenset({'http', 'https', 'irc', 'ircs', 'mailto', 'tel'})
+
+    def __init__(self, escape: bool = True, sanitize_urls: bool = True) -> None:
         self.escape_enabled = escape
+        self.sanitize_urls = sanitize_urls
 
     def render_list_item(self, item: Node, loose: bool) -> str:
         if not isinstance(item, ListItem):
@@ -86,6 +92,16 @@ class HTMLRenderer(BaseRenderer):
                 rendered.append(f'{name}="{self.escape_html(str(value))}"')
         return (' ' + ' '.join(rendered)) if rendered else ''
 
+    def sanitize_url(self, value: str) -> str | None:
+        if not self.sanitize_urls:
+            return value
+
+        normalized = ''.join(char for char in value.strip() if char > ' ')
+        scheme = urlsplit(normalized).scheme.lower()
+        if scheme and scheme not in self.allowed_url_schemes:
+            return None
+        return value
+
 
 @HTMLRenderer.register('root')
 def render_root(renderer: HTMLRenderer, node: Root) -> str:
@@ -127,6 +143,28 @@ def render_html(renderer: HTMLRenderer, node: Html) -> str:
 @HTMLRenderer.register('text')
 def render_text(renderer: HTMLRenderer, node: Text) -> str:
     return renderer.escape_html(re.sub(r'(?<! ) (?=\r?\n)', '', node.value))
+
+
+@HTMLRenderer.register('link')
+def render_link(renderer: HTMLRenderer, node: Link) -> str:
+    attrs = node.get_html_attrs()
+    href = renderer.sanitize_url(node.url)
+    if href is None:
+        attrs.pop('href', None)
+    else:
+        attrs['href'] = href
+    return f'<a{renderer.render_attrs(attrs)}>{renderer.render_children(node.children)}</a>'
+
+
+@HTMLRenderer.register('image')
+def render_image(renderer: HTMLRenderer, node: Image) -> str:
+    attrs = node.get_html_attrs()
+    src = renderer.sanitize_url(node.url)
+    if src is None:
+        attrs.pop('src', None)
+    else:
+        attrs['src'] = src
+    return f'<img{renderer.render_attrs(attrs)} />'
 
 
 @HTMLRenderer.register('break')
