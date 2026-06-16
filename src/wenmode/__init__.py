@@ -1,5 +1,5 @@
 from .parser import Wenmode
-from .presets import COMMON_MARK, GITHUB
+from .presets import commonmark, github
 from .renderers import HTMLRenderer, MarkdownRenderer
 
-__all__ = ['COMMON_MARK', 'GITHUB', 'HTMLRenderer', 'MarkdownRenderer', 'Wenmode']
+__all__ = ['commonmark', 'github', 'HTMLRenderer', 'MarkdownRenderer', 'Wenmode']

@@ -35,7 +35,7 @@ GFM_DISALLOWED_HTML_TAGS = [
     'plaintext',
 ]
 
-COMMON_MARK = [
+commonmark = [
     ThematicBreak,
     FencedCode,
     IndentedCode,
@@ -55,7 +55,7 @@ COMMON_MARK = [
     Emphasis,
 ]
 
-GITHUB = [
+github = [
     Table,
     ThematicBreak,
     FencedCode,

@@ -10,9 +10,9 @@ renderers such as `HTMLRenderer` and `MarkdownRenderer`.
 ## Quick Start
 
 ```python
-from wenmode import COMMON_MARK, HTMLRenderer, MarkdownRenderer, Wenmode
+from wenmode import commonmark, HTMLRenderer, MarkdownRenderer, Wenmode
 
-parser = Wenmode(COMMON_MARK)
+parser = Wenmode(commonmark)
 tree = parser.parse('# Hello\n\nThis is **wenmode**.')
 
 html = HTMLRenderer().render(tree)
@@ -62,9 +62,9 @@ without assuming a fixed preset.
 `COMMON_MARK` enables the CommonMark-oriented rule set:
 
 ```python
-from wenmode import COMMON_MARK, Wenmode
+from wenmode import commonmark, Wenmode
 
-parser = Wenmode(COMMON_MARK)
+parser = Wenmode(commonmark)
 ```
 
 The preset includes headings, block quotes, lists, code blocks, HTML blocks,
