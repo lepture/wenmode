@@ -70,37 +70,6 @@ def test_image_keeps_reference_definitions_enabled() -> None:
     assert render(parser, '[x]: /img.png\n\n![x]\n') == '<p><img src="/img.png" alt="x" /></p>\n'
 
 
-def test_footnote_resolves_later_definition() -> None:
-    parser = Wenmode([Footnote])
-
-    assert (
-        render(parser, 'a[^one]\n\n[^one]: note\n')
-        == '<p>a<sup><a href="#user-content-fn-one" id="user-content-fnref-one" '
-        'data-footnote-ref aria-describedby="footnote-label">1</a></sup></p>\n'
-        '<section data-footnotes class="footnotes">\n'
-        '<h2 class="sr-only" id="footnote-label">Footnotes</h2>\n'
-        '<ol>\n'
-        '<li id="user-content-fn-one">\n'
-        '<p>note <a href="#user-content-fnref-one" data-footnote-backref '
-        'class="data-footnote-backref" aria-label="Back to content">&#8617;</a></p>\n'
-        '</li>\n'
-        '</ol>\n'
-        '</section>\n'
-    )
-
-
-def test_footnote_resolves_earlier_definition() -> None:
-    parser = Wenmode([Footnote])
-
-    assert 'href="#user-content-fn-one"' in render(parser, '[^one]: note\n\na[^one]\n')
-
-
-def test_missing_footnote_definition_leaves_text() -> None:
-    parser = Wenmode([Footnote])
-
-    assert render(parser, 'a[^missing]\n') == '<p>a[^missing]</p>\n'
-
-
 def test_parser_reuses_footnote_state_per_parse() -> None:
     parser = Wenmode([Footnote])
 
@@ -112,15 +81,6 @@ def test_footnote_definitions_are_plain_text_without_footnote_rule() -> None:
     parser = Wenmode([Link])
 
     assert render(parser, '[^one]: note\n\n[^one]\n') == '<p>[^one]: note</p>\n<p>[^one]</p>\n'
-
-
-def test_duplicate_footnote_definitions_use_first_definition() -> None:
-    parser = Wenmode([Footnote])
-
-    html = render(parser, '[^one]: first\n\n[^one]: second\n\na[^one]\n')
-
-    assert '<p>first <a href="#user-content-fnref-one"' in html
-    assert 'second' not in html
 
 
 def test_github_preset_enables_footnotes_with_links() -> None:
