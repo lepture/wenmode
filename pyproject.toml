@@ -1,0 +1,40 @@
+[project]
+name = "wenmode"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Hsiaoming Yang", email = "me@lepture.com" }
+]
+requires-python = ">=3.11"
+dependencies = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+lint = [
+    "mypy>=1.15.0",
+    "ruff>=0.9.6",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "I", # isort
+]
+
+[tool.ruff.format]
+quote-style = "single"
+docstring-code-format = true
+
+[tool.mypy]
+strict = true
+python_version = "3.11"
+files = ["src/wenmode"]
+show_error_codes = true
+pretty = true
