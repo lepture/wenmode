@@ -21,11 +21,11 @@ class Table(BlockRule):
         super().__init__('table', r'[ \t]{0,3}.*\|.*(?:\r?\n)?$')
 
     def parse(self, parser: Wenmode, state: BlockState, match: re.Match[str]) -> TableNode | None:
-        if state.index + 1 >= len(state.lines):
+        if not state.has(1):
             return None
 
         header_line = state.line.rstrip('\r\n')
-        delimiter_line = state.lines[state.index + 1].rstrip('\r\n')
+        delimiter_line = state.peek(1).rstrip('\r\n')
         if not has_unescaped_pipe(header_line):
             return None
 

@@ -11,7 +11,7 @@ from .rules.blocks.html import is_html_block_tag
 from .rules.footnotes import FootnoteDefinition
 from .rules.inlines.emphasis import parse_emphasis_sequence
 from .rules.references import ReferenceDefinition
-from .state import BlockState
+from .state import BlockState, LineSource, StreamBlockState, StreamLineBuffer
 
 LIST_MARKER_RE = re.compile(
     r'^[ \t]{0,3}(?:(?P<bullet>[*+-])|(?P<ordered>\d{1,9})[.)])(?P<spaces>[ \t]+|$)(?P<rest>.*)$'
@@ -40,33 +40,44 @@ class Wenmode:
         self._inline_trigger_re = self._compile_inline_trigger_re(self._triggered_inline_rules)
         self._block_openers = self._compile_block_openers(self.block_rules)
 
-    def parse(self, text: str) -> Root:
-        return Root(children=self.parse_blocks(text))
+    def parse(self, source: LineSource) -> Root:
+        return Root(children=self._parse_document(source))
 
-    def parse_blocks(self, text: str, parent_state: BlockState | None = None) -> list[Node]:
-        references = parent_state.references if parent_state is not None else {}
-        footnotes = parent_state.footnotes if parent_state is not None else {}
-        state = BlockState.from_text(
-            text,
-            references=references,
-            footnotes=footnotes,
-            depth=(parent_state.depth + 1 if parent_state else 0),
-            pending_inlines=parent_state.pending_inlines if parent_state is not None else None,
-            pending_inline_callbacks=parent_state.pending_inline_callbacks if parent_state is not None else None,
+    def parse_blocks(self, text: str, parent_state: BlockState) -> list[Node]:
+        state = BlockState(
+            text.splitlines(keepends=True),
+            references=parent_state.references,
+            footnotes=parent_state.footnotes,
+            depth=parent_state.depth + 1,
+            pending_inlines=parent_state.pending_inlines,
+            pending_inline_callbacks=parent_state.pending_inline_callbacks,
             defer_inlines=True,
         )
+        return self._parse_block_nodes(state)
+
+    def _parse_document(self, source: LineSource) -> list[Node]:
+        if isinstance(source, str):
+            state: BlockState = BlockState(source.splitlines(keepends=True), defer_inlines=True)
+        else:
+            state = StreamBlockState(StreamLineBuffer(source), defer_inlines=True)
+        children = self._parse_block_nodes(state)
+        self._resolve_pending_inlines(state)
+        return children
+
+    def _parse_block_nodes(self, state: BlockState) -> list[Node]:
         children: list[Node] = []
 
         while not state.done:
-            if state.line.strip() == '':
+            line = state.line
+            if line.strip() == '':
                 state.advance()
                 continue
 
-            if self._is_plain_paragraph_start(state.line):
+            if self._is_plain_paragraph_start(line):
                 children.append(self._parse_paragraph(state))
                 continue
 
-            match = self._block_openers.match(state.line) if self._block_openers else None
+            match = self._block_openers.match(line) if self._block_openers else None
             if match is not None and not self._container_depth_exceeded(match, state):
                 rule = self._match_block_rule(match)
                 previous_index = state.index
@@ -79,8 +90,6 @@ class Wenmode:
 
             children.append(self._parse_paragraph(state))
 
-        if parent_state is None:
-            self._resolve_pending_inlines(state)
         return children
 
     def parse_inlines(self, text: str, state: BlockState | None = None) -> list[Node]:
@@ -155,16 +164,19 @@ class Wenmode:
 
     def _parse_paragraph(self, state: BlockState) -> Node:
         lines: list[str] = []
-        while not state.done and state.line.strip() != '':
+        while not state.done:
+            line = state.line
+            if line.strip() == '':
+                break
             if lines:
                 setext_heading = self.rules.get('setext_heading')
                 if setext_heading is not None:
                     parsed = setext_heading.parse_paragraph_continuation(self, state, lines)
                     if parsed is not None:
                         return parsed
-            if lines and self.is_paragraph_interrupt(state.line, state):
+            if lines and self.is_paragraph_interrupt(line, state):
                 break
-            lines.append(state.line.lstrip(' \t') if lines else state.line)
+            lines.append(line.lstrip(' \t') if lines else line)
             state.advance()
 
         text = ''.join(lines).strip()

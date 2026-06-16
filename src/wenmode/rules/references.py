@@ -23,14 +23,14 @@ class ReferenceDefinition(BlockRule):
         super().__init__('reference_definition', r'[ \t]{0,3}\[(?!\^)')
 
     def parse(self, parser: Wenmode, state: BlockState, match: re.Match[str]) -> None:
-        multiline_label = parse_multiline_label_reference(state.lines, state.index)
+        multiline_label = parse_multiline_label_reference(state, state.index)
         if multiline_label is not None:
             next_index, label, url, title = multiline_label
             state.references.setdefault(normalize_label(label), Reference(url=url, title=title))
             state.index = next_index
             return None
 
-        parsed = parse_reference(state.lines, state.index)
+        parsed = parse_reference(state, state.index)
         if parsed is None:
             return None
 
@@ -40,8 +40,8 @@ class ReferenceDefinition(BlockRule):
         return None
 
 
-def parse_reference(lines: list[str], index: int) -> tuple[int, str, str, str | None] | None:
-    match = REFERENCE_START_RE.match(lines[index].rstrip('\r\n'))
+def parse_reference(state: BlockState, index: int) -> tuple[int, str, str, str | None] | None:
+    match = REFERENCE_START_RE.match(state.line_at(index).rstrip('\r\n'))
     if match is None:
         return None
 
@@ -51,8 +51,8 @@ def parse_reference(lines: list[str], index: int) -> tuple[int, str, str, str | 
     rest = match.group('rest')
     index += 1
 
-    while rest == '' and index < len(lines):
-        continuation = lines[index].rstrip('\r\n')
+    while rest == '' and state.has_index(index):
+        continuation = state.line_at(index).rstrip('\r\n')
         if continuation.strip() == '':
             return None
         rest = continuation.strip()
@@ -69,14 +69,14 @@ def parse_reference(lines: list[str], index: int) -> tuple[int, str, str, str | 
     if remainder:
         parsed_title = parse_reference_title(remainder)
         if parsed_title is None and remainder[0] in '"\'(':
-            parsed_title, index = parse_multiline_reference_title(remainder, lines, index)
+            parsed_title, index = parse_multiline_reference_title(remainder, state, index)
         if parsed_title is None:
             return None
         title, remainder = parsed_title
         if remainder.strip():
             return None
-    elif index < len(lines):
-        next_line = lines[index].rstrip('\r\n')
+    elif state.has_index(index):
+        next_line = state.line_at(index).rstrip('\r\n')
         parsed_title = parse_reference_title(next_line.strip())
         if parsed_title is not None and not parsed_title[1].strip():
             title = parsed_title[0]
@@ -124,13 +124,13 @@ def parse_reference_title(text: str) -> tuple[str, str] | None:
 
 
 def parse_multiline_reference_title(
-    first_line: str, lines: list[str], index: int
+    first_line: str, state: BlockState, index: int
 ) -> tuple[tuple[str, str] | None, int]:
     title_lines = [first_line]
-    while index < len(lines):
-        if lines[index].strip() == '':
+    while state.has_index(index):
+        if state.line_at(index).strip() == '':
             return None, index
-        title_lines.append(lines[index].rstrip('\r\n'))
+        title_lines.append(state.line_at(index).rstrip('\r\n'))
         index += 1
         parsed = parse_reference_title('\n'.join(title_lines))
         if parsed is not None:
@@ -138,13 +138,13 @@ def parse_multiline_reference_title(
     return None, index
 
 
-def parse_multiline_label_reference(lines: list[str], index: int) -> tuple[int, str, str, str | None] | None:
-    if not MULTILINE_LABEL_START_RE.match(lines[index].rstrip('\r\n')):
+def parse_multiline_label_reference(state: BlockState, index: int) -> tuple[int, str, str, str | None] | None:
+    if not MULTILINE_LABEL_START_RE.match(state.line_at(index).rstrip('\r\n')):
         return None
-    label_lines = [lines[index].strip()[1:]]
+    label_lines = [state.line_at(index).strip()[1:]]
     cursor = index + 1
-    while cursor < len(lines):
-        line = lines[cursor].rstrip('\r\n')
+    while state.has_index(cursor):
+        line = state.line_at(cursor).rstrip('\r\n')
         end = MULTILINE_LABEL_END_RE.match(line)
         if end is not None:
             label_lines.append(end.group('label_end'))

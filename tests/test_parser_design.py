@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from io import StringIO
+
 from wenmode import HTMLRenderer, Wenmode, github
 from wenmode.rules import (
     AtxHeading,
@@ -11,12 +13,17 @@ from wenmode.rules import (
     Link,
     List,
     SetextHeading,
+    Table,
     ThematicBreak,
 )
 
 
 def render(parser: Wenmode, markdown: str) -> str:
     return HTMLRenderer().render(parser.parse(markdown))
+
+
+def lines(markdown: str):
+    yield from markdown.splitlines(keepends=True)
 
 
 def test_parser_reuses_reference_state_per_parse() -> None:
@@ -26,6 +33,44 @@ def test_parser_reuses_reference_state_per_parse() -> None:
     assert render(parser, '[x]\n') == '<p>[x]</p>\n'
     assert not hasattr(parser, 'references')
     assert not hasattr(parser, '_state_stack')
+
+
+def test_parser_accepts_synchronous_text_streams() -> None:
+    parser = Wenmode(github)
+    markdown = '# Title\n\nA [link][x] and a note[^one].\n\n[x]: /url\n[^one]: note\n'
+    expected = HTMLRenderer().render(parser.parse(markdown))
+
+    assert HTMLRenderer().render(parser.parse(StringIO(markdown))) == expected
+    assert HTMLRenderer().render(parser.parse(markdown.splitlines(keepends=True))) == expected
+    assert HTMLRenderer().render(parser.parse(lines(markdown))) == expected
+
+
+def test_stream_reference_definition_can_affect_earlier_blocks() -> None:
+    parser = Wenmode([Link])
+    markdown = '[x]\n\n[x]: /url "ti\ntle"\n'
+
+    assert HTMLRenderer().render(parser.parse(lines(markdown))) == '<p><a href="/url" title="ti\ntle">x</a></p>\n'
+
+
+def test_stream_table_lookahead() -> None:
+    parser = Wenmode([Table])
+    markdown = '| a | b |\n| --- | --- |\n| c | d |\n'
+
+    assert HTMLRenderer().render(parser.parse(lines(markdown))) == HTMLRenderer().render(parser.parse(markdown))
+
+
+def test_stream_footnote_continuation_lookahead() -> None:
+    parser = Wenmode([Footnote])
+    markdown = '[^one]: first\n\n  second\n\nA note[^one]\n'
+
+    assert HTMLRenderer().render(parser.parse(lines(markdown))) == HTMLRenderer().render(parser.parse(markdown))
+
+
+def test_stream_list_blank_line_lookahead() -> None:
+    parser = Wenmode([List])
+    markdown = '- a\n\n  b\n- c\n'
+
+    assert HTMLRenderer().render(parser.parse(lines(markdown))) == HTMLRenderer().render(parser.parse(markdown))
 
 
 def test_reference_definitions_are_plain_text_without_reference_consumers() -> None:

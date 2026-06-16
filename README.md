@@ -20,6 +20,13 @@ markdown = MarkdownRenderer().render(tree)
 ast = tree.to_ast()
 ```
 
+`parse()` also accepts synchronous text streams and other iterables of lines:
+
+```python
+with open('README.md', encoding='utf-8') as f:
+    tree = parser.parse(f)
+```
+
 `tree` is a `Root` node from `wenmode.nodes`. Use `to_ast()` when you need a
 plain dictionary representation:
 

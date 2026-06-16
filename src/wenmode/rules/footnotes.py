@@ -85,11 +85,11 @@ def collect_definition_lines(state: BlockState, rest: str) -> list[str]:
 
 
 def has_later_continuation(state: BlockState) -> bool:
-    index = state.index + 1
-    while index < len(state.lines):
-        line = state.lines[index]
+    offset = 1
+    while state.has(offset):
+        line = state.peek(offset)
         if line.strip() == '':
-            index += 1
+            offset += 1
             continue
         return count_indent(line) >= 2
     return False

@@ -201,23 +201,13 @@ def blank_belongs_to_item(
 ) -> bool:
     if state.done:
         return True
-    line = first_nonblank_line(state)
+    line = state.first_nonblank_from_current()
     if line is None:
         return True
     marker = MARKER_RE.match(line.rstrip('\r\n'))
     if marker is not None:
         return count_indent(marker.group('indent')) <= marker_indent
     return count_indent(line) <= content_indent or not has_nested_list(item_lines)
-
-
-def first_nonblank_line(state: BlockState) -> str | None:
-    index = state.index
-    while index < len(state.lines):
-        line = state.lines[index]
-        if line.strip() != '':
-            return line
-        index += 1
-    return None
 
 
 def has_nested_list(lines: list[str]) -> bool:
