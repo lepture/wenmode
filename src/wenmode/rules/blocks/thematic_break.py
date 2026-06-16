@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from wenmode.nodes import ThematicBreak as ThematicBreakNode
 from wenmode.rules.base import BlockRule
@@ -12,6 +12,8 @@ if TYPE_CHECKING:
 
 
 class ThematicBreak(BlockRule):
+    order: ClassVar[int] = 50
+
     def __init__(self) -> None:
         super().__init__(
             'thematic_break', r'[ \t]{0,3}(?:\*[ \t]*){3,}$|[ \t]{0,3}(?:-[ \t]*){3,}$|[ \t]{0,3}(?:_[ \t]*){3,}$'

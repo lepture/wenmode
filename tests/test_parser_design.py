@@ -1,7 +1,18 @@
 from __future__ import annotations
 
 from wenmode import HTMLRenderer, Wenmode, github
-from wenmode.rules import AtxHeading, Blockquote, Emphasis, FencedCode, Footnote, Image, Link, List, SetextHeading
+from wenmode.rules import (
+    AtxHeading,
+    Blockquote,
+    Emphasis,
+    FencedCode,
+    Footnote,
+    Image,
+    Link,
+    List,
+    SetextHeading,
+    ThematicBreak,
+)
 
 
 def render(parser: Wenmode, markdown: str) -> str:
@@ -62,6 +73,12 @@ def test_emphasis_rule_enables_strong_and_emphasis() -> None:
 def test_setext_heading_rule_owns_paragraph_continuation() -> None:
     assert render(Wenmode([SetextHeading]), 'a\n-\n') == '<h2>a</h2>\n'
     assert render(Wenmode([]), 'a\n-\n') == '<p>a\n-</p>\n'
+
+
+def test_thematic_break_rule_does_not_depend_on_list_order() -> None:
+    parser = Wenmode([List, ThematicBreak])
+
+    assert render(parser, '- - -\n') == '<hr />\n'
 
 
 def test_image_keeps_reference_definitions_enabled() -> None:

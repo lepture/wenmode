@@ -75,7 +75,7 @@ class ContainerDirective(BlockRule):
 
 
 class FencedDirective(BlockRule):
-    order: ClassVar[int] = 50
+    order: ClassVar[int] = 60
 
     def __init__(self) -> None:
         super().__init__('fenced_directive', r'[ \t]{0,3}(?:`{3,}|~{3,})\{[A-Za-z][A-Za-z0-9_-]*}')
