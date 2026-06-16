@@ -122,7 +122,7 @@ def html_end_pattern(line: str) -> re.Pattern[str] | None:
     if re.match(r'^<![A-Z]', line):
         return re.compile(r'>')
     if line.startswith('<![CDATA['):
-        return re.compile(r'\]\]>')
+        return re.compile(r']]>')
     return None
 
 

@@ -37,12 +37,14 @@ class List(BlockRule):
         items: list[Node] = []
         spread = False
 
+        thematic_break = parser.rules.get('thematic_break')
+
         while not state.done:
             line = state.line.rstrip('\r\n')
             marker = MARKER_RE.match(line)
             if marker is None:
                 break
-            if items and is_thematic_break(line):
+            if items and isinstance(thematic_break, BlockRule) and re.match(thematic_break.pattern, line):
                 break
             if ordered != (marker.group('ordered') is not None):
                 break
@@ -92,7 +94,6 @@ class List(BlockRule):
                         item_lines.append('\n')
                         continue
                     break
-                    continue
                 if has_continuation_indent(next_line, content_indent):
                     item_lines.append(strip_continuation_indent(next_line, content_indent))
                     state.advance()
@@ -219,11 +220,3 @@ def has_continuation_indent(line: str, columns: int) -> bool:
 def strip_continuation_indent(line: str, columns: int) -> str:
     expanded = expand_leading_tabs(line)
     return expanded[columns:] if len(expanded) >= columns else ''
-
-
-def is_thematic_break(line: str) -> bool:
-    return bool(
-        re.match(r'[ \t]{0,3}(?:\*[ \t]*){3,}$', line)
-        or re.match(r'[ \t]{0,3}(?:-[ \t]*){3,}$', line)
-        or re.match(r'[ \t]{0,3}(?:_[ \t]*){3,}$', line)
-    )

@@ -2,13 +2,12 @@ from __future__ import annotations
 
 from .blocks.blank_line import BlankLine
 from .blocks.blockquote import Blockquote
-from .blocks.code import FencedCode
-from .blocks.heading import AtxHeading
+from .blocks.fenced_code import FencedCode
+from .blocks.heading import AtxHeading, SetextHeading
 from .blocks.html import HtmlBlock
 from .blocks.indented_code import IndentedCode
 from .blocks.list import List
 from .blocks.paragraph import Paragraph
-from .blocks.setext_heading import SetextHeading
 from .blocks.thematic_break import ThematicBreak
 from .inlines.code import InlineCode
 from .inlines.emphasis import Emphasis

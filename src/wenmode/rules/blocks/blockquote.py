@@ -38,7 +38,7 @@ class Blockquote(BlockRule):
             content = expand_leading_tabs(quote.group(1), 2)
             lines.append(content + line_end)
             paragraph_open = content.strip() != '' and (
-                not parser.starts_nonparagraph_block(content) or has_nested_blockquote(content)
+                not starts_nonparagraph_block(parser, content) or has_nested_blockquote(content)
             )
             lazy_used = False
             state.advance()
@@ -61,6 +61,15 @@ def parse_shallow_blockquote(parser: Wenmode, state: BlockState) -> BlockquoteNo
 
 def has_nested_blockquote(line: str) -> bool:
     return re.match(r'[ \t]{0,3}(?:[*+-]|\d{1,9}[.)])(?:[ \t]+)>', line) is not None
+
+
+def starts_nonparagraph_block(parser: Wenmode, line: str) -> bool:
+    rule_names = {'atx_heading', 'fenced_code', 'list', 'indented_code', 'thematic_break'}
+    for name in rule_names:
+        rule = parser.rules.get(name)
+        if isinstance(rule, BlockRule) and re.match(rule.pattern, line):
+            return True
+    return False
 
 
 def is_setext_marker(line: str) -> bool:

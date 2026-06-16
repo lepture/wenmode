@@ -32,3 +32,6 @@ class BlockState:
 
     def advance(self, count: int = 1) -> None:
         self.index += count
+
+    def get_reference(self, label: str) -> Reference | None:
+        return self.references.get(label)

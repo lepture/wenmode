@@ -3,8 +3,8 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING
 
-from wenmode.nodes import Heading
-from wenmode.rules.base import BlockRule
+from wenmode.nodes import Heading, Node
+from wenmode.rules.base import BlockRule, Rule
 from wenmode.state import BlockState
 
 if TYPE_CHECKING:
@@ -27,3 +27,20 @@ class AtxHeading(BlockRule):
             content = ''
         state.advance()
         return Heading(depth=len(marker), children=parser.parse_inlines(content.strip(), state))
+
+
+class SetextHeading(Rule):
+    def __init__(self) -> None:
+        super().__init__('setext_heading')
+
+    def parse_paragraph_continuation(
+        self, parser: Wenmode, state: BlockState, lines: list[str]
+    ) -> Node | None:
+        marker = re.match(r'[ \t]{0,3}(=+|-+)[ \t]*$', state.line)
+        if marker is None:
+            return None
+
+        state.advance()
+        depth = 1 if marker.group(1).startswith('=') else 2
+        text = ''.join(lines).strip()
+        return Heading(depth=depth, children=parser.parse_inlines(text, state))

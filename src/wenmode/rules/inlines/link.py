@@ -16,6 +16,8 @@ if TYPE_CHECKING:
 
 
 class Image(InlineRule):
+    has_references = True
+
     def __init__(self) -> None:
         super().__init__('image', r'!\[')
 
@@ -31,6 +33,8 @@ class Image(InlineRule):
 
 
 class Link(InlineRule):
+    has_references = True
+
     def __init__(self) -> None:
         super().__init__('link', r'\[')
 
@@ -84,10 +88,11 @@ def parse_link_or_image(
     elif invalid_reference_label(reference_label):
         return None
 
-    reference = parser.get_reference(normalize_label(reference_label), state)
-    if reference is None:
-        return None
-    return label, reference.url, reference.title, end
+    if state:
+        reference = state.get_reference(normalize_label(reference_label))
+        if reference is not None:
+            return label, reference.url, reference.title, end
+    return None
 
 
 def find_closing_bracket(text: str, start: int) -> int | None:

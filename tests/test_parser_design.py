@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from wenmode import HTMLRenderer, Wenmode
-from wenmode.rules import AtxHeading, Blockquote, Emphasis, FencedCode, Image, Link, List
+from wenmode.rules import AtxHeading, Blockquote, Emphasis, FencedCode, Image, Link, List, SetextHeading
 
 
 def render(parser: Wenmode, markdown: str) -> str:
@@ -21,6 +21,7 @@ def test_reference_definitions_are_plain_text_without_reference_consumers() -> N
     parser = Wenmode([AtxHeading])
 
     assert render(parser, '[x]: /url\n\n[x]\n') == '<p>[x]: /url</p>\n<p>[x]</p>\n'
+    assert isinstance(parser.rules, dict)
 
 
 def test_fence_like_text_is_not_protected_without_fenced_code_rule() -> None:
@@ -56,6 +57,11 @@ def test_emphasis_rule_enables_strong_and_emphasis() -> None:
     parser = Wenmode([Emphasis])
 
     assert render(parser, '*a* **b**\n') == '<p><em>a</em> <strong>b</strong></p>\n'
+
+
+def test_setext_heading_rule_owns_paragraph_continuation() -> None:
+    assert render(Wenmode([SetextHeading]), 'a\n-\n') == '<h2>a</h2>\n'
+    assert render(Wenmode([]), 'a\n-\n') == '<p>a\n-</p>\n'
 
 
 def test_image_keeps_reference_definitions_enabled() -> None:

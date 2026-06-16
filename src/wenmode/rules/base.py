@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from wenmode.nodes import Node
 from wenmode.state import BlockState
@@ -14,6 +14,12 @@ if TYPE_CHECKING:
 @dataclass
 class Rule:
     name: str
+    has_references: ClassVar[bool] = False
+
+    def parse_paragraph_continuation(
+        self, parser: Wenmode, state: BlockState, lines: list[str]
+    ) -> Node | None:
+        return None
 
 
 @dataclass
