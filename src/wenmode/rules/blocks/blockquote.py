@@ -60,7 +60,7 @@ def parse_shallow_blockquote(parser: Wenmode, state: BlockState) -> BlockquoteNo
 
 
 def has_nested_blockquote(line: str) -> bool:
-    return re.match(r'[ \t]{0,3}(?:[*+-]|\d{1,9}[.)])(?:[ \t]+)>', line) is not None
+    return re.match(r'[ \t]{0,3}(?:[*+-]|\d{1,9}[.)])[ \t]+>', line) is not None
 
 
 def starts_nonparagraph_block(parser: Wenmode, line: str) -> bool:

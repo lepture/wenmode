@@ -30,6 +30,6 @@ def load_examples() -> list[CommonMarkExample]:
 )
 def test_commonmark_spec(example: CommonMarkExample) -> None:
     parser = Wenmode(COMMON_MARK)
-    renderer = HTMLRenderer()
+    renderer = HTMLRenderer(escape=False)
 
     assert renderer.render(parser.parse(example['markdown'])) == example['html']
