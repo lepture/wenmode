@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 import string
 from collections.abc import Iterable
-from typing import Any
+from typing import Any, TypeVar
 
 from .nodes import Node, Paragraph, Root, Text
 from .rules.base import BlockRule, InlineRule, Rule
@@ -19,6 +19,7 @@ LIST_MARKER_RE = re.compile(
 HTML_TAG_START_RE = re.compile(r'</?[A-Za-z]')
 HTML_PARAGRAPH_INTERRUPT_RE = re.compile(r'(?i)<(?:script|pre|style|textarea)(?:\s|>|$)')
 PUNCTUATION = set(string.punctuation)
+T = TypeVar('T', bound=Rule)
 
 
 class Wenmode:
@@ -26,14 +27,13 @@ class Wenmode:
 
     def __init__(self, rules: Iterable[type[Any] | Rule]) -> None:
         resolved_rules: list[Rule] = [rule() if isinstance(rule, type) else rule for rule in rules]
-        resolved_rules = prioritize_footnote_rule(resolved_rules)
         if any(rule.has_references for rule in resolved_rules):
             resolved_rules.append(ReferenceDefinition())
         if any(rule.has_footnotes for rule in resolved_rules):
             resolved_rules.append(FootnoteDefinition())
         self.rules = {rule.name: rule for rule in resolved_rules}
-        self.block_rules = [rule for rule in resolved_rules if isinstance(rule, BlockRule)]
-        self.inline_rules = [rule for rule in resolved_rules if isinstance(rule, InlineRule)]
+        self.block_rules = sorted_by_order([rule for rule in resolved_rules if isinstance(rule, BlockRule)])
+        self.inline_rules = sorted_by_order([rule for rule in resolved_rules if isinstance(rule, InlineRule)])
         self._emphasis_enabled = 'emphasis' in self.rules
         self._inline_rule_order = {rule.name: index for index, rule in enumerate(self.inline_rules)}
         self._triggered_inline_rules, self._search_inline_rules = self._prepare_inline_dispatch(self.inline_rules)
@@ -279,12 +279,5 @@ def contains_emphasis_marker(nodes: list[Node]) -> bool:
     return False
 
 
-def prioritize_footnote_rule(rules: list[Rule]) -> list[Rule]:
-    footnote_index = next((index for index, rule in enumerate(rules) if rule.name == 'footnote'), None)
-    link_index = next((index for index, rule in enumerate(rules) if rule.name == 'link'), None)
-    if footnote_index is None or link_index is None or footnote_index < link_index:
-        return rules
-
-    footnote = rules.pop(footnote_index)
-    rules.insert(link_index, footnote)
-    return rules
+def sorted_by_order(rules: list[T]) -> list[T]:
+    return [rule for _, rule in sorted(enumerate(rules), key=lambda item: (item[1].order, item[0]))]

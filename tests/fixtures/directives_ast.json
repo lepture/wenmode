@@ -1,0 +1,244 @@
+[
+  {
+    "name": "text directive",
+    "markdown": ":abbr[HTML]{title=\"HyperText Markup Language\"}\n",
+    "ast": {
+      "type": "root",
+      "children": [
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "type": "textDirective",
+              "name": "abbr",
+              "attributes": {
+                "title": "HyperText Markup Language"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "value": "HTML"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "role directive",
+    "markdown": "{abbr}`HTML *content*`\n",
+    "ast": {
+      "type": "root",
+      "children": [
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "type": "textDirective",
+              "name": "abbr",
+              "children": [
+                {
+                  "type": "text",
+                  "value": "HTML "
+                },
+                {
+                  "type": "emphasis",
+                  "children": [
+                    {
+                      "type": "text",
+                      "value": "content"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "role directive with longer backtick fence",
+    "markdown": "{code}``a ` tick``\n",
+    "ast": {
+      "type": "root",
+      "children": [
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "type": "textDirective",
+              "name": "code",
+              "children": [
+                {
+                  "type": "text",
+                  "value": "a ` tick"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "leaf directive",
+    "markdown": "::youtube[Video]{#abc v=123}\n",
+    "ast": {
+      "type": "root",
+      "children": [
+        {
+          "type": "leafDirective",
+          "name": "youtube",
+          "attributes": {
+            "id": "abc",
+            "v": "123"
+          },
+          "children": [
+            {
+              "type": "text",
+              "value": "Video"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "container directive",
+    "markdown": ":::note[Title]{.warning}\nHello *there*.\n:::\n",
+    "ast": {
+      "type": "root",
+      "children": [
+        {
+          "type": "containerDirective",
+          "name": "note",
+          "attributes": {
+            "class": "warning"
+          },
+          "children": [
+            {
+              "type": "paragraph",
+              "data": {
+                "directiveLabel": true
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "value": "Title"
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "children": [
+                {
+                  "type": "text",
+                  "value": "Hello "
+                },
+                {
+                  "type": "emphasis",
+                  "children": [
+                    {
+                      "type": "text",
+                      "value": "there"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "value": "."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "directive attribute shortcuts",
+    "markdown": ":name[Label]{#x.y.z key=value flag}\n",
+    "ast": {
+      "type": "root",
+      "children": [
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "type": "textDirective",
+              "name": "name",
+              "attributes": {
+                "id": "x",
+                "key": "value",
+                "flag": "",
+                "class": "y z"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "value": "Label"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "fenced directive",
+    "markdown": "```{note} Important\n:class: warning\n:flag:\n\nHello *there*.\n```\n",
+    "ast": {
+      "type": "root",
+      "children": [
+        {
+          "type": "containerDirective",
+          "name": "note",
+          "attributes": {
+            "class": "warning",
+            "flag": ""
+          },
+          "children": [
+            {
+              "type": "paragraph",
+              "data": {
+                "directiveLabel": true
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "value": "Important"
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "children": [
+                {
+                  "type": "text",
+                  "value": "Hello "
+                },
+                {
+                  "type": "emphasis",
+                  "children": [
+                    {
+                      "type": "text",
+                      "value": "there"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "value": "."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

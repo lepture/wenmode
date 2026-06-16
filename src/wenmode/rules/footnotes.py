@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from wenmode.nodes import FootnoteDefinition as FootnoteDefinitionNode
 from wenmode.nodes import FootnoteReference, Node
@@ -21,6 +21,7 @@ FOOTNOTE_REFERENCE_RE = r'\[\^(?P<label>(?:\\.|[^\[\]\\\n]){1,999})]'
 
 
 class Footnote(InlineRule):
+    order: ClassVar[int] = 50
     has_footnotes = True
 
     def __init__(self) -> None:

@@ -12,6 +12,7 @@ class Node:
     html_void: ClassVar[bool] = False
     block: ClassVar[bool] = False
     type: str
+    data: dict[str, Any] | None = None
 
     def get_html_tag(self) -> str | None:
         return self.html_tag
@@ -217,3 +218,29 @@ class FootnoteDefinition(Parent):
     identifier: str = ''
     label: str = ''
     type: str = 'footnoteDefinition'
+
+
+@dataclass
+class TextDirective(Parent):
+    name: str = ''
+    attributes: dict[str, str] | None = None
+    type: str = 'textDirective'
+
+
+@dataclass
+class LeafDirective(Parent):
+    block: ClassVar[bool] = True
+    name: str = ''
+    attributes: dict[str, str] | None = None
+    type: str = 'leafDirective'
+
+
+@dataclass
+class ContainerDirective(Parent):
+    block: ClassVar[bool] = True
+    name: str = ''
+    attributes: dict[str, str] | None = None
+    type: str = 'containerDirective'
+
+
+DirectiveNode = TextDirective | LeafDirective | ContainerDirective

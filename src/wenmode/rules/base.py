@@ -14,6 +14,7 @@ if TYPE_CHECKING:
 @dataclass
 class Rule:
     name: str
+    order: ClassVar[int] = 100
     has_references: ClassVar[bool] = False
     has_footnotes: ClassVar[bool] = False
 

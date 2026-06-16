@@ -1,0 +1,23 @@
+[
+  {
+    "name": "admonition note",
+    "markdown": ":::note[Remember]{#n .wide}\nRead this.\n:::\n",
+    "html": "<aside id=\"n\" class=\"wide admonition admonition-note\">\n<p class=\"admonition-title\">Remember</p>\n<p>Read this.</p>\n</aside>\n"
+  },
+  {
+    "name": "admonition danger",
+    "markdown": ":::danger[Stop]\nCareful.\n:::\n",
+    "html": "<aside class=\"admonition admonition-danger\">\n<p class=\"admonition-title\">Stop</p>\n<p>Careful.</p>\n</aside>\n"
+  },
+  {
+    "name": "configured admonition fallback",
+    "markdown": ":::tip[Hint]\nUse it.\n:::\n",
+    "html": "<p>Hint</p>\n<p>Use it.</p>\n",
+    "admonition_types": ["note"]
+  },
+  {
+    "name": "figure",
+    "markdown": ":::figure[Caption]{#fig .wide}\n![Alt](/img.png)\n:::\n",
+    "html": "<figure id=\"fig\" class=\"wide\">\n<p><img src=\"/img.png\" alt=\"Alt\" /></p>\n<figcaption>Caption</figcaption>\n</figure>\n"
+  }
+]

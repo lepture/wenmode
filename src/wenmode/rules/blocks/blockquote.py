@@ -69,7 +69,16 @@ def has_nested_blockquote(line: str) -> bool:
 
 
 def starts_nonparagraph_block(parser: Wenmode, line: str) -> bool:
-    rule_names = {'atx_heading', 'fenced_code', 'list', 'indented_code', 'thematic_break'}
+    rule_names = {
+        'atx_heading',
+        'container_directive',
+        'fenced_code',
+        'fenced_directive',
+        'indented_code',
+        'leaf_directive',
+        'list',
+        'thematic_break',
+    }
     for name in rule_names:
         rule = parser.rules.get(name)
         if isinstance(rule, BlockRule) and re.match(rule.pattern, line):

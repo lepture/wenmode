@@ -6,6 +6,7 @@ from wenmode.nodes import (
     Blockquote,
     Break,
     Code,
+    ContainerDirective,
     Delete,
     Emphasis,
     FootnoteDefinition,
@@ -15,18 +16,21 @@ from wenmode.nodes import (
     Image,
     InlineCode,
     InlineMath,
+    LeafDirective,
     Link,
     List,
     ListItem,
     Math,
     Node,
     Paragraph,
+    Parent,
     Root,
     Strong,
     Table,
     TableCell,
     TableRow,
     Text,
+    TextDirective,
     ThematicBreak,
 )
 
@@ -63,6 +67,34 @@ class MarkdownRenderer(BaseRenderer):
 
     def render_table_cell_content(self, cell: TableCell) -> str:
         return self.render_children(cell.children).replace('\n', ' ').strip()
+
+    def render_directive_label(self, node: Node) -> str:
+        if not isinstance(node, Parent):
+            return ''
+        return '[' + self.render_children(node.children).strip() + ']' if node.children else ''
+
+    def render_directive_attributes(self, attributes: dict[str, str] | None) -> str:
+        if not attributes:
+            return ''
+
+        parts: list[str] = []
+        identifier = attributes.get('id')
+        if identifier:
+            parts.append('#' + identifier)
+
+        class_name = attributes.get('class')
+        if class_name:
+            parts.extend('.' + value for value in class_name.split() if value)
+
+        for key, value in attributes.items():
+            if key in {'id', 'class'}:
+                continue
+            if value == '':
+                parts.append(key)
+            else:
+                parts.append(f'{key}={quote_directive_attribute(value)}')
+
+        return '{' + ' '.join(parts) + '}' if parts else ''
 
 
 @MarkdownRenderer.register('root')
@@ -117,6 +149,39 @@ def render_delete(renderer: MarkdownRenderer, node: Delete) -> str:
     return f'~~{renderer.render_children(node.children)}~~'
 
 
+@MarkdownRenderer.register('textDirective')
+def render_text_directive(renderer: MarkdownRenderer, node: TextDirective) -> str:
+    return (
+        f':{node.name}'
+        f'{renderer.render_directive_label(node)}'
+        f'{renderer.render_directive_attributes(node.attributes)}'
+    )
+
+
+@MarkdownRenderer.register('leafDirective')
+def render_leaf_directive(renderer: MarkdownRenderer, node: LeafDirective) -> str:
+    return (
+        f'::{node.name}'
+        f'{renderer.render_directive_label(node)}'
+        f'{renderer.render_directive_attributes(node.attributes)}'
+        '\n\n'
+    )
+
+
+@MarkdownRenderer.register('containerDirective')
+def render_container_directive(renderer: MarkdownRenderer, node: ContainerDirective) -> str:
+    children = list(node.children)
+    label = ''
+    if children and isinstance(children[0], Paragraph) and children[0].data == {'directiveLabel': True}:
+        label = renderer.render_directive_label(children.pop(0))
+
+    body = renderer.render_children(children).rstrip('\n')
+    head = f':::{node.name}{label}{renderer.render_directive_attributes(node.attributes)}'
+    if body:
+        return f'{head}\n{body}\n:::\n\n'
+    return f'{head}\n:::\n\n'
+
+
 @MarkdownRenderer.register('table')
 def render_table(renderer: MarkdownRenderer, node: Table) -> str:
     if not node.children:
@@ -158,6 +223,12 @@ def delimiter_for_align(align: str | None) -> str:
     if align == 'center':
         return ':---:'
     return '---'
+
+
+def quote_directive_attribute(value: str) -> str:
+    if value and not re.search(r'[\s"\'=<>`{}]', value):
+        return value
+    return '"' + value.replace('\\', '\\\\').replace('"', '\\"') + '"'
 
 
 @MarkdownRenderer.register('code')

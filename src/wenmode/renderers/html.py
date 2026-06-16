@@ -1,21 +1,25 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
+from typing import Protocol
 from urllib.parse import quote, urlsplit
 
 from wenmode.nodes import (
     Blockquote,
     Break,
     Code,
+    ContainerDirective,
     Delete,
+    DirectiveNode,
     FootnoteDefinition,
     FootnoteReference,
     Html,
     HtmlAttrValue,
     Image,
     InlineMath,
+    LeafDirective,
     Link,
     List,
     ListItem,
@@ -27,6 +31,7 @@ from wenmode.nodes import (
     TableCell,
     TableRow,
     Text,
+    TextDirective,
 )
 
 from .base import BaseRenderer
@@ -42,12 +47,23 @@ class FootnoteRenderState:
     reference_ids: dict[str, list[str]] = field(default_factory=dict)
 
 
+class DirectiveHtmlRenderer(Protocol):
+    def render(self, renderer: HTMLRenderer, node: DirectiveNode) -> str | None:
+        pass
+
+
 class HTMLRenderer(BaseRenderer):
     allowed_url_schemes = frozenset({'http', 'https', 'irc', 'ircs', 'mailto', 'tel'})
 
-    def __init__(self, escape: bool = True, sanitize_urls: bool = True) -> None:
+    def __init__(
+        self,
+        escape: bool = True,
+        sanitize_urls: bool = True,
+        directives: Iterable[DirectiveHtmlRenderer] = (),
+    ) -> None:
         self.escape_enabled = escape
         self.sanitize_urls = sanitize_urls
+        self.directives = list(directives)
         self.footnotes = FootnoteRenderState()
 
     def render_list_item(self, item: Node, loose: bool) -> str:
@@ -181,6 +197,13 @@ class HTMLRenderer(BaseRenderer):
             return content[:-5] + backrefs + '</p>\n'
         return content + backrefs + '\n'
 
+    def render_directive(self, node: TextDirective | LeafDirective | ContainerDirective) -> str | None:
+        for directive in self.directives:
+            rendered = directive.render(self, node)
+            if rendered is not None:
+                return rendered
+        return None
+
 
 @HTMLRenderer.register('root')
 def render_root(renderer: HTMLRenderer, node: Root) -> str:
@@ -216,6 +239,30 @@ def render_list_item(renderer: HTMLRenderer, node: ListItem) -> str:
 @HTMLRenderer.register('delete')
 def render_delete(renderer: HTMLRenderer, node: Delete) -> str:
     return f'<del>{renderer.render_children(node.children)}</del>'
+
+
+@HTMLRenderer.register('textDirective')
+def render_text_directive(renderer: HTMLRenderer, node: TextDirective) -> str:
+    rendered = renderer.render_directive(node)
+    if rendered is not None:
+        return rendered
+    return renderer.render_children(node.children)
+
+
+@HTMLRenderer.register('leafDirective')
+def render_leaf_directive(renderer: HTMLRenderer, node: LeafDirective) -> str:
+    rendered = renderer.render_directive(node)
+    if rendered is not None:
+        return rendered
+    return renderer.render_children(node.children)
+
+
+@HTMLRenderer.register('containerDirective')
+def render_container_directive(renderer: HTMLRenderer, node: ContainerDirective) -> str:
+    rendered = renderer.render_directive(node)
+    if rendered is not None:
+        return rendered
+    return renderer.render_children(node.children)
 
 
 @HTMLRenderer.register('table')
