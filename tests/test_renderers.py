@@ -3,12 +3,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import ClassVar
 
-from wenmode import commonmark, HTMLRenderer, MarkdownRenderer, Wenmode
+from wenmode import HTMLRenderer, MarkdownRenderer, Wenmode, commonmark
 from wenmode.nodes import (
     Blockquote,
     Break,
     Code,
     Emphasis,
+    FootnoteDefinition,
+    FootnoteReference,
     Heading,
     Html,
     HtmlAttrValue,
@@ -27,6 +29,7 @@ from wenmode.nodes import (
     ThematicBreak,
 )
 from wenmode.renderers import BaseRenderer
+from wenmode.rules import Footnote
 
 
 @dataclass
@@ -258,6 +261,117 @@ def test_markdown_renderer_round_trips_to_equivalent_html() -> None:
         '```\n\n'
         '[link](/url "t") and ![alt](/img.png)\n'
     )
+
+    html = html_renderer.render(parser.parse(markdown))
+    rendered_markdown = markdown_renderer.render(parser.parse(markdown))
+
+    assert html_renderer.render(parser.parse(rendered_markdown)) == html
+
+
+def test_html_renderer_outputs_single_footnote() -> None:
+    node = Root(
+        children=[
+            Paragraph(children=[Text(value='a'), FootnoteReference(identifier='one', label='one')]),
+            FootnoteDefinition(identifier='one', label='one', children=[Paragraph(children=[Text(value='note')])]),
+        ]
+    )
+
+    assert HTMLRenderer().render(node) == (
+        '<p>a<sup><a href="#user-content-fn-one" id="user-content-fnref-one" '
+        'data-footnote-ref aria-describedby="footnote-label">1</a></sup></p>\n'
+        '<section data-footnotes class="footnotes">\n'
+        '<h2 class="sr-only" id="footnote-label">Footnotes</h2>\n'
+        '<ol>\n'
+        '<li id="user-content-fn-one">\n'
+        '<p>note <a href="#user-content-fnref-one" data-footnote-backref '
+        'class="data-footnote-backref" aria-label="Back to content">&#8617;</a></p>\n'
+        '</li>\n'
+        '</ol>\n'
+        '</section>\n'
+    )
+
+
+def test_html_renderer_orders_multiple_footnotes_by_first_reference() -> None:
+    node = Root(
+        children=[
+            FootnoteDefinition(identifier='one', label='one', children=[Paragraph(children=[Text(value='one')])]),
+            FootnoteDefinition(identifier='two', label='two', children=[Paragraph(children=[Text(value='two')])]),
+            Paragraph(
+                children=[
+                    FootnoteReference(identifier='two', label='two'),
+                    Text(value=' '),
+                    FootnoteReference(identifier='one', label='one'),
+                ]
+            ),
+        ]
+    )
+
+    html = HTMLRenderer().render(node)
+
+    assert html.index('<li id="user-content-fn-two">') < html.index('<li id="user-content-fn-one">')
+    assert 'id="user-content-fnref-two" data-footnote-ref aria-describedby="footnote-label">1</a>' in html
+    assert 'id="user-content-fnref-one" data-footnote-ref aria-describedby="footnote-label">2</a>' in html
+
+
+def test_html_renderer_reuses_number_for_repeated_footnote_references() -> None:
+    node = Root(
+        children=[
+            Paragraph(
+                children=[
+                    FootnoteReference(identifier='one', label='one'),
+                    Text(value=' '),
+                    FootnoteReference(identifier='one', label='one'),
+                ]
+            ),
+            FootnoteDefinition(identifier='one', label='one', children=[Paragraph(children=[Text(value='note')])]),
+        ]
+    )
+
+    html = HTMLRenderer().render(node)
+
+    assert html.count('aria-describedby="footnote-label">1</a></sup>') == 2
+    assert 'id="user-content-fnref-one-2"' in html
+    assert 'href="#user-content-fnref-one-2" data-footnote-backref' in html
+
+
+def test_html_renderer_escapes_footnotes() -> None:
+    node = Root(
+        children=[
+            Paragraph(children=[FootnoteReference(identifier='a<b', label='a<b')]),
+            FootnoteDefinition(identifier='a<b', label='a<b', children=[Paragraph(children=[Text(value='<note>')])]),
+        ]
+    )
+
+    html = HTMLRenderer().render(node)
+
+    assert 'href="#user-content-fn-a%3Cb"' in html
+    assert '<p>&lt;note&gt; <a href="#user-content-fnref-a%3Cb"' in html
+
+
+def test_markdown_renderer_outputs_footnotes() -> None:
+    node = Root(
+        children=[
+            Paragraph(children=[Text(value='a'), FootnoteReference(identifier='one', label='one')]),
+            FootnoteDefinition(identifier='one', label='one', children=[Paragraph(children=[Text(value='note')])]),
+            FootnoteDefinition(
+                identifier='two',
+                label='two',
+                children=[
+                    Paragraph(children=[Text(value='first')]),
+                    Paragraph(children=[Text(value='second')]),
+                ],
+            ),
+        ]
+    )
+
+    assert MarkdownRenderer().render(node) == 'a[^one]\n\n[^one]: note\n\n[^two]: first\n  \n  second\n'
+
+
+def test_markdown_renderer_round_trips_footnotes_to_equivalent_html() -> None:
+    parser = Wenmode([Footnote])
+    html_renderer = HTMLRenderer()
+    markdown_renderer = MarkdownRenderer()
+    markdown = 'a[^one]\n\n[^one]: first\n  \n  second\n'
 
     html = html_renderer.render(parser.parse(markdown))
     rendered_markdown = markdown_renderer.render(parser.parse(markdown))

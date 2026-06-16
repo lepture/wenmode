@@ -8,6 +8,7 @@ from typing import Any
 from .nodes import Node, Paragraph, Root, Text
 from .rules.base import BlockRule, InlineRule, Rule
 from .rules.blocks.html import is_html_block_tag
+from .rules.footnotes import FootnoteDefinition
 from .rules.inlines.emphasis import parse_emphasis_sequence
 from .rules.references import ReferenceDefinition
 from .state import BlockState
@@ -24,12 +25,15 @@ class Wenmode:
     max_container_depth = 100
 
     def __init__(self, rules: Iterable[type[Any] | Rule]) -> None:
-        rules = [rule() if isinstance(rule, type) else rule for rule in rules]
-        if any(rule.has_references for rule in rules):
-            rules.append(ReferenceDefinition())
-        self.rules = {rule.name: rule for rule in rules}
-        self.block_rules = [rule for rule in rules if isinstance(rule, BlockRule)]
-        self.inline_rules = [rule for rule in rules if isinstance(rule, InlineRule)]
+        resolved_rules: list[Rule] = [rule() if isinstance(rule, type) else rule for rule in rules]
+        resolved_rules = prioritize_footnote_rule(resolved_rules)
+        if any(rule.has_references for rule in resolved_rules):
+            resolved_rules.append(ReferenceDefinition())
+        if any(rule.has_footnotes for rule in resolved_rules):
+            resolved_rules.append(FootnoteDefinition())
+        self.rules = {rule.name: rule for rule in resolved_rules}
+        self.block_rules = [rule for rule in resolved_rules if isinstance(rule, BlockRule)]
+        self.inline_rules = [rule for rule in resolved_rules if isinstance(rule, InlineRule)]
         self._emphasis_enabled = 'emphasis' in self.rules
         self._inline_rule_order = {rule.name: index for index, rule in enumerate(self.inline_rules)}
         self._triggered_inline_rules, self._search_inline_rules = self._prepare_inline_dispatch(self.inline_rules)
@@ -41,9 +45,11 @@ class Wenmode:
 
     def parse_blocks(self, text: str, parent_state: BlockState | None = None) -> list[Node]:
         references = parent_state.references if parent_state is not None else {}
+        footnotes = parent_state.footnotes if parent_state is not None else {}
         state = BlockState.from_text(
             text,
             references=references,
+            footnotes=footnotes,
             depth=(parent_state.depth + 1 if parent_state else 0),
             pending_inlines=parent_state.pending_inlines if parent_state is not None else None,
             pending_inline_callbacks=parent_state.pending_inline_callbacks if parent_state is not None else None,
@@ -194,6 +200,8 @@ class Wenmode:
             return False
         if match.lastgroup == 'reference_definition':
             return False
+        if match.lastgroup == 'footnote_definition':
+            return False
         if match.lastgroup == 'list':
             marker = LIST_MARKER_RE.match(line.rstrip('\r\n'))
             if marker is not None and marker.group('rest').strip() == '':
@@ -271,3 +279,14 @@ def contains_emphasis_marker(nodes: list[Node]) -> bool:
         if isinstance(node, Text) and node._parse_emphasis and ('*' in node.value or '_' in node.value):
             return True
     return False
+
+
+def prioritize_footnote_rule(rules: list[Rule]) -> list[Rule]:
+    footnote_index = next((index for index, rule in enumerate(rules) if rule.name == 'footnote'), None)
+    link_index = next((index for index, rule in enumerate(rules) if rule.name == 'link'), None)
+    if footnote_index is None or link_index is None or footnote_index < link_index:
+        return rules
+
+    footnote = rules.pop(footnote_index)
+    rules.insert(link_index, footnote)
+    return rules

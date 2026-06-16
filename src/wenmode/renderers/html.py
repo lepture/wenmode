@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import re
 from collections.abc import Mapping
-from urllib.parse import urlsplit
+from dataclasses import dataclass, field
+from urllib.parse import quote, urlsplit
 
 from wenmode.nodes import (
     Blockquote,
     Break,
     Code,
     Delete,
+    FootnoteDefinition,
+    FootnoteReference,
     Html,
     HtmlAttrValue,
     Image,
@@ -29,12 +32,21 @@ from .base import BaseRenderer
 SOFT_BREAK_SPACE_RE = re.compile(r'(?<! ) (?=\r?\n)')
 
 
+@dataclass
+class FootnoteRenderState:
+    definitions: dict[str, FootnoteDefinition] = field(default_factory=dict)
+    numbers: dict[str, int] = field(default_factory=dict)
+    order: list[str] = field(default_factory=list)
+    reference_ids: dict[str, list[str]] = field(default_factory=dict)
+
+
 class HTMLRenderer(BaseRenderer):
     allowed_url_schemes = frozenset({'http', 'https', 'irc', 'ircs', 'mailto', 'tel'})
 
     def __init__(self, escape: bool = True, sanitize_urls: bool = True) -> None:
         self.escape_enabled = escape
         self.sanitize_urls = sanitize_urls
+        self.footnotes = FootnoteRenderState()
 
     def render_list_item(self, item: Node, loose: bool) -> str:
         if not isinstance(item, ListItem):
@@ -130,10 +142,52 @@ class HTMLRenderer(BaseRenderer):
             return None
         return value
 
+    def collect_footnote_definitions(self, node: Node) -> dict[str, FootnoteDefinition]:
+        definitions: dict[str, FootnoteDefinition] = {}
+        collect_footnote_definitions(node, definitions)
+        return definitions
+
+    def render_footnote_section(self) -> str:
+        if not self.footnotes.order:
+            return ''
+
+        parts = [
+            '<section data-footnotes class="footnotes">\n',
+            '<h2 class="sr-only" id="footnote-label">Footnotes</h2>\n',
+            '<ol>\n',
+        ]
+        for identifier in self.footnotes.order:
+            definition = self.footnotes.definitions.get(identifier)
+            if definition is None:
+                continue
+            parts.append(f'<li id="{self.escape_html(footnote_id(identifier))}">\n')
+            parts.append(self.render_footnote_definition_content(definition))
+            parts.append('</li>\n')
+        parts.append('</ol>\n</section>\n')
+        return ''.join(parts)
+
+    def render_footnote_definition_content(self, definition: FootnoteDefinition) -> str:
+        content = self.render_children(definition.children)
+        backrefs = ''.join(
+            f' <a href="#{self.escape_html(reference_id)}" data-footnote-backref '
+            f'class="data-footnote-backref" aria-label="Back to content">&#8617;</a>'
+            for reference_id in self.footnotes.reference_ids.get(definition.identifier, [])
+        )
+        if backrefs == '':
+            return content
+        if content.endswith('</p>\n'):
+            return content[:-5] + backrefs + '</p>\n'
+        return content + backrefs + '\n'
+
 
 @HTMLRenderer.register('root')
 def render_root(renderer: HTMLRenderer, node: Root) -> str:
-    return renderer.render_children(node.children)
+    previous_footnotes = renderer.footnotes
+    renderer.footnotes = FootnoteRenderState(definitions=renderer.collect_footnote_definitions(node))
+    try:
+        return renderer.render_children(node.children) + renderer.render_footnote_section()
+    finally:
+        renderer.footnotes = previous_footnotes
 
 
 @HTMLRenderer.register('blockquote')
@@ -243,3 +297,47 @@ def render_image(renderer: HTMLRenderer, node: Image) -> str:
 @HTMLRenderer.register('break')
 def render_break(renderer: HTMLRenderer, node: Break) -> str:
     return '<br />\n'
+
+
+@HTMLRenderer.register('footnoteReference')
+def render_footnote_reference(renderer: HTMLRenderer, node: FootnoteReference) -> str:
+    if node.identifier not in renderer.footnotes.definitions:
+        label = renderer.escape_html(node.label or node.identifier)
+        return f'[^{label}]'
+
+    if node.identifier not in renderer.footnotes.numbers:
+        renderer.footnotes.numbers[node.identifier] = len(renderer.footnotes.order) + 1
+        renderer.footnotes.order.append(node.identifier)
+
+    number = renderer.footnotes.numbers[node.identifier]
+    references = renderer.footnotes.reference_ids.setdefault(node.identifier, [])
+    base_reference_id = footnote_reference_id(node.identifier)
+    reference_id = base_reference_id if not references else f'{base_reference_id}-{len(references) + 1}'
+    references.append(reference_id)
+    href = footnote_id(node.identifier)
+    return (
+        f'<sup><a href="#{renderer.escape_html(href)}" id="{renderer.escape_html(reference_id)}" '
+        f'data-footnote-ref aria-describedby="footnote-label">{number}</a></sup>'
+    )
+
+
+@HTMLRenderer.register('footnoteDefinition')
+def render_footnote_definition(renderer: HTMLRenderer, node: FootnoteDefinition) -> str:
+    return ''
+
+
+def collect_footnote_definitions(node: Node, definitions: dict[str, FootnoteDefinition]) -> None:
+    if isinstance(node, FootnoteDefinition):
+        definitions.setdefault(node.identifier, node)
+    children = getattr(node, 'children', None)
+    if isinstance(children, list):
+        for child in children:
+            collect_footnote_definitions(child, definitions)
+
+
+def footnote_id(identifier: str) -> str:
+    return 'user-content-fn-' + quote(identifier, safe='-_.~')
+
+
+def footnote_reference_id(identifier: str) -> str:
+    return 'user-content-fnref-' + quote(identifier, safe='-_.~')

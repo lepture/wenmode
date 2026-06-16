@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 class Rule:
     name: str
     has_references: ClassVar[bool] = False
+    has_footnotes: ClassVar[bool] = False
 
     def parse_paragraph_continuation(
         self, parser: Wenmode, state: BlockState, lines: list[str]

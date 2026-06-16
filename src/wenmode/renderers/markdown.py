@@ -8,6 +8,8 @@ from wenmode.nodes import (
     Code,
     Delete,
     Emphasis,
+    FootnoteDefinition,
+    FootnoteReference,
     Heading,
     Html,
     Image,
@@ -219,3 +221,19 @@ def render_image(renderer: MarkdownRenderer, node: Image) -> str:
 @MarkdownRenderer.register('break')
 def render_break(renderer: MarkdownRenderer, node: Break) -> str:
     return '  \n'
+
+
+@MarkdownRenderer.register('footnoteReference')
+def render_footnote_reference(renderer: MarkdownRenderer, node: FootnoteReference) -> str:
+    return f'[^{renderer.escape_text(node.label or node.identifier)}]'
+
+
+@MarkdownRenderer.register('footnoteDefinition')
+def render_footnote_definition(renderer: MarkdownRenderer, node: FootnoteDefinition) -> str:
+    label = renderer.escape_text(node.label or node.identifier)
+    body = renderer.render_children(node.children).rstrip('\n')
+    if not body:
+        return f'[^{label}]:\n\n'
+
+    lines = body.splitlines()
+    return f'[^{label}]: {lines[0]}\n' + ''.join(f'  {line}\n' for line in lines[1:]) + '\n'

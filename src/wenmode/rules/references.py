@@ -20,7 +20,7 @@ MULTILINE_LABEL_END_RE = re.compile(r'^(?P<label_end>[^\]]*)\]:[ \t]*(?P<rest>.*
 
 class ReferenceDefinition(BlockRule):
     def __init__(self) -> None:
-        super().__init__('reference_definition', r'[ \t]{0,3}\[')
+        super().__init__('reference_definition', r'[ \t]{0,3}\[(?!\^)')
 
     def parse(self, parser: Wenmode, state: BlockState, match: re.Match[str]) -> None:
         multiline_label = parse_multiline_label_reference(state.lines, state.index)
@@ -46,6 +46,8 @@ def parse_reference(lines: list[str], index: int) -> tuple[int, str, str, str | 
         return None
 
     label = normalize_label_text(match.group('label'))
+    if label.startswith('^'):
+        return None
     rest = match.group('rest')
     index += 1
 
@@ -147,7 +149,7 @@ def parse_multiline_label_reference(lines: list[str], index: int) -> tuple[int, 
         if end is not None:
             label_lines.append(end.group('label_end'))
             label = normalize_label_text('\n'.join(label_lines))
-            if normalize_label(label) == '':
+            if label.startswith('^') or normalize_label(label) == '':
                 return None
             destination, rest_after_destination = parse_reference_destination(end.group('rest'))
             if destination is None:

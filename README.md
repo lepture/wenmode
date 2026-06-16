@@ -91,6 +91,8 @@ Node classes live in `wenmode.nodes`. Their `type` values follow mdast naming:
 - `link`
 - `image`
 - `break`
+- `footnoteReference`
+- `footnoteDefinition`
 
 Nodes are data objects. Rendering behavior belongs to renderers, so the same
 AST can be rendered to HTML, Markdown, or another text format.
@@ -130,8 +132,24 @@ parser.parse('[x]\n')  # no reference leaks from the previous parse
 ```
 
 Reference extraction only runs when an enabled rule declares that it consumes
-references. `Link` and `Image` do this today; future extensions such as
-footnotes can opt in the same way.
+references. `Link` and `Image` do this today.
+
+## Footnotes
+
+The GitHub preset supports footnotes:
+
+```python
+from wenmode import github, HTMLRenderer, Wenmode
+
+parser = Wenmode(github)
+tree = parser.parse('A note[^one].\n\n[^one]: Footnote text.\n')
+
+html = HTMLRenderer().render(tree)
+```
+
+Footnote definitions are kept in parse state like link references, so a
+`Wenmode` instance can be reused safely across parses. To enable footnotes
+without the full GitHub preset, include `Footnote` in your rule list.
 
 ## Rule Layout
 
@@ -142,6 +160,7 @@ The implementation is split by rule type:
 - `wenmode.rules.inlines` contains inline rules such as links, images, inline
   code, emphasis, escapes, and raw HTML.
 - `wenmode.rules.references` contains shared reference-definition extraction.
+- `wenmode.rules.footnotes` contains footnote references and definitions.
 
 This keeps complex rules, such as lists, in their own modules while preserving a
 single public import surface through `wenmode.rules`.

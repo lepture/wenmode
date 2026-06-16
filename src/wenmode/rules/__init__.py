@@ -9,6 +9,7 @@ from .blocks.indented_code import IndentedCode
 from .blocks.list import List
 from .blocks.table import Table
 from .blocks.thematic_break import ThematicBreak
+from .footnotes import Footnote
 from .inlines.code import InlineCode
 from .inlines.emphasis import Emphasis
 from .inlines.extended_autolink import ExtendedAutolink
@@ -27,6 +28,7 @@ __all__ = [
     'Emphasis',
     'ExtendedAutolink',
     'FencedCode',
+    'Footnote',
     'HardBreak',
     'HtmlBlock',
     'Image',

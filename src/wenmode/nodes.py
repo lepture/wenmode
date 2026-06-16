@@ -191,3 +191,18 @@ class Break(Node):
     html_tag: ClassVar[str | None] = 'br'
     html_void: ClassVar[bool] = True
     type: str = 'break'
+
+
+@dataclass
+class FootnoteReference(Node):
+    identifier: str = ''
+    label: str = ''
+    type: str = 'footnoteReference'
+
+
+@dataclass
+class FootnoteDefinition(Parent):
+    block: ClassVar[bool] = True
+    identifier: str = ''
+    label: str = ''
+    type: str = 'footnoteDefinition'
