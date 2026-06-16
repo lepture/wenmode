@@ -7,6 +7,7 @@ from .rules import (
     Blockquote,
     CharacterReference,
     Emphasis,
+    ExtendedAutolink,
     FencedCode,
     HardBreak,
     HtmlBlock,
@@ -17,8 +18,22 @@ from .rules import (
     List,
     RawHtml,
     SetextHeading,
+    Strikethrough,
+    Table,
     ThematicBreak,
 )
+
+GFM_DISALLOWED_HTML_TAGS = [
+    'title',
+    'textarea',
+    'style',
+    'xmp',
+    'iframe',
+    'noembed',
+    'noframes',
+    'script',
+    'plaintext',
+]
 
 COMMON_MARK = [
     ThematicBreak,
@@ -38,4 +53,27 @@ COMMON_MARK = [
     Link,
     InlineCode,
     Emphasis,
+]
+
+GITHUB = [
+    Table,
+    ThematicBreak,
+    FencedCode,
+    IndentedCode,
+    HtmlBlock(disallowed_tags=GFM_DISALLOWED_HTML_TAGS),
+    List(task=True),
+    AtxHeading,
+    SetextHeading,
+    Blockquote,
+    HardBreak,
+    Autolink,
+    RawHtml(disallowed_tags=GFM_DISALLOWED_HTML_TAGS),
+    BackslashEscape,
+    CharacterReference,
+    Image,
+    Link,
+    InlineCode,
+    Strikethrough,
+    Emphasis,
+    ExtendedAutolink,
 ]

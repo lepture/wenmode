@@ -83,6 +83,7 @@ class List(Parent):
 @dataclass
 class ListItem(Parent):
     block: ClassVar[bool] = True
+    checked: bool | None = None
     spread: bool = False
     type: str = 'listItem'
 
@@ -130,6 +131,29 @@ class Strong(Parent):
 class Emphasis(Parent):
     html_tag: ClassVar[str | None] = 'em'
     type: str = 'emphasis'
+
+
+@dataclass
+class Delete(Parent):
+    html_tag: ClassVar[str | None] = 'del'
+    type: str = 'delete'
+
+
+@dataclass
+class Table(Parent):
+    block: ClassVar[bool] = True
+    align: list[str | None] = field(default_factory=list)
+    type: str = 'table'
+
+
+@dataclass
+class TableRow(Parent):
+    type: str = 'tableRow'
+
+
+@dataclass
+class TableCell(Parent):
+    type: str = 'tableCell'
 
 
 @dataclass

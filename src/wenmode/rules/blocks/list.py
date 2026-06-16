@@ -4,7 +4,7 @@ import re
 from typing import TYPE_CHECKING
 
 from wenmode.nodes import List as ListNode
-from wenmode.nodes import ListItem, Node, Paragraph
+from wenmode.nodes import ListItem, Node, Paragraph, Text
 from wenmode.rules.base import BlockRule
 from wenmode.state import BlockState
 from wenmode.utils import count_indent, count_indent_from, expand_leading_tabs
@@ -16,11 +16,13 @@ if TYPE_CHECKING:
 MARKER_RE = re.compile(
     r'^(?P<indent>[ \t]{0,3})(?P<marker>(?P<bullet>[*+-])|(?P<ordered>\d{1,9})(?P<delimiter>[.)]))(?P<spaces>[ \t]+|$)(?P<rest>.*)$'
 )
+TASK_MARKER_RE = re.compile(r'^\[([ xX])][ \t]+')
 
 
 class List(BlockRule):
-    def __init__(self) -> None:
+    def __init__(self, task: bool = False) -> None:
         super().__init__('list', r'[ \t]{0,3}(?:[*+-](?:[ \t]+|$)|\d{1,9}[.)](?:[ \t]+|$))')
+        self.task = task
 
     def parse(self, parser: Wenmode, state: BlockState, match: re.Match[str]) -> ListNode:
         first = MARKER_RE.match(state.line.rstrip('\r\n'))
@@ -28,7 +30,7 @@ class List(BlockRule):
             state.advance()
             return ListNode(children=[])
         if state.depth >= parser.max_container_depth - 1:
-            return parse_shallow_list(parser, state, first)
+            return parse_shallow_list(parser, state, first, task=self.task)
 
         ordered = first.group('ordered') is not None
         start = int(first.group('ordered')) if ordered else None
@@ -104,7 +106,10 @@ class List(BlockRule):
                     continue
                 break
 
-            items.append(ListItem(children=parser.parse_blocks(''.join(item_lines), parent_state=state), spread=item_spread))
+            item = ListItem(children=parser.parse_blocks(''.join(item_lines), parent_state=state), spread=item_spread)
+            if self.task:
+                apply_task_list_marker(item)
+            items.append(item)
 
             if item_spread:
                 while not state.done and state.line.strip() == '':
@@ -113,7 +118,7 @@ class List(BlockRule):
         return ListNode(children=items, ordered=ordered, start=start, spread=spread)
 
 
-def parse_shallow_list(parser: Wenmode, state: BlockState, first: re.Match[str]) -> ListNode:
+def parse_shallow_list(parser: Wenmode, state: BlockState, first: re.Match[str], task: bool = False) -> ListNode:
     ordered = first.group('ordered') is not None
     start = int(first.group('ordered')) if ordered else None
     delimiter = first.group('delimiter')
@@ -144,9 +149,31 @@ def parse_shallow_list(parser: Wenmode, state: BlockState, first: re.Match[str])
 
         text = '\n'.join(part for part in text_lines if part).strip()
         children: list[Node] = [Paragraph(children=parser.parse_inlines(text, state))] if text else []
-        items.append(ListItem(children=children))
+        item = ListItem(children=children)
+        if task:
+            apply_task_list_marker(item)
+        items.append(item)
 
     return ListNode(children=items, ordered=ordered, start=start)
+
+
+def apply_task_list_marker(item: ListItem) -> None:
+    if not item.children or not isinstance(item.children[0], Paragraph):
+        return
+
+    paragraph = item.children[0]
+    if not paragraph.children or not isinstance(paragraph.children[0], Text):
+        return
+
+    text = paragraph.children[0]
+    match = TASK_MARKER_RE.match(text.value)
+    if match is None:
+        return
+
+    item.checked = match.group(1).lower() == 'x'
+    text.value = text.value[match.end() :]
+    if text.value == '':
+        paragraph.children.pop(0)
 
 
 def should_keep_blank_in_item(state: BlockState, content_indent: int, marker_indent: int) -> bool:

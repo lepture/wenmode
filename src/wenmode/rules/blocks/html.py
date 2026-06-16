@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from wenmode.nodes import Html
 from wenmode.rules.base import BlockRule
 from wenmode.state import BlockState
+from wenmode.utils import filter_disallowed_html
 
 if TYPE_CHECKING:
     from wenmode.parser import Wenmode
@@ -78,12 +80,13 @@ BLOCK_TAGS = (
 
 
 class HtmlBlock(BlockRule):
-    def __init__(self) -> None:
+    def __init__(self, disallowed_tags: Sequence[str] = ()) -> None:
         tags = '|'.join(BLOCK_TAGS)
         super().__init__(
             'html_block',
             rf'(?i:[ \t]{{0,3}}<(?:script(?:\s|>|$)|pre(?:\s|>|$)|style(?:\s|>|$)|!--|\?|![A-Z]|\!\[CDATA\[|/?(?:{tags})(?:\s|/?>|$)|[A-Za-z][A-Za-z0-9-]*(?:\s+[A-Za-z_:][A-Za-z0-9_.:-]*(?:\s*=\s*(?:[^\s"\'=<>`]+|\'[^\']*\'|"[^"]*"))?)*\s*/?>[ \t]*$|/[A-Za-z][A-Za-z0-9-]*\s*>[ \t]*$))',
         )
+        self.disallowed_tags = tuple(disallowed_tags)
 
     def parse(self, parser: Wenmode, state: BlockState, match: re.Match[str]) -> Html:
         first = state.line
@@ -98,16 +101,19 @@ class HtmlBlock(BlockRule):
                     state.advance()
                     break
                 state.advance()
-            return Html(value=''.join(lines))
+            return Html(value=self.html_value(''.join(lines)))
 
         if is_html_block_tag(stripped) or is_complete_html_tag(stripped):
             while not state.done and state.line.strip() != '':
                 lines.append(state.line)
                 state.advance()
-            return Html(value=''.join(lines))
+            return Html(value=self.html_value(''.join(lines)))
 
         state.advance()
-        return Html(value=first)
+        return Html(value=self.html_value(first))
+
+    def html_value(self, value: str) -> str:
+        return filter_disallowed_html(value, self.disallowed_tags)
 
 
 def html_end_pattern(line: str) -> re.Pattern[str] | None:

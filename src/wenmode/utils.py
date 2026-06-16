@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import html
 import re
+from collections.abc import Sequence
 from urllib.parse import quote
 
 ESCAPABLE = r'!"#$%&\'()*+,\-./:;<=>?@\[\\\]^_`{|}~'
@@ -53,3 +54,10 @@ def count_indent_from(text: str, start_column: int) -> int:
         else:
             break
     return column
+
+
+def filter_disallowed_html(value: str, tags: Sequence[str]) -> str:
+    if not tags:
+        return value
+    tag_pattern = '|'.join(re.escape(tag) for tag in tags)
+    return re.sub(rf'(?i)<(?=/?(?:{tag_pattern})(?:\s|/?>|$))', '&lt;', value)

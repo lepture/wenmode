@@ -8,7 +8,7 @@ from .nodes import Node, Paragraph, Root, Text
 from .rules.base import BlockRule, InlineRule, Rule
 from .rules.inlines.emphasis import parse_emphasis_sequence
 from .rules.references import extract_references
-from .state import BlockState, Reference
+from .state import BlockState
 
 
 class Wenmode:
@@ -45,7 +45,7 @@ class Wenmode:
                 parsed = rule.parse(self, state, match)
                 if parsed is not None:
                     children.append(parsed)
-                continue
+                    continue
 
             children.append(self._parse_paragraph(state))
 

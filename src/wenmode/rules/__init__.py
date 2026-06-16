@@ -8,11 +8,14 @@ from .blocks.html import HtmlBlock
 from .blocks.indented_code import IndentedCode
 from .blocks.list import List
 from .blocks.paragraph import Paragraph
+from .blocks.table import Table
 from .blocks.thematic_break import ThematicBreak
 from .inlines.code import InlineCode
 from .inlines.emphasis import Emphasis
+from .inlines.extended_autolink import ExtendedAutolink
 from .inlines.html import Autolink, RawHtml
 from .inlines.link import Image, Link
+from .inlines.strikethrough import Strikethrough
 from .inlines.text import BackslashEscape, CharacterReference, HardBreak
 
 __all__ = [
@@ -23,6 +26,7 @@ __all__ = [
     'Blockquote',
     'CharacterReference',
     'Emphasis',
+    'ExtendedAutolink',
     'FencedCode',
     'HardBreak',
     'HtmlBlock',
@@ -34,5 +38,7 @@ __all__ = [
     'Paragraph',
     'RawHtml',
     'SetextHeading',
+    'Strikethrough',
+    'Table',
     'ThematicBreak',
 ]

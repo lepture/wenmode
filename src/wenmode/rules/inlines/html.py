@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 from typing import TYPE_CHECKING
 from urllib.parse import quote
 
 from wenmode.nodes import Html, Link, Node, Text
 from wenmode.rules.base import InlineRule
 from wenmode.state import BlockState
+from wenmode.utils import filter_disallowed_html
 
 if TYPE_CHECKING:
     from wenmode.parser import Wenmode
@@ -38,13 +40,14 @@ class Autolink(InlineRule):
 
 
 class RawHtml(InlineRule):
-    def __init__(self) -> None:
+    def __init__(self, disallowed_tags: Sequence[str] = ()) -> None:
         super().__init__('raw_html', HTML_RE)
+        self.disallowed_tags = tuple(disallowed_tags)
 
     def parse(
         self, parser: Wenmode, text: str, match: re.Match[str], state: BlockState | None = None
     ) -> tuple[Node | None, int]:
-        return Html(value=match.group(0)), match.end()
+        return Html(value=filter_disallowed_html(match.group(0), self.disallowed_tags)), match.end()
 
 
 def normalize_uri(value: str) -> str:

@@ -8,6 +8,7 @@ from wenmode.nodes import (
     Blockquote,
     Break,
     Code,
+    Delete,
     Html,
     HtmlAttrValue,
     Image,
@@ -17,6 +18,9 @@ from wenmode.nodes import (
     Node,
     Paragraph,
     Root,
+    Table,
+    TableCell,
+    TableRow,
     Text,
 )
 
@@ -40,13 +44,35 @@ class HTMLRenderer(BaseRenderer):
             parts: list[str] = []
             for index, child in enumerate(item.children):
                 if isinstance(child, Paragraph):
+                    marker = self.render_task_marker(item) if index == 0 else ''
+                    parts.append(marker)
                     parts.append(self.render_children(child.children))
                     if index < len(item.children) - 1:
                         parts.append('\n')
                 else:
+                    if index == 0:
+                        parts.append(self.render_task_marker(item))
                     parts.append(self.render(child))
             return prefix + ''.join(parts) + '</li>\n'
-        return '<li>\n' + self.render_children(item.children) + '</li>\n'
+        return '<li>\n' + self.render_loose_list_item_children(item) + '</li>\n'
+
+    def render_loose_list_item_children(self, item: ListItem) -> str:
+        parts: list[str] = []
+        for index, child in enumerate(item.children):
+            if index == 0 and isinstance(child, Paragraph) and item.checked is not None:
+                parts.append('<p>' + self.render_task_marker(item) + self.render_children(child.children) + '</p>\n')
+            else:
+                if index == 0 and item.checked is not None:
+                    parts.append(self.render_task_marker(item))
+                parts.append(self.render(child))
+        return ''.join(parts)
+
+    def render_task_marker(self, item: ListItem) -> str:
+        if item.checked is None:
+            return ''
+        if item.checked:
+            return '<input checked="" disabled="" type="checkbox"> '
+        return '<input disabled="" type="checkbox"> '
 
     def escape(self, value: str) -> str:
         if not self.escape_enabled:
@@ -127,6 +153,51 @@ def render_list(renderer: HTMLRenderer, node: List) -> str:
 @HTMLRenderer.register('listItem')
 def render_list_item(renderer: HTMLRenderer, node: ListItem) -> str:
     return renderer.render_list_item(node, node.spread)
+
+
+@HTMLRenderer.register('delete')
+def render_delete(renderer: HTMLRenderer, node: Delete) -> str:
+    return f'<del>{renderer.render_children(node.children)}</del>'
+
+
+@HTMLRenderer.register('table')
+def render_table(renderer: HTMLRenderer, node: Table) -> str:
+    if not node.children:
+        return '<table>\n</table>\n'
+
+    header = node.children[0]
+    body = node.children[1:]
+    output = ['<table>\n<thead>\n', render_table_row(renderer, header, 'th', node.align), '</thead>\n']
+    if body:
+        output.append('<tbody>\n')
+        output.extend(render_table_row(renderer, row, 'td', node.align) for row in body)
+        output.append('</tbody>\n')
+    output.append('</table>\n')
+    return ''.join(output)
+
+
+@HTMLRenderer.register('tableRow')
+def render_table_row_node(renderer: HTMLRenderer, node: TableRow) -> str:
+    return render_table_row(renderer, node, 'td', [])
+
+
+@HTMLRenderer.register('tableCell')
+def render_table_cell_node(renderer: HTMLRenderer, node: TableCell) -> str:
+    return f'<td>{renderer.render_children(node.children)}</td>'
+
+
+def render_table_row(renderer: HTMLRenderer, row: Node, tag: str, align: list[str | None]) -> str:
+    if not isinstance(row, TableRow):
+        return renderer.render(row)
+    output = ['<tr>\n']
+    for index, cell in enumerate(row.children):
+        if not isinstance(cell, TableCell):
+            output.append(renderer.render(cell))
+            continue
+        attrs = {'align': align[index]} if index < len(align) and align[index] is not None else {}
+        output.append(f'<{tag}{renderer.render_attrs(attrs)}>{renderer.render_children(cell.children)}</{tag}>\n')
+    output.append('</tr>\n')
+    return ''.join(output)
 
 
 @HTMLRenderer.register('code')

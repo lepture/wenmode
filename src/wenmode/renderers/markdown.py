@@ -6,6 +6,7 @@ from wenmode.nodes import (
     Blockquote,
     Break,
     Code,
+    Delete,
     Emphasis,
     Heading,
     Html,
@@ -14,9 +15,13 @@ from wenmode.nodes import (
     Link,
     List,
     ListItem,
+    Node,
     Paragraph,
     Root,
     Strong,
+    Table,
+    TableCell,
+    TableRow,
     Text,
     ThematicBreak,
 )
@@ -26,6 +31,8 @@ from .base import BaseRenderer
 
 class MarkdownRenderer(BaseRenderer):
     def render_list_item(self, item: ListItem, marker: str) -> str:
+        if item.checked is not None:
+            marker += '[x] ' if item.checked else '[ ] '
         if not item.children:
             return marker.rstrip()
 
@@ -46,6 +53,9 @@ class MarkdownRenderer(BaseRenderer):
 
     def escape_title(self, value: str) -> str:
         return value.replace('\\', '\\\\').replace('"', '\\"')
+
+    def render_table_cell_content(self, cell: TableCell) -> str:
+        return self.render_children(cell.children).replace('\n', ' ').strip()
 
 
 @MarkdownRenderer.register('root')
@@ -93,6 +103,54 @@ def render_list(renderer: MarkdownRenderer, node: List) -> str:
 @MarkdownRenderer.register('listItem')
 def render_list_item(renderer: MarkdownRenderer, node: ListItem) -> str:
     return renderer.render_children(node.children)
+
+
+@MarkdownRenderer.register('delete')
+def render_delete(renderer: MarkdownRenderer, node: Delete) -> str:
+    return f'~~{renderer.render_children(node.children)}~~'
+
+
+@MarkdownRenderer.register('table')
+def render_table(renderer: MarkdownRenderer, node: Table) -> str:
+    if not node.children:
+        return ''
+
+    header = normalize_table_row(node.children[0], len(node.align))
+    body = [normalize_table_row(row, len(node.align)) for row in node.children[1:]]
+    lines = [
+        '| ' + ' | '.join(renderer.render_table_cell_content(cell) for cell in header) + ' |',
+        '| ' + ' | '.join(delimiter_for_align(align) for align in node.align) + ' |',
+    ]
+    lines.extend('| ' + ' | '.join(renderer.render_table_cell_content(cell) for cell in row) + ' |' for row in body)
+    return '\n'.join(lines) + '\n\n'
+
+
+@MarkdownRenderer.register('tableRow')
+def render_table_row(renderer: MarkdownRenderer, node: TableRow) -> str:
+    cells = [cell for cell in node.children if isinstance(cell, TableCell)]
+    return '| ' + ' | '.join(renderer.render_table_cell_content(cell) for cell in cells) + ' |\n'
+
+
+@MarkdownRenderer.register('tableCell')
+def render_table_cell(renderer: MarkdownRenderer, node: TableCell) -> str:
+    return renderer.render_table_cell_content(node)
+
+
+def normalize_table_row(row: Node, size: int) -> list[TableCell]:
+    cells = [cell for cell in row.children if isinstance(cell, TableCell)] if isinstance(row, TableRow) else []
+    if len(cells) < size:
+        cells.extend(TableCell() for _ in range(size - len(cells)))
+    return cells[:size]
+
+
+def delimiter_for_align(align: str | None) -> str:
+    if align == 'left':
+        return ':---'
+    if align == 'right':
+        return '---:'
+    if align == 'center':
+        return ':---:'
+    return '---'
 
 
 @MarkdownRenderer.register('code')
