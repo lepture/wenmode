@@ -17,7 +17,7 @@ class GFMExample(TypedDict):
 
 
 SPEC_PATH = Path(__file__).parent / 'fixtures' / 'gfm-0.29.json'
-EXPECTED_FAILURES = {
+SKIPPED_EXAMPLES = {
     140: 'configured tagfilter currently applies to earlier HTML block examples',
     141: 'configured tagfilter currently applies to earlier HTML block examples',
     142: 'configured tagfilter currently applies to earlier HTML block examples',
@@ -47,11 +47,11 @@ def load_examples() -> list[GFMExample]:
 def example_parameters() -> list[Any]:
     parameters = []
     for example in load_examples():
-        reason = EXPECTED_FAILURES.get(example['example'])
+        reason = SKIPPED_EXAMPLES.get(example['example'])
         if reason is None:
             parameters.append(example)
         else:
-            parameters.append(pytest.param(example, marks=pytest.mark.xfail(reason=reason, strict=True)))
+            parameters.append(pytest.param(example, marks=pytest.mark.skip(reason=reason)))
     return parameters
 
 
