@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 
 
 DELIMITER_CELL_RE = re.compile(r'^:?-{3,}:?$')
+CELL_SPACE_RE = re.compile(r'[ \t]+')
 
 
 class Table(BlockRule):
@@ -57,7 +58,7 @@ def parse_delimiter_row(line: str) -> list[str | None] | None:
 
     align: list[str | None] = []
     for cell in split_table_row(line):
-        value = re.sub(r'[ \t]+', '', cell)
+        value = CELL_SPACE_RE.sub('', cell)
         if DELIMITER_CELL_RE.fullmatch(value) is None:
             return None
         left = value.startswith(':')

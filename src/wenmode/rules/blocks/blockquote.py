@@ -13,6 +13,11 @@ if TYPE_CHECKING:
     from wenmode.parser import Wenmode
 
 
+BLOCKQUOTE_RE = re.compile(r'[ \t]{0,3}> ?(.*)')
+NESTED_BLOCKQUOTE_RE = re.compile(r'[ \t]{0,3}(?:[*+-]|\d{1,9}[.)])[ \t]+>')
+SETEXT_MARKER_RE = re.compile(r'[ \t]{0,3}(=+|-+)[ \t]*$')
+
+
 class Blockquote(BlockRule):
     def __init__(self) -> None:
         super().__init__('blockquote', r'[ \t]{0,3}>')
@@ -26,7 +31,7 @@ class Blockquote(BlockRule):
         lazy_used = False
         while not state.done:
             line = state.line
-            quote = re.match(r'[ \t]{0,3}> ?(.*)', line)
+            quote = BLOCKQUOTE_RE.match(line)
             if quote is None:
                 if paragraph_open and line.strip() != '' and not parser.is_paragraph_interrupt(line, state):
                     lines.append(('    ' if lazy_used and is_setext_marker(line) else '') + line)
@@ -49,7 +54,7 @@ class Blockquote(BlockRule):
 def parse_shallow_blockquote(parser: Wenmode, state: BlockState) -> BlockquoteNode:
     lines: list[str] = []
     while not state.done:
-        quote = re.match(r'[ \t]{0,3}> ?(.*)', state.line)
+        quote = BLOCKQUOTE_RE.match(state.line)
         if quote is None:
             break
         lines.append(quote.group(1).strip())
@@ -60,7 +65,7 @@ def parse_shallow_blockquote(parser: Wenmode, state: BlockState) -> BlockquoteNo
 
 
 def has_nested_blockquote(line: str) -> bool:
-    return re.match(r'[ \t]{0,3}(?:[*+-]|\d{1,9}[.)])[ \t]+>', line) is not None
+    return NESTED_BLOCKQUOTE_RE.match(line) is not None
 
 
 def starts_nonparagraph_block(parser: Wenmode, line: str) -> bool:
@@ -73,4 +78,4 @@ def starts_nonparagraph_block(parser: Wenmode, line: str) -> bool:
 
 
 def is_setext_marker(line: str) -> bool:
-    return re.match(r'[ \t]{0,3}(=+|-+)[ \t]*$', line) is not None
+    return SETEXT_MARKER_RE.match(line) is not None

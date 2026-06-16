@@ -12,12 +12,15 @@ if TYPE_CHECKING:
     from wenmode.parser import Wenmode
 
 
+FENCE_OPENER_RE = re.compile(r'(?P<indent>[ \t]{0,3})(`{3,}|~{3,})(.*)$')
+
+
 class FencedCode(BlockRule):
     def __init__(self) -> None:
         super().__init__('fenced_code', r'[ \t]{0,3}(?:`{3,}|~{3,})')
 
     def parse(self, parser: Wenmode, state: BlockState, match: re.Match[str]) -> Node:
-        opener = re.match(r'(?P<indent>[ \t]{0,3})(`{3,}|~{3,})(.*)$', state.line.rstrip('\r\n'))
+        opener = FENCE_OPENER_RE.match(state.line.rstrip('\r\n'))
         if opener is None:
             state.advance()
             return Code(value='')

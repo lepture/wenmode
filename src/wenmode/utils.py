@@ -6,15 +6,17 @@ from collections.abc import Sequence
 from urllib.parse import quote
 
 ESCAPABLE = r'!"#$%&\'()*+,\-./:;<=>?@\[\\\]^_`{|}~'
+BACKSLASH_ESCAPE_RE = re.compile(rf'\\([{ESCAPABLE}])')
+WHITESPACE_RE = re.compile(r'\s+')
 
 
 def normalize_label_text(value: str) -> str:
-    value = re.sub(rf'\\([{ESCAPABLE}])', r'\1', value)
+    value = BACKSLASH_ESCAPE_RE.sub(r'\1', value)
     return html.unescape(value)
 
 
 def normalize_label(value: str) -> str:
-    return re.sub(r'\s+', ' ', normalize_label_text(value).strip()).casefold()
+    return WHITESPACE_RE.sub(' ', normalize_label_text(value).strip()).casefold()
 
 
 def normalize_uri_text(value: str) -> str:

@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 
 
 ESCAPABLE = r'!"#$%&\'()*+,\-./:;<=>?@\[\\\]^_`{|}~'
+NUMERIC_CHARACTER_REFERENCE_RE = re.compile(r'&#(?P<base>[xX]?)(?P<digits>[0-9A-Fa-f]+);')
 
 
 class BackslashEscape(InlineRule):
@@ -33,7 +34,7 @@ class CharacterReference(InlineRule):
         self, parser: Wenmode, text: str, match: re.Match[str], state: BlockState | None = None
     ) -> tuple[Node | None, int]:
         value = match.group(0)
-        numeric = re.match(r'&#(?P<base>[xX]?)(?P<digits>[0-9A-Fa-f]+);', value)
+        numeric = NUMERIC_CHARACTER_REFERENCE_RE.match(value)
         if numeric is not None:
             base = 16 if numeric.group('base') else 10
             codepoint = int(numeric.group('digits'), base)

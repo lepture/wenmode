@@ -11,13 +11,17 @@ if TYPE_CHECKING:
     from wenmode.parser import Wenmode
 
 
+ATX_HEADING_RE = re.compile(r'[ \t]{0,3}(#{1,6})(?:[ \t]+|$)(.*?)(?:[ \t]+#+[ \t]*)?$')
+SETEXT_HEADING_RE = re.compile(r'[ \t]{0,3}(=+|-+)[ \t]*$')
+
+
 class AtxHeading(BlockRule):
     def __init__(self) -> None:
         super().__init__('atx_heading', r'[ \t]{0,3}#{1,6}(?:[ \t]+|$)')
 
     def parse(self, parser: Wenmode, state: BlockState, match: re.Match[str]) -> Heading:
         line = state.line.rstrip('\r\n')
-        heading = re.match(r'[ \t]{0,3}(#{1,6})(?:[ \t]+|$)(.*?)(?:[ \t]+#+[ \t]*)?$', line)
+        heading = ATX_HEADING_RE.match(line)
         if heading is None:
             state.advance()
             return Heading(children=[])
@@ -36,7 +40,7 @@ class SetextHeading(Rule):
     def parse_paragraph_continuation(
         self, parser: Wenmode, state: BlockState, lines: list[str]
     ) -> Node | None:
-        marker = re.match(r'[ \t]{0,3}(=+|-+)[ \t]*$', state.line)
+        marker = SETEXT_HEADING_RE.match(state.line)
         if marker is None:
             return None
 

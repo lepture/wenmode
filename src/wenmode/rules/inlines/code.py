@@ -12,6 +12,9 @@ if TYPE_CHECKING:
     from wenmode.parser import Wenmode
 
 
+CODE_LINE_ENDING_RE = re.compile(r'\r\n?|\n')
+
+
 class InlineCode(InlineRule):
     def __init__(self) -> None:
         super().__init__('inline_code', r'`+')
@@ -26,7 +29,7 @@ class InlineCode(InlineRule):
         if closer is None:
             return None, match.start()
         end = match.end() + closer.start()
-        value = re.sub(r'\r\n?|\n', ' ', text[match.end() : end])
+        value = CODE_LINE_ENDING_RE.sub(' ', text[match.end() : end])
         if len(value) >= 2 and value.startswith(' ') and value.endswith(' ') and any(char != ' ' for char in value):
             value = value[1:-1]
         return InlineCodeNode(value=value), end + len(marker)

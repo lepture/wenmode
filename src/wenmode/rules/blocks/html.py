@@ -77,14 +77,21 @@ BLOCK_TAGS = (
     'track',
     'ul',
 )
+BLOCK_TAGS_PATTERN = '|'.join(BLOCK_TAGS)
+HTML_BLOCK_TAG_RE = re.compile(rf'(?i)^</?(?:{BLOCK_TAGS_PATTERN})(?:\s|/?>|$)')
+HTML_SCRIPT_STYLE_RE = re.compile(r'(?i)^<(script|pre|style|textarea)(?:\s|>|$)')
+HTML_OPEN_TAG_RE = re.compile(r'(?i)^<([A-Za-z][A-Za-z0-9-]*)')
+HTML_DECLARATION_RE = re.compile(r'^<![A-Z]')
+COMPLETE_HTML_TAG_RE = re.compile(
+    r'(?i)</?[A-Za-z][A-Za-z0-9-]*(?:\s+[A-Za-z_:][A-Za-z0-9_.:-]*(?:\s*=\s*(?:[^\s"\'=<>`]+|\'[^\']*\'|"[^"]*"))?)*\s*/?>[ \t]*'
+)
 
 
 class HtmlBlock(BlockRule):
     def __init__(self, disallowed_tags: Sequence[str] = ()) -> None:
-        tags = '|'.join(BLOCK_TAGS)
         super().__init__(
             'html_block',
-            rf'(?i:[ \t]{{0,3}}<(?:script(?:\s|>|$)|pre(?:\s|>|$)|style(?:\s|>|$)|!--|\?|![A-Z]|\!\[CDATA\[|/?(?:{tags})(?:\s|/?>|$)|[A-Za-z][A-Za-z0-9-]*(?:\s+[A-Za-z_:][A-Za-z0-9_.:-]*(?:\s*=\s*(?:[^\s"\'=<>`]+|\'[^\']*\'|"[^"]*"))?)*\s*/?>[ \t]*$|/[A-Za-z][A-Za-z0-9-]*\s*>[ \t]*$))',
+            rf'(?i:[ \t]{{0,3}}<(?:script(?:\s|>|$)|pre(?:\s|>|$)|style(?:\s|>|$)|!--|\?|![A-Z]|\!\[CDATA\[|/?(?:{BLOCK_TAGS_PATTERN})(?:\s|/?>|$)|[A-Za-z][A-Za-z0-9-]*(?:\s+[A-Za-z_:][A-Za-z0-9_.:-]*(?:\s*=\s*(?:[^\s"\'=<>`]+|\'[^\']*\'|"[^"]*"))?)*\s*/?>[ \t]*$|/[A-Za-z][A-Za-z0-9-]*\s*>[ \t]*$))',
         )
         self.disallowed_tags = tuple(disallowed_tags)
 
@@ -117,15 +124,15 @@ class HtmlBlock(BlockRule):
 
 
 def html_end_pattern(line: str) -> re.Pattern[str] | None:
-    if re.match(r'(?i)^<(script|pre|style|textarea)(?:\s|>|$)', line):
-        tag = re.match(r'(?i)^<([A-Za-z][A-Za-z0-9-]*)', line)
+    if HTML_SCRIPT_STYLE_RE.match(line):
+        tag = HTML_OPEN_TAG_RE.match(line)
         if tag is not None:
             return re.compile(rf'(?i)</{tag.group(1)}\s*>')
     if line.startswith('<!--'):
         return re.compile(r'-->')
     if line.startswith('<?'):
         return re.compile(r'\?>')
-    if re.match(r'^<![A-Z]', line):
+    if HTML_DECLARATION_RE.match(line):
         return re.compile(r'>')
     if line.startswith('<![CDATA['):
         return re.compile(r']]>')
@@ -133,15 +140,8 @@ def html_end_pattern(line: str) -> re.Pattern[str] | None:
 
 
 def is_html_block_tag(line: str) -> bool:
-    tags = '|'.join(BLOCK_TAGS)
-    return re.match(rf'(?i)^</?(?:{tags})(?:\s|/?>|$)', line) is not None
+    return HTML_BLOCK_TAG_RE.match(line) is not None
 
 
 def is_complete_html_tag(line: str) -> bool:
-    return (
-        re.fullmatch(
-            r'(?i)</?[A-Za-z][A-Za-z0-9-]*(?:\s+[A-Za-z_:][A-Za-z0-9_.:-]*(?:\s*=\s*(?:[^\s"\'=<>`]+|\'[^\']*\'|"[^"]*"))?)*\s*/?>[ \t]*',
-            line,
-        )
-        is not None
-    )
+    return COMPLETE_HTML_TAG_RE.fullmatch(line) is not None

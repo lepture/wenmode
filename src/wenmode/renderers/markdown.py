@@ -28,6 +28,9 @@ from wenmode.nodes import (
 
 from .base import BaseRenderer
 
+ESCAPABLE_TEXT_RE = re.compile(r'([\\`*_{}\[\]<>()#+\-.!|])')
+DESTINATION_WRAP_RE = re.compile(r'[\s()]')
+
 
 class MarkdownRenderer(BaseRenderer):
     def render_list_item(self, item: ListItem, marker: str) -> str:
@@ -44,10 +47,10 @@ class MarkdownRenderer(BaseRenderer):
         return '\n'.join(parts)
 
     def escape_text(self, value: str) -> str:
-        return re.sub(r'([\\`*_{}\[\]<>()#+\-.!|])', r'\\\1', value)
+        return ESCAPABLE_TEXT_RE.sub(r'\\\1', value)
 
     def escape_destination(self, value: str) -> str:
-        if re.search(r'[\s()]', value):
+        if DESTINATION_WRAP_RE.search(value):
             return '<' + value.replace('\\', '\\\\').replace('<', '\\<').replace('>', '\\>') + '>'
         return value.replace('\\', '\\\\').replace(')', '\\)')
 

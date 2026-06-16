@@ -15,6 +15,9 @@ if TYPE_CHECKING:
     from wenmode.parser import Wenmode
 
 
+ANGLE_SPAN_RE = re.compile(rf'{URI_RE}|{EMAIL_RE}|{HTML_RE}')
+
+
 class Image(InlineRule):
     has_references = True
 
@@ -148,13 +151,10 @@ def invalid_reference_label(label: str) -> bool:
 
 
 def find_angle_span_end(text: str, start: int) -> int | None:
-    rest = text[start:]
-    if re.match(rf'{URI_RE}|{EMAIL_RE}|{HTML_RE}', rest) is None:
-        return None
-    match = re.match(rf'{URI_RE}|{EMAIL_RE}|{HTML_RE}', rest)
+    match = ANGLE_SPAN_RE.match(text, start)
     if match is None:
         return None
-    return start + match.end()
+    return match.end()
 
 
 def parse_direct_destination(text: str, start: int) -> tuple[str, str | None, int] | None:

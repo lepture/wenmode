@@ -14,9 +14,14 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [dependency-groups]
+benchmark = [
+    "markdown>=3.10",
+    "markdown-it-py>=4.0.0",
+    "mistune>=3.1.4",
+]
 lint = [
-    "mypy>=1.15.0",
-    "ruff>=0.9.6",
+    "mypy>=2.1.0",
+    "ruff>=0.15.17",
 ]
 test = [
     "pytest>=8.4.0",
@@ -45,3 +50,10 @@ python_version = "3.11"
 files = ["src/wenmode"]
 show_error_codes = true
 pretty = true
+
+[tool.coverage.run]
+branch = true
+source = ["joserfc"]
+
+[tool.coverage.paths]
+source = ["src"]

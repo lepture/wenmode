@@ -6,9 +6,16 @@ from typing import Any
 
 from .nodes import Node, Paragraph, Root, Text
 from .rules.base import BlockRule, InlineRule, Rule
+from .rules.blocks.html import is_html_block_tag
 from .rules.inlines.emphasis import parse_emphasis_sequence
-from .rules.references import extract_references
+from .rules.references import ReferenceDefinition
 from .state import BlockState
+
+LIST_MARKER_RE = re.compile(
+    r'^[ \t]{0,3}(?:(?P<bullet>[*+-])|(?P<ordered>\d{1,9})[.)])(?P<spaces>[ \t]+|$)(?P<rest>.*)$'
+)
+HTML_TAG_START_RE = re.compile(r'</?[A-Za-z]')
+HTML_PARAGRAPH_INTERRUPT_RE = re.compile(r'(?i)<(?:script|pre|style|textarea)(?:\s|>|$)')
 
 
 class Wenmode:
@@ -16,10 +23,11 @@ class Wenmode:
 
     def __init__(self, rules: Iterable[type[Any] | Rule]) -> None:
         rules = [rule() if isinstance(rule, type) else rule for rule in rules]
+        if any(rule.has_references for rule in rules):
+            rules.append(ReferenceDefinition())
         self.rules = {rule.name: rule for rule in rules}
         self.block_rules = [rule for rule in rules if isinstance(rule, BlockRule)]
         self.inline_rules = [rule for rule in rules if isinstance(rule, InlineRule)]
-        self._has_references = any(rule.has_references for rule in rules)
         self._block_openers = self._compile_block_openers(self.block_rules)
 
     def parse(self, text: str) -> Root:
@@ -27,11 +35,14 @@ class Wenmode:
 
     def parse_blocks(self, text: str, parent_state: BlockState | None = None) -> list[Node]:
         references = parent_state.references if parent_state is not None else {}
-        if self._has_references:
-            text, extracted = extract_references(text, self)
-            for label, reference in extracted.items():
-                references.setdefault(label, reference)
-        state = BlockState.from_text(text, references=references, depth=(parent_state.depth + 1 if parent_state else 0))
+        state = BlockState.from_text(
+            text,
+            references=references,
+            depth=(parent_state.depth + 1 if parent_state else 0),
+            pending_inlines=parent_state.pending_inlines if parent_state is not None else None,
+            pending_inline_callbacks=parent_state.pending_inline_callbacks if parent_state is not None else None,
+            defer_inlines=True,
+        )
         children: list[Node] = []
 
         while not state.done:
@@ -42,16 +53,26 @@ class Wenmode:
             match = self._block_openers.match(state.line) if self._block_openers else None
             if match is not None and not self._container_depth_exceeded(match, state):
                 rule = self._match_block_rule(match)
+                previous_index = state.index
                 parsed = rule.parse(self, state, match)
                 if parsed is not None:
                     children.append(parsed)
                     continue
+                if state.index != previous_index:
+                    continue
 
             children.append(self._parse_paragraph(state))
 
+        if parent_state is None:
+            self._resolve_pending_inlines(state)
         return children
 
     def parse_inlines(self, text: str, state: BlockState | None = None) -> list[Node]:
+        if state is not None and state.defer_inlines:
+            pending_nodes: list[Node] = []
+            state.pending_inlines.append((pending_nodes, text))
+            return pending_nodes
+
         nodes: list[Node] = []
         pos = 0
         emphasis_enabled = 'emphasis' in self.rules
@@ -104,6 +125,17 @@ class Wenmode:
         text = ''.join(lines).strip()
         return Paragraph(children=self.parse_inlines(text, state))
 
+    def _resolve_pending_inlines(self, state: BlockState) -> None:
+        state.defer_inlines = False
+        pending = list(state.pending_inlines)
+        state.pending_inlines.clear()
+        for nodes, text in pending:
+            nodes[:] = self.parse_inlines(text, state)
+        callbacks = list(state.pending_inline_callbacks)
+        state.pending_inline_callbacks.clear()
+        for callback in callbacks:
+            callback()
+
     def _match_block_rule(self, match: re.Match[str]) -> BlockRule:
         group = match.lastgroup
         if group is None:
@@ -121,22 +153,19 @@ class Wenmode:
             return False
         if self._container_depth_exceeded(match, state):
             return False
+        if match.lastgroup == 'reference_definition':
+            return False
         if match.lastgroup == 'list':
-            marker = re.match(
-                r'^[ \t]{0,3}(?:(?P<bullet>[*+-])|(?P<ordered>\d{1,9})[.)])(?P<spaces>[ \t]+|$)(?P<rest>.*)$',
-                line.rstrip('\r\n'),
-            )
+            marker = LIST_MARKER_RE.match(line.rstrip('\r\n'))
             if marker is not None and marker.group('rest').strip() == '':
                 return False
             if marker is not None and marker.group('ordered') is not None and marker.group('ordered') != '1':
                 return False
         if match.lastgroup == 'html_block':
             stripped = line.lstrip(' \t')
-            if is_block_html_start(stripped):
+            if is_html_block_tag(stripped):
                 return True
-            if re.match(r'</?[A-Za-z]', stripped) and not re.match(
-                r'(?i)<(?:script|pre|style|textarea)(?:\s|>|$)', stripped
-            ):
+            if HTML_TAG_START_RE.match(stripped) and not HTML_PARAGRAPH_INTERRUPT_RE.match(stripped):
                 return False
         return match.lastgroup != 'indented_code'
 
@@ -168,10 +197,3 @@ def merge_text(nodes: list[Node]) -> list[Node]:
 
 def parse_emphasis_nodes(nodes: list[Node]) -> list[Node]:
     return parse_emphasis_sequence(nodes)
-
-
-def is_block_html_start(line: str) -> bool:
-    return re.match(
-        r'(?i)</?(?:address|article|aside|base|basefont|blockquote|body|caption|center|col|colgroup|dd|details|dialog|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|frame|frameset|h1|h2|h3|h4|h5|h6|head|header|hr|html|iframe|legend|li|link|main|menu|menuitem|nav|noframes|ol|optgroup|option|p|param|search|section|summary|table|tbody|td|tfoot|th|thead|title|tr|track|ul)(?:\s|/?>|$)',
-        line,
-    ) is not None

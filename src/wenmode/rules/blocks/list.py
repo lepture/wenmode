@@ -108,7 +108,7 @@ class List(BlockRule):
 
             item = ListItem(children=parser.parse_blocks(''.join(item_lines), parent_state=state), spread=item_spread)
             if self.task:
-                apply_task_list_marker(item)
+                schedule_task_list_marker(state, item)
             items.append(item)
 
             if item_spread:
@@ -151,10 +151,17 @@ def parse_shallow_list(parser: Wenmode, state: BlockState, first: re.Match[str],
         children: list[Node] = [Paragraph(children=parser.parse_inlines(text, state))] if text else []
         item = ListItem(children=children)
         if task:
-            apply_task_list_marker(item)
+            schedule_task_list_marker(state, item)
         items.append(item)
 
     return ListNode(children=items, ordered=ordered, start=start)
+
+
+def schedule_task_list_marker(state: BlockState, item: ListItem) -> None:
+    if state.defer_inlines:
+        state.pending_inline_callbacks.append(lambda: apply_task_list_marker(item))
+    else:
+        apply_task_list_marker(item)
 
 
 def apply_task_list_marker(item: ListItem) -> None:

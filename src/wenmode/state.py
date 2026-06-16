@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Callable
+
+from wenmode.nodes import Node
 
 
 @dataclass
@@ -15,12 +18,28 @@ class BlockState:
     index: int = 0
     references: dict[str, Reference] = field(default_factory=dict)
     depth: int = 0
+    pending_inlines: list[tuple[list[Node], str]] = field(default_factory=list)
+    pending_inline_callbacks: list[Callable[[], None]] = field(default_factory=list)
+    defer_inlines: bool = False
 
     @classmethod
     def from_text(
-        cls, text: str, references: dict[str, Reference] | None = None, depth: int = 0
+        cls,
+        text: str,
+        references: dict[str, Reference] | None = None,
+        depth: int = 0,
+        pending_inlines: list[tuple[list[Node], str]] | None = None,
+        pending_inline_callbacks: list[Callable[[], None]] | None = None,
+        defer_inlines: bool = False,
     ) -> BlockState:
-        return cls(text.splitlines(keepends=True), references=references if references is not None else {}, depth=depth)
+        return cls(
+            text.splitlines(keepends=True),
+            references=references if references is not None else {},
+            depth=depth,
+            pending_inlines=pending_inlines if pending_inlines is not None else [],
+            pending_inline_callbacks=pending_inline_callbacks if pending_inline_callbacks is not None else [],
+            defer_inlines=defer_inlines,
+        )
 
     @property
     def done(self) -> bool:

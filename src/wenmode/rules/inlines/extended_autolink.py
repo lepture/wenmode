@@ -22,6 +22,9 @@ EXTENDED_AUTOLINK_RE = (
     r')'
 )
 TRAILING_PUNCTUATION = '?!.,:*_~'
+EMAIL_RE = re.compile(
+    r"(?i)[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+"
+)
 
 
 class ExtendedAutolink(InlineRule):
@@ -56,7 +59,4 @@ def trim_trailing_punctuation(value: str) -> str:
 
 
 def is_email(value: str) -> bool:
-    return re.fullmatch(
-        r"(?i)[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+",
-        value,
-    ) is not None
+    return EMAIL_RE.fullmatch(value) is not None

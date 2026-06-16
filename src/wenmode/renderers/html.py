@@ -26,6 +26,8 @@ from wenmode.nodes import (
 
 from .base import BaseRenderer
 
+SOFT_BREAK_SPACE_RE = re.compile(r'(?<! ) (?=\r?\n)')
+
 
 class HTMLRenderer(BaseRenderer):
     allowed_url_schemes = frozenset({'http', 'https', 'irc', 'ircs', 'mailto', 'tel'})
@@ -213,7 +215,7 @@ def render_html(renderer: HTMLRenderer, node: Html) -> str:
 
 @HTMLRenderer.register('text')
 def render_text(renderer: HTMLRenderer, node: Text) -> str:
-    return renderer.escape_html(re.sub(r'(?<! ) (?=\r?\n)', '', node.value))
+    return renderer.escape_html(SOFT_BREAK_SPACE_RE.sub('', node.value))
 
 
 @HTMLRenderer.register('link')
