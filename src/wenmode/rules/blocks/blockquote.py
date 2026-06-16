@@ -4,8 +4,10 @@ import re
 from typing import TYPE_CHECKING
 
 from wenmode.nodes import Blockquote as BlockquoteNode
+from wenmode.nodes import Node, Paragraph
 from wenmode.rules.base import BlockRule
 from wenmode.state import BlockState
+from wenmode.utils import expand_leading_tabs
 
 if TYPE_CHECKING:
     from wenmode.parser import Wenmode
@@ -16,6 +18,9 @@ class Blockquote(BlockRule):
         super().__init__('blockquote', r'[ \t]{0,3}>')
 
     def parse(self, parser: Wenmode, state: BlockState, match: re.Match[str]) -> BlockquoteNode:
+        if state.depth >= parser.max_container_depth - 1:
+            return parse_shallow_blockquote(parser, state)
+
         lines: list[str] = []
         paragraph_open = False
         lazy_used = False
@@ -23,7 +28,7 @@ class Blockquote(BlockRule):
             line = state.line
             quote = re.match(r'[ \t]{0,3}> ?(.*)', line)
             if quote is None:
-                if paragraph_open and line.strip() != '' and not parser.is_paragraph_interrupt(line):
+                if paragraph_open and line.strip() != '' and not parser.is_paragraph_interrupt(line, state):
                     lines.append(('    ' if lazy_used and is_setext_marker(line) else '') + line)
                     lazy_used = True
                     state.advance()
@@ -33,22 +38,25 @@ class Blockquote(BlockRule):
             content = expand_leading_tabs(quote.group(1), 2)
             lines.append(content + line_end)
             paragraph_open = content.strip() != '' and (
-                not starts_nonparagraph_block(content) or has_nested_blockquote(content)
+                not parser.starts_nonparagraph_block(content) or has_nested_blockquote(content)
             )
             lazy_used = False
             state.advance()
 
-        return BlockquoteNode(children=parser.parse_blocks(''.join(lines)))
+        return BlockquoteNode(children=parser.parse_blocks(''.join(lines), parent_state=state))
 
 
-def starts_nonparagraph_block(line: str) -> bool:
-    return bool(
-        re.match(r'[ \t]{0,3}(?:#{1,6}(?:[ \t]+|$)|(?:`{3,}|~{3,})|(?:[*+-]|\d{1,9}[.)])(?:[ \t]+|$))', line)
-        or re.match(r'[ \t]{4,}', line)
-        or re.match(r'[ \t]{0,3}(?:\*[ \t]*){3,}$', line)
-        or re.match(r'[ \t]{0,3}(?:-[ \t]*){3,}$', line)
-        or re.match(r'[ \t]{0,3}(?:_[ \t]*){3,}$', line)
-    )
+def parse_shallow_blockquote(parser: Wenmode, state: BlockState) -> BlockquoteNode:
+    lines: list[str] = []
+    while not state.done:
+        quote = re.match(r'[ \t]{0,3}> ?(.*)', state.line)
+        if quote is None:
+            break
+        lines.append(quote.group(1).strip())
+        state.advance()
+    text = '\n'.join(line for line in lines if line).strip()
+    children: list[Node] = [Paragraph(children=parser.parse_inlines(text, state))] if text else []
+    return BlockquoteNode(children=children)
 
 
 def has_nested_blockquote(line: str) -> bool:
@@ -57,22 +65,3 @@ def has_nested_blockquote(line: str) -> bool:
 
 def is_setext_marker(line: str) -> bool:
     return re.match(r'[ \t]{0,3}(=+|-+)[ \t]*$', line) is not None
-
-
-def expand_leading_tabs(line: str, start_column: int = 0) -> str:
-    column = start_column
-    parts: list[str] = []
-    index = 0
-    while index < len(line):
-        char = line[index]
-        if char == ' ':
-            parts.append(' ')
-            column += 1
-        elif char == '\t':
-            size = 4 - column % 4
-            parts.append(' ' * size)
-            column += size
-        else:
-            break
-        index += 1
-    return ''.join(parts) + line[index:]

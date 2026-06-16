@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from wenmode.nodes import Break, Node, Text
 from wenmode.rules.base import InlineRule
+from wenmode.state import BlockState
 
 if TYPE_CHECKING:
     from wenmode.parser import Wenmode
@@ -18,7 +19,9 @@ class BackslashEscape(InlineRule):
     def __init__(self) -> None:
         super().__init__('backslash_escape', rf'\\(?=[{ESCAPABLE}])')
 
-    def parse(self, parser: Wenmode, text: str, match: re.Match[str]) -> tuple[Node | None, int]:
+    def parse(
+        self, parser: Wenmode, text: str, match: re.Match[str], state: BlockState | None = None
+    ) -> tuple[Node | None, int]:
         return Text(value=text[match.end()], _parse_emphasis=False), match.end() + 1
 
 
@@ -26,7 +29,9 @@ class CharacterReference(InlineRule):
     def __init__(self) -> None:
         super().__init__('character_reference', r'&(?:#[xX][0-9A-Fa-f]+|#[0-9]+|[A-Za-z][A-Za-z0-9]{1,31});')
 
-    def parse(self, parser: Wenmode, text: str, match: re.Match[str]) -> tuple[Node | None, int]:
+    def parse(
+        self, parser: Wenmode, text: str, match: re.Match[str], state: BlockState | None = None
+    ) -> tuple[Node | None, int]:
         value = match.group(0)
         numeric = re.match(r'&#(?P<base>[xX]?)(?P<digits>[0-9A-Fa-f]+);', value)
         if numeric is not None:
@@ -43,5 +48,7 @@ class HardBreak(InlineRule):
     def __init__(self) -> None:
         super().__init__('hard_break', r'(?:\\| {2,})\r?\n')
 
-    def parse(self, parser: Wenmode, text: str, match: re.Match[str]) -> tuple[Node | None, int]:
+    def parse(
+        self, parser: Wenmode, text: str, match: re.Match[str], state: BlockState | None = None
+    ) -> tuple[Node | None, int]:
         return Break(), match.end()

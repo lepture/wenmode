@@ -6,6 +6,7 @@ from urllib.parse import quote
 
 from wenmode.nodes import Html, Link, Node, Text
 from wenmode.rules.base import InlineRule
+from wenmode.state import BlockState
 
 if TYPE_CHECKING:
     from wenmode.parser import Wenmode
@@ -25,7 +26,9 @@ class Autolink(InlineRule):
     def __init__(self) -> None:
         super().__init__('autolink', rf'{URI_RE}|{EMAIL_RE}')
 
-    def parse(self, parser: Wenmode, text: str, match: re.Match[str]) -> tuple[Node | None, int]:
+    def parse(
+        self, parser: Wenmode, text: str, match: re.Match[str], state: BlockState | None = None
+    ) -> tuple[Node | None, int]:
         uri = match.groupdict().get('uri')
         if uri is not None:
             return Link(url=normalize_uri(uri), children=[Text(value=uri)]), match.end()
@@ -38,7 +41,9 @@ class RawHtml(InlineRule):
     def __init__(self) -> None:
         super().__init__('raw_html', HTML_RE)
 
-    def parse(self, parser: Wenmode, text: str, match: re.Match[str]) -> tuple[Node | None, int]:
+    def parse(
+        self, parser: Wenmode, text: str, match: re.Match[str], state: BlockState | None = None
+    ) -> tuple[Node | None, int]:
         return Html(value=match.group(0)), match.end()
 
 

@@ -26,4 +26,4 @@ class AtxHeading(BlockRule):
         if content.strip('#').strip() == '':
             content = ''
         state.advance()
-        return Heading(depth=len(marker), children=parser.parse_inlines(content.strip()))
+        return Heading(depth=len(marker), children=parser.parse_inlines(content.strip(), state))

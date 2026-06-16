@@ -1,16 +1,26 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+
+
+@dataclass
+class Reference:
+    url: str
+    title: str | None = None
 
 
 @dataclass
 class BlockState:
     lines: list[str]
     index: int = 0
+    references: dict[str, Reference] = field(default_factory=dict)
+    depth: int = 0
 
     @classmethod
-    def from_text(cls, text: str) -> BlockState:
-        return cls(text.splitlines(keepends=True))
+    def from_text(
+        cls, text: str, references: dict[str, Reference] | None = None, depth: int = 0
+    ) -> BlockState:
+        return cls(text.splitlines(keepends=True), references=references if references is not None else {}, depth=depth)
 
     @property
     def done(self) -> bool:

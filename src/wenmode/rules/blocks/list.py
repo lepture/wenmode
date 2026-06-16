@@ -4,9 +4,10 @@ import re
 from typing import TYPE_CHECKING
 
 from wenmode.nodes import List as ListNode
-from wenmode.nodes import ListItem, Node
+from wenmode.nodes import ListItem, Node, Paragraph
 from wenmode.rules.base import BlockRule
 from wenmode.state import BlockState
+from wenmode.utils import count_indent, count_indent_from, expand_leading_tabs
 
 if TYPE_CHECKING:
     from wenmode.parser import Wenmode
@@ -26,6 +27,8 @@ class List(BlockRule):
         if first is None:
             state.advance()
             return ListNode(children=[])
+        if state.depth >= parser.max_container_depth - 1:
+            return parse_shallow_list(parser, state, first)
 
         ordered = first.group('ordered') is not None
         start = int(first.group('ordered')) if ordered else None
@@ -94,19 +97,55 @@ class List(BlockRule):
                     item_lines.append(strip_continuation_indent(next_line, content_indent))
                     state.advance()
                     continue
-                if item_lines and item_lines[-1].strip() != '' and not parser.is_paragraph_interrupt(next_line):
+                if item_lines and item_lines[-1].strip() != '' and not parser.is_paragraph_interrupt(next_line, state):
                     item_lines.append(next_line)
                     state.advance()
                     continue
                 break
 
-            items.append(ListItem(children=parser.parse_blocks(''.join(item_lines)), spread=item_spread))
+            items.append(ListItem(children=parser.parse_blocks(''.join(item_lines), parent_state=state), spread=item_spread))
 
             if item_spread:
                 while not state.done and state.line.strip() == '':
                     state.advance()
 
         return ListNode(children=items, ordered=ordered, start=start, spread=spread)
+
+
+def parse_shallow_list(parser: Wenmode, state: BlockState, first: re.Match[str]) -> ListNode:
+    ordered = first.group('ordered') is not None
+    start = int(first.group('ordered')) if ordered else None
+    delimiter = first.group('delimiter')
+    bullet = first.group('bullet')
+    items: list[Node] = []
+
+    while not state.done:
+        marker = MARKER_RE.match(state.line.rstrip('\r\n'))
+        if marker is None:
+            break
+        if ordered != (marker.group('ordered') is not None):
+            break
+        if bullet is not None and marker.group('bullet') != bullet:
+            break
+        if delimiter is not None and marker.group('delimiter') != delimiter:
+            break
+
+        text_lines = [marker.group('rest')]
+        state.advance()
+        while not state.done:
+            line = state.line
+            next_marker = MARKER_RE.match(line.rstrip('\r\n'))
+            if next_marker is not None and count_indent(next_marker.group('indent')) == count_indent(marker.group('indent')):
+                break
+            if line.strip():
+                text_lines.append(line.strip())
+            state.advance()
+
+        text = '\n'.join(part for part in text_lines if part).strip()
+        children: list[Node] = [Paragraph(children=parser.parse_inlines(text, state))] if text else []
+        items.append(ListItem(children=children))
+
+    return ListNode(children=items, ordered=ordered, start=start)
 
 
 def should_keep_blank_in_item(state: BlockState, content_indent: int, marker_indent: int) -> bool:
@@ -180,42 +219,6 @@ def has_continuation_indent(line: str, columns: int) -> bool:
 def strip_continuation_indent(line: str, columns: int) -> str:
     expanded = expand_leading_tabs(line)
     return expanded[columns:] if len(expanded) >= columns else ''
-
-
-def expand_leading_tabs(line: str, start_column: int = 0) -> str:
-    column = start_column
-    parts: list[str] = []
-    index = 0
-    while index < len(line):
-        char = line[index]
-        if char == ' ':
-            parts.append(' ')
-            column += 1
-        elif char == '\t':
-            size = 4 - column % 4
-            parts.append(' ' * size)
-            column += size
-        else:
-            break
-        index += 1
-    return ''.join(parts) + line[index:]
-
-
-def count_indent(text: str) -> int:
-    return count_indent_from(text, 0)
-
-
-def count_indent_from(text: str, start_column: int) -> int:
-    column = 0
-    column += start_column
-    for char in text:
-        if char == ' ':
-            column += 1
-        elif char == '\t':
-            column += 4 - column % 4
-        else:
-            break
-    return column
 
 
 def is_thematic_break(line: str) -> bool:

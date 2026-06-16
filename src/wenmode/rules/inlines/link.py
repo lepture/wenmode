@@ -8,6 +8,7 @@ from wenmode.nodes import Image as ImageNode
 from wenmode.nodes import Link as LinkNode
 from wenmode.rules.base import InlineRule
 from wenmode.rules.inlines.html import EMAIL_RE, HTML_RE, URI_RE
+from wenmode.state import BlockState
 from wenmode.utils import normalize_label, normalize_label_text, normalize_uri_text
 
 if TYPE_CHECKING:
@@ -18,35 +19,41 @@ class Image(InlineRule):
     def __init__(self) -> None:
         super().__init__('image', r'!\[')
 
-    def parse(self, parser: Wenmode, text: str, match: re.Match[str]) -> tuple[Node | None, int]:
-        parsed = parse_link_or_image(parser, text, match.start(), image=True)
+    def parse(
+        self, parser: Wenmode, text: str, match: re.Match[str], state: BlockState | None = None
+    ) -> tuple[Node | None, int]:
+        parsed = parse_link_or_image(parser, text, match.start(), image=True, state=state)
         if parsed is None:
             return None, match.start()
 
         label, url, title, end = parsed
-        return ImageNode(url=url, alt=plain_text(parser.parse_inlines(label)), title=title), end
+        return ImageNode(url=url, alt=plain_text(parser.parse_inlines(label, state)), title=title), end
 
 
 class Link(InlineRule):
     def __init__(self) -> None:
         super().__init__('link', r'\[')
 
-    def parse(self, parser: Wenmode, text: str, match: re.Match[str]) -> tuple[Node | None, int]:
+    def parse(
+        self, parser: Wenmode, text: str, match: re.Match[str], state: BlockState | None = None
+    ) -> tuple[Node | None, int]:
         if match.start() > 0 and text[match.start() - 1] == '!' and not is_escaped(text, match.start() - 1):
             return None, match.start()
-        parsed = parse_link_or_image(parser, text, match.start(), image=False)
+        parsed = parse_link_or_image(parser, text, match.start(), image=False, state=state)
         if parsed is None:
             return None, match.start()
 
         label, url, title, end = parsed
-        return LinkNode(url=url, title=title, children=parser.parse_inlines(label)), end
+        return LinkNode(url=url, title=title, children=parser.parse_inlines(label, state)), end
 
 
 def normalize_optional_text(value: str | None) -> str | None:
     return normalize_label_text(value) if value is not None else None
 
 
-def parse_link_or_image(parser: Wenmode, text: str, start: int, image: bool) -> tuple[str, str, str | None, int] | None:
+def parse_link_or_image(
+    parser: Wenmode, text: str, start: int, image: bool, state: BlockState | None
+) -> tuple[str, str, str | None, int] | None:
     label_start = start + 2 if image else start + 1
     label_end = find_closing_bracket(text, label_start)
     if label_end is None:
@@ -54,7 +61,7 @@ def parse_link_or_image(parser: Wenmode, text: str, start: int, image: bool) -> 
 
     label = text[label_start:label_end]
     after_label = label_end + 1
-    if not image and label_contains_link(parser, label):
+    if not image and label_contains_link(parser, label, state):
         return None
 
     direct = parse_direct_destination(text, after_label)
@@ -77,7 +84,7 @@ def parse_link_or_image(parser: Wenmode, text: str, start: int, image: bool) -> 
     elif invalid_reference_label(reference_label):
         return None
 
-    reference = parser.references.get(normalize_label(reference_label))
+    reference = parser.get_reference(normalize_label(reference_label), state)
     if reference is None:
         return None
     return label, reference.url, reference.title, end
@@ -111,8 +118,8 @@ def find_closing_bracket(text: str, start: int) -> int | None:
     return None
 
 
-def label_contains_link(parser: Wenmode, label: str) -> bool:
-    return any(contains_link(node) for node in parser.parse_inlines(label))
+def label_contains_link(parser: Wenmode, label: str, state: BlockState | None) -> bool:
+    return any(contains_link(node) for node in parser.parse_inlines(label, state))
 
 
 def contains_link(node: Node) -> bool:

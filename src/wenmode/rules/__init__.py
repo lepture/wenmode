@@ -11,7 +11,7 @@ from .blocks.paragraph import Paragraph
 from .blocks.setext_heading import SetextHeading
 from .blocks.thematic_break import ThematicBreak
 from .inlines.code import InlineCode
-from .inlines.emphasis import Bold, Emphasis, Italic, Strong
+from .inlines.emphasis import Emphasis
 from .inlines.html import Autolink, RawHtml
 from .inlines.link import Image, Link
 from .inlines.text import BackslashEscape, CharacterReference, HardBreak
@@ -22,7 +22,6 @@ __all__ = [
     'BackslashEscape',
     'BlankLine',
     'Blockquote',
-    'Bold',
     'CharacterReference',
     'Emphasis',
     'FencedCode',
@@ -31,12 +30,10 @@ __all__ = [
     'Image',
     'IndentedCode',
     'InlineCode',
-    'Italic',
     'Link',
     'List',
     'Paragraph',
     'RawHtml',
     'SetextHeading',
-    'Strong',
     'ThematicBreak',
 ]

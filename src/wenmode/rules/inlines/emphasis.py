@@ -9,45 +9,20 @@ from wenmode.nodes import Node
 from wenmode.nodes import Strong as StrongNode
 from wenmode.nodes import Text as TextNode
 from wenmode.rules.base import InlineRule
+from wenmode.state import BlockState
 
 if TYPE_CHECKING:
     from wenmode.parser import Wenmode
 
 
-class Strong(InlineRule):
-    def __init__(self) -> None:
-        super().__init__('strong', r'(?:\*\*|__)')
-
-    def parse(self, parser: Wenmode, text: str, match: re.Match[str]) -> tuple[Node | None, int]:
-        marker = match.group(0)
-        if not can_open(text, match.start(), len(marker), marker[0]):
-            return None, match.start()
-        end = find_closing_delimiter(text, marker, match.end())
-        if end == -1:
-            return None, match.start()
-        return StrongNode(children=parser.parse_inlines(text[match.end() : end])), end + len(marker)
-
-
 class Emphasis(InlineRule):
     def __init__(self) -> None:
-        super().__init__('emphasis', r'(?:\*|_)')
+        super().__init__('emphasis', r'(?:\*+|_+)')
 
-    def parse(self, parser: Wenmode, text: str, match: re.Match[str]) -> tuple[Node | None, int]:
-        marker = match.group(0)
-        previous = text[match.start() - 1] if match.start() > 0 else ''
-        next_char = text[match.end()] if match.end() < len(text) else ''
-        if previous == marker or next_char == marker:
-            return None, match.start()
-        if not can_open(text, match.start(), len(marker), marker):
-            return None, match.start()
-        end = find_closing_delimiter(text, marker, match.end())
-        if end == -1:
-            return None, match.start()
-        return EmphasisNode(children=parser.parse_inlines(text[match.end() : end])), end + len(marker)
-
-
-Bold = Strong
-Italic = Emphasis
+    def parse(
+        self, parser: Wenmode, text: str, match: re.Match[str], state: BlockState | None = None
+    ) -> tuple[Node | None, int]:
+        return None, match.start()
 
 
 @dataclass
@@ -59,57 +34,7 @@ class Delimiter:
     can_close: bool
 
 
-def parse_emphasis_text(parser: Wenmode, text: str, strong: bool, emphasis: bool) -> list[Node]:
-    nodes: list[Node] = []
-    pos = 0
-
-    while pos < len(text):
-        found: tuple[int, str] | None = None
-        for marker in enabled_markers(strong, emphasis):
-            index = text.find(marker, pos)
-            while index != -1 and marker in ('*', '_') and (
-                (index > 0 and text[index - 1] == marker) or (index + 1 < len(text) and text[index + 1] == marker)
-            ):
-                index = text.find(marker, index + 1)
-            if index != -1 and (found is None or index < found[0] or (index == found[0] and len(marker) > len(found[1]))):
-                found = (index, marker)
-
-        if found is None:
-            nodes.append(TextNode(value=text[pos:]))
-            break
-
-        start, marker = found
-        if start > pos:
-            nodes.append(TextNode(value=text[pos:start]))
-        if not can_open(text, start, len(marker), marker[0]):
-            nodes.append(TextNode(value=text[start : start + 1]))
-            pos = start + 1
-            continue
-
-        end = find_closing_delimiter(text, marker, start + len(marker))
-        if end == -1:
-            nodes.append(TextNode(value=text[start : start + 1]))
-            pos = start + 1
-            continue
-
-        children = parser.parse_inlines(text[start + len(marker) : end])
-        node = StrongNode(children=children) if len(marker) == 2 else EmphasisNode(children=children)
-        nodes.append(node)
-        pos = end + len(marker)
-
-    return nodes
-
-
-def enabled_markers(strong: bool, emphasis: bool) -> list[str]:
-    markers: list[str] = []
-    if strong:
-        markers.extend(['**', '__'])
-    if emphasis:
-        markers.extend(['*', '_'])
-    return markers
-
-
-def parse_emphasis_sequence(nodes: list[Node], strong: bool, emphasis: bool) -> list[Node]:
+def parse_emphasis_sequence(nodes: list[Node]) -> list[Node]:
     parts: list[Node] = []
     delimiters: list[Delimiter] = []
     source = source_text(nodes)
@@ -117,7 +42,7 @@ def parse_emphasis_sequence(nodes: list[Node], strong: bool, emphasis: bool) -> 
     source_pos = 0
     for node in nodes:
         if isinstance(node, TextNode) and node._parse_emphasis:
-            split_text_node(node.value, source, source_pos, parts, delimiters, strong, emphasis)
+            split_text_node(node.value, source, source_pos, parts, delimiters)
             source_pos += len(node.value)
         else:
             parts.append(node)
@@ -145,8 +70,6 @@ def split_text_node(
     source_start: int,
     parts: list[Node],
     delimiters: list[Delimiter],
-    strong: bool,
-    emphasis: bool,
 ) -> None:
     pos = 0
     while pos < len(text):
@@ -162,15 +85,6 @@ def split_text_node(
             end += 1
         run_length = end - pos
         delimiter_length = run_length
-        if marker == '*' and not (strong or emphasis):
-            parts.append(TextNode(value=text[pos:end]))
-            pos = end
-            continue
-        if marker == '_' and not (strong or emphasis):
-            parts.append(TextNode(value=text[pos:end]))
-            pos = end
-            continue
-
         absolute = source_start + pos
         opener = can_open(source, absolute, run_length, marker)
         closer = can_close(source, absolute, run_length, marker)

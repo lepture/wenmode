@@ -17,7 +17,6 @@ from .rules import (
     List,
     RawHtml,
     SetextHeading,
-    Strong,
     ThematicBreak,
 )
 
@@ -38,6 +37,5 @@ COMMON_MARK = [
     Image,
     Link,
     InlineCode,
-    Strong,
     Emphasis,
 ]

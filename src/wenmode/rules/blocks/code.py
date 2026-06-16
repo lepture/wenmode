@@ -31,7 +31,7 @@ class FencedCode(BlockRule):
             while not state.done and state.line.strip() != '':
                 paragraph_lines.append(state.line)
                 state.advance()
-            return Paragraph(children=parser.parse_inlines(''.join(paragraph_lines).strip()))
+            return Paragraph(children=parser.parse_inlines(''.join(paragraph_lines).strip(), state))
         info = normalize_label_text(info)
         info_parts = info.split(None, 1)
         lang = info_parts[0] if info_parts else None

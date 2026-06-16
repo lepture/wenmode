@@ -32,5 +32,7 @@ class InlineRule(Rule):
     def __post_init__(self) -> None:
         self.compiled = re.compile(self.pattern)
 
-    def parse(self, parser: Wenmode, text: str, match: re.Match[str]) -> tuple[Node | None, int]:
+    def parse(
+        self, parser: Wenmode, text: str, match: re.Match[str], state: BlockState | None = None
+    ) -> tuple[Node | None, int]:
         raise NotImplementedError

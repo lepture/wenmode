@@ -2,40 +2,37 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterable
-from dataclasses import dataclass
 from typing import Any
 
 from .nodes import Heading, Node, Paragraph, Root, Text
 from .rules.base import BlockRule, InlineRule, Rule
 from .rules.inlines.emphasis import parse_emphasis_sequence
-from .state import BlockState
+from .state import BlockState, Reference
 from .utils import normalize_label, normalize_label_text, normalize_uri_text
 
 
-@dataclass
-class Reference:
-    url: str
-    title: str | None = None
-
-
 class Wenmode:
+    max_container_depth = 100
+
     def __init__(self, rules: Iterable[type[Any] | Rule]) -> None:
         self.rules = [rule() if isinstance(rule, type) else rule for rule in rules]
         self.block_rules = [rule for rule in self.rules if isinstance(rule, BlockRule)]
         self.inline_rules = [rule for rule in self.rules if isinstance(rule, InlineRule)]
-        self._setext_heading_enabled = any(rule.name == 'setext_heading' for rule in self.rules)
+        self._rule_names = {rule.name for rule in self.rules}
+        self._setext_heading_enabled = 'setext_heading' in self._rule_names
+        self._references_enabled = bool(self._rule_names & {'link', 'image'})
         self._block_openers = self._compile_block_openers(self.block_rules)
-        self.references: dict[str, Reference] = {}
 
     def parse(self, text: str) -> Root:
-        text, self.references = extract_references(text)
         return Root(children=self.parse_blocks(text))
 
-    def parse_blocks(self, text: str) -> list[Node]:
-        text, references = extract_references(text)
-        for label, reference in references.items():
-            self.references.setdefault(label, reference)
-        state = BlockState.from_text(text)
+    def parse_blocks(self, text: str, parent_state: BlockState | None = None) -> list[Node]:
+        references = parent_state.references if parent_state is not None else {}
+        if self._references_enabled:
+            text, extracted = extract_references(text, self)
+            for label, reference in extracted.items():
+                references.setdefault(label, reference)
+        state = BlockState.from_text(text, references=references, depth=(parent_state.depth + 1 if parent_state else 0))
         children: list[Node] = []
 
         while not state.done:
@@ -44,7 +41,7 @@ class Wenmode:
                 continue
 
             match = self._block_openers.match(state.line) if self._block_openers else None
-            if match is not None:
+            if match is not None and not self._container_depth_exceeded(match, state):
                 rule = self._match_block_rule(match)
                 parsed = rule.parse(self, state, match)
                 if parsed is not None:
@@ -55,12 +52,11 @@ class Wenmode:
 
         return children
 
-    def parse_inlines(self, text: str) -> list[Node]:
+    def parse_inlines(self, text: str, state: BlockState | None = None) -> list[Node]:
         nodes: list[Node] = []
         pos = 0
-        strong_enabled = any(rule.name == 'strong' for rule in self.inline_rules)
         emphasis_enabled = any(rule.name == 'emphasis' for rule in self.inline_rules)
-        inline_rules = [rule for rule in self.inline_rules if rule.name not in {'strong', 'emphasis'}]
+        inline_rules = [rule for rule in self.inline_rules if rule.name != 'emphasis']
 
         while pos < len(text):
             found: tuple[int, InlineRule, re.Match[str]] | None = None
@@ -79,7 +75,7 @@ class Wenmode:
             if start > pos:
                 nodes.append(Text(value=text[pos:start]))
 
-            node, end = rule.parse(self, text, match)
+            node, end = rule.parse(self, text, match, state)
             if node is None or end <= start:
                 nodes.append(Text(value=text[start : start + 1]))
                 pos = start + 1
@@ -88,12 +84,33 @@ class Wenmode:
                 pos = end
 
         nodes = merge_text(nodes)
-        if strong_enabled or emphasis_enabled:
-            nodes = parse_emphasis_nodes(nodes, strong=strong_enabled, emphasis=emphasis_enabled)
+        if emphasis_enabled:
+            nodes = parse_emphasis_nodes(nodes)
         return merge_text(nodes)
 
     def is_block_start(self, line: str) -> bool:
         return self._block_openers.match(line) is not None if self._block_openers else False
+
+    def get_reference(self, label: str, state: BlockState | None) -> Reference | None:
+        return state.references.get(label) if state is not None else None
+
+    def starts_nonparagraph_block(self, line: str) -> bool:
+        return bool(
+            ('atx_heading' in self._rule_names and re.match(r'[ \t]{0,3}#{1,6}(?:[ \t]+|$)', line))
+            or ('fenced_code' in self._rule_names and re.match(r'[ \t]{0,3}(?:`{3,}|~{3,})', line))
+            or ('list' in self._rule_names and re.match(r'[ \t]{0,3}(?:[*+-]|\d{1,9}[.)])(?:[ \t]+|$)', line))
+            or ('indented_code' in self._rule_names and re.match(r'[ \t]{4,}', line))
+            or ('thematic_break' in self._rule_names and is_thematic_break(line))
+        )
+
+    def can_interrupt_after(self, line: str) -> bool:
+        stripped = line.lstrip(' \t')
+        return bool(
+            ('atx_heading' in self._rule_names and re.match(r'#{1,6}(?:[ \t]+|$)', stripped))
+            or ('fenced_code' in self._rule_names and re.match(r'(?:`{3,}|~{3,})', stripped))
+            or ('blockquote' in self._rule_names and re.match(r'>', stripped))
+            or ('list' in self._rule_names and re.match(r'(?:[*+-]|\d{1,9}[.)])(?:[ \t]+|$)', stripped))
+        )
 
     def _parse_paragraph(self, state: BlockState) -> Node:
         lines: list[str] = []
@@ -104,14 +121,14 @@ class Wenmode:
                     state.advance()
                     depth = 1 if marker.group(1).startswith('=') else 2
                     text = ''.join(lines).strip()
-                    return Heading(depth=depth, children=self.parse_inlines(text))
-            if lines and self.is_paragraph_interrupt(state.line):
+                    return Heading(depth=depth, children=self.parse_inlines(text, state))
+            if lines and self.is_paragraph_interrupt(state.line, state):
                 break
             lines.append(state.line.lstrip(' \t') if lines else state.line)
             state.advance()
 
         text = ''.join(lines).strip()
-        return Paragraph(children=self.parse_inlines(text))
+        return Paragraph(children=self.parse_inlines(text, state))
 
     def _match_block_rule(self, match: re.Match[str]) -> BlockRule:
         group = match.lastgroup
@@ -122,11 +139,13 @@ class Wenmode:
                 return rule
         raise RuntimeError(f'unknown block rule: {group}')
 
-    def is_paragraph_interrupt(self, line: str) -> bool:
+    def is_paragraph_interrupt(self, line: str, state: BlockState | None = None) -> bool:
         if self._block_openers is None:
             return False
         match = self._block_openers.match(line)
         if match is None:
+            return False
+        if self._container_depth_exceeded(match, state):
             return False
         if match.lastgroup == 'list':
             marker = re.match(
@@ -146,6 +165,11 @@ class Wenmode:
             ):
                 return False
         return match.lastgroup != 'indented_code'
+
+    def _container_depth_exceeded(self, match: re.Match[str], state: BlockState | None) -> bool:
+        if match.lastgroup not in {'blockquote', 'list'} or state is None:
+            return False
+        return state.depth >= self.max_container_depth
 
     @staticmethod
     def _compile_block_openers(rules: list[BlockRule]) -> re.Pattern[str] | None:
@@ -168,8 +192,8 @@ def merge_text(nodes: list[Node]) -> list[Node]:
     return merged
 
 
-def parse_emphasis_nodes(nodes: list[Node], strong: bool, emphasis: bool) -> list[Node]:
-    return parse_emphasis_sequence(nodes, strong=strong, emphasis=emphasis)
+def parse_emphasis_nodes(nodes: list[Node]) -> list[Node]:
+    return parse_emphasis_sequence(nodes)
 
 
 def is_block_html_start(line: str) -> bool:
@@ -183,14 +207,14 @@ REFERENCE_START_RE = re.compile(r'^[ \t]{0,3}\[(?P<label>(?:\\.|[^\[\]\\\n]){1,9
 FENCE_RE = re.compile(r'^[ \t]{0,3}(`{3,}|~{3,})')
 
 
-def extract_references(text: str) -> tuple[str, dict[str, Reference]]:
+def extract_references(text: str, parser: Wenmode) -> tuple[str, dict[str, Reference]]:
     lines = text.splitlines(keepends=True)
     references: dict[str, Reference] = {}
     output: list[str] = []
     index = 0
 
     while index < len(lines):
-        fence = FENCE_RE.match(lines[index])
+        fence = FENCE_RE.match(lines[index]) if 'fenced_code' in parser._rule_names else None
         if fence is not None:
             fence_char = fence.group(1)[0]
             fence_size = len(fence.group(1))
@@ -205,7 +229,7 @@ def extract_references(text: str) -> tuple[str, dict[str, Reference]]:
                     break
             continue
 
-        blockquote_reference = parse_blockquote_reference(lines[index])
+        blockquote_reference = parse_blockquote_reference(lines[index]) if 'blockquote' in parser._rule_names else None
         if blockquote_reference is not None:
             label, reference = blockquote_reference
             references.setdefault(label, reference)
@@ -220,7 +244,7 @@ def extract_references(text: str) -> tuple[str, dict[str, Reference]]:
             index = next_index
             continue
 
-        if output and output[-1].strip() and not can_interrupt_after(output[-1]):
+        if output and output[-1].strip() and not parser.can_interrupt_after(output[-1]):
             output.append(lines[index])
             index += 1
             continue
@@ -334,13 +358,11 @@ def parse_multiline_reference_title(
     return None, index
 
 
-def can_interrupt_after(line: str) -> bool:
-    stripped = line.lstrip(' \t')
+def is_thematic_break(line: str) -> bool:
     return bool(
-        re.match(r'#{1,6}(?:[ \t]+|$)', stripped)
-        or re.match(r'(?:`{3,}|~{3,})', stripped)
-        or re.match(r'>', stripped)
-        or re.match(r'(?:[*+-]|\d{1,9}[.)])(?:[ \t]+|$)', stripped)
+        re.match(r'[ \t]{0,3}(?:\*[ \t]*){3,}$', line)
+        or re.match(r'[ \t]{0,3}(?:-[ \t]*){3,}$', line)
+        or re.match(r'[ \t]{0,3}(?:_[ \t]*){3,}$', line)
     )
 
 
