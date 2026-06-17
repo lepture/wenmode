@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
 from wenmode.headings import plain_text
-from wenmode.nodes import DirectiveNode, LeafDirective
+from wenmode.nodes import LeafDirective
 from wenmode.toc import collect_toc, render_toc_list
 
 if TYPE_CHECKING:
@@ -11,12 +12,12 @@ if TYPE_CHECKING:
 
 
 class TableOfContents:
-    def __init__(self, name: str = 'toc') -> None:
-        self.name = name
+    node_type = 'leafDirective'
 
-    def render(self, renderer: HTMLRenderer, node: DirectiveNode, context: HTMLRenderContext) -> str | None:
-        if not isinstance(node, LeafDirective) or node.name != self.name:
-            return None
+    def __init__(self, names: Iterable[str] = ('toc',)) -> None:
+        self.names = frozenset(names)
+
+    def render(self, renderer: HTMLRenderer, node: LeafDirective, context: HTMLRenderContext) -> str:
         if context.root is None:
             return ''
 

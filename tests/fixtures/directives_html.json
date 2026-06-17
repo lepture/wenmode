@@ -13,7 +13,7 @@
     "name": "configured admonition fallback",
     "markdown": ":::tip[Hint]\nUse it.\n:::\n",
     "html": "<p>Hint</p>\n<p>Use it.</p>\n",
-    "admonition_types": ["note"]
+    "admonition_names": ["note"]
   },
   {
     "name": "figure",

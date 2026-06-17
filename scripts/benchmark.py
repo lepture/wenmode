@@ -12,7 +12,8 @@ import markdown
 import mistune
 from markdown_it import MarkdownIt
 
-from wenmode import HTMLRenderer, Parser, github
+from wenmode import HTMLRenderer, Parser
+from wenmode.presets import github
 
 ROOT = Path(__file__).resolve().parents[1]
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
-from typing import Protocol
+from typing import Any, Protocol
 from urllib.parse import quote, urlsplit
 
 from wenmode.nodes import (
@@ -12,7 +12,6 @@ from wenmode.nodes import (
     Code,
     ContainerDirective,
     Delete,
-    DirectiveNode,
     FootnoteDefinition,
     FootnoteReference,
     Html,
@@ -54,7 +53,10 @@ class HTMLRenderContext(RenderContext):
 
 
 class DirectiveHtmlRenderer(Protocol):
-    def render(self, renderer: HTMLRenderer, node: DirectiveNode, context: HTMLRenderContext) -> str | None:
+    node_type: str
+    names: Iterable[str]
+
+    def render(self, renderer: HTMLRenderer, node: Any, context: HTMLRenderContext) -> str:
         pass
 
 
@@ -69,7 +71,9 @@ class HTMLRenderer(BaseRenderer):
     ) -> None:
         self.escape_enabled = escape
         self.sanitize_urls = sanitize_urls
-        self.directives = list(directives)
+        self.directives: dict[tuple[str, str], DirectiveHtmlRenderer] = {}
+        for directive in directives:
+            self.register_directive_renderer(directive)
 
     def create_context(self, node: Node | None = None) -> HTMLRenderContext:
         definitions = node.footnote_definitions if isinstance(node, Root) else None
@@ -80,7 +84,8 @@ class HTMLRenderer(BaseRenderer):
         return context
 
     def register_directive_renderer(self, directive: DirectiveHtmlRenderer) -> None:
-        self.directives.append(directive)
+        for name in directive.names:
+            self.directives[(directive.node_type, name)] = directive
 
     def render_list_item(self, item: Node, loose: bool, context: HTMLRenderContext) -> str:
         if not isinstance(item, ListItem):
@@ -213,11 +218,10 @@ class HTMLRenderer(BaseRenderer):
     def render_directive(
         self, node: TextDirective | LeafDirective | ContainerDirective, context: HTMLRenderContext
     ) -> str | None:
-        for directive in self.directives:
-            rendered = directive.render(self, node, context)
-            if rendered is not None:
-                return rendered
-        return None
+        directive = self.directives.get((node.type, node.name))
+        if directive is None:
+            return None
+        return directive.render(self, node, context)
 
 
 @HTMLRenderer.register('root')

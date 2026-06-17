@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
-from wenmode.nodes import ContainerDirective, DirectiveNode
+from wenmode.nodes import ContainerDirective
 
 from .util import split_directive_label
 
@@ -12,13 +12,12 @@ if TYPE_CHECKING:
 
 
 class Admonition:
-    def __init__(self, types: Iterable[str] = ('note', 'tip', 'caution', 'danger')) -> None:
-        self.types = frozenset(types)
+    node_type = 'containerDirective'
 
-    def render(self, renderer: HTMLRenderer, node: DirectiveNode, context: HTMLRenderContext) -> str | None:
-        if not isinstance(node, ContainerDirective) or node.name not in self.types:
-            return None
+    def __init__(self, names: Iterable[str] = ('note', 'tip', 'caution', 'danger')) -> None:
+        self.names = frozenset(names)
 
+    def render(self, renderer: HTMLRenderer, node: ContainerDirective, context: HTMLRenderContext) -> str:
         label, children = split_directive_label(node)
         class_name = f'admonition admonition-{node.name}'
         attrs = dict(node.attributes or {})

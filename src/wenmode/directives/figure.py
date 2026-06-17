@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
-from wenmode.nodes import ContainerDirective, DirectiveNode
+from wenmode.nodes import ContainerDirective
 
 from .util import split_directive_label
 
@@ -11,13 +12,12 @@ if TYPE_CHECKING:
 
 
 class Figure:
-    def __init__(self, name: str = 'figure') -> None:
-        self.name = name
+    node_type = 'containerDirective'
 
-    def render(self, renderer: HTMLRenderer, node: DirectiveNode, context: HTMLRenderContext) -> str | None:
-        if not isinstance(node, ContainerDirective) or node.name != self.name:
-            return None
+    def __init__(self, names: Iterable[str] = ('figure',)) -> None:
+        self.names = frozenset(names)
 
+    def render(self, renderer: HTMLRenderer, node: ContainerDirective, context: HTMLRenderContext) -> str:
         label, children = split_directive_label(node)
         parts = [f'<figure{renderer.render_attrs(node.attributes or {})}>\n']
         parts.append(renderer.render_children(children, context))

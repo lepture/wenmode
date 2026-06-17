@@ -33,7 +33,7 @@ class DirectiveHtmlExample(TypedDict):
     name: str
     markdown: str
     html: str
-    admonition_types: NotRequired[list[str]]
+    admonition_names: NotRequired[list[str]]
 
 
 def load_directive_examples() -> list[DirectiveExample]:
@@ -66,8 +66,8 @@ def test_directive_ast_examples(example: DirectiveExample) -> None:
 )
 def test_directive_html_examples(example: DirectiveHtmlExample) -> None:
     parser = Parser([ContainerDirective, TextDirective, ImageRule])
-    admonition_types = example.get('admonition_types')
-    admonition = Admonition(types=admonition_types) if admonition_types is not None else Admonition()
+    admonition_names = example.get('admonition_names')
+    admonition = Admonition(names=admonition_names) if admonition_names is not None else Admonition()
 
     assert HTMLRenderer(directives=[admonition, Figure()]).render(parser.parse(example['markdown'])) == example['html']
 
