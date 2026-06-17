@@ -65,23 +65,24 @@ rendering behavior lives in renderers.
 want another output format.
 
 ```python
-from wenmode import MarkdownRenderer, Wenmode
+from wenmode import RSTRenderer, Wenmode
 
-wenmode = Wenmode(renderer=MarkdownRenderer())
-markdown = wenmode.render('# Hello\n')
+wenmode = Wenmode(renderer=RSTRenderer())
+rst = wenmode.render('# Hello\n')
 
-assert markdown == '# Hello\n'
+assert rst == 'Hello\n=====\n'
 ```
 
 Wenmode currently provides:
 
 - `HTMLRenderer`, for HTML output.
 - `MarkdownRenderer`, for serializing the AST back to Markdown.
+- `RSTRenderer`, for serializing the AST to reStructuredText.
 - `BaseRenderer`, a small dispatch-based base class for custom renderers.
 
-`MarkdownRenderer` serializes the AST to canonical Markdown. It is not a
-source-preserving formatter; syntax details that are not represented in the AST
-may be normalized or omitted.
+`MarkdownRenderer` and `RSTRenderer` serialize the AST to canonical markup. They
+are not source-preserving formatters; syntax details that are not represented in
+the AST may be normalized or omitted.
 
 If you already have a node, use `render_node()` to render it directly.
 

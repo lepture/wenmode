@@ -2,11 +2,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from wenmode import HTMLRenderer, MarkdownRenderer, Parser
+from wenmode import HTMLRenderer, MarkdownRenderer, Parser, RSTRenderer
 from wenmode.nodes import (
     Blockquote,
     Break,
     Code,
+    ContainerDirective,
+    DefinitionDescription,
+    DefinitionList,
+    DefinitionTerm,
     Emphasis,
     FootnoteDefinition,
     FootnoteReference,
@@ -25,6 +29,9 @@ from wenmode.nodes import (
     Parent,
     Root,
     Strong,
+    Table,
+    TableCell,
+    TableRow,
     Text,
     ThematicBreak,
 )
@@ -237,6 +244,126 @@ def test_markdown_renderer_outputs_block_nodes() -> None:
     )
 
 
+def test_rst_renderer_outputs_inline_nodes() -> None:
+    node = Root(
+        children=[
+            Heading(depth=2, children=[Text(value='Title')]),
+            Paragraph(
+                children=[
+                    Text(value='Hello '),
+                    Emphasis(children=[Text(value='em')]),
+                    Text(value=' '),
+                    Strong(children=[Text(value='strong')]),
+                    Text(value=' '),
+                    InlineCode(value='code'),
+                    Text(value=' '),
+                    InlineMath(value='x + y'),
+                    Text(value=' '),
+                    Link(url='/url', title='T', children=[Text(value='link')]),
+                    Text(value=' '),
+                    Image(url='/img.png', alt='alt'),
+                ]
+            ),
+        ]
+    )
+
+    assert RSTRenderer().render(node) == (
+        'Title\n'
+        '-----\n\n'
+        'Hello *em* **strong** ``code`` :math:`x + y` `link </url>`__ |image-1|\n\n'
+        '.. |image-1| image:: /img.png\n'
+        '   :alt: alt\n'
+    )
+
+
+def test_rst_renderer_outputs_block_nodes() -> None:
+    node = Root(
+        children=[
+            Blockquote(children=[Paragraph(children=[Text(value='quote')])]),
+            List(
+                children=[
+                    ListItem(children=[Paragraph(children=[Text(value='one')])]),
+                    ListItem(children=[Paragraph(children=[Text(value='two')])]),
+                ]
+            ),
+            List(
+                ordered=True,
+                start=3,
+                children=[
+                    ListItem(children=[Paragraph(children=[Text(value='three')])]),
+                    ListItem(children=[Paragraph(children=[Text(value='four')])]),
+                ],
+            ),
+            Code(value='print(1)\n', lang='py'),
+            ThematicBreak(),
+            Paragraph(children=[Text(value='a'), Break(), Text(value='b')]),
+        ]
+    )
+
+    assert RSTRenderer().render(node) == (
+        '   quote\n\n'
+        '- one\n'
+        '- two\n\n'
+        '3. three\n'
+        '4. four\n\n'
+        '.. code-block:: py\n\n'
+        '   print(1)\n\n'
+        '----\n\n'
+        'a\n'
+        'b\n'
+    )
+
+
+def test_rst_renderer_outputs_tables_definitions_and_directives() -> None:
+    node = Root(
+        children=[
+            DefinitionList(
+                children=[
+                    DefinitionTerm(children=[Text(value='Apple')]),
+                    DefinitionDescription(children=[Paragraph(children=[Text(value='Fruit')])]),
+                ]
+            ),
+            Table(
+                children=[
+                    TableRow(
+                        children=[
+                            TableCell(children=[Text(value='Name')]),
+                            TableCell(children=[Text(value='Value')]),
+                        ]
+                    ),
+                    TableRow(
+                        children=[
+                            TableCell(children=[Text(value='A')]),
+                            TableCell(children=[Text(value='1')]),
+                        ]
+                    ),
+                ],
+            ),
+            ContainerDirective(
+                name='note',
+                attributes={'class': 'warning'},
+                children=[
+                    Paragraph(children=[Text(value='Important')], data={'directiveLabel': True}),
+                    Paragraph(children=[Text(value='Body.')]),
+                ],
+            ),
+        ]
+    )
+
+    assert RSTRenderer().render(node) == (
+        'Apple\n'
+        '  Fruit\n\n'
+        '====  =====\n'
+        'Name  Value\n'
+        '====  =====\n'
+        'A     1\n'
+        '====  =====\n\n'
+        '.. note:: Important\n'
+        '   :class: warning\n\n'
+        '   Body.\n'
+    )
+
+
 def test_markdown_renderer_round_trips_to_equivalent_html() -> None:
     parser = Parser(commonmark)
     html_renderer = HTMLRenderer()
@@ -369,6 +496,25 @@ def test_markdown_renderer_outputs_footnotes() -> None:
     assert MarkdownRenderer().render(node) == 'a[^one]\n\n[^one]: note\n\n[^two]: first\n  \n  second\n'
 
 
+def test_rst_renderer_outputs_footnotes() -> None:
+    node = Root(
+        children=[
+            Paragraph(children=[Text(value='a'), FootnoteReference(identifier='one', label='one')]),
+            FootnoteDefinition(identifier='one', label='one', children=[Paragraph(children=[Text(value='note')])]),
+            FootnoteDefinition(
+                identifier='two',
+                label='two',
+                children=[
+                    Paragraph(children=[Text(value='first')]),
+                    Paragraph(children=[Text(value='second')]),
+                ],
+            ),
+        ]
+    )
+
+    assert RSTRenderer().render(node) == 'a[#one]_\n\n.. [#one] note\n\n.. [#two] first\n\n   second\n'
+
+
 def test_markdown_renderer_round_trips_footnotes_to_equivalent_html() -> None:
     parser = Parser([Footnote])
     html_renderer = HTMLRenderer()
@@ -404,6 +550,17 @@ def test_markdown_renderer_outputs_math_nodes() -> None:
     )
 
     assert MarkdownRenderer().render(node) == 'a $x + y$\n\n$$\nz = 1\n$$\n'
+
+
+def test_rst_renderer_outputs_math_nodes() -> None:
+    node = Root(
+        children=[
+            Paragraph(children=[Text(value='a '), InlineMath(value='x + y')]),
+            Math(value='z = 1\n'),
+        ]
+    )
+
+    assert RSTRenderer().render(node) == 'a :math:`x + y`\n\n.. math::\n\n   z = 1\n'
 
 
 def test_markdown_renderer_round_trips_math_to_equivalent_html() -> None:
