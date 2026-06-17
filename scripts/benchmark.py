@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import argparse
-import json
+import hashlib
 import statistics
+import tarfile
+import tempfile
 import time
+import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
@@ -12,10 +15,17 @@ import markdown
 import mistune
 from markdown_it import MarkdownIt
 
-from wenmode import HTMLRenderer, Parser
-from wenmode.presets import github
+from wenmode import HTMLRenderer, Wenmode
+from wenmode.presets import commonmark
+from wenmode.rules import Table
 
 ROOT = Path(__file__).resolve().parents[1]
+DOCS = ROOT / 'docs'
+RUST_BOOK_TARBALL = 'https://github.com/rust-lang/book/archive/refs/heads/main.tar.gz'
+PROGIT_TARBALL = 'https://github.com/progit/progit/archive/refs/heads/master.tar.gz'
+GITHUB_DOCS_TARBALL = 'https://github.com/github/docs/archive/refs/heads/main.tar.gz'
+USER_AGENT = 'wenmode-benchmark'
+CACHE_DIR = Path(tempfile.gettempdir()) / 'wenmode-benchmark'
 
 
 @dataclass(frozen=True)
@@ -46,37 +56,143 @@ class Result:
     relative: float | None = None
 
 
-def load_spec_markdown(path: Path) -> str:
-    examples = json.loads(path.read_text())
-    return '\n\n'.join(example['markdown'] for example in examples)
+def docs_markdown_paths() -> list[Path]:
+    return sorted(DOCS.glob('*.md'))
+
+
+def load_markdown_files_case(name: str, paths: list[Path]) -> Case:
+    parts = []
+    for path in paths:
+        label = path_label(path)
+        parts.append(f'<!-- {label} -->\n\n{path.read_text()}')
+    return Case(name, '\n\n'.join(parts))
+
+
+def load_docs_case() -> Case:
+    return load_markdown_files_case('docs', docs_markdown_paths())
+
+
+def load_local_file_case(selected: str) -> Case | None:
+    path = Path(selected).expanduser()
+    if not path.is_absolute():
+        path = ROOT / path
+    if not path.is_file():
+        return None
+    return Case(path_label(path.with_suffix('')), path.read_text())
+
+
+def path_label(path: Path) -> str:
+    try:
+        return path.relative_to(ROOT).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
+def load_archive_case(name: str, url: str, include: Callable[[str], bool]) -> Case:
+    parts = []
+    with tarfile.open(cached_archive(url), mode='r:gz') as tar:
+        members = sorted(
+            (
+                member
+                for member in tar.getmembers()
+                if member.isfile() and len(Path(member.name).parts) > 1 and include(archive_relative_path(member.name))
+            ),
+            key=lambda member: member.name,
+        )
+        for member in members:
+            extracted = tar.extractfile(member)
+            if extracted is None:
+                continue
+            label = archive_relative_path(member.name)
+            parts.append(f'<!-- {label} -->\n\n{extracted.read().decode(errors="replace")}')
+
+    return Case(name, '\n\n'.join(parts))
+
+
+def cached_archive(url: str) -> Path:
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    path = CACHE_DIR / archive_filename(url)
+    if not path.exists():
+        request = urllib.request.Request(url, headers={'User-Agent': USER_AGENT})
+        with urllib.request.urlopen(request, timeout=120) as response:
+            temporary_path = path.with_name(path.name + '.tmp')
+            temporary_path.write_bytes(response.read())
+            temporary_path.replace(path)
+    return path
+
+
+def archive_filename(url: str) -> str:
+    digest = hashlib.sha256(url.encode()).hexdigest()[:16]
+    name = url.rstrip('/').rsplit('/', 1)[-1]
+    return f'{digest}-{name}'
+
+
+def archive_relative_path(path: str) -> str:
+    parts = Path(path).parts
+    return '/'.join(parts[1:])
+
+
+def load_rust_book_case() -> Case:
+    return load_archive_case(
+        'rust-book',
+        RUST_BOOK_TARBALL,
+        lambda path: path.startswith('src/') and path.endswith('.md'),
+    )
+
+
+def load_progit_case() -> Case:
+    return load_archive_case(
+        'progit',
+        PROGIT_TARBALL,
+        lambda path: path.startswith('en/') and path.endswith('.markdown'),
+    )
+
+
+def load_github_docs_case() -> Case:
+    return load_archive_case(
+        'github-docs',
+        GITHUB_DOCS_TARBALL,
+        lambda path: path.startswith('content/') and path.endswith('.md'),
+    )
 
 
 def load_cases(selected: str) -> list[Case]:
     cases = {
-        'readme': Case('readme', (ROOT / 'README.md').read_text()),
-        'commonmark': Case(
-            'commonmark',
-            load_spec_markdown(ROOT / 'tests' / 'fixtures' / 'commonmark-0.31.2.json'),
-        ),
-        'gfm': Case('gfm', load_spec_markdown(ROOT / 'tests' / 'fixtures' / 'gfm-0.29.json')),
+        'docs': load_docs_case,
+        'rust-book': load_rust_book_case,
+        'progit': load_progit_case,
+        'github-docs': load_github_docs_case,
     }
     if selected == 'all':
-        return list(cases.values())
-    return [cases[selected]]
+        return [load_case() for load_case in cases.values()]
+
+    load_case = cases.get(selected)
+    if load_case is not None:
+        return [load_case()]
+
+    local_file = load_local_file_case(selected)
+    if local_file is not None:
+        return [local_file]
+
+    options = [*cases, 'all', '<local-file>']
+    raise SystemExit(f'unknown --case {selected!r}; choose one of: {", ".join(options)}')
 
 
 def make_targets() -> list[Target]:
-    wenmode_parser = Parser(github)
-    wenmode_renderer = HTMLRenderer(escape=False, sanitize_urls=False)
+    # Keep the benchmark feature set aligned across renderers:
+    # CommonMark-compatible parsing plus pipe tables. GFM-only extensions such as
+    # strikethrough, footnotes, and bare URL autolinks are intentionally disabled
+    # because they are not equally available in the current target set.
+    wenmode = Wenmode([Table, *commonmark], HTMLRenderer(escape=False, sanitize_urls=False))
 
-    mistune_renderer = mistune.create_markdown(renderer='html', plugins=['table', 'strikethrough', 'speedup'])
+    mistune_renderer = mistune.create_markdown(renderer='html', plugins=['table', 'speedup'])
 
     python_markdown = markdown.Markdown(extensions=['tables', 'sane_lists'])
 
-    markdown_it = MarkdownIt('commonmark', {'html': True}).enable(['table', 'strikethrough'])
+    markdown_it = MarkdownIt('commonmark', {'html': True}).enable('table')
 
     return [
-        Target('wenmode', lambda text: wenmode_renderer.render(wenmode_parser.parse(text))),
+        Target('wenmode', wenmode.render),
         Target('mistune', mistune_renderer),
         Target('python-markdown', lambda text: python_markdown.reset().convert(text)),
         Target('markdown-it-py', markdown_it.render),
@@ -169,9 +285,9 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Compare Markdown-to-HTML renderer throughput.')
     parser.add_argument(
         '--case',
-        choices=['readme', 'commonmark', 'gfm', 'all'],
-        default='all',
-        help='input corpus to benchmark',
+        metavar='CASE',
+        default='docs',
+        help='input corpus: docs, rust-book, progit, github-docs, all, or a local file path',
     )
     parser.add_argument('--iterations', type=int, default=10, help='timed iterations per renderer and case')
     parser.add_argument('--warmup', type=int, default=2, help='untimed warmup iterations per renderer and case')
