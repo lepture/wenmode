@@ -142,13 +142,13 @@ def test_subscript_does_not_allow_plain_spaces() -> None:
 
 def test_ruby_rule() -> None:
     parser = Parser([Ruby])
-    root = parser.parse('[漢字(kanji)] and [漢(kan)字(ji)]\n')
+    root = parser.parse('[汉字(hàn zì)] and [汉(hàn)字(zì)]\n')
 
     assert (
         HTMLRenderer().render(root)
-        == '<p><ruby>漢字<rt>kanji</rt></ruby> and <ruby>漢<rt>kan</rt></ruby><ruby>字<rt>ji</rt></ruby></p>\n'
+        == '<p><ruby>汉字<rt>hàn zì</rt></ruby> and <ruby>汉<rt>hàn</rt>字<rt>zì</rt></ruby></p>\n'
     )
-    assert MarkdownRenderer().render(root) == '[漢字(kanji)] and [漢(kan)字(ji)]\n'
+    assert MarkdownRenderer().render(root) == '[汉字(hàn zì)] and [汉(hàn)字(zì)]\n'
 
 
 def test_ruby_link_rule() -> None:

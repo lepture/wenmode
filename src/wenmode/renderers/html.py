@@ -321,10 +321,11 @@ def render_subscript(renderer: HTMLRenderer, node: Subscript, context: HTMLRende
 
 @HTMLRenderer.register('ruby')
 def render_ruby(renderer: HTMLRenderer, node: Ruby, context: HTMLRenderContext) -> str:
-    return ''.join(
-        f'<ruby>{renderer.escape_html(segment["base"])}<rt>{renderer.escape_html(segment["text"])}</rt></ruby>'
+    content = ''.join(
+        f'{renderer.escape_html(segment["base"])}<rt>{renderer.escape_html(segment["text"])}</rt>'
         for segment in node.segments
     )
+    return f'<ruby>{content}</ruby>'
 
 
 @HTMLRenderer.register('inlineSpoiler')
