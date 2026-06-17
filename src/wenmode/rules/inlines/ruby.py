@@ -22,6 +22,8 @@ RUBY_SEGMENT_RE = re.compile(r'(\w+)\(([\w ]+)\)')
 
 
 class Ruby(InlineRule):
+    order = 90
+
     def __init__(self) -> None:
         super().__init__('ruby', RUBY_PATTERN, '[')
 
