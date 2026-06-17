@@ -6,6 +6,7 @@ from .formatting import Insert, Mark, Subscript, Superscript
 from .html import Autolink, RawHtml
 from .link import Image, Link
 from .math import InlineMath
+from .ruby import Ruby
 from .text import BackslashEscape, CharacterReference, HardBreak
 
 __all__ = [
@@ -21,6 +22,7 @@ __all__ = [
     'Link',
     'Mark',
     'RawHtml',
+    'Ruby',
     'Subscript',
     'Superscript',
 ]

@@ -27,6 +27,7 @@ from wenmode.nodes import (
     Paragraph,
     Parent,
     Root,
+    Ruby,
     Strong,
     Subscript,
     Superscript,
@@ -175,6 +176,12 @@ def render_superscript(renderer: MarkdownRenderer, node: Superscript, context: R
 @MarkdownRenderer.register('subscript')
 def render_subscript(renderer: MarkdownRenderer, node: Subscript, context: RenderContext) -> str:
     return f'~{renderer.render_script_children(node, "~", context)}~'
+
+
+@MarkdownRenderer.register('ruby')
+def render_ruby(renderer: MarkdownRenderer, node: Ruby, context: RenderContext) -> str:
+    segments = ''.join(f'{segment["base"]}({segment["text"]})' for segment in node.segments)
+    return f'[{segments}]'
 
 
 @MarkdownRenderer.register('textDirective')

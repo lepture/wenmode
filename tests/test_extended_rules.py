@@ -19,6 +19,7 @@ from wenmode.rules import (
     Link,
     Mark,
     MathBlock,
+    Ruby,
     Strikethrough,
     Subscript,
     Superscript,
@@ -133,6 +134,27 @@ def test_subscript_does_not_allow_plain_spaces() -> None:
     parser = Parser([Subscript])
 
     assert render(parser, '~no script~\n') == '<p>~no script~</p>\n'
+
+
+def test_ruby_rule() -> None:
+    parser = Parser([Ruby])
+    root = parser.parse('[漢字(kanji)] and [漢(kan)字(ji)]\n')
+
+    assert (
+        HTMLRenderer().render(root)
+        == '<p><ruby>漢字<rt>kanji</rt></ruby> and <ruby>漢<rt>kan</rt></ruby><ruby>字<rt>ji</rt></ruby></p>\n'
+    )
+    assert MarkdownRenderer().render(root) == '[漢字(kanji)] and [漢(kan)字(ji)]\n'
+
+
+def test_ruby_link_rule() -> None:
+    parser = Parser([Ruby, Link])
+    root = parser.parse('[漢字(kanji)](/ruby "Ruby") and [漢字(kanji)][term]\n\n[term]: /term\n')
+
+    assert (
+        HTMLRenderer().render(root) == '<p><a href="/ruby" title="Ruby"><ruby>漢字<rt>kanji</rt></ruby></a> and '
+        '<a href="/term"><ruby>漢字<rt>kanji</rt></ruby></a></p>\n'
+    )
 
 
 def test_footnote_identifiers_disallow_spaces() -> None:

@@ -191,6 +191,12 @@ class Subscript(Parent):
 
 
 @dataclass
+class Ruby(Node):
+    segments: list[dict[str, str]] = field(default_factory=list)
+    type: str = 'ruby'
+
+
+@dataclass
 class Table(Parent):
     block: ClassVar[bool] = True
     align: list[str | None] = field(default_factory=list)

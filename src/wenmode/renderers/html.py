@@ -28,6 +28,7 @@ from wenmode.nodes import (
     Node,
     Paragraph,
     Root,
+    Ruby,
     Subscript,
     Superscript,
     Table,
@@ -280,6 +281,14 @@ def render_superscript(renderer: HTMLRenderer, node: Superscript, context: HTMLR
 @HTMLRenderer.register('subscript')
 def render_subscript(renderer: HTMLRenderer, node: Subscript, context: HTMLRenderContext) -> str:
     return f'<sub>{renderer.render_children(node.children, context)}</sub>'
+
+
+@HTMLRenderer.register('ruby')
+def render_ruby(renderer: HTMLRenderer, node: Ruby, context: HTMLRenderContext) -> str:
+    return ''.join(
+        f'<ruby>{renderer.escape_html(segment["base"])}<rt>{renderer.escape_html(segment["text"])}</rt></ruby>'
+        for segment in node.segments
+    )
 
 
 @HTMLRenderer.register('textDirective')
