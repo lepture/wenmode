@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from .blank_line import BlankLine
 from .blockquote import Blockquote
+from .definition_list import DefinitionList
 from .directive import ContainerDirective, FencedDirective, LeafDirective
 from .fenced_code import FencedCode
 from .heading import AtxHeading, SetextHeading
@@ -18,6 +19,7 @@ __all__ = [
     'Blockquote',
     'BlockSpoiler',
     'ContainerDirective',
+    'DefinitionList',
     'FencedDirective',
     'FencedCode',
     'HtmlBlock',

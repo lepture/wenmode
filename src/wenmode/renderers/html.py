@@ -13,6 +13,9 @@ from wenmode.nodes import (
     Break,
     Code,
     ContainerDirective,
+    DefinitionDescription,
+    DefinitionList,
+    DefinitionTerm,
     Delete,
     FootnoteDefinition,
     FootnoteReference,
@@ -270,6 +273,25 @@ def render_list(renderer: HTMLRenderer, node: List, context: HTMLRenderContext) 
 @HTMLRenderer.register('listItem')
 def render_list_item(renderer: HTMLRenderer, node: ListItem, context: HTMLRenderContext) -> str:
     return renderer.render_list_item(node, node.spread, context)
+
+
+@HTMLRenderer.register('definitionList')
+def render_definition_list(renderer: HTMLRenderer, node: DefinitionList, context: HTMLRenderContext) -> str:
+    return '<dl>\n' + renderer.render_children(node.children, context) + '</dl>\n'
+
+
+@HTMLRenderer.register('definitionTerm')
+def render_definition_term(renderer: HTMLRenderer, node: DefinitionTerm, context: HTMLRenderContext) -> str:
+    return f'<dt>{renderer.render_children(node.children, context)}</dt>\n'
+
+
+@HTMLRenderer.register('definitionDescription')
+def render_definition_description(
+    renderer: HTMLRenderer, node: DefinitionDescription, context: HTMLRenderContext
+) -> str:
+    if not node.spread and len(node.children) == 1 and isinstance(node.children[0], Paragraph):
+        return f'<dd>{renderer.render_children(node.children[0].children, context)}</dd>\n'
+    return '<dd>\n' + renderer.render_children(node.children, context) + '</dd>\n'
 
 
 @HTMLRenderer.register('delete')

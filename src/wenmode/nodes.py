@@ -111,6 +111,24 @@ class ListItem(Parent):
 
 
 @dataclass
+class DefinitionList(Parent):
+    block: ClassVar[bool] = True
+    type: str = 'definitionList'
+
+
+@dataclass
+class DefinitionTerm(Parent):
+    type: str = 'definitionTerm'
+
+
+@dataclass
+class DefinitionDescription(Parent):
+    block: ClassVar[bool] = True
+    spread: bool = False
+    type: str = 'definitionDescription'
+
+
+@dataclass
 class Code(Literal):
     block: ClassVar[bool] = True
     lang: str | None = None

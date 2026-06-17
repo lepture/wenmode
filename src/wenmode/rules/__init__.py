@@ -3,6 +3,7 @@ from __future__ import annotations
 from .abbr import Abbreviation
 from .blocks.blank_line import BlankLine
 from .blocks.blockquote import Blockquote
+from .blocks.definition_list import DefinitionList
 from .blocks.directive import ContainerDirective, FencedDirective, LeafDirective
 from .blocks.fenced_code import FencedCode
 from .blocks.heading import AtxHeading, HeadingIdTransform, SetextHeading
@@ -37,6 +38,7 @@ __all__ = [
     'BlockSpoiler',
     'CharacterReference',
     'ContainerDirective',
+    'DefinitionList',
     'Emphasis',
     'ExtendedAutolink',
     'FencedDirective',

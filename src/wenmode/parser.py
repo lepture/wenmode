@@ -64,6 +64,7 @@ class Parser:
         self.rules = {rule.name: rule for rule in resolved_rules}
         self.block_rules = sorted_by_order([rule for rule in resolved_rules if isinstance(rule, BlockRule)])
         self.inline_rules = sorted_by_order([rule for rule in resolved_rules if isinstance(rule, InlineRule)])
+        self.paragraph_continuation_rules = sorted_by_order(resolved_rules)
         self.root_transforms = root_transforms
         self._emphasis_enabled = 'emphasis' in self.rules
         self._defer_inlines = any(transform.defer_inlines for transform in root_transforms)
@@ -225,9 +226,8 @@ class Parser:
             if line.strip() == '':
                 break
             if lines:
-                setext_heading = self.rules.get('setext_heading')
-                if setext_heading is not None:
-                    parsed = setext_heading.parse_paragraph_continuation(self, state, lines)
+                for rule in self.paragraph_continuation_rules:
+                    parsed = rule.parse_paragraph_continuation(self, state, lines)
                     if parsed is not None:
                         return parsed
             if lines and self.is_paragraph_interrupt(line, state):

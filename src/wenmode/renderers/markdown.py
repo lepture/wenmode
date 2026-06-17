@@ -9,6 +9,9 @@ from wenmode.nodes import (
     Break,
     Code,
     ContainerDirective,
+    DefinitionDescription,
+    DefinitionList,
+    DefinitionTerm,
     Delete,
     Emphasis,
     FootnoteDefinition,
@@ -168,6 +171,29 @@ def render_list(renderer: MarkdownRenderer, node: List, context: RenderContext) 
 @MarkdownRenderer.register('listItem')
 def render_list_item(renderer: MarkdownRenderer, node: ListItem, context: RenderContext) -> str:
     return renderer.render_children(node.children, context)
+
+
+@MarkdownRenderer.register('definitionList')
+def render_definition_list(renderer: MarkdownRenderer, node: DefinitionList, context: RenderContext) -> str:
+    return renderer.render_children(node.children, context) + '\n'
+
+
+@MarkdownRenderer.register('definitionTerm')
+def render_definition_term(renderer: MarkdownRenderer, node: DefinitionTerm, context: RenderContext) -> str:
+    return renderer.render_children(node.children, context) + '\n'
+
+
+@MarkdownRenderer.register('definitionDescription')
+def render_definition_description(
+    renderer: MarkdownRenderer, node: DefinitionDescription, context: RenderContext
+) -> str:
+    if not node.children:
+        return ': \n'
+    body = renderer.render_children(node.children, context).rstrip('\n')
+    if not node.spread and len(node.children) == 1 and isinstance(node.children[0], Paragraph):
+        return ': ' + renderer.render_children(node.children[0].children, context) + '\n'
+    lines = body.splitlines()
+    return ': ' + lines[0] + '\n' + ''.join('    ' + line + '\n' for line in lines[1:])
 
 
 @MarkdownRenderer.register('delete')

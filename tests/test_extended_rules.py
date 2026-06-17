@@ -13,6 +13,7 @@ from wenmode.rules import (
     BackslashEscape,
     Blockquote,
     BlockSpoiler,
+    DefinitionList,
     Emphasis,
     Footnote,
     InlineCode,
@@ -191,6 +192,17 @@ def test_abbreviation_rule() -> None:
         '<abbr title="Consortium">W3C</abbr>.</p>\n'
     )
     assert MarkdownRenderer().render(root) == 'The HTML spec is maintained by W3C\\.\n'
+
+
+def test_definition_list_rule() -> None:
+    parser = Parser([DefinitionList, Emphasis])
+    root = parser.parse('Apple\n: Pomaceous *fruit*\n\nOrange\n: Citrus fruit\n')
+
+    assert (
+        HTMLRenderer().render(root) == '<dl>\n<dt>Apple</dt>\n<dd>Pomaceous <em>fruit</em></dd>\n'
+        '<dt>Orange</dt>\n<dd>Citrus fruit</dd>\n</dl>\n'
+    )
+    assert MarkdownRenderer().render(root) == 'Apple\n: Pomaceous *fruit*\nOrange\n: Citrus fruit\n'
 
 
 def test_footnote_identifiers_disallow_spaces() -> None:
