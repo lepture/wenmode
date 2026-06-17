@@ -105,15 +105,18 @@ def next_delimiter_run(text: str, start: int) -> int:
 
 def process_delimiters(parts: list[Node], delimiters: list[Delimiter]) -> None:
     closer_pos = 0
+    openers_bottom: dict[tuple[str, int, bool], int] = {}
     while closer_pos < len(delimiters):
         closer = delimiters[closer_pos]
         if not closer.can_close or closer.length == 0:
             closer_pos += 1
             continue
 
+        opener_key = (closer.marker, closer.length % 3, closer.can_open)
         opener_pos = closer_pos - 1
+        opener_bottom = openers_bottom.get(opener_key, 0)
         opener: Delimiter | None = None
-        while opener_pos >= 0:
+        while opener_pos >= opener_bottom:
             candidate = delimiters[opener_pos]
             if (
                 candidate.marker == closer.marker
@@ -126,6 +129,7 @@ def process_delimiters(parts: list[Node], delimiters: list[Delimiter]) -> None:
             opener_pos -= 1
 
         if opener is None:
+            openers_bottom[opener_key] = closer_pos
             closer_pos += 1
             continue
 
@@ -154,11 +158,12 @@ def process_delimiters(parts: list[Node], delimiters: list[Delimiter]) -> None:
 
         removed = old_closer_index - opener.index - 2
         closer.index = opener.index + 2
-        for delimiter in delimiters:
-            if opener.index < delimiter.index < old_closer_index:
-                delimiter.length = 0
-            elif delimiter.index >= old_closer_index:
-                delimiter.index -= removed
+        if removed:
+            for delimiter in delimiters:
+                if opener.index < delimiter.index < old_closer_index:
+                    delimiter.length = 0
+                elif delimiter.index >= old_closer_index:
+                    delimiter.index -= removed
 
         opener.length -= use_length
         closer.length -= use_length
@@ -167,7 +172,10 @@ def process_delimiters(parts: list[Node], delimiters: list[Delimiter]) -> None:
         if closer.length == 0:
             closer.can_close = False
 
-        closer_pos = max(opener_pos, 0)
+        if opener.can_open or closer.can_close:
+            closer_pos = max(opener_pos, openers_bottom.get(opener_key, 0))
+        else:
+            closer_pos += 1
 
 
 def has_strong_enabled(parts: list[Node], opener: Delimiter, closer: Delimiter) -> bool:

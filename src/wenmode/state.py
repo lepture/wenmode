@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
-from typing import Callable
+from typing import Any, Callable
 
 from wenmode.nodes import Node
 
@@ -61,6 +61,7 @@ class BlockState:
     depth: int = 0
     pending_inlines: list[tuple[list[Node], str]] = field(default_factory=list)
     pending_inline_callbacks: list[Callable[[], None]] = field(default_factory=list)
+    inline_cache: dict[str, Any] = field(default_factory=dict)
     defer_inlines: bool = False
 
     @property
@@ -116,6 +117,7 @@ class StreamBlockState(BlockState):
         depth: int = 0,
         pending_inlines: list[tuple[list[Node], str]] | None = None,
         pending_inline_callbacks: list[Callable[[], None]] | None = None,
+        inline_cache: dict[str, Any] | None = None,
         defer_inlines: bool = False,
     ) -> None:
         self.line_buffer = line_buffer
@@ -128,6 +130,7 @@ class StreamBlockState(BlockState):
             depth=depth,
             pending_inlines=pending_inlines if pending_inlines is not None else [],
             pending_inline_callbacks=pending_inline_callbacks if pending_inline_callbacks is not None else [],
+            inline_cache=inline_cache if inline_cache is not None else {},
             defer_inlines=defer_inlines,
         )
 

@@ -19,6 +19,7 @@ HTML_TAG_START_RE = re.compile(r'</?[A-Za-z]')
 HTML_PARAGRAPH_INTERRUPT_RE = re.compile(r'(?i)<(?:script|pre|style|textarea)(?:\s|>|$)')
 PUNCTUATION = set(string.punctuation)
 T = TypeVar('T', bound=Rule)
+InlineSearchCache = dict[str, object]
 
 
 class StreamingUnsupportedError(ValueError):
@@ -66,8 +67,7 @@ class Parser:
         self.inline_rules = sorted_by_order([rule for rule in resolved_rules if isinstance(rule, InlineRule)])
         self.root_transforms = root_transforms
         self._paragraph_continuations = [
-            rule.parse_paragraph_continuation
-            for rule in resolved_rules if isinstance(rule, ContinueRule)
+            rule.parse_paragraph_continuation for rule in resolved_rules if isinstance(rule, ContinueRule)
         ]
         self._emphasis_enabled = 'emphasis' in self.rules
         self._defer_inlines = any(transform.defer_inlines for transform in root_transforms)
@@ -103,6 +103,7 @@ class Parser:
             depth=parent_state.depth + 1,
             pending_inlines=parent_state.pending_inlines,
             pending_inline_callbacks=parent_state.pending_inline_callbacks,
+            inline_cache=parent_state.inline_cache,
             defer_inlines=parent_state.defer_inlines,
         )
         return self._parse_block_nodes(state)
@@ -158,11 +159,13 @@ class Parser:
             state.pending_inlines.append((pending_nodes, text))
             return pending_nodes
 
+        inline_state = state if state is not None else BlockState([])
         nodes: list[Node] = []
+        search_cache: InlineSearchCache = {}
         pos = 0
 
         while pos < len(text):
-            found = self._find_inline_match(text, pos)
+            found = self._find_inline_match(text, pos, search_cache)
 
             if found is None:
                 nodes.append(Text(value=text[pos:]))
@@ -172,7 +175,7 @@ class Parser:
             if start > pos:
                 nodes.append(Text(value=text[pos:start]))
 
-            node, end = rule.parse(self, text, match, state)
+            node, end = rule.parse(self, text, match, inline_state)
             if node is None or end <= start:
                 nodes.append(Text(value=text[start : start + 1]))
                 pos = start + 1
@@ -185,8 +188,10 @@ class Parser:
             nodes = parse_emphasis_sequence(nodes)
         return merge_text(nodes)
 
-    def _find_inline_match(self, text: str, pos: int) -> tuple[int, InlineRule, re.Match[str]] | None:
-        found = self._find_search_inline_match(text, pos)
+    def _find_inline_match(
+        self, text: str, pos: int, search_cache: InlineSearchCache
+    ) -> tuple[int, InlineRule, re.Match[str]] | None:
+        found = self._find_search_inline_match(text, pos, search_cache)
         limit = found[0] if found is not None else len(text)
         if self._inline_trigger_re is None:
             return found
@@ -204,7 +209,19 @@ class Parser:
             trigger_match = self._inline_trigger_re.search(text, start + 1)
         return found
 
-    def _find_search_inline_match(self, text: str, pos: int) -> tuple[int, InlineRule, re.Match[str]] | None:
+    def _find_search_inline_match(
+        self, text: str, pos: int, search_cache: InlineSearchCache
+    ) -> tuple[int, InlineRule, re.Match[str]] | None:
+        cached_text = search_cache.get('text')
+        cached_pos = search_cache.get('pos')
+        cached_found = search_cache.get('found')
+        if cached_text is text and isinstance(cached_pos, int) and cached_pos <= pos:
+            if cached_found is None:
+                return None
+            cached_match = cast(tuple[int, InlineRule, re.Match[str]], cached_found)
+            if pos <= cached_match[0]:
+                return cached_match
+
         found: tuple[int, InlineRule, re.Match[str]] | None = None
         for rule in self._search_inline_rules:
             match = rule.compiled.search(text, pos)
@@ -213,6 +230,9 @@ class Parser:
             candidate = (match.start(), rule, match)
             if found is None or self._inline_candidate_before(candidate, found):
                 found = candidate
+        search_cache['text'] = text
+        search_cache['pos'] = pos
+        search_cache['found'] = found
         return found
 
     def _inline_candidate_before(

@@ -10,7 +10,7 @@ from wenmode.state import BlockState
 from wenmode.utils import normalize_label
 
 from ..base import InlineRule
-from .link import find_closing_bracket, invalid_reference_label, parse_direct_destination
+from .link import closing_bracket_cache, find_closing_bracket, invalid_reference_label, parse_direct_destination
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
@@ -55,7 +55,7 @@ def parse_ruby_link(
     if text[start] != '[':
         return None
 
-    ref_end = find_closing_bracket(text, start + 1)
+    ref_end = find_closing_bracket(text, start + 1, closing_bracket_cache(state))
     if ref_end is None:
         return None
 

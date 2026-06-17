@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from wenmode.nodes import Break, InlineCode, Node, Parent, Text
 from wenmode.nodes import Image as ImageNode
@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 
 
 ANGLE_SPAN_RE = re.compile(rf'{URI_RE}|{EMAIL_RE}|{HTML_RE}')
+ClosingBracketCache = dict[int, tuple[str, dict[int, int]]]
 
 
 class Image(InlineRule):
@@ -29,9 +30,7 @@ class Image(InlineRule):
     def parse(
         self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
     ) -> tuple[Node | None, int]:
-        parsed = parse_link_or_image(
-            parser, text, match.start(), image=True, state=state, references=self.references
-        )
+        parsed = parse_link_or_image(parser, text, match.start(), image=True, state=state, references=self.references)
         if parsed is None:
             return None, match.start()
 
@@ -50,9 +49,7 @@ class Link(InlineRule):
     ) -> tuple[Node | None, int]:
         if match.start() > 0 and text[match.start() - 1] == '!' and not is_escaped(text, match.start() - 1):
             return None, match.start()
-        parsed = parse_link_or_image(
-            parser, text, match.start(), image=False, state=state, references=self.references
-        )
+        parsed = parse_link_or_image(parser, text, match.start(), image=False, state=state, references=self.references)
         if parsed is None:
             return None, match.start()
 
@@ -67,8 +64,9 @@ def normalize_optional_text(value: str | None) -> str | None:
 def parse_link_or_image(
     parser: Parser, text: str, start: int, image: bool, state: BlockState | None, references: bool = True
 ) -> tuple[str, str, str | None, int] | None:
+    bracket_cache = closing_bracket_cache(state)
     label_start = start + 2 if image else start + 1
-    label_end = find_closing_bracket(text, label_start)
+    label_end = find_closing_bracket(text, label_start, bracket_cache)
     if label_end is None:
         return None
 
@@ -87,7 +85,7 @@ def parse_link_or_image(
     reference_label = label
     end = after_label
     if after_label < len(text) and text[after_label] == '[':
-        ref_end = find_closing_bracket(text, after_label + 1)
+        ref_end = find_closing_bracket(text, after_label + 1, bracket_cache)
         if ref_end is None:
             return None
         explicit = text[after_label + 1 : ref_end]
@@ -106,7 +104,60 @@ def parse_link_or_image(
     return None
 
 
-def find_closing_bracket(text: str, start: int) -> int | None:
+def closing_bracket_cache(state: BlockState | None) -> ClosingBracketCache | None:
+    if state is None:
+        return None
+    return cast(ClosingBracketCache, state.inline_cache.setdefault('closing_brackets', {}))
+
+
+def find_closing_bracket(text: str, start: int, cache: ClosingBracketCache | None = None) -> int | None:
+    if start > 0 and text[start - 1] == '[':
+        return closing_bracket_map(text, cache).get(start)
+    return find_closing_bracket_uncached(text, start)
+
+
+def closing_bracket_map(text: str, cache: ClosingBracketCache | None) -> dict[int, int]:
+    if cache is None:
+        return build_closing_bracket_map(text)
+
+    key = id(text)
+    cached = cache.get(key)
+    if cached is not None and cached[0] is text:
+        return cached[1]
+
+    pairs = build_closing_bracket_map(text)
+    cache[key] = (text, pairs)
+    return pairs
+
+
+def build_closing_bracket_map(text: str) -> dict[int, int]:
+    pairs: dict[int, int] = {}
+    stack: list[int] = []
+    index = 0
+    while index < len(text):
+        char = text[index]
+        if char == '\\':
+            index += 2
+            continue
+        if char == '`':
+            code_end = find_code_span_end(text, index)
+            if code_end is not None:
+                index = code_end
+                continue
+        if char == '<':
+            angle_end = find_angle_span_end(text, index)
+            if angle_end is not None:
+                index = angle_end
+                continue
+        if char == '[':
+            stack.append(index)
+        elif char == ']' and stack:
+            pairs[stack.pop() + 1] = index
+        index += 1
+    return pairs
+
+
+def find_closing_bracket_uncached(text: str, start: int) -> int | None:
     depth = 0
     index = start
     while index < len(text):
