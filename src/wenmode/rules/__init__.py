@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from .base import BlockRule, ContinueRule, InlineRule, Rule
 from .blocks.abbr import Abbreviation
 from .blocks.blockquote import Blockquote
 from .blocks.definition_list import DefinitionList
@@ -26,6 +27,7 @@ from .inlines.ruby import Ruby
 from .inlines.spoiler import InlineSpoiler
 from .inlines.strikethrough import Strikethrough
 from .inlines.text import BackslashEscape, CharacterReference, HardBreak
+from .transforms import RootTransform
 
 __all__ = [
     'Abbreviation',
@@ -33,9 +35,11 @@ __all__ = [
     'Autolink',
     'BackslashEscape',
     'Blockquote',
+    'BlockRule',
     'BlockSpoiler',
     'CharacterReference',
     'ContainerDirective',
+    'ContinueRule',
     'DefinitionList',
     'Emphasis',
     'ExtendedAutolink',
@@ -47,6 +51,7 @@ __all__ = [
     'HtmlBlock',
     'Image',
     'IndentedCode',
+    'InlineRule',
     'InlineCode',
     'InlineMath',
     'InlineSpoiler',
@@ -57,6 +62,8 @@ __all__ = [
     'Mark',
     'MathBlock',
     'RawHtml',
+    'RootTransform',
+    'Rule',
     'Role',
     'Ruby',
     'SetextHeading',
