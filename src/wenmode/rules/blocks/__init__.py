@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from .blank_line import BlankLine
 from .blockquote import Blockquote
 from .definition_list import DefinitionList
 from .directive import ContainerDirective, FencedDirective, LeafDirective
@@ -15,7 +14,6 @@ from .thematic_break import ThematicBreak
 
 __all__ = [
     'AtxHeading',
-    'BlankLine',
     'Blockquote',
     'BlockSpoiler',
     'ContainerDirective',

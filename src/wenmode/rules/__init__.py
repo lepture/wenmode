@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from .blocks.abbr import Abbreviation
-from .blocks.blank_line import BlankLine
 from .blocks.blockquote import Blockquote
 from .blocks.definition_list import DefinitionList
 from .blocks.directive import ContainerDirective, FencedDirective, LeafDirective
@@ -33,7 +32,6 @@ __all__ = [
     'AtxHeading',
     'Autolink',
     'BackslashEscape',
-    'BlankLine',
     'Blockquote',
     'BlockSpoiler',
     'CharacterReference',

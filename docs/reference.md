@@ -50,7 +50,6 @@ explicit node types.
 | `LeafDirective` | `::name[label]{attrs}` | `leafDirective` | `{'type': 'leafDirective', 'name': 'name', 'attributes': {...}, 'children': [...]}` | children fallback unless a directive renderer handles it |
 | `ContainerDirective` | `:::name[label]{attrs}` body `:::` | `containerDirective` | `{'type': 'containerDirective', 'name': 'name', 'children': [...]}` | children fallback unless a directive renderer handles it |
 | `FencedDirective` | ```` ```{name} label ```` with optional `:key: value` lines | `containerDirective` | same node as `ContainerDirective` | children fallback unless a directive renderer handles it |
-| `BlankLine` | blank line | no node | consumes the line and returns `None` | no output |
 
 ### Structured block examples
 
