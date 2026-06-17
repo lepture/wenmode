@@ -6,7 +6,8 @@ from typing import TypedDict
 
 import pytest
 
-from wenmode import HTMLRenderer, Parser, commonmark
+from wenmode import HTMLRenderer, Parser
+from wenmode.presets import commonmark
 
 
 class CommonMarkExample(TypedDict):

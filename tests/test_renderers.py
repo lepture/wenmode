@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import ClassVar
 
-from wenmode import HTMLRenderer, MarkdownRenderer, Parser, commonmark
+from wenmode import HTMLRenderer, MarkdownRenderer, Parser
 from wenmode.nodes import (
     Blockquote,
     Break,
@@ -30,6 +30,7 @@ from wenmode.nodes import (
     Text,
     ThematicBreak,
 )
+from wenmode.presets import commonmark
 from wenmode.renderers import BaseRenderer
 from wenmode.renderers.base import RenderContext
 from wenmode.rules import Footnote, MathBlock

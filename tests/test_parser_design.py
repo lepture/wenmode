@@ -4,7 +4,8 @@ from io import StringIO
 
 import pytest
 
-from wenmode import HTMLRenderer, Parser, StreamingUnsupportedError, Wenmode, commonmark, github, streaming
+from wenmode import HTMLRenderer, Parser, StreamingUnsupportedError, Wenmode
+from wenmode.presets import commonmark, github, streaming
 from wenmode.rules import (
     AtxHeading,
     Blockquote,

@@ -6,7 +6,8 @@ from typing import TypedDict
 
 import pytest
 
-from wenmode import HTMLRenderer, Parser, commonmark, github
+from wenmode import HTMLRenderer, Parser
+from wenmode.presets import commonmark, github
 from wenmode.rules import Blockquote, Emphasis, Footnote, InlineCode, InlineMath, Link, MathBlock
 
 FIXTURES_DIR = Path(__file__).parent / 'fixtures'

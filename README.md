@@ -128,7 +128,8 @@ Use `Parser` directly when you only need an AST and want to choose rendering
 separately:
 
 ```python
-from wenmode import HTMLRenderer, Parser, commonmark
+from wenmode import HTMLRenderer, Parser
+from wenmode.presets import commonmark
 
 parser = Parser(commonmark)
 tree = parser.parse('# Hello\n')
@@ -154,7 +155,8 @@ leak between calls, so a parser instance can be reused safely.
 `commonmark` enables the CommonMark-oriented rule set:
 
 ```python
-from wenmode import Wenmode, commonmark
+from wenmode import Wenmode
+from wenmode.presets import commonmark
 
 wenmode = Wenmode(commonmark)
 ```
@@ -167,7 +169,8 @@ The `github` preset adds GitHub-flavored features such as tables,
 strikethrough, task lists, extended autolinks, and footnotes:
 
 ```python
-from wenmode import Wenmode, github
+from wenmode import Wenmode
+from wenmode.presets import github
 
 wenmode = Wenmode(github)
 ```
@@ -178,7 +181,8 @@ Use the `streaming` preset when you want to render HTML chunks without waiting
 for the entire document to be parsed and rendered:
 
 ```python
-from wenmode import Wenmode, streaming
+from wenmode import Wenmode
+from wenmode.presets import streaming
 
 wenmode = Wenmode(streaming)
 
@@ -194,7 +198,8 @@ For FastAPI, pass the synchronous iterator to `StreamingResponse`:
 
 ```python
 from fastapi.responses import StreamingResponse
-from wenmode import Wenmode, streaming
+from wenmode import Wenmode
+from wenmode.presets import streaming
 
 wenmode = Wenmode(streaming)
 
@@ -269,10 +274,13 @@ Use `add_heading_ids` to assign stable heading anchors, then collect and render
 a table of contents from the AST:
 
 ```python
-from wenmode import HTMLRenderer, Parser, add_heading_ids, collect_toc, commonmark, render_toc_html
+from wenmode import HTMLRenderer, Parser
+from wenmode.headings import Slugger, add_heading_ids
+from wenmode.presets import commonmark
+from wenmode.toc import collect_toc, render_toc_html
 
 root = Parser(commonmark).parse(markdown)
-add_heading_ids(root, min_depth=2)
+add_heading_ids(root, slugger=Slugger(), min_depth=2)
 
 toc = collect_toc(root, min_depth=2, max_depth=3)
 html = render_toc_html(toc) + HTMLRenderer().render(root)
@@ -281,8 +289,9 @@ html = render_toc_html(toc) + HTMLRenderer().render(root)
 You can also render an in-document table of contents with the `toc` directive:
 
 ```python
-from wenmode import HTMLRenderer, Parser, commonmark
+from wenmode import HTMLRenderer, Parser
 from wenmode.directives import TableOfContents
+from wenmode.presets import commonmark
 from wenmode.rules import AtxHeading, LeafDirective, SetextHeading
 
 rules = list(commonmark)

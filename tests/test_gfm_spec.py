@@ -6,7 +6,8 @@ from typing import Any, TypedDict
 
 import pytest
 
-from wenmode import HTMLRenderer, Parser, github
+from wenmode import HTMLRenderer, Parser
+from wenmode.presets import github
 
 
 class GFMExample(TypedDict):

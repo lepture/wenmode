@@ -31,12 +31,11 @@ class Slugger:
 def add_heading_ids(
     node: Node,
     *,
-    slugger: Slugger | None = None,
+    slugger: Slugger,
     min_depth: int = 1,
     max_depth: int = 6,
     overwrite: bool = False,
 ) -> None:
-    slugger = slugger or Slugger()
     for heading in iter_headings(node):
         if not (min_depth <= heading.depth <= max_depth):
             continue

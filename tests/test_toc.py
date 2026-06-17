@@ -1,7 +1,10 @@
 from __future__ import annotations
 
-from wenmode import HTMLRenderer, Parser, Slugger, add_heading_ids, collect_toc, commonmark, render_toc_html
+from wenmode import HTMLRenderer, Parser
+from wenmode.headings import Slugger, add_heading_ids
+from wenmode.presets import commonmark
 from wenmode.rules import AtxHeading, HeadingIdTransform, SetextHeading
+from wenmode.toc import collect_toc, render_toc_html
 
 
 def test_add_heading_ids_and_collect_toc() -> None:
@@ -12,7 +15,7 @@ def test_add_heading_ids_and_collect_toc() -> None:
         '## Usage & Setup!\n'
     )
 
-    add_heading_ids(root, min_depth=2)
+    add_heading_ids(root, slugger=Slugger(), min_depth=2)
     toc = collect_toc(root, min_depth=2, max_depth=3)
 
     assert [item.id for item in toc] == ['usage-setup', 'usage-setup-1']
@@ -26,7 +29,7 @@ def test_collect_toc_uses_existing_heading_ids_without_overwriting() -> None:
     first, second = root.children
     first.data = {'id': 'custom'}
 
-    add_heading_ids(root)
+    add_heading_ids(root, slugger=Slugger())
     toc = collect_toc(root)
 
     assert [item.id for item in toc] == ['custom', 'intro']
