@@ -37,6 +37,13 @@ def create_footnotes() -> dict[str, FootnoteState]:
 FOOTNOTES_KEY = StateKey('wenmode.footnotes', create_footnotes)
 
 
+def create_footnote_definitions() -> dict[str, FootnoteDefinitionNode]:
+    return {}
+
+
+FOOTNOTE_DEFINITIONS_KEY = StateKey('wenmode.footnote_definitions', create_footnote_definitions)
+
+
 class Footnote(InlineRule):
     order: ClassVar[int] = 50
 
@@ -83,15 +90,18 @@ class FootnoteTransform:
     required_rules: Sequence[type[Rule] | Rule] = [FootnoteDefinition]
 
     def prepare(self, parser: Parser, root: Root, state: BlockState) -> None:
+        definitions = collect_footnote_definitions(root)
+        state.store.get(FOOTNOTE_DEFINITIONS_KEY).update(definitions)
+
         footnotes = state.store.get(FOOTNOTES_KEY)
-        for identifier, definition in collect_footnote_definitions(root).items():
+        for identifier, definition in definitions.items():
             footnotes.setdefault(
                 identifier,
                 FootnoteState(identifier=identifier, label=definition.label, children=definition.children),
             )
 
     def transform(self, parser: Parser, root: Root, state: BlockState) -> None:
-        root.footnote_definitions = collect_footnote_definitions(root)
+        root.footnote_definitions = state.store.get(FOOTNOTE_DEFINITIONS_KEY)
 
 
 def collect_footnote_definitions(node: Node) -> dict[str, FootnoteDefinitionNode]:
