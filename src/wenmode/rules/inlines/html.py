@@ -7,7 +7,7 @@ from urllib.parse import quote
 
 from wenmode.nodes import Html, Link, Node, Text
 from wenmode.state import BlockState
-from wenmode.utils import filter_disallowed_html
+from wenmode.utils import compile_disallowed_html_filter, filter_disallowed_html
 
 from ..base import InlineRule
 
@@ -43,13 +43,13 @@ class Autolink(InlineRule):
 class RawHtml(InlineRule):
     def __init__(self, disallowed_tags: Sequence[str] = ()) -> None:
         super().__init__('raw_html', HTML_RE, '<')
-        self.disallowed_tags = tuple(disallowed_tags)
+        self.disallowed_html_filter = compile_disallowed_html_filter(disallowed_tags)
 
     def parse(
         self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
     ) -> tuple[Node | None, int]:
         value = match.group(0)
-        filtered = filter_disallowed_html(value, self.disallowed_tags)
+        filtered = filter_disallowed_html(value, self.disallowed_html_filter)
         data = {'escaped': True} if filtered != value else None
         return Html(value=filtered, data=data), match.end()
 

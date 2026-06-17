@@ -67,8 +67,14 @@ def is_escaped(text: str, index: int) -> bool:
     return backslashes % 2 == 1
 
 
-def filter_disallowed_html(value: str, tags: Sequence[str]) -> str:
+def compile_disallowed_html_filter(tags: Sequence[str]) -> re.Pattern[str] | None:
     if not tags:
-        return value
+        return None
     tag_pattern = '|'.join(re.escape(tag) for tag in tags)
-    return re.sub(rf'(?i)<(?=/?(?:{tag_pattern})(?:\s|/?>|$))', '&lt;', value)
+    return re.compile(rf'(?i)<(?=/?(?:{tag_pattern})(?:\s|/?>|$))')
+
+
+def filter_disallowed_html(value: str, pattern: re.Pattern[str] | None) -> str:
+    if pattern is None:
+        return value
+    return pattern.sub('&lt;', value)

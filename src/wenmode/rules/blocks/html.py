@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from wenmode.nodes import Html
 from wenmode.state import BlockState
-from wenmode.utils import filter_disallowed_html
+from wenmode.utils import compile_disallowed_html_filter, filter_disallowed_html
 
 from ..base import BlockRule
 
@@ -94,7 +94,7 @@ class HtmlBlock(BlockRule):
             'html_block',
             rf'(?i:[ \t]{{0,3}}<(?:script(?:\s|>|$)|pre(?:\s|>|$)|style(?:\s|>|$)|!--|\?|![A-Z]|\!\[CDATA\[|/?(?:{BLOCK_TAGS_PATTERN})(?:\s|/?>|$)|[A-Za-z][A-Za-z0-9-]*(?:\s+[A-Za-z_:][A-Za-z0-9_.:-]*(?:\s*=\s*(?:[^\s"\'=<>`]+|\'[^\']*\'|"[^"]*"))?)*\s*/?>[ \t]*$|/[A-Za-z][A-Za-z0-9-]*\s*>[ \t]*$))',
         )
-        self.disallowed_tags = tuple(disallowed_tags)
+        self.disallowed_html_filter = compile_disallowed_html_filter(disallowed_tags)
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Html:
         first = state.line
@@ -121,7 +121,7 @@ class HtmlBlock(BlockRule):
         return self.html_node(first)
 
     def html_node(self, value: str) -> Html:
-        filtered = filter_disallowed_html(value, self.disallowed_tags)
+        filtered = filter_disallowed_html(value, self.disallowed_html_filter)
         data = {'escaped': True} if filtered != value else None
         return Html(value=filtered, data=data)
 
