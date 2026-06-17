@@ -4,9 +4,9 @@ import re
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
+from wenmode.headings import Slugger, add_heading_ids
 from wenmode.nodes import Heading, Node
 from wenmode.state import BlockState
-from wenmode.toc import Slugger, add_heading_ids
 
 from ..base import BlockRule, Rule
 from ..transforms import RootTransform

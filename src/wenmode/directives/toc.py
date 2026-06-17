@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from wenmode.headings import plain_text
 from wenmode.nodes import DirectiveNode, LeafDirective
-from wenmode.toc import collect_toc, plain_text, render_toc_list
+from wenmode.toc import collect_toc, render_toc_list
 
 if TYPE_CHECKING:
     from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer

@@ -1,7 +1,8 @@
+from .headings import Slugger, add_heading_ids
 from .parser import Parser, StreamingUnsupportedError
 from .presets import commonmark, github, streaming
 from .renderers import HTMLRenderer, MarkdownRenderer
-from .toc import Slugger, TocItem, add_heading_ids, collect_toc, render_toc_html
+from .toc import TocItem, collect_toc, render_toc_html
 from .wenmode import Wenmode
 
 __all__ = [
