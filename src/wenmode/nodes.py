@@ -74,6 +74,12 @@ class Heading(Parent):
     def get_html_tag(self) -> str:
         return f'h{self.depth}'
 
+    def get_html_attrs(self) -> dict[str, HtmlAttrValue]:
+        if not self.data:
+            return {}
+        identifier = self.data.get('id')
+        return {'id': identifier} if isinstance(identifier, str) else {}
+
 
 @dataclass
 class Blockquote(Parent):

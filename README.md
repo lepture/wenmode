@@ -263,6 +263,21 @@ wenmode = Wenmode([Footnote])
 html = wenmode.render('A note[^one].\n\n[^one]: Footnote text.\n')
 ```
 
+## Table Of Contents
+
+Use `add_heading_ids` to assign stable heading anchors, then collect and render
+a table of contents from the AST:
+
+```python
+from wenmode import HTMLRenderer, Parser, add_heading_ids, collect_toc, commonmark, render_toc_html
+
+root = Parser(commonmark).parse(markdown)
+add_heading_ids(root, min_depth=2)
+
+toc = collect_toc(root, min_depth=2, max_depth=3)
+html = render_toc_html(toc) + HTMLRenderer().render(root)
+```
+
 ## Rule Layout
 
 The implementation is split by rule type:
