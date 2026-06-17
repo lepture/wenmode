@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, NotRequired, TypedDict
+from typing import Any, TypedDict
 
 import pytest
 
@@ -29,11 +29,14 @@ class DirectiveExample(TypedDict):
     ast: dict[str, Any]
 
 
-class DirectiveHtmlExample(TypedDict):
+class DirectiveHtmlExampleBase(TypedDict):
     name: str
     markdown: str
     html: str
-    admonition_names: NotRequired[list[str]]
+
+
+class DirectiveHtmlExample(DirectiveHtmlExampleBase, total=False):
+    admonition_names: list[str]
 
 
 def load_directive_examples() -> list[DirectiveExample]:
