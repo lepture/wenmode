@@ -28,7 +28,7 @@ class StreamingUnsupportedError(ValueError):
 
 
 class Parser:
-    max_container_depth = 100
+    max_container_depth = 20
 
     def __init__(self, rules: Iterable[type[Rule] | Rule]) -> None:
         self._registered_rules: list[Rule] = []

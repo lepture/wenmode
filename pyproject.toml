@@ -53,7 +53,7 @@ pretty = true
 
 [tool.coverage.run]
 branch = true
-source = ["joserfc"]
+source = ["wenmode"]
 
 [tool.coverage.paths]
 source = ["src"]
