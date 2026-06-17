@@ -48,9 +48,31 @@ class CharacterReference(InlineRule):
 
 class HardBreak(InlineRule):
     def __init__(self) -> None:
-        super().__init__('hard_break', r'(?:\\| {2,})\r?\n', '\\ ')
+        super().__init__('hard_break', r'(?:\\| {2,})\r?\n')
+
+    def search(self, text: str, pos: int = 0) -> re.Match[str] | None:
+        start = find_hard_break(text, pos)
+        return self.compiled.match(text, start) if start is not None else None
 
     def parse(
         self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
     ) -> tuple[Node | None, int]:
         return Break(), match.end()
+
+
+def find_hard_break(text: str, pos: int) -> int | None:
+    newline = text.find('\n', pos)
+    while newline != -1:
+        line_end = newline - 1 if newline > 0 and text[newline - 1] == '\r' else newline
+        if line_end > 0 and text[line_end - 1] == '\\' and line_end - 1 >= pos:
+            return line_end - 1
+
+        space_start = line_end
+        while space_start > 0 and text[space_start - 1] == ' ':
+            space_start -= 1
+        start = max(space_start, pos)
+        if line_end - start >= 2:
+            return start
+
+        newline = text.find('\n', newline + 1)
+    return None
