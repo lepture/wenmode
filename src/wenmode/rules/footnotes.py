@@ -5,9 +5,10 @@ from typing import TYPE_CHECKING, ClassVar
 
 from wenmode.nodes import FootnoteDefinition as FootnoteDefinitionNode
 from wenmode.nodes import FootnoteReference, Node
-from wenmode.rules.base import BlockRule, InlineRule
 from wenmode.state import Footnote as FootnoteState
 from wenmode.utils import count_indent, normalize_label, normalize_label_text
+
+from .base import BlockRule, InlineRule
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser

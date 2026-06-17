@@ -4,8 +4,9 @@ import re
 from typing import TYPE_CHECKING
 
 from wenmode.nodes import Heading, Node
-from wenmode.rules.base import BlockRule, Rule
 from wenmode.state import BlockState
+
+from ..base import BlockRule, Rule
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser

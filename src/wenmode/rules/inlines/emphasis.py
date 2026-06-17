@@ -8,8 +8,9 @@ from wenmode.nodes import Emphasis as EmphasisNode
 from wenmode.nodes import Node
 from wenmode.nodes import Strong as StrongNode
 from wenmode.nodes import Text as TextNode
-from wenmode.rules.base import InlineRule
 from wenmode.state import BlockState
+
+from ..base import InlineRule
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser

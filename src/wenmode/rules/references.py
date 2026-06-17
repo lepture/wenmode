@@ -3,9 +3,10 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING
 
-from wenmode.rules.base import BlockRule
 from wenmode.state import Reference
 from wenmode.utils import normalize_label, normalize_label_text, normalize_uri_text
+
+from .base import BlockRule
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser

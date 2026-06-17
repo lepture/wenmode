@@ -4,8 +4,9 @@ import re
 from typing import TYPE_CHECKING, ClassVar
 
 from wenmode.nodes import ThematicBreak as ThematicBreakNode
-from wenmode.rules.base import BlockRule
 from wenmode.state import BlockState
+
+from ..base import BlockRule
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser

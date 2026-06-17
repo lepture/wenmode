@@ -6,9 +6,10 @@ from typing import TYPE_CHECKING, ClassVar
 from wenmode.nodes import ContainerDirective as ContainerDirectiveNode
 from wenmode.nodes import LeafDirective as LeafDirectiveNode
 from wenmode.nodes import Node, Paragraph
-from wenmode.rules.base import BlockRule
 from wenmode.rules.directives import parse_directive_head
 from wenmode.state import BlockState
+
+from ..base import BlockRule
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser

@@ -6,10 +6,11 @@ from typing import TYPE_CHECKING
 from wenmode.nodes import Break, InlineCode, Node, Parent, Text
 from wenmode.nodes import Image as ImageNode
 from wenmode.nodes import Link as LinkNode
-from wenmode.rules.base import InlineRule
 from wenmode.rules.inlines.html import EMAIL_RE, HTML_RE, URI_RE
 from wenmode.state import BlockState
 from wenmode.utils import normalize_label, normalize_label_text, normalize_uri_text
+
+from ..base import InlineRule
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser

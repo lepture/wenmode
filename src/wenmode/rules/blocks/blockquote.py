@@ -5,9 +5,10 @@ from typing import TYPE_CHECKING
 
 from wenmode.nodes import Blockquote as BlockquoteNode
 from wenmode.nodes import Node, Paragraph
-from wenmode.rules.base import BlockRule
 from wenmode.state import BlockState
 from wenmode.utils import expand_leading_tabs
+
+from ..base import BlockRule
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser

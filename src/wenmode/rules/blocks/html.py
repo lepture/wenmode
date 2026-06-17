@@ -5,9 +5,10 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from wenmode.nodes import Html
-from wenmode.rules.base import BlockRule
 from wenmode.state import BlockState
 from wenmode.utils import filter_disallowed_html
+
+from ..base import BlockRule
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser

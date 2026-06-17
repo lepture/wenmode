@@ -5,9 +5,10 @@ from typing import TYPE_CHECKING
 
 from wenmode.nodes import List as ListNode
 from wenmode.nodes import ListItem, Node, Paragraph, Text
-from wenmode.rules.base import BlockRule
 from wenmode.state import BlockState
 from wenmode.utils import count_indent, count_indent_from, expand_leading_tabs
+
+from ..base import BlockRule
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
