@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import re
 from collections.abc import Sequence
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from wenmode.nodes import Abbreviation as AbbreviationNode
 from wenmode.nodes import Node, Parent, Text
-from wenmode.state import ABBREVIATIONS, BlockState
-from wenmode.state import Abbreviation as AbbreviationDefinitionNode
+from wenmode.state import BlockState, StateKey
 
 from ..base import BlockRule, Rule
 
@@ -18,6 +18,19 @@ if TYPE_CHECKING:
 
 ABBREVIATION_START_RE = re.compile(r'^[ \t]{0,3}\*\[(?P<label>[^\]\n]+)\]:[ \t]*(?P<title>.*)$')
 ABBREVIATION_CONTINUATION_RE = re.compile(r'^(?: {3,}|\t)(?P<title>.*)$')
+
+
+@dataclass
+class AbbreviationState:
+    label: str
+    title: str
+
+
+def create_abbreviations() -> dict[str, AbbreviationState]:
+    return {}
+
+
+ABBREVIATIONS_KEY = StateKey('wenmode.abbreviations', create_abbreviations)
 
 
 class Abbreviation(Rule):
@@ -38,7 +51,7 @@ class AbbreviationDefinition(BlockRule):
             return None
 
         next_index, label, title = parsed
-        state.store.get(ABBREVIATIONS)[label] = AbbreviationDefinitionNode(label=label, title=title)
+        state.store.get(ABBREVIATIONS_KEY)[label] = AbbreviationState(label=label, title=title)
         state.index = next_index
         return None
 
@@ -52,7 +65,7 @@ class AbbreviationTransform:
         pass
 
     def transform(self, parser: Parser, root: Root, state: BlockState) -> None:
-        abbreviations = state.store.get(ABBREVIATIONS)
+        abbreviations = state.store.get(ABBREVIATIONS_KEY)
         if not abbreviations:
             return
         pattern = re.compile('|'.join(re.escape(label) for label in sorted(abbreviations, key=len, reverse=True)))
@@ -79,7 +92,7 @@ def parse_abbreviation_definition(state: BlockState, index: int) -> tuple[int, s
 
 
 def transform_abbreviations(
-    node: Parent, definitions: dict[str, AbbreviationDefinitionNode], pattern: re.Pattern[str]
+    node: Parent, definitions: dict[str, AbbreviationState], pattern: re.Pattern[str]
 ) -> None:
     children: list[Node] = []
     changed = False
@@ -97,7 +110,7 @@ def transform_abbreviations(
 
 
 def replace_abbreviations(
-    node: Text, definitions: dict[str, AbbreviationDefinitionNode], pattern: re.Pattern[str]
+    node: Text, definitions: dict[str, AbbreviationState], pattern: re.Pattern[str]
 ) -> list[Node]:
     nodes: list[Node] = []
     pos = 0

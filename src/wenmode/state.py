@@ -50,42 +50,6 @@ class StreamLineBuffer:
 
 
 @dataclass
-class Reference:
-    url: str
-    title: str | None = None
-
-
-@dataclass
-class Footnote:
-    identifier: str
-    label: str
-    children: list[Node]
-
-
-@dataclass
-class Abbreviation:
-    label: str
-    title: str
-
-
-def create_references() -> dict[str, Reference]:
-    return {}
-
-
-def create_footnotes() -> dict[str, Footnote]:
-    return {}
-
-
-def create_abbreviations() -> dict[str, Abbreviation]:
-    return {}
-
-
-REFERENCES = StateKey('wenmode.references', create_references)
-FOOTNOTES = StateKey('wenmode.footnotes', create_footnotes)
-ABBREVIATIONS = StateKey('wenmode.abbreviations', create_abbreviations)
-
-
-@dataclass
 class BlockState:
     lines: list[str]
     index: int = 0

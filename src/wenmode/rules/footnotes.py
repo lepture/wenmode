@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import re
 from collections.abc import Sequence
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, ClassVar
 
 from wenmode.nodes import FootnoteDefinition as FootnoteDefinitionNode
 from wenmode.nodes import FootnoteReference, Node, Root
-from wenmode.state import FOOTNOTES
-from wenmode.state import Footnote as FootnoteState
+from wenmode.state import StateKey
 from wenmode.utils import count_indent, normalize_label, normalize_label_text
 
 from .base import BlockRule, InlineRule, Rule
@@ -21,6 +21,20 @@ FOOTNOTE_DEFINITION_RE = re.compile(
     r'^[ \t]{0,3}\[\^(?P<label>(?:\\\S|[^\s\[\]\\]){1,999})\]:[ \t]*(?P<rest>.*)$'
 )
 FOOTNOTE_REFERENCE_RE = r'\[\^(?P<label>(?:\\[^\s]|[^\s\[\]\\]){1,999})]'
+
+
+@dataclass
+class FootnoteState:
+    identifier: str
+    label: str
+    children: list[Node]
+
+
+def create_footnotes() -> dict[str, Footnote]:
+    return {}
+
+
+FOOTNOTES_KEY = StateKey('wenmode.footnotes', create_footnotes)
 
 
 class Footnote(InlineRule):
@@ -37,7 +51,7 @@ class Footnote(InlineRule):
             return None, match.start()
 
         identifier = normalize_label(match.group('label'))
-        footnote = state.store.get(FOOTNOTES).get(identifier)
+        footnote = state.store.get(FOOTNOTES_KEY).get(identifier)
         if footnote is None:
             return None, match.start()
 
@@ -69,7 +83,7 @@ class FootnoteTransform:
     required_rules: Sequence[type[Rule] | Rule] = [FootnoteDefinition]
 
     def prepare(self, parser: Parser, root: Root, state: BlockState) -> None:
-        footnotes = state.store.get(FOOTNOTES)
+        footnotes = state.store.get(FOOTNOTES_KEY)
         for identifier, definition in collect_footnote_definitions(root).items():
             footnotes.setdefault(
                 identifier,

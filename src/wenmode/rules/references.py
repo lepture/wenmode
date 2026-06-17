@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import re
 from collections.abc import Sequence
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from wenmode.state import REFERENCES, Reference
+from wenmode.state import StateKey
 from wenmode.utils import normalize_label, normalize_label_text, normalize_uri_text
 
 from .base import BlockRule, Rule
@@ -21,6 +22,19 @@ MULTILINE_LABEL_START_RE = re.compile(r'^[ \t]{0,3}\[[^\]\n]*$')
 MULTILINE_LABEL_END_RE = re.compile(r'^(?P<label_end>[^\]]*)\]:[ \t]*(?P<rest>.*)$')
 
 
+@dataclass
+class ReferenceState:
+    url: str
+    title: str | None = None
+
+
+def create_references() -> dict[str, ReferenceState]:
+    return {}
+
+
+REFERENCES_KEY = StateKey('wenmode.references', create_references)
+
+
 class ReferenceDefinition(BlockRule):
     def __init__(self) -> None:
         super().__init__('reference_definition', r'[ \t]{0,3}\[(?!\^)')
@@ -29,7 +43,7 @@ class ReferenceDefinition(BlockRule):
         multiline_label = parse_multiline_label_reference(state, state.index)
         if multiline_label is not None:
             next_index, label, url, title = multiline_label
-            state.store.get(REFERENCES).setdefault(normalize_label(label), Reference(url=url, title=title))
+            state.store.get(REFERENCES_KEY).setdefault(normalize_label(label), ReferenceState(url=url, title=title))
             state.index = next_index
             return None
 
@@ -38,7 +52,7 @@ class ReferenceDefinition(BlockRule):
             return None
 
         next_index, label, url, title = parsed
-        state.store.get(REFERENCES).setdefault(normalize_label(label), Reference(url=url, title=title))
+        state.store.get(REFERENCES_KEY).setdefault(normalize_label(label), ReferenceState(url=url, title=title))
         state.index = next_index
         return None
 

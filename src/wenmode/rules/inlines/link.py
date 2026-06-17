@@ -6,11 +6,11 @@ from typing import TYPE_CHECKING
 from wenmode.nodes import Break, InlineCode, Node, Parent, Text
 from wenmode.nodes import Image as ImageNode
 from wenmode.nodes import Link as LinkNode
-from wenmode.state import REFERENCES, BlockState, StateKey
+from wenmode.state import BlockState, StateKey
 from wenmode.utils import normalize_label, normalize_label_text, normalize_uri_text
 
 from ..base import InlineRule
-from ..references import ReferenceTransform
+from ..references import REFERENCES_KEY, ReferenceTransform
 from .html import EMAIL_RE, HTML_RE, URI_RE
 
 if TYPE_CHECKING:
@@ -105,7 +105,7 @@ def parse_link_or_image(
         return None
 
     if state:
-        reference = state.store.get(REFERENCES).get(normalize_label(reference_label))
+        reference = state.store.get(REFERENCES_KEY).get(normalize_label(reference_label))
         if reference is not None:
             return label, reference.url, reference.title, end
     return None
