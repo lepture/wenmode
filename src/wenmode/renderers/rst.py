@@ -278,8 +278,7 @@ def render_container_directive(renderer: RSTRenderer, node: ContainerDirective, 
     argument = ''
     if children and isinstance(children[0], Paragraph) and children[0].data == {'directiveLabel': True}:
         label = children.pop(0)
-        if isinstance(label, Paragraph):
-            argument = renderer.render_directive_argument(label, context)
+        argument = renderer.render_directive_argument(label, context)
 
     head = f'.. {node.name}::' + (f' {argument}' if argument else '')
     options = renderer.render_directive_options(node.attributes)

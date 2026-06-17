@@ -14,7 +14,7 @@ from .blocks.math import MathBlock
 from .blocks.spoiler import BlockSpoiler
 from .blocks.table import Table
 from .blocks.thematic_break import ThematicBreak
-from .footnotes import Footnote
+from .footnotes import Footnote, FootnoteDefinition
 from .inlines.code import InlineCode
 from .inlines.directive import Role, TextDirective
 from .inlines.emphasis import Emphasis
@@ -27,6 +27,7 @@ from .inlines.ruby import Ruby
 from .inlines.spoiler import InlineSpoiler
 from .inlines.strikethrough import Strikethrough
 from .inlines.text import BackslashEscape, CharacterReference, HardBreak
+from .references import ReferenceDefinition
 from .transforms import RootTransform
 
 __all__ = [
@@ -46,6 +47,7 @@ __all__ = [
     'FencedDirective',
     'FencedCode',
     'Footnote',
+    'FootnoteDefinition',
     'HardBreak',
     'HeadingIdTransform',
     'HtmlBlock',
@@ -62,6 +64,7 @@ __all__ = [
     'Mark',
     'MathBlock',
     'RawHtml',
+    'ReferenceDefinition',
     'RootTransform',
     'Rule',
     'Role',

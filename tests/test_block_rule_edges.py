@@ -6,9 +6,13 @@ import pytest
 
 from wenmode import Parser
 from wenmode.nodes import Code, Heading, Html, List, ListItem, Math, Node, Paragraph, Text
-from wenmode.rules import Abbreviation, AtxHeading, FencedCode, HtmlBlock, MathBlock
+from wenmode.rules import Abbreviation, AtxHeading, FencedCode, FencedDirective, HtmlBlock, SetextHeading
 from wenmode.rules import BlockSpoiler as BlockSpoilerRule
+from wenmode.rules import ContainerDirective as ContainerDirectiveRule
+from wenmode.rules import DefinitionList as DefinitionListRule
+from wenmode.rules import LeafDirective as LeafDirectiveBlockRule
 from wenmode.rules import List as ListRule
+from wenmode.rules import MathBlock as MathBlockRule
 from wenmode.rules import Table as TableRule
 from wenmode.rules import TextDirective as TextDirectiveRule
 from wenmode.rules.blocks import html as html_block_module
@@ -19,17 +23,13 @@ from wenmode.rules.blocks.abbr import (
     replace_abbreviations,
     transform_abbreviations,
 )
-from wenmode.rules.blocks.definition_list import DefinitionList as DefinitionListRule
 from wenmode.rules.blocks.definition_list import (
     collect_description_continuation,
     parse_following_items,
     parse_following_terms,
 )
-from wenmode.rules.blocks.directive import ContainerDirective as ContainerDirectiveRule
-from wenmode.rules.blocks.directive import FencedDirective, directive_label_children, parse_option_line
-from wenmode.rules.blocks.directive import LeafDirective as LeafDirectiveBlockRule
+from wenmode.rules.blocks.directive import directive_label_children, parse_option_line
 from wenmode.rules.blocks.fenced_code import strip_fence_indent
-from wenmode.rules.blocks.heading import SetextHeading
 from wenmode.rules.blocks.indented_code import strip_indent as strip_indented_code
 from wenmode.rules.blocks.list import (
     MARKER_RE,
@@ -39,7 +39,6 @@ from wenmode.rules.blocks.list import (
     parse_shallow_list,
     should_keep_blank_in_item,
 )
-from wenmode.rules.blocks.math import MathBlock as MathBlockRule
 from wenmode.rules.blocks.spoiler import BLOCK_SPOILER_RE
 from wenmode.rules.blocks.table import has_unescaped_pipe, normalize_row, parse_delimiter_row, split_table_row
 from wenmode.rules.blocks.util import parse_shallow_block
@@ -152,7 +151,7 @@ def test_block_rule_edge_branches() -> None:
     assert strip_indented_code('     too much\n', 4) == ' too much\n'
     assert strip_indented_code('  no\n', 4) == 'no\n'
 
-    assert render_html(Parser([MathBlock]), '$$ x\n$$\n') == '<div class="math math-display">x\n</div>\n'
+    assert render_html(Parser([MathBlockRule]), '$$ x\n$$\n') == '<div class="math math-display">x\n</div>\n'
     assert MathBlockRule().parse(
         Parser([]), BlockState(['nope\n']), re.match(r'.*', 'nope') is not None and re.match(r'.*', 'nope')
     ) == Math(value='')

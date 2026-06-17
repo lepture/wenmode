@@ -6,7 +6,10 @@ import pytest
 
 from wenmode import Parser
 from wenmode.nodes import FootnoteDefinition, Paragraph, Root, Text
-from wenmode.rules import Footnote, Role
+from wenmode.rules import Footnote as FootnoteRule
+from wenmode.rules import FootnoteDefinition as FootnoteDefinitionRule
+from wenmode.rules import Role
+from wenmode.rules import TextDirective as TextDirectiveInlineRule
 from wenmode.rules import directives as directives_module
 from wenmode.rules import footnotes as footnotes_module
 from wenmode.rules.directives import (
@@ -16,11 +19,8 @@ from wenmode.rules.directives import (
     parse_shortcuts,
     tokenize_attributes,
 )
-from wenmode.rules.footnotes import Footnote as FootnoteRule
-from wenmode.rules.footnotes import FootnoteDefinition as FootnoteDefinitionRule
 from wenmode.rules.footnotes import collect_definition_lines, collect_footnote_definitions, has_later_continuation
 from wenmode.rules.footnotes import strip_indent as strip_footnote_indent
-from wenmode.rules.inlines.directive import TextDirective as TextDirectiveInlineRule
 from wenmode.rules.inlines.directive import parse_role
 from wenmode.rules.references import (
     parse_multiline_label_reference,
@@ -78,7 +78,7 @@ def test_directive_parsing_helpers_and_invalid_inline_directives(monkeypatch: py
 
 def test_reference_and_footnote_edge_branches(monkeypatch: pytest.MonkeyPatch) -> None:
     assert FootnoteRule().parse(Parser([]), '[^x]', re.match(r'\[\^x]', '[^x]')) == (None, 0)  # type: ignore[arg-type]
-    assert render_html(Parser([Footnote]), '[^]: bad\n') == '<p>[^]: bad</p>\n'
+    assert render_html(Parser([FootnoteRule]), '[^]: bad\n') == '<p>[^]: bad</p>\n'
     footnote_match = re.match(r'.*', '[^x]: note')
     assert footnote_match is not None
     monkeypatch.setattr(footnotes_module, 'normalize_label', lambda label: '')

@@ -7,9 +7,12 @@ import pytest
 from wenmode import Parser
 from wenmode.nodes import Break, Image, InlineCode, Node, Paragraph, Text
 from wenmode.nodes import Emphasis as EmphasisNode
-from wenmode.rules import Emphasis, InlineMath, Strikethrough
+from wenmode.rules import Emphasis, Strikethrough
+from wenmode.rules import ExtendedAutolink as ExtendedAutolinkRule
 from wenmode.rules import Image as ImageRule
+from wenmode.rules import InlineMath as InlineMathRule
 from wenmode.rules import Link as LinkRule
+from wenmode.rules import Ruby as RubyRule
 from wenmode.rules.inlines import emphasis as emphasis_module
 from wenmode.rules.inlines import math as math_module
 from wenmode.rules.inlines import strikethrough as strikethrough_module
@@ -22,7 +25,6 @@ from wenmode.rules.inlines.emphasis import (
     parse_emphasis_sequence,
     process_delimiters,
 )
-from wenmode.rules.inlines.extended_autolink import ExtendedAutolink as ExtendedAutolinkRule
 from wenmode.rules.inlines.link import (
     build_closing_bracket_map,
     closing_bracket_cache,
@@ -38,9 +40,7 @@ from wenmode.rules.inlines.link import (
     parse_title,
 )
 from wenmode.rules.inlines.link import plain_text as link_plain_text
-from wenmode.rules.inlines.math import InlineMath as InlineMathRule
 from wenmode.rules.inlines.math import find_closing_dollar
-from wenmode.rules.inlines.ruby import Ruby as RubyRule
 from wenmode.rules.inlines.ruby import parse_ruby_link, parse_ruby_segments
 from wenmode.rules.inlines.strikethrough import find_closing_marker
 from wenmode.state import BlockState
@@ -88,7 +88,7 @@ def test_inline_link_and_math_edge_branches(monkeypatch: pytest.MonkeyPatch) -> 
     assert link_plain_text([Node(type='plain')]) == ''
     assert find_code_span_end('`unterminated', 0) is None
 
-    assert render_html(Parser([InlineMath]), '$ $\n') == '<p>$ $</p>\n'
+    assert render_html(Parser([InlineMathRule]), '$ $\n') == '<p>$ $</p>\n'
     inline_math_match = re.match(r'\$', '$ $')
     assert inline_math_match is not None
     assert InlineMathRule().parse(Parser([]), '$ $', inline_math_match, BlockState([])) == (None, 0)

@@ -11,17 +11,18 @@ from wenmode.presets import commonmark, github, streaming
 from wenmode.rules import (
     AtxHeading,
     Blockquote,
+    BlockRule,
     Emphasis,
     FencedCode,
     Footnote,
     Image,
     Link,
     List,
+    Rule,
     SetextHeading,
     Table,
     ThematicBreak,
 )
-from wenmode.rules.base import BlockRule, Rule
 from wenmode.state import BlockState, StateKey
 
 TERMS = StateKey('tests.terms', lambda: {})

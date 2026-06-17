@@ -9,15 +9,11 @@ from wenmode.directives import Figure
 from wenmode.headings import Slugger, add_heading_ids, plain_text
 from wenmode.nodes import FootnoteReference, Heading, Image, Node, Root, Text
 from wenmode.parser import contains_emphasis_marker, merge_text
-from wenmode.renderers import BaseRenderer
-from wenmode.renderers.base import RenderContext
-from wenmode.renderers.html import DirectiveHtmlRenderer, HTMLRenderContext
-from wenmode.rules import AtxHeading, BlockRule, ContinueRule, HtmlBlock, InlineRule
+from wenmode.renderers import BaseRenderer, DirectiveHtmlRenderer, RenderContext
+from wenmode.rules import AtxHeading, BlockRule, ContinueRule, HtmlBlock, InlineRule, ReferenceDefinition, RootTransform
 from wenmode.rules import Link as LinkRule
 from wenmode.rules import List as ListRule
 from wenmode.rules.blocks.heading import resolve_heading_id_transform
-from wenmode.rules.references import ReferenceDefinition
-from wenmode.rules.transforms import RootTransform
 from wenmode.state import BlockState, StateStore, StreamBlockState, StreamLineBuffer
 from wenmode.toc import collect_toc
 
@@ -60,7 +56,8 @@ def test_base_node_state_and_protocol_edges() -> None:
     assert stream_state.pending_inline_callbacks is callbacks
     assert stream_state.first_nonblank_from_current() is None
 
-    assert DirectiveHtmlRenderer.render(object(), HTMLRenderer(), Node(type='x'), HTMLRenderContext()) is None
+    html_renderer = HTMLRenderer()
+    assert DirectiveHtmlRenderer.render(object(), html_renderer, Node(type='x'), html_renderer.create_context()) is None
     assert RootTransform.prepare(object(), Parser([]), Root(), BlockState([])) is None
     assert RootTransform.transform(object(), Parser([]), Root(), BlockState([])) is None
 

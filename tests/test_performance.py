@@ -5,7 +5,7 @@ from collections.abc import Callable
 
 from wenmode import Wenmode
 from wenmode.presets import commonmark, github
-from wenmode.rules.base import Rule
+from wenmode.rules import Rule
 
 
 def parse_time(markdown: str, rules: list[type[Rule] | Rule]) -> float:
