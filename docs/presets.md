@@ -10,6 +10,15 @@ from wenmode.presets import github
 wenmode = Wenmode(github)
 ```
 
+## Choosing a preset
+
+| Preset | Use it when | Includes | Main tradeoff |
+| --- | --- | --- | --- |
+| `commonmark` | You want the default Markdown behavior for articles, comments, or docs. | Core Markdown, reference links and images, inline HTML parsing. | No GFM tables, task list markers, footnotes, or bare URL autolinks. |
+| `github` | You want GitHub-flavored Markdown output. | `commonmark`-style behavior plus tables, task list items, strikethrough, extended autolinks, footnotes, and GFM disallowed HTML tag handling. | Requires full-document parsing, so it is not compatible with streaming output. |
+| `streaming` | You need to emit HTML chunks as input arrives. | Most CommonMark-style rules, with direct links and images. | Reference-style links, reference-style images, footnotes, and other deferred transforms are disabled. |
+| Custom rule list | You are building a specific Markdown dialect or want to disable syntax. | Only the rules you pass. | You own the feature set and rule interactions. |
+
 ## CommonMark
 
 `commonmark` is the default preset used by `Wenmode()`.

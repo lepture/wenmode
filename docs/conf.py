@@ -13,3 +13,4 @@ source_suffix = {
 
 html_theme = 'shibuya'
 html_title = 'Wenmode'
+html_baseurl = 'https://wenmode.lepture.com/'

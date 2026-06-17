@@ -35,6 +35,8 @@ math, spoilers, ruby text, and directives.
 
 usage
 presets
+security
+recipes
 rules
 reference
 directives

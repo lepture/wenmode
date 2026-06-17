@@ -8,6 +8,8 @@ output, extension state, and pluggable rendering.
 The top-level `Wenmode` class combines a parser and a renderer. By default it
 parses CommonMark-style Markdown and renders HTML.
 
+Documentation: <https://wenmode.lepture.com>
+
 ## Installation
 
 ```bash
@@ -22,6 +24,7 @@ from wenmode import Wenmode
 wenmode = Wenmode()
 
 html = wenmode.render('# Hello\n\nThis is **wenmode**.')
+assert html == '<h1>Hello</h1>\n<p>This is <strong>wenmode</strong>.</p>\n'
 ```
 
 Use `parse()` when you need the mdast-compatible syntax tree:
@@ -32,6 +35,24 @@ from wenmode import Wenmode
 wenmode = Wenmode()
 tree = wenmode.parse('A [link](https://example.com).\n')
 ast = tree.to_ast()
+
+assert ast == {
+    'type': 'root',
+    'children': [
+        {
+            'type': 'paragraph',
+            'children': [
+                {'type': 'text', 'value': 'A '},
+                {
+                    'type': 'link',
+                    'children': [{'type': 'text', 'value': 'link'}],
+                    'url': 'https://example.com',
+                },
+                {'type': 'text', 'value': '.'},
+            ],
+        }
+    ],
+}
 ```
 
 Pass a different renderer when you want another output format:
@@ -42,6 +63,7 @@ from wenmode import MarkdownRenderer, Wenmode
 wenmode = Wenmode(renderer=MarkdownRenderer())
 
 markdown = wenmode.render('# Hello\n')
+assert markdown == '# Hello\n'
 ```
 
 ## Rules

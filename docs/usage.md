@@ -10,6 +10,8 @@ from wenmode import Wenmode
 
 wenmode = Wenmode()
 html = wenmode.render('# Hello\n\nThis is **wenmode**.')
+
+assert html == '<h1>Hello</h1>\n<p>This is <strong>wenmode</strong>.</p>\n'
 ```
 
 `render()` parses the source and renders the resulting syntax tree. The source
@@ -34,6 +36,24 @@ from wenmode import Wenmode
 wenmode = Wenmode()
 tree = wenmode.parse('A [link](https://example.com).\n')
 ast = tree.to_ast()
+
+assert ast == {
+    'type': 'root',
+    'children': [
+        {
+            'type': 'paragraph',
+            'children': [
+                {'type': 'text', 'value': 'A '},
+                {
+                    'type': 'link',
+                    'children': [{'type': 'text', 'value': 'link'}],
+                    'url': 'https://example.com',
+                },
+                {'type': 'text', 'value': '.'},
+            ],
+        }
+    ],
+}
 ```
 
 The returned root node is a `wenmode.nodes.Root`. Nodes are data objects; their
@@ -49,6 +69,8 @@ from wenmode import MarkdownRenderer, Wenmode
 
 wenmode = Wenmode(renderer=MarkdownRenderer())
 markdown = wenmode.render('# Hello\n')
+
+assert markdown == '# Hello\n'
 ```
 
 Wenmode currently provides:
@@ -100,8 +122,15 @@ from wenmode.presets import streaming
 
 wenmode = Wenmode(streaming)
 
+sent_chunks: list[str] = []
+
 for chunk in wenmode.stream('# Hello\n\nA [link](/url).\n'):
-    send(chunk)
+    sent_chunks.append(chunk)
+
+assert sent_chunks == [
+    '<h1>Hello</h1>\n',
+    '<p>A <a href="/url">link</a>.</p>\n',
+]
 ```
 
 The streaming API yields rendered block output as parsing progresses. It only
@@ -110,6 +139,9 @@ If unsupported rules are enabled, `stream()` raises `StreamingUnsupportedError`.
 
 `Wenmode.stream()` returns a synchronous iterator of HTML chunks. Web frameworks
 that accept iterable response bodies can send those chunks directly.
+
+See [](presets.md) for choosing a rule preset, [](security.md) for HTML and URL
+safety behavior, and [](recipes.md) for common integration tasks.
 
 ### FastAPI
 

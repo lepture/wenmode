@@ -37,7 +37,7 @@ classifiers = [
 Homepage = "https://github.com/lepture/wenmode"
 Repository = "https://github.com/lepture/wenmode"
 Issues = "https://github.com/lepture/wenmode/issues"
-Documentation = "https://github.com/lepture/wenmode/tree/main/docs"
+Documentation = "https://wenmode.lepture.com"
 
 [build-system]
 requires = ["hatchling"]
