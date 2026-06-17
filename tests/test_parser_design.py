@@ -176,9 +176,19 @@ def test_image_keeps_reference_definitions_enabled() -> None:
     assert render(parser, '[x]: /img.png\n\n![x]\n') == '<p><img src="/img.png" alt="x" /></p>\n'
 
 
+def test_link_and_image_share_one_reference_transform() -> None:
+    parser = Parser([Link, Image])
+
+    assert [transform.name for transform in parser.root_transforms] == ['reference']
+    assert render(parser, '[x]: /url\n\n[x] and ![x]\n') == (
+        '<p><a href="/url">x</a> and <img src="/url" alt="x" /></p>\n'
+    )
+
+
 def test_link_and_image_can_disable_references() -> None:
     parser = Parser([Image(references=False), Link(references=False)])
 
+    assert parser.root_transforms == []
     assert render(parser, '[x](/url) and ![alt](/img.png)\n') == (
         '<p><a href="/url">x</a> and <img src="/img.png" alt="alt" /></p>\n'
     )

@@ -77,11 +77,6 @@ class HTMLRenderer(BaseRenderer):
             footnotes=FootnoteRenderState(definitions=definitions or {}),
             root=node if isinstance(node, Root) else None,
         )
-        if context.root is not None:
-            for directive in self.directives:
-                prepare = getattr(directive, 'prepare', None)
-                if callable(prepare):
-                    prepare(self, context.root, context)
         return context
 
     def register_directive_renderer(self, directive: DirectiveHtmlRenderer) -> None:

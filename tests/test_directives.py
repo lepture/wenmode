@@ -120,7 +120,7 @@ def test_fenced_directive_order_is_before_fenced_code() -> None:
 
 
 def test_toc_leaf_directive_renders_heading_links() -> None:
-    parser = Parser([AtxHeading, LeafDirective, ContainerDirective, Emphasis])
+    parser = Parser([AtxHeading(id_transform=True), LeafDirective, ContainerDirective, Emphasis])
     root = parser.parse('::toc[On this page]{min=2 max=3 .wide}\n\n# Title\n\n## Usage *Guide*\n\n### Install\n\n## Usage Guide\n')
 
     assert HTMLRenderer(directives=[TableOfContents()]).render(root) == (
@@ -141,8 +141,8 @@ def test_toc_leaf_directive_renders_heading_links() -> None:
     )
 
 
-def test_toc_directive_prepares_heading_ids_even_when_rendered_late() -> None:
-    parser = Parser([AtxHeading, LeafDirective])
+def test_toc_directive_uses_existing_heading_ids_even_when_rendered_late() -> None:
+    parser = Parser([AtxHeading(id_transform=True), LeafDirective])
     root = parser.parse('## Before\n\n::toc{min-depth=2 max-depth=2 id=contents label=Contents}\n')
 
     assert HTMLRenderer(directives=[TableOfContents()]).render(root) == (
@@ -153,3 +153,10 @@ def test_toc_directive_prepares_heading_ids_even_when_rendered_late() -> None:
         '</ol>\n'
         '</nav>\n'
     )
+
+
+def test_toc_directive_does_not_create_heading_ids() -> None:
+    parser = Parser([AtxHeading, LeafDirective])
+    root = parser.parse('## Before\n\n::toc{min=2 max=2}\n')
+
+    assert HTMLRenderer(directives=[TableOfContents()]).render(root) == '<h2>Before</h2>\n'

@@ -21,6 +21,8 @@ class TocItem:
 
 
 class Slugger:
+    name = 'default'
+
     def __init__(self) -> None:
         self.seen: dict[str, int] = {}
 

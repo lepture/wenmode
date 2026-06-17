@@ -5,13 +5,11 @@ import string
 from collections.abc import Callable, Iterable, Iterator
 from typing import TypeVar, cast
 
-from .nodes import FootnoteDefinition as FootnoteDefinitionNode
 from .nodes import Node, Paragraph, Root, Text
 from .rules.base import BlockRule, InlineRule, Rule
 from .rules.blocks.html import is_html_block_tag
-from .rules.footnotes import FootnoteDefinition as FootnoteDefinitionRule
 from .rules.inlines.emphasis import parse_emphasis_sequence
-from .rules.references import ReferenceDefinition
+from .rules.transforms import RootTransform
 from .state import BlockState, LineSource, StreamBlockState, StreamLineBuffer
 
 LIST_MARKER_RE = re.compile(
@@ -56,30 +54,32 @@ class Parser:
 
     def _rebuild_rules(self) -> None:
         resolved_rules = list(self._registered_rules)
-        rule_names = {rule.name for rule in resolved_rules}
-        has_references = any(rule.has_references for rule in resolved_rules)
-        if has_references and 'reference_definition' not in rule_names:
-            resolved_rules.append(ReferenceDefinition())
-        has_footnotes = any(rule.has_footnotes for rule in resolved_rules)
-        if has_footnotes and 'footnote_definition' not in rule_names:
-            resolved_rules.append(FootnoteDefinitionRule())
+        root_transforms = self._collect_root_transforms(resolved_rules)
+        for transform in root_transforms:
+            for required in transform.required_rules:
+                rule = self._resolve_rule(required)
+                if all(registered.name != rule.name for registered in resolved_rules):
+                    resolved_rules.append(rule)
 
         self.rules = {rule.name: rule for rule in resolved_rules}
         self.block_rules = sorted_by_order([rule for rule in resolved_rules if isinstance(rule, BlockRule)])
         self.inline_rules = sorted_by_order([rule for rule in resolved_rules if isinstance(rule, InlineRule)])
+        self.root_transforms = root_transforms
         self._emphasis_enabled = 'emphasis' in self.rules
-        self._references_enabled = has_references or 'reference_definition' in self.rules
-        self._footnotes_enabled = 'footnote_definition' in self.rules
-        self._defer_inlines = self._references_enabled or self._footnotes_enabled
+        self._defer_inlines = any(transform.defer_inlines for transform in root_transforms)
         self._inline_rule_order = {rule.name: index for index, rule in enumerate(self.inline_rules)}
         self._triggered_inline_rules, self._search_inline_rules = self._prepare_inline_dispatch(self.inline_rules)
         self._inline_trigger_re = self._compile_inline_trigger_re(self._triggered_inline_rules)
         self._block_openers = self._compile_block_openers(self.block_rules)
 
     def parse(self, source: LineSource) -> Root:
-        root = Root(children=self._parse_document(source))
-        if self._footnotes_enabled:
-            root.footnote_definitions = collect_footnote_definitions(root)
+        state = self._create_block_state(source, defer_inlines=self._defer_inlines)
+        root = Root(children=self._parse_block_nodes(state))
+        for transform in self.root_transforms:
+            transform.prepare(self, root, state)
+        self._resolve_pending_inlines(state)
+        for transform in self.root_transforms:
+            transform.transform(self, root, state)
         return root
 
     def parse_iter(self, source: LineSource) -> Iterator[Node]:
@@ -101,12 +101,6 @@ class Parser:
             defer_inlines=parent_state.defer_inlines,
         )
         return self._parse_block_nodes(state)
-
-    def _parse_document(self, source: LineSource) -> list[Node]:
-        state = self._create_block_state(source, defer_inlines=self._defer_inlines)
-        children = self._parse_block_nodes(state)
-        self._resolve_pending_inlines(state)
-        return children
 
     def _create_block_state(self, source: LineSource, defer_inlines: bool) -> BlockState:
         if isinstance(source, str):
@@ -150,7 +144,7 @@ class Parser:
         if not self._defer_inlines:
             return
         raise StreamingUnsupportedError(
-            'streaming output requires rules without references or footnotes; use the streaming preset'
+            'streaming output requires rules without deferred inline transforms; use the streaming preset'
         )
 
     def parse_inlines(self, text: str, state: BlockState | None = None) -> list[Node]:
@@ -263,6 +257,18 @@ class Parser:
             return rule
         raise RuntimeError(f'unknown block rule: {group}')
 
+    @staticmethod
+    def _collect_root_transforms(rules: list[Rule]) -> list[RootTransform]:
+        transforms: list[RootTransform] = []
+        seen: set[str] = set()
+        for rule in rules:
+            for transform in rule.root_transforms:
+                if transform.name in seen:
+                    continue
+                seen.add(transform.name)
+                transforms.append(transform)
+        return transforms
+
     def is_paragraph_interrupt(self, line: str, state: BlockState | None = None) -> bool:
         if self._block_openers is None:
             return False
@@ -354,18 +360,3 @@ def contains_emphasis_marker(nodes: list[Node]) -> bool:
 
 def sorted_by_order(rules: list[T]) -> list[T]:
     return [rule for _, rule in sorted(enumerate(rules), key=lambda item: (item[1].order, item[0]))]
-
-
-def collect_footnote_definitions(node: Node) -> dict[str, FootnoteDefinitionNode]:
-    definitions: dict[str, FootnoteDefinitionNode] = {}
-    collect_footnote_definitions_into(node, definitions)
-    return definitions
-
-
-def collect_footnote_definitions_into(node: Node, definitions: dict[str, FootnoteDefinitionNode]) -> None:
-    if isinstance(node, FootnoteDefinitionNode):
-        definitions.setdefault(node.identifier, node)
-    children = getattr(node, 'children', None)
-    if isinstance(children, list):
-        for child in children:
-            collect_footnote_definitions_into(child, definitions)

@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, ClassVar
 
 from wenmode.nodes import FootnoteDefinition as FootnoteDefinitionNode
-from wenmode.nodes import FootnoteReference, Node
+from wenmode.nodes import FootnoteReference, Node, Root
 from wenmode.state import Footnote as FootnoteState
 from wenmode.utils import count_indent, normalize_label, normalize_label_text
 
-from .base import BlockRule, InlineRule
+from .base import BlockRule, InlineRule, Rule
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
@@ -23,10 +24,10 @@ FOOTNOTE_REFERENCE_RE = r'\[\^(?P<label>(?:\\[^\s]|[^\s\[\]\\]){1,999})]'
 
 class Footnote(InlineRule):
     order: ClassVar[int] = 50
-    has_footnotes = True
 
     def __init__(self) -> None:
         super().__init__('footnote', FOOTNOTE_REFERENCE_RE, '[')
+        self.root_transforms = [FootnoteTransform()]
 
     def parse(
         self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
@@ -58,9 +59,38 @@ class FootnoteDefinition(BlockRule):
 
         content_lines = collect_definition_lines(state, parsed.group('rest'))
         children = parser.parse_blocks(''.join(content_lines), parent_state=state) if content_lines else []
-        node = FootnoteDefinitionNode(identifier=identifier, label=label, children=children)
-        state.footnotes.setdefault(identifier, FootnoteState(identifier=identifier, label=label, children=children))
-        return node
+        return FootnoteDefinitionNode(identifier=identifier, label=label, children=children)
+
+
+class FootnoteTransform:
+    name = 'footnote'
+    defer_inlines = True
+    required_rules: Sequence[type[Rule] | Rule] = [FootnoteDefinition]
+
+    def prepare(self, parser: Parser, root: Root, state: BlockState) -> None:
+        for identifier, definition in collect_footnote_definitions(root).items():
+            state.footnotes.setdefault(
+                identifier,
+                FootnoteState(identifier=identifier, label=definition.label, children=definition.children),
+            )
+
+    def transform(self, parser: Parser, root: Root, state: BlockState) -> None:
+        root.footnote_definitions = collect_footnote_definitions(root)
+
+
+def collect_footnote_definitions(node: Node) -> dict[str, FootnoteDefinitionNode]:
+    definitions: dict[str, FootnoteDefinitionNode] = {}
+    collect_footnote_definitions_into(node, definitions)
+    return definitions
+
+
+def collect_footnote_definitions_into(node: Node, definitions: dict[str, FootnoteDefinitionNode]) -> None:
+    if isinstance(node, FootnoteDefinitionNode):
+        definitions.setdefault(node.identifier, node)
+    children = getattr(node, 'children', None)
+    if isinstance(children, list):
+        for child in children:
+            collect_footnote_definitions_into(child, definitions)
 
 
 def collect_definition_lines(state: BlockState, rest: str) -> list[str]:

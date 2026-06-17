@@ -5,10 +5,10 @@ from typing import TYPE_CHECKING
 
 from wenmode.nodes import Node
 from wenmode.nodes import TextDirective as TextDirectiveNode
-from wenmode.rules.directives import parse_directive_head
 from wenmode.state import BlockState
 
 from ..base import InlineRule
+from ..directives import parse_directive_head
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser

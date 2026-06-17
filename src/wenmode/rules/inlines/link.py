@@ -6,11 +6,12 @@ from typing import TYPE_CHECKING
 from wenmode.nodes import Break, InlineCode, Node, Parent, Text
 from wenmode.nodes import Image as ImageNode
 from wenmode.nodes import Link as LinkNode
-from wenmode.rules.inlines.html import EMAIL_RE, HTML_RE, URI_RE
 from wenmode.state import BlockState
 from wenmode.utils import normalize_label, normalize_label_text, normalize_uri_text
 
 from ..base import InlineRule
+from ..references import ReferenceTransform
+from .html import EMAIL_RE, HTML_RE, URI_RE
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
@@ -20,17 +21,16 @@ ANGLE_SPAN_RE = re.compile(rf'{URI_RE}|{EMAIL_RE}|{HTML_RE}')
 
 
 class Image(InlineRule):
-    has_references = True
-
     def __init__(self, references: bool = True) -> None:
-        self.has_references = references
         super().__init__('image', r'!\[', '!')
+        self.references = references
+        self.root_transforms = [ReferenceTransform()] if references else []
 
     def parse(
         self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
     ) -> tuple[Node | None, int]:
         parsed = parse_link_or_image(
-            parser, text, match.start(), image=True, state=state, references=self.has_references
+            parser, text, match.start(), image=True, state=state, references=self.references
         )
         if parsed is None:
             return None, match.start()
@@ -40,11 +40,10 @@ class Image(InlineRule):
 
 
 class Link(InlineRule):
-    has_references = True
-
     def __init__(self, references: bool = True) -> None:
-        self.has_references = references
         super().__init__('link', r'\[', '[')
+        self.references = references
+        self.root_transforms = [ReferenceTransform()] if references else []
 
     def parse(
         self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
@@ -52,7 +51,7 @@ class Link(InlineRule):
         if match.start() > 0 and text[match.start() - 1] == '!' and not is_escaped(text, match.start() - 1):
             return None, match.start()
         parsed = parse_link_or_image(
-            parser, text, match.start(), image=False, state=state, references=self.has_references
+            parser, text, match.start(), image=False, state=state, references=self.references
         )
         if parsed is None:
             return None, match.start()

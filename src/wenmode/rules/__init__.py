@@ -4,7 +4,7 @@ from .blocks.blank_line import BlankLine
 from .blocks.blockquote import Blockquote
 from .blocks.directive import ContainerDirective, FencedDirective, LeafDirective
 from .blocks.fenced_code import FencedCode
-from .blocks.heading import AtxHeading, SetextHeading
+from .blocks.heading import AtxHeading, HeadingIdTransform, SetextHeading
 from .blocks.html import HtmlBlock
 from .blocks.indented_code import IndentedCode
 from .blocks.list import List
@@ -36,6 +36,7 @@ __all__ = [
     'FencedCode',
     'Footnote',
     'HardBreak',
+    'HeadingIdTransform',
     'HtmlBlock',
     'Image',
     'IndentedCode',

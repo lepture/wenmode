@@ -4,10 +4,10 @@ import re
 from typing import TYPE_CHECKING
 
 from wenmode.nodes import Link, Node, Text
-from wenmode.rules.inlines.html import normalize_uri
 from wenmode.state import BlockState
 
 from ..base import InlineRule
+from .html import normalize_uri
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser

@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING, ClassVar
 from wenmode.nodes import Node
 from wenmode.state import BlockState
 
+from .transforms import RootTransform
+
 if TYPE_CHECKING:
     from wenmode.parser import Parser
 
@@ -15,8 +17,7 @@ if TYPE_CHECKING:
 class Rule:
     name: str
     order: ClassVar[int] = 100
-    has_references: bool = field(init=False, default=False)
-    has_footnotes: bool = field(init=False, default=False)
+    root_transforms: list[RootTransform] = field(init=False, default_factory=list)
 
     def parse_paragraph_continuation(self, parser: Parser, state: BlockState, lines: list[str]) -> Node | None:
         return None

@@ -249,10 +249,10 @@ Use `to_ast()` when you need a plain dictionary representation:
 
 ## References And Footnotes
 
-Reference extraction only runs when an enabled rule declares that it consumes
-references. `Link` and `Image` do this today.
+Reference extraction only runs when an enabled rule registers the reference
+transform. `Link` and `Image` do this by default.
 
-Footnote definitions are kept in parse state like link references. To enable
+Footnote definitions are collected by the footnote transform. To enable
 footnotes without the full GitHub preset, include `Footnote` in your rule list.
 
 ```python
@@ -283,9 +283,14 @@ You can also render an in-document table of contents with the `toc` directive:
 ```python
 from wenmode import HTMLRenderer, Parser, commonmark
 from wenmode.directives import TableOfContents
-from wenmode.rules import LeafDirective
+from wenmode.rules import AtxHeading, LeafDirective, SetextHeading
 
-root = Parser([*commonmark, LeafDirective]).parse('::toc{min=2 max=3}\n\n## Intro\n')
+rules = list(commonmark)
+rules[rules.index(AtxHeading)] = AtxHeading(id_transform=True)
+rules[rules.index(SetextHeading)] = SetextHeading(id_transform=True)
+rules.append(LeafDirective)
+
+root = Parser(rules).parse('::toc{min=2 max=3}\n\n## Intro\n')
 html = HTMLRenderer(directives=[TableOfContents()]).render(root)
 ```
 
