@@ -19,15 +19,18 @@ class Rule:
     order: ClassVar[int] = 100
     root_transforms: list[RootTransform] = field(init=False, default_factory=list)
 
-    def parse_paragraph_continuation(self, parser: Parser, state: BlockState, lines: list[str]) -> Node | None:
-        return None
-
 
 @dataclass
 class BlockRule(Rule):
     pattern: str
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
+        raise NotImplementedError
+
+
+@dataclass
+class ContinueRule(Rule):
+    def parse_paragraph_continuation(self, parser: Parser, state: BlockState, lines: list[str]) -> Node | None:
         raise NotImplementedError
 
 

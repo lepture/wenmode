@@ -6,7 +6,7 @@ from collections.abc import Callable, Iterable, Iterator
 from typing import TypeVar, cast
 
 from .nodes import Node, Paragraph, Root, Text
-from .rules.base import BlockRule, InlineRule, Rule
+from .rules.base import BlockRule, ContinueRule, InlineRule, Rule
 from .rules.blocks.html import is_html_block_tag
 from .rules.inlines.emphasis import parse_emphasis_sequence
 from .rules.transforms import RootTransform
@@ -64,7 +64,9 @@ class Parser:
         self.rules = {rule.name: rule for rule in resolved_rules}
         self.block_rules = sorted_by_order([rule for rule in resolved_rules if isinstance(rule, BlockRule)])
         self.inline_rules = sorted_by_order([rule for rule in resolved_rules if isinstance(rule, InlineRule)])
-        self.paragraph_continuation_rules = sorted_by_order(resolved_rules)
+        self.paragraph_continuation_rules = sorted_by_order(
+            [rule for rule in resolved_rules if isinstance(rule, ContinueRule)]
+        )
         self.root_transforms = root_transforms
         self._emphasis_enabled = 'emphasis' in self.rules
         self._defer_inlines = any(transform.defer_inlines for transform in root_transforms)
@@ -179,7 +181,7 @@ class Parser:
 
         nodes = merge_text(nodes)
         if self._emphasis_enabled and contains_emphasis_marker(nodes):
-            nodes = parse_emphasis_nodes(nodes)
+            nodes = parse_emphasis_sequence(nodes)
         return merge_text(nodes)
 
     def _find_inline_match(self, text: str, pos: int) -> tuple[int, InlineRule, re.Match[str]] | None:
@@ -346,10 +348,6 @@ def merge_text(nodes: list[Node]) -> list[Node]:
         else:
             merged.append(node)
     return merged
-
-
-def parse_emphasis_nodes(nodes: list[Node]) -> list[Node]:
-    return parse_emphasis_sequence(nodes)
 
 
 def contains_emphasis_marker(nodes: list[Node]) -> bool:

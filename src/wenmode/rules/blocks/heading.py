@@ -8,7 +8,7 @@ from wenmode.headings import Slugger, add_heading_ids
 from wenmode.nodes import Heading, Node
 from wenmode.state import BlockState
 
-from ..base import BlockRule, Rule
+from ..base import BlockRule, ContinueRule, Rule
 from ..transforms import RootTransform
 
 if TYPE_CHECKING:
@@ -65,7 +65,7 @@ class AtxHeading(BlockRule):
         return Heading(depth=len(marker), children=parser.parse_inlines(content.strip(), state))
 
 
-class SetextHeading(Rule):
+class SetextHeading(ContinueRule):
     def __init__(self, id_transform: HeadingIdTransformOption = False) -> None:
         super().__init__('setext_heading')
         self.root_transforms = resolve_heading_id_transform(id_transform)

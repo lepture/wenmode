@@ -3,11 +3,11 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING
 
-from wenmode.nodes import DefinitionDescription, DefinitionTerm, Node, Paragraph
+from wenmode.nodes import DefinitionDescription, DefinitionTerm, Node
 from wenmode.nodes import DefinitionList as DefinitionListNode
 from wenmode.state import BlockState
 
-from ..base import Rule
+from ..base import ContinueRule
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
@@ -17,7 +17,7 @@ DESCRIPTION_RE = re.compile(r'^[ \t]{0,3}:[ \t]+(?P<text>.*)$')
 INDENTED_RE = re.compile(r'^(?: {4}|\t)(?P<text>.*)$')
 
 
-class DefinitionList(Rule):
+class DefinitionList(ContinueRule):
     def __init__(self) -> None:
         super().__init__('definition_list')
 
