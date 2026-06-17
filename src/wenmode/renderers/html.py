@@ -18,6 +18,7 @@ from wenmode.nodes import (
     HtmlAttrValue,
     Image,
     InlineMath,
+    InlineSpoiler,
     Insert,
     LeafDirective,
     Link,
@@ -289,6 +290,11 @@ def render_ruby(renderer: HTMLRenderer, node: Ruby, context: HTMLRenderContext) 
         f'<ruby>{renderer.escape_html(segment["base"])}<rt>{renderer.escape_html(segment["text"])}</rt></ruby>'
         for segment in node.segments
     )
+
+
+@HTMLRenderer.register('inlineSpoiler')
+def render_inline_spoiler(renderer: HTMLRenderer, node: InlineSpoiler, context: HTMLRenderContext) -> str:
+    return f'<span class="spoiler">{renderer.render_children(node.children, context)}</span>'
 
 
 @HTMLRenderer.register('textDirective')

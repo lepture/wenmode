@@ -15,6 +15,7 @@ from wenmode.rules import (
     Footnote,
     InlineCode,
     InlineMath,
+    InlineSpoiler,
     Insert,
     Link,
     Mark,
@@ -155,6 +156,14 @@ def test_ruby_link_rule() -> None:
         HTMLRenderer().render(root) == '<p><a href="/ruby" title="Ruby"><ruby>漢字<rt>kanji</rt></ruby></a> and '
         '<a href="/term"><ruby>漢字<rt>kanji</rt></ruby></a></p>\n'
     )
+
+
+def test_inline_spoiler_rule() -> None:
+    parser = Parser([InlineSpoiler, Emphasis])
+    root = parser.parse('A >! hidden *thing* !< appears.\n')
+
+    assert HTMLRenderer().render(root) == '<p>A <span class="spoiler">hidden <em>thing</em></span> appears.</p>\n'
+    assert MarkdownRenderer().render(root) == 'A >! hidden *thing* !< appears\\.\n'
 
 
 def test_footnote_identifiers_disallow_spaces() -> None:

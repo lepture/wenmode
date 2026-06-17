@@ -7,6 +7,7 @@ from .html import Autolink, RawHtml
 from .link import Image, Link
 from .math import InlineMath
 from .ruby import Ruby
+from .spoiler import InlineSpoiler
 from .text import BackslashEscape, CharacterReference, HardBreak
 
 __all__ = [
@@ -18,6 +19,7 @@ __all__ = [
     'Image',
     'InlineCode',
     'InlineMath',
+    'InlineSpoiler',
     'Insert',
     'Link',
     'Mark',

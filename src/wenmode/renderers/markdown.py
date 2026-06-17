@@ -16,6 +16,7 @@ from wenmode.nodes import (
     Image,
     InlineCode,
     InlineMath,
+    InlineSpoiler,
     Insert,
     LeafDirective,
     Link,
@@ -182,6 +183,11 @@ def render_subscript(renderer: MarkdownRenderer, node: Subscript, context: Rende
 def render_ruby(renderer: MarkdownRenderer, node: Ruby, context: RenderContext) -> str:
     segments = ''.join(f'{segment["base"]}({segment["text"]})' for segment in node.segments)
     return f'[{segments}]'
+
+
+@MarkdownRenderer.register('inlineSpoiler')
+def render_inline_spoiler(renderer: MarkdownRenderer, node: InlineSpoiler, context: RenderContext) -> str:
+    return f'>! {renderer.render_children(node.children, context)} !<'
 
 
 @MarkdownRenderer.register('textDirective')

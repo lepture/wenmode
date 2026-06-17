@@ -21,6 +21,7 @@ from .inlines.html import Autolink, RawHtml
 from .inlines.link import Image, Link
 from .inlines.math import InlineMath
 from .inlines.ruby import Ruby
+from .inlines.spoiler import InlineSpoiler
 from .inlines.strikethrough import Strikethrough
 from .inlines.text import BackslashEscape, CharacterReference, HardBreak
 
@@ -44,6 +45,7 @@ __all__ = [
     'IndentedCode',
     'InlineCode',
     'InlineMath',
+    'InlineSpoiler',
     'Insert',
     'LeafDirective',
     'Link',
