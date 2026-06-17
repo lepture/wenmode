@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from wenmode.nodes import InlineMath as InlineMathNode
 from wenmode.nodes import Node
 from wenmode.state import BlockState
+from wenmode.utils import is_escaped
 
 from ..base import InlineRule
 
@@ -71,12 +72,3 @@ def is_adjacent_to_dollar(text: str, index: int) -> bool:
     previous_is_dollar = index > 0 and text[index - 1] == '$'
     next_is_dollar = index + 1 < len(text) and text[index + 1] == '$'
     return previous_is_dollar or next_is_dollar
-
-
-def is_escaped(text: str, index: int) -> bool:
-    backslashes = 0
-    cursor = index - 1
-    while cursor >= 0 and text[cursor] == '\\':
-        backslashes += 1
-        cursor -= 1
-    return backslashes % 2 == 1

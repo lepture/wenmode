@@ -10,6 +10,7 @@ from wenmode.state import BlockState
 
 from ..base import BlockRule
 from ..directives import parse_directive_head
+from .util import collect_until
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
@@ -17,7 +18,9 @@ if TYPE_CHECKING:
 
 LEAF_DIRECTIVE_RE = re.compile(r'[ \t]{0,3}::(?=[A-Za-z])(.+?)[ \t]*$')
 CONTAINER_DIRECTIVE_RE = re.compile(r'(?P<indent>[ \t]{0,3})(?P<fence>:{3,})(?P<head>.*)$')
-FENCED_DIRECTIVE_RE = re.compile(r'(?P<indent>[ \t]{0,3})(?P<fence>`{3,}|~{3,})\{(?P<name>[A-Za-z][A-Za-z0-9_-]*)}(?P<title>.*)$')
+FENCED_DIRECTIVE_RE = re.compile(
+    r'(?P<indent>[ \t]{0,3})(?P<fence>`{3,}|~{3,})\{(?P<name>[A-Za-z][A-Za-z0-9_-]*)}(?P<title>.*)$'
+)
 OPTION_RE = re.compile(r'[ \t]*:([A-Za-z][A-Za-z0-9_-]*):(?:[ \t]*(.*))?$')
 
 
@@ -61,14 +64,8 @@ class ContainerDirective(BlockRule):
             return None
 
         state.advance()
-        lines: list[str] = []
         closer = re.compile(rf'[ \t]{{0,3}}:{{{len(fence)},}}[ \t]*$')
-        while not state.done:
-            if closer.match(state.line.rstrip('\r\n')):
-                state.advance()
-                break
-            lines.append(state.line)
-            state.advance()
+        lines = collect_until(state, lambda line: closer.match(line.rstrip('\r\n')) is not None)
 
         children = directive_label_children(parser, label, state)
         children.extend(parser.parse_blocks(''.join(lines), parent_state=state))
@@ -104,14 +101,8 @@ class FencedDirective(BlockRule):
         if not state.done and state.line.strip() == '':
             state.advance()
 
-        lines: list[str] = []
         closer = re.compile(rf'[ \t]{{0,3}}{re.escape(fence_char)}{{{len(fence)},}}[ \t]*$')
-        while not state.done:
-            if closer.match(state.line.rstrip('\r\n')):
-                state.advance()
-                break
-            lines.append(state.line)
-            state.advance()
+        lines = collect_until(state, lambda line: closer.match(line.rstrip('\r\n')) is not None)
 
         children = directive_label_children(parser, title, state)
         children.extend(parser.parse_blocks(''.join(lines), parent_state=state))

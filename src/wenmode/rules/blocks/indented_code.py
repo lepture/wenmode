@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 from wenmode.nodes import Code
 from wenmode.state import BlockState
+from wenmode.utils import count_indent
 
 from ..base import BlockRule
 
@@ -21,7 +22,7 @@ class IndentedCode(BlockRule):
 
         while not state.done:
             line = state.line
-            if not has_indent(line, 4):
+            if count_indent(line) < 4:
                 if line.strip() == '':
                     lines.append('\n')
                     state.advance()
@@ -34,20 +35,6 @@ class IndentedCode(BlockRule):
             lines.pop()
 
         return Code(value=''.join(lines))
-
-
-def has_indent(line: str, columns: int) -> bool:
-    column = 0
-    for char in line:
-        if char == ' ':
-            column += 1
-        elif char == '\t':
-            column += 4 - column % 4
-        else:
-            break
-        if column >= columns:
-            return True
-    return False
 
 
 def strip_indent(line: str, columns: int) -> str:

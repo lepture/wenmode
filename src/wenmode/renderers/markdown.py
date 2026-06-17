@@ -136,20 +136,12 @@ def render_heading(renderer: MarkdownRenderer, node: Heading, context: RenderCon
 
 @MarkdownRenderer.register('blockquote')
 def render_blockquote(renderer: MarkdownRenderer, node: Blockquote, context: RenderContext) -> str:
-    body = renderer.render_children(node.children, context).rstrip('\n')
-    if not body:
-        return '>\n\n'
-    lines = body.splitlines()
-    return '\n'.join('> ' + line if line else '>' for line in lines) + '\n\n'
+    return render_prefixed_block(renderer, node, '>', context)
 
 
 @MarkdownRenderer.register('blockSpoiler')
 def render_block_spoiler(renderer: MarkdownRenderer, node: BlockSpoiler, context: RenderContext) -> str:
-    body = renderer.render_children(node.children, context).rstrip('\n')
-    if not body:
-        return '>!\n\n'
-    lines = body.splitlines()
-    return '\n'.join('>! ' + line if line else '>!' for line in lines) + '\n\n'
+    return render_prefixed_block(renderer, node, '>!', context)
 
 
 @MarkdownRenderer.register('list')
@@ -314,6 +306,14 @@ def quote_directive_attribute(value: str) -> str:
     if value and not re.search(r'[\s"\'=<>`{}]', value):
         return value
     return '"' + value.replace('\\', '\\\\').replace('"', '\\"') + '"'
+
+
+def render_prefixed_block(renderer: MarkdownRenderer, node: Parent, marker: str, context: RenderContext) -> str:
+    body = renderer.render_children(node.children, context).rstrip('\n')
+    if not body:
+        return f'{marker}\n\n'
+    lines = body.splitlines()
+    return '\n'.join(f'{marker} {line}' if line else marker for line in lines) + '\n\n'
 
 
 @MarkdownRenderer.register('code')

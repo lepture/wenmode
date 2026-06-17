@@ -7,6 +7,7 @@ from wenmode.nodes import Math, Node
 from wenmode.state import BlockState
 
 from ..base import BlockRule
+from .util import collect_until
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
@@ -32,11 +33,6 @@ class MathBlock(BlockRule):
             lines.append(rest + '\n')
         state.advance()
 
-        while not state.done:
-            if MATH_CLOSER_RE.match(state.line):
-                state.advance()
-                break
-            lines.append(state.line)
-            state.advance()
+        lines.extend(collect_until(state, lambda line: MATH_CLOSER_RE.match(line) is not None))
 
         return Math(value=''.join(lines))

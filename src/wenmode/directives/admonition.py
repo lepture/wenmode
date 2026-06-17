@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from wenmode.nodes import ContainerDirective
 
-from .util import split_directive_label
+from .util import append_class, split_directive_label
 
 if TYPE_CHECKING:
     from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
@@ -29,7 +29,3 @@ class Admonition:
         parts.append(renderer.render_children(children, context))
         parts.append('</aside>\n')
         return ''.join(parts)
-
-
-def append_class(current: str | None, value: str) -> str:
-    return f'{current} {value}' if current else value

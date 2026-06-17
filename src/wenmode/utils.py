@@ -58,6 +58,15 @@ def count_indent_from(text: str, start_column: int) -> int:
     return column
 
 
+def is_escaped(text: str, index: int) -> bool:
+    backslashes = 0
+    cursor = index - 1
+    while cursor >= 0 and text[cursor] == '\\':
+        backslashes += 1
+        cursor -= 1
+    return backslashes % 2 == 1
+
+
 def filter_disallowed_html(value: str, tags: Sequence[str]) -> str:
     if not tags:
         return value

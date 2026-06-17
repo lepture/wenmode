@@ -7,7 +7,7 @@ from wenmode.nodes import Break, InlineCode, Node, Parent, Text
 from wenmode.nodes import Image as ImageNode
 from wenmode.nodes import Link as LinkNode
 from wenmode.state import BlockState, StateKey
-from wenmode.utils import normalize_label, normalize_label_text, normalize_uri_text
+from wenmode.utils import is_escaped, normalize_label, normalize_label_text, normalize_uri_text
 
 from ..base import InlineRule
 from ..references import REFERENCES_KEY, ReferenceTransform
@@ -315,15 +315,6 @@ def plain_text(nodes: list[Node]) -> str:
         elif isinstance(node, Parent):
             values.append(plain_text(node.children))
     return ''.join(values)
-
-
-def is_escaped(text: str, index: int) -> bool:
-    backslashes = 0
-    cursor = index - 1
-    while cursor >= 0 and text[cursor] == '\\':
-        backslashes += 1
-        cursor -= 1
-    return backslashes % 2 == 1
 
 
 def find_code_span_end(text: str, start: int) -> int | None:

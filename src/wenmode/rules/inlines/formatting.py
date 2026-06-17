@@ -9,9 +9,9 @@ from wenmode.nodes import Node
 from wenmode.nodes import Subscript as SubscriptNode
 from wenmode.nodes import Superscript as SuperscriptNode
 from wenmode.state import BlockState
+from wenmode.utils import is_escaped
 
 from ..base import InlineRule
-from .strikethrough import is_escaped
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser

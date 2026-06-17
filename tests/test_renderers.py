@@ -33,6 +33,7 @@ from wenmode.renderers import BaseRenderer
 from wenmode.renderers.base import RenderContext
 from wenmode.rules import Footnote, MathBlock
 from wenmode.rules import InlineMath as InlineMathRule
+from wenmode.rules.footnotes import collect_footnote_definitions
 
 
 @dataclass
@@ -54,21 +55,6 @@ def root_with_footnote_definitions(children: list[Node]) -> Root:
     root = Root(children=children)
     root.footnote_definitions = collect_footnote_definitions(root)
     return root
-
-
-def collect_footnote_definitions(node: Node) -> dict[str, FootnoteDefinition]:
-    definitions: dict[str, FootnoteDefinition] = {}
-    collect_footnote_definitions_into(node, definitions)
-    return definitions
-
-
-def collect_footnote_definitions_into(node: Node, definitions: dict[str, FootnoteDefinition]) -> None:
-    if isinstance(node, FootnoteDefinition):
-        definitions.setdefault(node.identifier, node)
-    children = getattr(node, 'children', None)
-    if isinstance(children, list):
-        for child in children:
-            collect_footnote_definitions_into(child, definitions)
 
 
 def test_renderer_registers_custom_node_handler() -> None:

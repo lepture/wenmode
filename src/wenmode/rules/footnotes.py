@@ -30,7 +30,7 @@ class FootnoteState:
     children: list[Node]
 
 
-def create_footnotes() -> dict[str, Footnote]:
+def create_footnotes() -> dict[str, FootnoteState]:
     return {}
 
 

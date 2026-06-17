@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from wenmode.nodes import Node, TableCell, TableRow
 from wenmode.nodes import Table as TableNode
 from wenmode.state import BlockState
+from wenmode.utils import is_escaped
 
 from ..base import BlockRule
 
@@ -119,12 +120,3 @@ def split_table_row(line: str) -> list[str]:
 
 def has_unescaped_pipe(line: str) -> bool:
     return any(char == '|' and not is_escaped(line, index) for index, char in enumerate(line))
-
-
-def is_escaped(value: str, index: int) -> bool:
-    backslashes = 0
-    cursor = index - 1
-    while cursor >= 0 and value[cursor] == '\\':
-        backslashes += 1
-        cursor -= 1
-    return backslashes % 2 == 1

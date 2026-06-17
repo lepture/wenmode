@@ -214,6 +214,14 @@ class HTMLRenderer(BaseRenderer):
             return None
         return directive.render(self, node, context)
 
+    def render_directive_or_children(
+        self, node: TextDirective | LeafDirective | ContainerDirective, context: HTMLRenderContext
+    ) -> str:
+        rendered = self.render_directive(node, context)
+        if rendered is not None:
+            return rendered
+        return self.render_children(node.children, context)
+
 
 @HTMLRenderer.register('root')
 def render_root(renderer: HTMLRenderer, node: Root, context: HTMLRenderContext) -> str:
@@ -327,28 +335,13 @@ def render_inline_spoiler(renderer: HTMLRenderer, node: InlineSpoiler, context: 
     return f'<span class="spoiler">{renderer.render_children(node.children, context)}</span>'
 
 
-@HTMLRenderer.register('textDirective')
-def render_text_directive(renderer: HTMLRenderer, node: TextDirective, context: HTMLRenderContext) -> str:
-    rendered = renderer.render_directive(node, context)
-    if rendered is not None:
-        return rendered
-    return renderer.render_children(node.children, context)
-
-
-@HTMLRenderer.register('leafDirective')
-def render_leaf_directive(renderer: HTMLRenderer, node: LeafDirective, context: HTMLRenderContext) -> str:
-    rendered = renderer.render_directive(node, context)
-    if rendered is not None:
-        return rendered
-    return renderer.render_children(node.children, context)
-
-
 @HTMLRenderer.register('containerDirective')
-def render_container_directive(renderer: HTMLRenderer, node: ContainerDirective, context: HTMLRenderContext) -> str:
-    rendered = renderer.render_directive(node, context)
-    if rendered is not None:
-        return rendered
-    return renderer.render_children(node.children, context)
+@HTMLRenderer.register('leafDirective')
+@HTMLRenderer.register('textDirective')
+def render_directive_node(
+    renderer: HTMLRenderer, node: TextDirective | LeafDirective | ContainerDirective, context: HTMLRenderContext
+) -> str:
+    return renderer.render_directive_or_children(node, context)
 
 
 @HTMLRenderer.register('table')

@@ -7,6 +7,8 @@ from wenmode.headings import plain_text
 from wenmode.nodes import LeafDirective
 from wenmode.toc import collect_toc, render_toc_list
 
+from .util import append_class
+
 if TYPE_CHECKING:
     from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 
@@ -51,7 +53,3 @@ def parse_depth(attributes: dict[str, str], keys: tuple[str, ...], default: int)
         except ValueError:
             return default
     return default
-
-
-def append_class(current: str | None, value: str) -> str:
-    return f'{current} {value}' if current else value

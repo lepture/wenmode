@@ -4,11 +4,11 @@ import re
 from typing import TYPE_CHECKING
 
 from wenmode.nodes import Blockquote as BlockquoteNode
-from wenmode.nodes import Node, Paragraph
 from wenmode.state import BlockState
 from wenmode.utils import expand_leading_tabs
 
 from ..base import BlockRule
+from .util import parse_shallow_block
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
@@ -25,7 +25,7 @@ class Blockquote(BlockRule):
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> BlockquoteNode:
         if state.depth >= parser.max_container_depth - 1:
-            return parse_shallow_blockquote(parser, state)
+            return BlockquoteNode(children=parse_shallow_block(parser, BLOCKQUOTE_RE, state))
 
         lines: list[str] = []
         paragraph_open = False
@@ -50,19 +50,6 @@ class Blockquote(BlockRule):
             state.advance()
 
         return BlockquoteNode(children=parser.parse_blocks(''.join(lines), parent_state=state))
-
-
-def parse_shallow_blockquote(parser: Parser, state: BlockState) -> BlockquoteNode:
-    lines: list[str] = []
-    while not state.done:
-        quote = BLOCKQUOTE_RE.match(state.line)
-        if quote is None:
-            break
-        lines.append(quote.group(1).strip())
-        state.advance()
-    text = '\n'.join(line for line in lines if line).strip()
-    children: list[Node] = [Paragraph(children=parser.parse_inlines(text, state))] if text else []
-    return BlockquoteNode(children=children)
 
 
 def has_nested_blockquote(line: str) -> bool:
