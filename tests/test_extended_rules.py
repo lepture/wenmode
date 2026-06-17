@@ -19,6 +19,8 @@ from wenmode.rules import (
     Link,
     Mark,
     MathBlock,
+    Strikethrough,
+    Subscript,
     Superscript,
 )
 
@@ -114,6 +116,23 @@ def test_superscript_does_not_allow_plain_spaces() -> None:
     parser = Parser([Superscript])
 
     assert render(parser, '^no script^\n') == '<p>^no script^</p>\n'
+
+
+def test_subscript_rule() -> None:
+    parser = Parser([Subscript, Strikethrough, BackslashEscape, Emphasis])
+    root = parser.parse('H~2~O and ~with\\ space~ and ~escaped\\~tilde~ and ~~delete~~\n')
+
+    assert (
+        HTMLRenderer().render(root)
+        == '<p>H<sub>2</sub>O and <sub>with space</sub> and <sub>escaped~tilde</sub> and <del>delete</del></p>\n'
+    )
+    assert MarkdownRenderer().render(root) == 'H~2~O and ~with\\ space~ and ~escaped\\~tilde~ and ~~delete~~\n'
+
+
+def test_subscript_does_not_allow_plain_spaces() -> None:
+    parser = Parser([Subscript])
+
+    assert render(parser, '~no script~\n') == '<p>~no script~</p>\n'
 
 
 def test_footnote_identifiers_disallow_spaces() -> None:

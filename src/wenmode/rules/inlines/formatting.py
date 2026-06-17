@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from wenmode.nodes import Insert as InsertNode
 from wenmode.nodes import Mark as MarkNode
 from wenmode.nodes import Node
+from wenmode.nodes import Subscript as SubscriptNode
 from wenmode.nodes import Superscript as SuperscriptNode
 from wenmode.state import BlockState
 
@@ -63,6 +64,19 @@ class Superscript(InlineRule):
     ) -> tuple[Node | None, int]:
         value = match.group(0)[1:-1].replace('\\ ', ' ')
         return SuperscriptNode(children=parser.parse_inlines(value, state)), match.end()
+
+
+class Subscript(InlineRule):
+    order = 90
+
+    def __init__(self) -> None:
+        super().__init__('subscript', r'(?<!~)~(?!~)(?:(?<!\\)(?:\\\\)*\\~|[^\s~]|\\ )+?(?<!~)~(?!~)', '~')
+
+    def parse(
+        self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
+    ) -> tuple[Node | None, int]:
+        value = match.group(0)[1:-1].replace('\\ ', ' ')
+        return SubscriptNode(children=parser.parse_inlines(value, state)), match.end()
 
 
 def find_closing_marker(text: str, start: int, marker: str) -> int:

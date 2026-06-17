@@ -28,6 +28,7 @@ from wenmode.nodes import (
     Parent,
     Root,
     Strong,
+    Subscript,
     Superscript,
     Table,
     TableCell,
@@ -169,6 +170,11 @@ def render_insert(renderer: MarkdownRenderer, node: Insert, context: RenderConte
 @MarkdownRenderer.register('superscript')
 def render_superscript(renderer: MarkdownRenderer, node: Superscript, context: RenderContext) -> str:
     return f'^{renderer.render_script_children(node, "^", context)}^'
+
+
+@MarkdownRenderer.register('subscript')
+def render_subscript(renderer: MarkdownRenderer, node: Subscript, context: RenderContext) -> str:
+    return f'~{renderer.render_script_children(node, "~", context)}~'
 
 
 @MarkdownRenderer.register('textDirective')

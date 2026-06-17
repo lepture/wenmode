@@ -185,6 +185,12 @@ class Superscript(Parent):
 
 
 @dataclass
+class Subscript(Parent):
+    html_tag: ClassVar[str | None] = 'sub'
+    type: str = 'subscript'
+
+
+@dataclass
 class Table(Parent):
     block: ClassVar[bool] = True
     align: list[str | None] = field(default_factory=list)

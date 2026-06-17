@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from .code import InlineCode
 from .emphasis import Emphasis
-from .formatting import Insert, Mark, Superscript
+from .formatting import Insert, Mark, Subscript, Superscript
 from .html import Autolink, RawHtml
 from .link import Image, Link
 from .math import InlineMath
@@ -21,5 +21,6 @@ __all__ = [
     'Link',
     'Mark',
     'RawHtml',
+    'Subscript',
     'Superscript',
 ]
