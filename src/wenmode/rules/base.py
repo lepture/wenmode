@@ -15,12 +15,10 @@ if TYPE_CHECKING:
 class Rule:
     name: str
     order: ClassVar[int] = 100
-    has_references: ClassVar[bool] = False
-    has_footnotes: ClassVar[bool] = False
+    has_references: bool = field(init=False, default=False)
+    has_footnotes: bool = field(init=False, default=False)
 
-    def parse_paragraph_continuation(
-        self, parser: Parser, state: BlockState, lines: list[str]
-    ) -> Node | None:
+    def parse_paragraph_continuation(self, parser: Parser, state: BlockState, lines: list[str]) -> Node | None:
         return None
 
 

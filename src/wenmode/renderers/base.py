@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass
 from typing import ClassVar, cast
 
@@ -22,13 +22,18 @@ class BaseRenderer:
         super().__init_subclass__()
         cls.handlers = dict(cls.handlers)
 
-    def create_context(self, node: Node) -> RenderContext:
+    def create_context(self, node: Node | None = None) -> RenderContext:
         return RenderContext()
 
     def render(self, node: Node, context: RenderContext | None = None) -> str:
         if context is None:
             context = self.create_context(node)
         return self.render_node(node, context)
+
+    def render_iter(self, nodes: Iterable[Node]) -> Iterator[str]:
+        context = self.create_context()
+        for node in nodes:
+            yield self.render_node(node, context)
 
     def render_node(self, node: Node, context: RenderContext) -> str:
         handler = self.handlers.get(node.type)

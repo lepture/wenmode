@@ -15,17 +15,15 @@ from wenmode import Wenmode
 
 wenmode = Wenmode()
 
-tree = wenmode.parse('# Hello\n\nThis is **wenmode**.')
-html = wenmode.render(tree)
-ast = tree.to_ast()
+html = wenmode.render('# Hello\n\nThis is **wenmode**.')
 ```
 
-`parse()` returns a `Root` node from `wenmode.nodes`. `render()` accepts a node,
-so parsing and rendering stay explicit:
+`render()` parses source text and renders it. Use `parse()` when you need the
+syntax tree:
 
 ```python
 tree = wenmode.parse('A [link](https://example.com).\n')
-html = wenmode.render(tree)
+ast = tree.to_ast()
 ```
 
 `parse()` also accepts synchronous text streams and other iterables of lines:
@@ -44,9 +42,8 @@ different output format:
 from wenmode import MarkdownRenderer, Wenmode
 
 wenmode = Wenmode(renderer=MarkdownRenderer())
-tree = wenmode.parse('# Hello\n')
 
-markdown = wenmode.render(tree)
+markdown = wenmode.render('# Hello\n')
 ```
 
 Wenmode currently provides:
@@ -76,9 +73,10 @@ from wenmode import Wenmode
 from wenmode.rules import AtxHeading, FencedCode, Image, InlineCode, Link
 
 wenmode = Wenmode([AtxHeading, FencedCode, Link, Image, InlineCode])
-tree = wenmode.parse('# h1\n\nhi `code` **strong**')
 
-assert wenmode.render(tree) == '<h1>h1</h1>\n<p>hi <code>code</code> **strong**</p>\n'
+assert wenmode.render('# h1\n\nhi `code` **strong**') == (
+    '<h1>h1</h1>\n<p>hi <code>code</code> **strong**</p>\n'
+)
 ```
 
 Because `Emphasis` is not enabled above, `**strong**` stays as text. Enabling
@@ -118,8 +116,7 @@ wenmode = Wenmode()
 wenmode.register_rule(ContainerDirective)
 wenmode.register_directive_renderer(Admonition())
 
-tree = wenmode.parse(':::note[Title]\nBody.\n:::\n')
-html = wenmode.render(tree)
+html = wenmode.render(':::note[Title]\nBody.\n:::\n')
 ```
 
 `register_directive_renderer()` requires an `HTMLRenderer`, because directive
@@ -173,6 +170,40 @@ strikethrough, task lists, extended autolinks, and footnotes:
 from wenmode import Wenmode, github
 
 wenmode = Wenmode(github)
+```
+
+## Streaming Output
+
+Use the `streaming` preset when you want to render HTML chunks without waiting
+for the entire document to be parsed and rendered:
+
+```python
+from wenmode import Wenmode, streaming
+
+wenmode = Wenmode(streaming)
+
+for chunk in wenmode.stream('# Hello\n\nA [link](/url).\n'):
+    send(chunk)
+```
+
+The `streaming` preset uses the CommonMark-oriented rules, but disables
+reference-style links and images. Direct links and images still work, while
+`[label]`, `[label][id]`, and `![label]` stay as text.
+
+For FastAPI, pass the synchronous iterator to `StreamingResponse`:
+
+```python
+from fastapi.responses import StreamingResponse
+from wenmode import Wenmode, streaming
+
+wenmode = Wenmode(streaming)
+
+
+async def preview(markdown: str):
+    return StreamingResponse(
+        wenmode.stream(markdown),
+        media_type='text/html; charset=utf-8',
+    )
 ```
 
 ## Nodes
@@ -229,8 +260,7 @@ from wenmode import Wenmode
 from wenmode.rules import Footnote
 
 wenmode = Wenmode([Footnote])
-tree = wenmode.parse('A note[^one].\n\n[^one]: Footnote text.\n')
-html = wenmode.render(tree)
+html = wenmode.render('A note[^one].\n\n[^one]: Footnote text.\n')
 ```
 
 ## Rule Layout

@@ -70,7 +70,7 @@ class HTMLRenderer(BaseRenderer):
         self.sanitize_urls = sanitize_urls
         self.directives = list(directives)
 
-    def create_context(self, node: Node) -> HTMLRenderContext:
+    def create_context(self, node: Node | None = None) -> HTMLRenderContext:
         definitions = node.footnote_definitions if isinstance(node, Root) else None
         return HTMLRenderContext(FootnoteRenderState(definitions=definitions or {}))
 

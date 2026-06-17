@@ -22,13 +22,16 @@ ANGLE_SPAN_RE = re.compile(rf'{URI_RE}|{EMAIL_RE}|{HTML_RE}')
 class Image(InlineRule):
     has_references = True
 
-    def __init__(self) -> None:
+    def __init__(self, references: bool = True) -> None:
+        self.has_references = references
         super().__init__('image', r'!\[', '!')
 
     def parse(
         self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
     ) -> tuple[Node | None, int]:
-        parsed = parse_link_or_image(parser, text, match.start(), image=True, state=state)
+        parsed = parse_link_or_image(
+            parser, text, match.start(), image=True, state=state, references=self.has_references
+        )
         if parsed is None:
             return None, match.start()
 
@@ -39,7 +42,8 @@ class Image(InlineRule):
 class Link(InlineRule):
     has_references = True
 
-    def __init__(self) -> None:
+    def __init__(self, references: bool = True) -> None:
+        self.has_references = references
         super().__init__('link', r'\[', '[')
 
     def parse(
@@ -47,7 +51,9 @@ class Link(InlineRule):
     ) -> tuple[Node | None, int]:
         if match.start() > 0 and text[match.start() - 1] == '!' and not is_escaped(text, match.start() - 1):
             return None, match.start()
-        parsed = parse_link_or_image(parser, text, match.start(), image=False, state=state)
+        parsed = parse_link_or_image(
+            parser, text, match.start(), image=False, state=state, references=self.has_references
+        )
         if parsed is None:
             return None, match.start()
 
@@ -60,7 +66,7 @@ def normalize_optional_text(value: str | None) -> str | None:
 
 
 def parse_link_or_image(
-    parser: Parser, text: str, start: int, image: bool, state: BlockState | None
+    parser: Parser, text: str, start: int, image: bool, state: BlockState | None, references: bool = True
 ) -> tuple[str, str, str | None, int] | None:
     label_start = start + 2 if image else start + 1
     label_end = find_closing_bracket(text, label_start)
@@ -76,6 +82,8 @@ def parse_link_or_image(
     if direct is not None:
         url, title, end = direct
         return label, url, title, end
+    if not references:
+        return None
 
     reference_label = label
     end = after_label

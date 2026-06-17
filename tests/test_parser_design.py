@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from io import StringIO
 
-from wenmode import HTMLRenderer, Parser, github
+import pytest
+
+from wenmode import HTMLRenderer, Parser, StreamingUnsupportedError, Wenmode, commonmark, github, streaming
 from wenmode.rules import (
     AtxHeading,
     Blockquote,
@@ -172,6 +174,61 @@ def test_image_keeps_reference_definitions_enabled() -> None:
     parser = Parser([Image])
 
     assert render(parser, '[x]: /img.png\n\n![x]\n') == '<p><img src="/img.png" alt="x" /></p>\n'
+
+
+def test_link_and_image_can_disable_references() -> None:
+    parser = Parser([Image(references=False), Link(references=False)])
+
+    assert render(parser, '[x](/url) and ![alt](/img.png)\n') == (
+        '<p><a href="/url">x</a> and <img src="/img.png" alt="alt" /></p>\n'
+    )
+    assert render(parser, '[x]: /url\n\n[x]\n\n![x]\n') == '<p>[x]: /url</p>\n<p>[x]</p>\n<p>![x]</p>\n'
+    assert 'reference_definition' not in parser.rules
+
+
+def test_streaming_preset_disables_references() -> None:
+    parser = Parser(streaming)
+
+    assert 'reference_definition' not in parser.rules
+    assert render(parser, '[x](/url) and ![alt](/img.png)\n') == (
+        '<p><a href="/url">x</a> and <img src="/img.png" alt="alt" /></p>\n'
+    )
+    assert render(parser, '[x]: /url\n\n[x]\n\n![x]\n') == '<p>[x]: /url</p>\n<p>[x]</p>\n<p>![x]</p>\n'
+
+
+def test_wenmode_stream_matches_full_render_for_streaming_preset() -> None:
+    wenmode = Wenmode(streaming)
+    markdown = '# Title\n\nA [link](/url).\n\n- one\n- two\n'
+
+    assert ''.join(wenmode.stream(markdown)) == render(wenmode.parser, markdown)
+    assert ''.join(wenmode.stream(StringIO(markdown))) == render(wenmode.parser, markdown)
+    assert ''.join(wenmode.stream(lines(markdown))) == render(wenmode.parser, markdown)
+
+
+def test_wenmode_stream_does_not_read_entire_input_before_first_chunk() -> None:
+    consumed = 0
+
+    def chunks():
+        nonlocal consumed
+        for line in ['# Title\n', '\n', 'Second paragraph.\n']:
+            consumed += 1
+            yield line
+
+    stream = Wenmode(streaming).stream(chunks())
+
+    assert next(stream) == '<h1>Title</h1>\n'
+    assert consumed == 1
+
+
+def test_wenmode_stream_rejects_unsupported_rules() -> None:
+    with pytest.raises(StreamingUnsupportedError):
+        next(Wenmode(commonmark).stream('[x]\n\n[x]: /url\n'))
+
+    with pytest.raises(StreamingUnsupportedError):
+        next(Wenmode(github).stream('a[^one]\n\n[^one]: note\n'))
+
+    with pytest.raises(StreamingUnsupportedError):
+        next(Wenmode([Footnote]).stream('a[^one]\n\n[^one]: note\n'))
 
 
 def test_parser_reuses_footnote_state_per_parse() -> None:

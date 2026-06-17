@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 
 from .nodes import Node, Root
 from .parser import Parser
@@ -26,8 +26,14 @@ class Wenmode:
     def parse(self, source: LineSource) -> Root:
         return self.parser.parse(source)
 
-    def render(self, node: Node) -> str:
+    def render(self, source: LineSource) -> str:
+        return self.render_node(self.parse(source))
+
+    def render_node(self, node: Node) -> str:
         return self.renderer.render(node)
+
+    def stream(self, source: LineSource) -> Iterator[str]:
+        return self.renderer.render_iter(self.parser.parse_iter(source))
 
     def register_rule(self, rule: type[Rule] | Rule) -> None:
         self.parser.register_rule(rule)

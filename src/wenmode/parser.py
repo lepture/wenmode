@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 import string
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Iterator
 from typing import TypeVar, cast
 
 from .nodes import FootnoteDefinition as FootnoteDefinitionNode
@@ -21,6 +21,10 @@ HTML_TAG_START_RE = re.compile(r'</?[A-Za-z]')
 HTML_PARAGRAPH_INTERRUPT_RE = re.compile(r'(?i)<(?:script|pre|style|textarea)(?:\s|>|$)')
 PUNCTUATION = set(string.punctuation)
 T = TypeVar('T', bound=Rule)
+
+
+class StreamingUnsupportedError(ValueError):
+    pass
 
 
 class Parser:
@@ -53,16 +57,20 @@ class Parser:
     def _rebuild_rules(self) -> None:
         resolved_rules = list(self._registered_rules)
         rule_names = {rule.name for rule in resolved_rules}
-        if any(rule.has_references for rule in resolved_rules) and 'reference_definition' not in rule_names:
+        has_references = any(rule.has_references for rule in resolved_rules)
+        if has_references and 'reference_definition' not in rule_names:
             resolved_rules.append(ReferenceDefinition())
-        if any(rule.has_footnotes for rule in resolved_rules) and 'footnote_definition' not in rule_names:
+        has_footnotes = any(rule.has_footnotes for rule in resolved_rules)
+        if has_footnotes and 'footnote_definition' not in rule_names:
             resolved_rules.append(FootnoteDefinitionRule())
 
         self.rules = {rule.name: rule for rule in resolved_rules}
         self.block_rules = sorted_by_order([rule for rule in resolved_rules if isinstance(rule, BlockRule)])
         self.inline_rules = sorted_by_order([rule for rule in resolved_rules if isinstance(rule, InlineRule)])
         self._emphasis_enabled = 'emphasis' in self.rules
+        self._references_enabled = has_references or 'reference_definition' in self.rules
         self._footnotes_enabled = 'footnote_definition' in self.rules
+        self._defer_inlines = self._references_enabled or self._footnotes_enabled
         self._inline_rule_order = {rule.name: index for index, rule in enumerate(self.inline_rules)}
         self._triggered_inline_rules, self._search_inline_rules = self._prepare_inline_dispatch(self.inline_rules)
         self._inline_trigger_re = self._compile_inline_trigger_re(self._triggered_inline_rules)
@@ -74,6 +82,14 @@ class Parser:
             root.footnote_definitions = collect_footnote_definitions(root)
         return root
 
+    def parse_iter(self, source: LineSource) -> Iterator[Node]:
+        self._assert_streaming_supported()
+        state = self._create_block_state(source, defer_inlines=False)
+        while not state.done:
+            node = self._parse_next_block_node(state)
+            if node is not None:
+                yield node
+
     def parse_blocks(self, text: str, parent_state: BlockState) -> list[Node]:
         state = BlockState(
             text.splitlines(keepends=True),
@@ -82,22 +98,32 @@ class Parser:
             depth=parent_state.depth + 1,
             pending_inlines=parent_state.pending_inlines,
             pending_inline_callbacks=parent_state.pending_inline_callbacks,
-            defer_inlines=True,
+            defer_inlines=parent_state.defer_inlines,
         )
         return self._parse_block_nodes(state)
 
     def _parse_document(self, source: LineSource) -> list[Node]:
-        if isinstance(source, str):
-            state: BlockState = BlockState(source.splitlines(keepends=True), defer_inlines=True)
-        else:
-            state = StreamBlockState(StreamLineBuffer(source), defer_inlines=True)
+        state = self._create_block_state(source, defer_inlines=self._defer_inlines)
         children = self._parse_block_nodes(state)
         self._resolve_pending_inlines(state)
         return children
 
+    def _create_block_state(self, source: LineSource, defer_inlines: bool) -> BlockState:
+        if isinstance(source, str):
+            return BlockState(source.splitlines(keepends=True), defer_inlines=defer_inlines)
+        return StreamBlockState(StreamLineBuffer(source), defer_inlines=defer_inlines)
+
     def _parse_block_nodes(self, state: BlockState) -> list[Node]:
         children: list[Node] = []
 
+        while not state.done:
+            node = self._parse_next_block_node(state)
+            if node is not None:
+                children.append(node)
+
+        return children
+
+    def _parse_next_block_node(self, state: BlockState) -> Node | None:
         while not state.done:
             line = state.line
             if line.strip() == '':
@@ -105,8 +131,7 @@ class Parser:
                 continue
 
             if self._is_plain_paragraph_start(line):
-                children.append(self._parse_paragraph(state))
-                continue
+                return self._parse_paragraph(state)
 
             match = self._block_openers.match(line) if self._block_openers else None
             if match is not None and not self._container_depth_exceeded(match, state):
@@ -114,14 +139,19 @@ class Parser:
                 previous_index = state.index
                 parsed = rule.parse(self, state, match)
                 if parsed is not None:
-                    children.append(parsed)
-                    continue
+                    return parsed
                 if state.index != previous_index:
                     continue
 
-            children.append(self._parse_paragraph(state))
+            return self._parse_paragraph(state)
+        return None
 
-        return children
+    def _assert_streaming_supported(self) -> None:
+        if not self._defer_inlines:
+            return
+        raise StreamingUnsupportedError(
+            'streaming output requires rules without references or footnotes; use the streaming preset'
+        )
 
     def parse_inlines(self, text: str, state: BlockState | None = None) -> list[Node]:
         if state is not None and state.defer_inlines:

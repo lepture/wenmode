@@ -56,6 +56,26 @@ commonmark = [
     Emphasis,
 ]
 
+streaming = [
+    ThematicBreak,
+    FencedCode,
+    IndentedCode,
+    HtmlBlock,
+    List,
+    AtxHeading,
+    SetextHeading,
+    Blockquote,
+    HardBreak,
+    Autolink,
+    RawHtml,
+    BackslashEscape,
+    CharacterReference,
+    Image(references=False),
+    Link(references=False),
+    InlineCode,
+    Emphasis,
+]
+
 github = [
     Table,
     ThematicBreak,
