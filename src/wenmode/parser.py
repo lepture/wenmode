@@ -95,6 +95,7 @@ class Parser:
             text.splitlines(keepends=True),
             references=parent_state.references,
             footnotes=parent_state.footnotes,
+            abbreviations=parent_state.abbreviations,
             depth=parent_state.depth + 1,
             pending_inlines=parent_state.pending_inlines,
             pending_inline_callbacks=parent_state.pending_inline_callbacks,

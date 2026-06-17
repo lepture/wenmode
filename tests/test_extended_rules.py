@@ -9,6 +9,7 @@ import pytest
 from wenmode import HTMLRenderer, MarkdownRenderer, Parser
 from wenmode.presets import commonmark, github
 from wenmode.rules import (
+    Abbreviation,
     BackslashEscape,
     Blockquote,
     BlockSpoiler,
@@ -176,6 +177,20 @@ def test_block_spoiler_rule() -> None:
         == '<div class="spoiler">\n<p>hidden <em>thing</em></p>\n<p>second paragraph</p>\n</div>\n'
     )
     assert MarkdownRenderer().render(root) == '>! hidden *thing*\n>!\n>! second paragraph\n'
+
+
+def test_abbreviation_rule() -> None:
+    parser = Parser([Abbreviation])
+    root = parser.parse(
+        'The HTML spec is maintained by W3C.\n\n*[HTML]: Hyper Text Markup Language\n*[W3C]: Consortium\n'
+    )
+
+    assert (
+        HTMLRenderer().render(root)
+        == '<p>The <abbr title="Hyper Text Markup Language">HTML</abbr> spec is maintained by '
+        '<abbr title="Consortium">W3C</abbr>.</p>\n'
+    )
+    assert MarkdownRenderer().render(root) == 'The HTML spec is maintained by W3C\\.\n'
 
 
 def test_footnote_identifiers_disallow_spaces() -> None:

@@ -7,6 +7,7 @@ from typing import Any, Protocol
 from urllib.parse import quote, urlsplit
 
 from wenmode.nodes import (
+    Abbreviation,
     Blockquote,
     BlockSpoiler,
     Break,
@@ -237,6 +238,12 @@ def render_root(renderer: HTMLRenderer, node: Root, context: HTMLRenderContext) 
     if node.footnote_definitions:
         out += renderer.render_footnote_section(context)
     return out
+
+
+@HTMLRenderer.register('abbreviation')
+def render_abbreviation(renderer: HTMLRenderer, node: Abbreviation, context: HTMLRenderContext) -> str:
+    attrs = {'title': node.title} if node.title else {}
+    return f'<abbr{renderer.render_attrs(attrs)}>{renderer.render_children(node.children, context)}</abbr>'
 
 
 @HTMLRenderer.register('blockquote')

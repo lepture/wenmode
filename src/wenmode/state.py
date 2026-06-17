@@ -46,11 +46,18 @@ class Footnote:
 
 
 @dataclass
+class Abbreviation:
+    label: str
+    title: str
+
+
+@dataclass
 class BlockState:
     lines: list[str]
     index: int = 0
     references: dict[str, Reference] = field(default_factory=dict)
     footnotes: dict[str, Footnote] = field(default_factory=dict)
+    abbreviations: dict[str, Abbreviation] = field(default_factory=dict)
     depth: int = 0
     pending_inlines: list[tuple[list[Node], str]] = field(default_factory=list)
     pending_inline_callbacks: list[Callable[[], None]] = field(default_factory=list)
@@ -94,6 +101,9 @@ class BlockState:
     def get_footnote(self, identifier: str) -> Footnote | None:
         return self.footnotes.get(identifier)
 
+    def get_abbreviation(self, label: str) -> Abbreviation | None:
+        return self.abbreviations.get(label)
+
 
 class StreamBlockState(BlockState):
     def __init__(
@@ -102,6 +112,7 @@ class StreamBlockState(BlockState):
         index: int = 0,
         references: dict[str, Reference] | None = None,
         footnotes: dict[str, Footnote] | None = None,
+        abbreviations: dict[str, Abbreviation] | None = None,
         depth: int = 0,
         pending_inlines: list[tuple[list[Node], str]] | None = None,
         pending_inline_callbacks: list[Callable[[], None]] | None = None,
@@ -113,6 +124,7 @@ class StreamBlockState(BlockState):
             index=index,
             references=references if references is not None else {},
             footnotes=footnotes if footnotes is not None else {},
+            abbreviations=abbreviations if abbreviations is not None else {},
             depth=depth,
             pending_inlines=pending_inlines if pending_inlines is not None else [],
             pending_inline_callbacks=pending_inline_callbacks if pending_inline_callbacks is not None else [],
@@ -147,4 +159,3 @@ class StreamBlockState(BlockState):
                 return line
             offset += 1
         return None
-

@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 
 from wenmode.nodes import (
+    Abbreviation,
     Blockquote,
     BlockSpoiler,
     Break,
@@ -117,6 +118,11 @@ def render_root(renderer: MarkdownRenderer, node: Root, context: RenderContext) 
 @MarkdownRenderer.register('paragraph')
 def render_paragraph(renderer: MarkdownRenderer, node: Paragraph, context: RenderContext) -> str:
     return renderer.render_children(node.children, context) + '\n\n'
+
+
+@MarkdownRenderer.register('abbreviation')
+def render_abbreviation(renderer: MarkdownRenderer, node: Abbreviation, context: RenderContext) -> str:
+    return renderer.render_children(node.children, context)
 
 
 @MarkdownRenderer.register('heading')

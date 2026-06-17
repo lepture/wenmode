@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from .abbr import Abbreviation
 from .blocks.blank_line import BlankLine
 from .blocks.blockquote import Blockquote
 from .blocks.directive import ContainerDirective, FencedDirective, LeafDirective
@@ -27,6 +28,7 @@ from .inlines.strikethrough import Strikethrough
 from .inlines.text import BackslashEscape, CharacterReference, HardBreak
 
 __all__ = [
+    'Abbreviation',
     'AtxHeading',
     'Autolink',
     'BackslashEscape',

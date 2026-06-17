@@ -208,6 +208,12 @@ class InlineSpoiler(Parent):
 
 
 @dataclass
+class Abbreviation(Parent):
+    title: str = ''
+    type: str = 'abbreviation'
+
+
+@dataclass
 class Table(Parent):
     block: ClassVar[bool] = True
     align: list[str | None] = field(default_factory=list)
