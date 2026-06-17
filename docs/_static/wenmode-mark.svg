@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">Wenmode mark</title>
+  <desc id="desc">A brush-style mark based on the Chinese character wen.</desc>
+  <defs>
+    <linearGradient id="paper" x1="7" x2="57" y1="5" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fffdf7"/>
+      <stop offset="1" stop-color="#f2eee3"/>
+    </linearGradient>
+    <linearGradient id="ink" x1="13" x2="55" y1="8" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#343942"/>
+      <stop offset=".42" stop-color="#171b22"/>
+      <stop offset="1" stop-color="#05070a"/>
+    </linearGradient>
+    <filter id="soft-shadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="1.4" stdDeviation="1.6" flood-color="#15130f" flood-opacity=".16"/>
+    </filter>
+  </defs>
+  <rect x="3" y="3" width="58" height="58" rx="15" fill="url(#paper)"/>
+  <path d="M9.4 48.9c8.3 7.7 21.2 10.3 34.7 7.2 6.7-1.5 11.4-4.7 14-9.5" fill="none" stroke="#ded6c5" stroke-width="1.25" stroke-linecap="round"/>
+  <g filter="url(#soft-shadow)" fill="none" stroke="url(#ink)" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M33.2 8.9c3.4 2.7 5.6 5.8 6.5 9.2" stroke-width="7.6"/>
+    <path d="M12.8 25c9-3.3 22.8-4.1 41.2-2.4" stroke-width="8.4"/>
+    <path d="M39.6 29.4c-5.9 10.9-15.3 20.4-28.1 28.4" stroke-width="8.2"/>
+    <path d="M24.7 33.4c7.6 10.9 18.2 18.8 31.8 23.6" stroke-width="8.8"/>
+  </g>
+  <path d="M18.1 24.4c8.6-1.6 18.2-1.9 28.9-.8" fill="none" stroke="#fffaf0" stroke-width="1.15" stroke-linecap="round" opacity=".58"/>
+  <path d="M33.6 38.2c-3.1 4.8-7.3 9.2-12.7 13.3" fill="none" stroke="#fffaf0" stroke-width="1.05" stroke-linecap="round" opacity=".52"/>
+  <path d="M34.4 43.7c4.1 3.8 8.9 6.9 14.2 9.3" fill="none" stroke="#fffaf0" stroke-width=".95" stroke-linecap="round" opacity=".45"/>
+  <rect x="48.6" y="40.5" width="11.4" height="11.4" rx="2.4" fill="#c43a31"/>
+  <g transform="translate(48.6 40.5)" fill="none" stroke="#fff8ef" stroke-width=".55" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3.2.9v9.6"/>
+    <path d="M.9 2.9c.3 1.6 1 2.5 2.3 2.5 1.1 0 1.9-.8 2.4-2.2"/>
+    <path d="M3.2 6.5c-1.4.3-2.2 1.6-2.2 3.4"/>
+    <path d="M3.2 6.5c1.4.3 2.1 1.6 2.2 3.4"/>
+    <path d="M7.4 1.2c1.3-.5 2.8-.1 3.1 1 .3 1.2-.8 2.1-2.5 1.9-1.2-.1-1.8-1.8-.6-2.9Z"/>
+    <path d="M6.9 2.8h3.5"/>
+    <path d="M5.7 5.5h5"/>
+    <path d="M9.6 5.6c-.9 1.2-2 2-3.6 2.8"/>
+    <path d="M10.1 6.9C9 8.1 7.8 9 6.5 9.7"/>
+    <path d="M10.7 7.9c-1 .9-1.9 1.7-3.1 2.3"/>
+    <path d="M10.7 5.7c-.4 1.5-.7 3-.5 4.8"/>
+  </g>
+</svg>

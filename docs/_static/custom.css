@@ -1,0 +1,201 @@
+:root {
+  --light-accent-1: #fffcfc;
+  --light-accent-2: #fef8f7;
+  --light-accent-3: #fdece9;
+  --light-accent-4: #ffddd8;
+  --light-accent-5: #ffcfc8;
+  --light-accent-6: #f9c0b8;
+  --light-accent-7: #efaca3;
+  --light-accent-8: #e59388;
+  --light-accent-9: #c43a31;
+  --light-accent-10: #b42923;
+  --light-accent-11: #c73d33;
+  --light-accent-12: #5f211b;
+
+  --light-accent-a1: #ff000003;
+  --light-accent-a2: #e0200008;
+  --light-accent-a3: #e8230016;
+  --light-accent-a4: #ff210027;
+  --light-accent-a5: #ff210037;
+  --light-accent-a6: #ea1d0047;
+  --light-accent-a7: #d319005c;
+  --light-accent-a8: #c8180077;
+  --light-accent-a9: #b60b00ce;
+  --light-accent-a10: #a80700dc;
+  --light-accent-a11: #b90d00cc;
+  --light-accent-a12: #4c0700e4;
+
+  --light-accent-contrast: #fff;
+  --light-accent-surface: #fef6f5cc;
+  --light-accent-indicator: #c43a31;
+  --light-accent-track: #c43a31;
+}
+
+@supports (color: color(display-p3 1 1 1)) {
+  @media (color-gamut: p3) {
+    :root {
+      --light-accent-1: oklch(99.4% 0.0028 28.07);
+      --light-accent-2: oklch(98.3% 0.0071 28.07);
+      --light-accent-3: oklch(95.6% 0.0188 28.07);
+      --light-accent-4: oklch(92.8% 0.0419 28.07);
+      --light-accent-5: oklch(89.5% 0.0552 28.07);
+      --light-accent-6: oklch(85.6% 0.0667 28.07);
+      --light-accent-7: oklch(80.6% 0.0804 28.07);
+      --light-accent-8: oklch(74.4% 0.1016 28.07);
+      --light-accent-9: oklch(55.2% 0.1763 28.07);
+      --light-accent-10: oklch(50.6% 0.1763 28.07);
+      --light-accent-11: oklch(55.9% 0.1763 28.07);
+      --light-accent-12: oklch(34.1% 0.0915 28.07);
+
+      --light-accent-a1: color(display-p3 0.6745 0.0235 0.0235 / 0.012);
+      --light-accent-a2: color(display-p3 0.7569 0.1451 0.0196 / 0.032);
+      --light-accent-a3: color(display-p3 0.7647 0.1529 0.0078 / 0.083);
+      --light-accent-a4: color(display-p3 0.8431 0.1373 0.0078 / 0.15);
+      --light-accent-a5: color(display-p3 0.851 0.1333 0.0039 / 0.208);
+      --light-accent-a6: color(display-p3 0.7843 0.1176 0.0039 / 0.271);
+      --light-accent-a7: color(display-p3 0.7137 0.1137 0.0039 / 0.353);
+      --light-accent-a8: color(display-p3 0.6745 0.1059 0.0039 / 0.455);
+      --light-accent-a9: color(display-p3 0.6275 0.0627 0 / 0.777);
+      --light-accent-a10: color(display-p3 0.5765 0.0471 0 / 0.828);
+      --light-accent-a11: color(display-p3 0.6392 0.0667 0 / 0.769);
+      --light-accent-a12: color(display-p3 0.2588 0.0314 0 / 0.883);
+
+      --light-accent-contrast: #fff;
+      --light-accent-surface: color(display-p3 0.9922 0.9647 0.9608 / 0.8);
+      --light-accent-indicator: oklch(55.2% 0.1763 28.07);
+      --light-accent-track: oklch(55.2% 0.1763 28.07);
+    }
+  }
+}
+
+:root, .light, .light-theme {
+  --accent-1: var(--light-accent-1);
+  --accent-2: var(--light-accent-2);
+  --accent-3: var(--light-accent-3);
+  --accent-4: var(--light-accent-4);
+  --accent-5: var(--light-accent-5);
+  --accent-6: var(--light-accent-6);
+  --accent-7: var(--light-accent-7);
+  --accent-8: var(--light-accent-8);
+  --accent-9: var(--light-accent-9);
+  --accent-10: var(--light-accent-10);
+  --accent-11: var(--light-accent-11);
+  --accent-12: var(--light-accent-12);
+  --accent-a1: var(--light-accent-a1);
+  --accent-a2: var(--light-accent-a2);
+  --accent-a3: var(--light-accent-a3);
+  --accent-a4: var(--light-accent-a4);
+  --accent-a5: var(--light-accent-a5);
+  --accent-a6: var(--light-accent-a6);
+  --accent-a7: var(--light-accent-a7);
+  --accent-a8: var(--light-accent-a8);
+  --accent-a9: var(--light-accent-a9);
+  --accent-a10: var(--light-accent-a10);
+  --accent-a11: var(--light-accent-a11);
+  --accent-a12: var(--light-accent-a12);
+  --accent-contrast: var(--light-accent-contrast);
+  --accent-surface: var(--light-accent-surface);
+  --accent-indicator: var(--light-accent-indicator);
+  --accent-track: var(--light-accent-track);
+}
+
+:root {
+  --dark-accent-1: #180e0d;
+  --dark-accent-2: #211210;
+  --dark-accent-3: #3f0e0a;
+  --dark-accent-4: #570203;
+  --dark-accent-5: #680807;
+  --dark-accent-6: #7b1814;
+  --dark-accent-7: #952922;
+  --dark-accent-8: #c1372e;
+  --dark-accent-9: #c43a31;
+  --dark-accent-10: #b42923;
+  --dark-accent-11: #ff9081;
+  --dark-accent-12: #ffd0c7;
+
+  --dark-accent-a1: #f1000008;
+  --dark-accent-a2: #f4200312;
+  --dark-accent-a3: #fc020032;
+  --dark-accent-a4: #ff00004b;
+  --dark-accent-a5: #fd00005e;
+  --dark-accent-a6: #ff211872;
+  --dark-accent-a7: #fe3c2f8e;
+  --dark-accent-a8: #ff4539bd;
+  --dark-accent-a9: #ff483cc0;
+  --dark-accent-a10: #ff342caf;
+  --dark-accent-a11: #ff9081;
+  --dark-accent-a12: #ffd0c7;
+
+  --dark-accent-contrast: #fff;
+  --dark-accent-surface: #31131080;
+  --dark-accent-indicator: #c43a31;
+  --dark-accent-track: #c43a31;
+}
+
+@supports (color: color(display-p3 1 1 1)) {
+  @media (color-gamut: p3) {
+    :root {
+      --dark-accent-1: oklch(17.8% 0.016 28.07);
+      --dark-accent-2: oklch(20.3% 0.0259 28.07);
+      --dark-accent-3: oklch(25% 0.0773 28.07);
+      --dark-accent-4: oklch(28.8% 0.1153 28.07);
+      --dark-accent-5: oklch(33.1% 0.1282 28.07);
+      --dark-accent-6: oklch(38.2% 0.134 28.07);
+      --dark-accent-7: oklch(45% 0.1451 28.07);
+      --dark-accent-8: oklch(54.4% 0.1763 28.07);
+      --dark-accent-9: oklch(55.2% 0.1763 28.07);
+      --dark-accent-10: oklch(50.6% 0.1763 28.07);
+      --dark-accent-11: oklch(78.4% 0.1763 28.07);
+      --dark-accent-12: oklch(90.2% 0.0636 28.07);
+
+      --dark-accent-a1: color(display-p3 0.9608 0 0 / 0.022);
+      --dark-accent-a2: color(display-p3 1 0.2 0.0667 / 0.059);
+      --dark-accent-a3: color(display-p3 0.9961 0.0902 0 / 0.173);
+      --dark-accent-a4: color(display-p3 0.9961 0 0 / 0.261);
+      --dark-accent-a5: color(display-p3 1 0.1059 0.0314 / 0.328);
+      --dark-accent-a6: color(display-p3 1 0.2235 0.1569 / 0.404);
+      --dark-accent-a7: color(display-p3 1 0.3255 0.2471 / 0.505);
+      --dark-accent-a8: color(display-p3 1 0.3529 0.2824 / 0.677);
+      --dark-accent-a9: color(display-p3 1 0.3647 0.2941 / 0.69);
+      --dark-accent-a10: color(display-p3 1 0.302 0.2392 / 0.627);
+      --dark-accent-a11: color(display-p3 1 0.6235 0.5569 / 0.937);
+      --dark-accent-a12: color(display-p3 1 0.8471 0.8118 / 0.971);
+
+      --dark-accent-contrast: #fff;
+      --dark-accent-surface: color(display-p3 0.1725 0.0784 0.0627 / 0.5);
+      --dark-accent-indicator: oklch(55.2% 0.1763 28.07);
+      --dark-accent-track: oklch(55.2% 0.1763 28.07);
+    }
+  }
+}
+
+.dark, .dark-theme {
+  --accent-1: var(--dark-accent-1);
+  --accent-2: var(--dark-accent-2);
+  --accent-3: var(--dark-accent-3);
+  --accent-4: var(--dark-accent-4);
+  --accent-5: var(--dark-accent-5);
+  --accent-6: var(--dark-accent-6);
+  --accent-7: var(--dark-accent-7);
+  --accent-8: var(--dark-accent-8);
+  --accent-9: var(--dark-accent-9);
+  --accent-10: var(--dark-accent-10);
+  --accent-11: var(--dark-accent-11);
+  --accent-12: var(--dark-accent-12);
+  --accent-a1: var(--dark-accent-a1);
+  --accent-a2: var(--dark-accent-a2);
+  --accent-a3: var(--dark-accent-a3);
+  --accent-a4: var(--dark-accent-a4);
+  --accent-a5: var(--dark-accent-a5);
+  --accent-a6: var(--dark-accent-a6);
+  --accent-a7: var(--dark-accent-a7);
+  --accent-a8: var(--dark-accent-a8);
+  --accent-a9: var(--dark-accent-a9);
+  --accent-a10: var(--dark-accent-a10);
+  --accent-a11: var(--dark-accent-a11);
+  --accent-a12: var(--dark-accent-a12);
+  --accent-contrast: var(--dark-accent-contrast);
+  --accent-surface: var(--dark-accent-surface);
+  --accent-indicator: var(--dark-accent-indicator);
+  --accent-track: var(--dark-accent-track);
+}

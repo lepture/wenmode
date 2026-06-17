@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="13 16 250 64" role="img" aria-labelledby="title desc">
+  <title id="title">Wenmode logo dark</title>
+  <desc id="desc">Wenmode logo optimized for dark mode with a brush-style wen mark and wordmark.</desc>
+  <defs>
+    <linearGradient id="paper" x1="23" x2="73" y1="21" y2="76" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#252b33"/>
+      <stop offset="1" stop-color="#10151c"/>
+    </linearGradient>
+    <linearGradient id="ink" x1="29" x2="71" y1="24" y2="74" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff8ec"/>
+      <stop offset=".45" stop-color="#f0e4d0"/>
+      <stop offset="1" stop-color="#d7c6a8"/>
+    </linearGradient>
+    <filter id="soft-shadow" x="10" y="14" width="76" height="80" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="1.4" stdDeviation="1.6" flood-color="#000000" flood-opacity=".32"/>
+    </filter>
+  </defs>
+  <rect x="19" y="19" width="58" height="58" rx="15" fill="url(#paper)" stroke="#3a424d" stroke-width=".8"/>
+  <path d="M25.4 64.9c8.3 7.7 21.2 10.3 34.7 7.2 6.7-1.5 11.4-4.7 14-9.5" fill="none" stroke="#524837" stroke-width="1.25" stroke-linecap="round"/>
+  <g filter="url(#soft-shadow)" fill="none" stroke="url(#ink)" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M49.2 24.9c3.4 2.7 5.6 5.8 6.5 9.2" stroke-width="7.6"/>
+    <path d="M28.8 41c9-3.3 22.8-4.1 41.2-2.4" stroke-width="8.4"/>
+    <path d="M55.6 45.4c-5.9 10.9-15.3 20.4-28.1 28.4" stroke-width="8.2"/>
+    <path d="M40.7 49.4c7.6 10.9 18.2 18.8 31.8 23.6" stroke-width="8.8"/>
+  </g>
+  <path d="M34.1 40.4c8.6-1.6 18.2-1.9 28.9-.8" fill="none" stroke="#161b22" stroke-width="1.15" stroke-linecap="round" opacity=".5"/>
+  <path d="M49.6 54.2c-3.1 4.8-7.3 9.2-12.7 13.3" fill="none" stroke="#161b22" stroke-width="1.05" stroke-linecap="round" opacity=".45"/>
+  <path d="M50.4 59.7c4.1 3.8 8.9 6.9 14.2 9.3" fill="none" stroke="#161b22" stroke-width=".95" stroke-linecap="round" opacity=".4"/>
+  <rect x="64.6" y="56.5" width="11.4" height="11.4" rx="2.4" fill="#d94a3f"/>
+  <g transform="translate(64.6 56.5)" fill="none" stroke="#fff8ef" stroke-width=".55" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3.2.9v9.6"/>
+    <path d="M.9 2.9c.3 1.6 1 2.5 2.3 2.5 1.1 0 1.9-.8 2.4-2.2"/>
+    <path d="M3.2 6.5c-1.4.3-2.2 1.6-2.2 3.4"/>
+    <path d="M3.2 6.5c1.4.3 2.1 1.6 2.2 3.4"/>
+    <path d="M7.4 1.2c1.3-.5 2.8-.1 3.1 1 .3 1.2-.8 2.1-2.5 1.9-1.2-.1-1.8-1.8-.6-2.9Z"/>
+    <path d="M6.9 2.8h3.5"/>
+    <path d="M5.7 5.5h5"/>
+    <path d="M9.6 5.6c-.9 1.2-2 2-3.6 2.8"/>
+    <path d="M10.1 6.9C9 8.1 7.8 9 6.5 9.7"/>
+    <path d="M10.7 7.9c-1 .9-1.9 1.7-3.1 2.3"/>
+    <path d="M10.7 5.7c-.4 1.5-.7 3-.5 4.8"/>
+  </g>
+  <text x="96" y="56" fill="#f7efe2" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="34" font-weight="700" letter-spacing="0">Wenmode</text>
+  <path d="M99 66.5h132" fill="none" stroke="#d94a3f" stroke-width="2.5" stroke-linecap="round"/>
+</svg>
