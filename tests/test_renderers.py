@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import ClassVar
 
 from wenmode import HTMLRenderer, MarkdownRenderer, Parser
 from wenmode.nodes import (
@@ -13,7 +12,6 @@ from wenmode.nodes import (
     FootnoteReference,
     Heading,
     Html,
-    HtmlAttrValue,
     Image,
     InlineCode,
     InlineMath,
@@ -49,21 +47,7 @@ class CustomParent(Parent):
 
 @dataclass
 class CustomElement(Parent):
-    html_tag: ClassVar[str | None] = 'mark'
     type: str = 'customElement'
-
-    def get_html_attrs(self) -> dict[str, HtmlAttrValue]:
-        return {'data-custom': 'yes', 'hidden': False, 'href': 'javascript:alert(1)'}
-
-
-@dataclass
-class CustomVoidElement(Node):
-    html_tag: ClassVar[str | None] = 'custom-void'
-    html_void: ClassVar[bool] = True
-    type: str = 'customVoidElement'
-
-    def get_html_attrs(self) -> dict[str, HtmlAttrValue]:
-        return {'checked': True, 'label': '<x>'}
 
 
 def root_with_footnote_definitions(children: list[Node]) -> Root:
@@ -95,23 +79,17 @@ def test_renderer_registers_custom_node_handler() -> None:
     assert HTMLRenderer().render(CustomLiteral(value='<x>')) == '<custom>&lt;x&gt;</custom>'
 
 
-def test_html_renderer_uses_node_html_tag_and_attrs_without_registration() -> None:
-    node = Root(
-        children=[
-            Paragraph(children=[CustomElement(children=[Text(value='marked')]), CustomVoidElement()]),
-        ]
-    )
+def test_html_renderer_custom_elements_require_registered_handler() -> None:
+    node = Paragraph(children=[CustomElement(children=[Text(value='marked')])])
 
-    assert HTMLRenderer().render(node) == (
-        '<p><mark data-custom="yes" href="javascript:alert(1)">marked</mark>'
-        '<custom-void checked label="&lt;x&gt;" /></p>\n'
-    )
+    assert HTMLRenderer().render(node) == '<p>marked</p>\n'
 
+    @HTMLRenderer.register('customElement')
+    def render_custom_element(renderer: HTMLRenderer, node: CustomElement, context: RenderContext) -> str:
+        attrs = renderer.render_attrs({'data-custom': 'yes', 'hidden': False})
+        return f'<mark{attrs}>{renderer.render_children(node.children, context)}</mark>'
 
-def test_nodes_omit_empty_html_attrs() -> None:
-    assert Link(url='/url').get_html_attrs() == {'href': '/url'}
-    assert Link(url='/url', title='title').get_html_attrs() == {'href': '/url', 'title': 'title'}
-    assert Image(url='/img.png', alt='alt').get_html_attrs() == {'src': '/img.png', 'alt': 'alt'}
+    assert HTMLRenderer().render(node) == '<p><mark data-custom="yes">marked</mark></p>\n'
 
 
 def test_html_renderer_always_escapes_text_code_and_attrs() -> None:

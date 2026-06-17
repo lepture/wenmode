@@ -63,6 +63,10 @@ class PlainTextRenderer(BaseRenderer):
 `BaseRenderer` falls back to rendering child nodes or literal `value` fields,
 which makes it a useful starting point for simple text renderers.
 
+`MarkdownRenderer` serializes the AST to canonical Markdown. It is not a
+source-preserving formatter; syntax details that are not represented in the AST
+may be normalized or omitted.
+
 ## Rules
 
 The default `Wenmode()` parser uses the `commonmark` preset. Pass an explicit
@@ -101,6 +105,48 @@ wenmode.register_rule(ContainerDirective)
 Rules are instances internally and are exposed through `wenmode.parser.rules` as
 a `{rule_name: rule}` dictionary. This lets rules consult other enabled rules
 without assuming a fixed preset.
+
+## Extension Protocol
+
+Extensions are rules and optional root transforms:
+
+- `BlockRule` matches and parses block-level syntax.
+- `InlineRule` matches and parses inline syntax.
+- `ContinueRule` can turn paragraph continuations into another block, such as a
+  setext heading or definition list.
+- `RootTransform` can prepare document-level state, inject required rules, and
+  transform the final root node.
+
+The extension API has these stable semantics:
+
+- `rule.name` is the rule key. Registering another rule with the same name
+  replaces the previous rule.
+- `rule.order` is used to sort rules with the same parser phase.
+- `InlineRule.trigger_chars` lets the parser dispatch common inline rules
+  without searching every rule at every position.
+- `RootTransform.required_rules` are registered automatically when the transform
+  is enabled.
+- `RootTransform.defer_inlines = True` lets a transform collect document-level
+  definitions before inline parsing is resolved. Such rules are not compatible
+  with streaming output.
+- Parser, rule, and transform instances must not store per-parse mutable state.
+
+Use `BlockState.store` for extension state:
+
+```python
+from wenmode.state import StateKey
+
+TERMS = StateKey('my_package.terms', lambda: {})
+
+
+def remember_term(state, label, title):
+    state.store.get(TERMS)[label] = title
+```
+
+Nested block parsing shares the same store, so definitions found inside block
+quotes, lists, directives, or footnotes are visible to document-level
+transforms. Each top-level parse gets a fresh store, so parser instances remain
+reusable.
 
 ## Directives
 
@@ -219,22 +265,43 @@ Node classes live in `wenmode.nodes`. Their `type` values follow mdast naming:
 - `paragraph`
 - `heading`
 - `blockquote`
+- `blockSpoiler`
 - `list`
 - `listItem`
+- `definitionList`
+- `definitionTerm`
+- `definitionDescription`
 - `code`
+- `math`
 - `thematicBreak`
 - `html`
 - `text`
 - `inlineCode`
+- `inlineMath`
 - `strong`
 - `emphasis`
+- `delete`
+- `mark`
+- `insert`
+- `superscript`
+- `subscript`
+- `ruby`
+- `inlineSpoiler`
+- `abbreviation`
+- `table`
+- `tableRow`
+- `tableCell`
 - `link`
 - `image`
 - `break`
 - `footnoteReference`
 - `footnoteDefinition`
+- `textDirective`
+- `leafDirective`
+- `containerDirective`
 
-Nodes are data objects. Rendering behavior belongs to renderers, so the same
+Nodes are pure data objects. They do not carry HTML tag names, HTML attributes,
+or other renderer hints. Rendering behavior belongs to renderers, so the same
 AST can be rendered to HTML, Markdown, or another text format.
 
 Use `to_ast()` when you need a plain dictionary representation:
@@ -267,6 +334,10 @@ from wenmode.rules import Footnote
 wenmode = Wenmode([Footnote])
 html = wenmode.render('A note[^one].\n\n[^one]: Footnote text.\n')
 ```
+
+Internally, references and footnotes are stored through `BlockState.store`, the
+same mechanism available to custom extensions. They are not stored on the parser
+or as fixed `BlockState` fields.
 
 ## Table Of Contents
 

@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import re
 from io import StringIO
 
 import pytest
 
 from wenmode import HTMLRenderer, Parser, StreamingUnsupportedError, Wenmode
+from wenmode.nodes import Node, Root
 from wenmode.presets import commonmark, github, streaming
 from wenmode.rules import (
     AtxHeading,
@@ -19,6 +21,43 @@ from wenmode.rules import (
     Table,
     ThematicBreak,
 )
+from wenmode.rules.base import BlockRule, Rule
+from wenmode.state import BlockState, StateKey
+
+TERMS = StateKey('tests.terms', lambda: {})
+TERM_RE = re.compile(r'^[ \t]{0,3}@term\[(?P<label>[^\]]+)]:[ \t]*(?P<title>.*)$')
+
+
+class Glossary(Rule):
+    def __init__(self) -> None:
+        super().__init__('glossary')
+        self.root_transforms = [GlossaryTransform()]
+
+
+class TermDefinition(BlockRule):
+    def __init__(self) -> None:
+        super().__init__('term_definition', r'[ \t]{0,3}@term\[')
+
+    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
+        term = TERM_RE.match(state.line.rstrip('\r\n'))
+        if term is None:
+            return None
+
+        state.store.get(TERMS)[term.group('label')] = term.group('title')
+        state.advance()
+        return None
+
+
+class GlossaryTransform:
+    name = 'glossary'
+    defer_inlines = False
+    required_rules = [TermDefinition]
+
+    def prepare(self, parser: Parser, root: Root, state: BlockState) -> None:
+        pass
+
+    def transform(self, parser: Parser, root: Root, state: BlockState) -> None:
+        root.data = {'terms': dict(state.store.get(TERMS))}
 
 
 def render(parser: Parser, markdown: str) -> str:
@@ -54,6 +93,20 @@ def test_parser_dynamic_rule_registration_updates_rule_dependencies() -> None:
     parser.register_rule(Link)
 
     assert render(parser, '[x]: /url\n\n[x]\n') == '<p><a href="/url">x</a></p>\n'
+
+
+def test_custom_extension_state_uses_state_store() -> None:
+    parser = Parser([Glossary, Blockquote])
+
+    assert 'term_definition' in parser.rules
+
+    root = parser.parse('> @term[nested]: Nested\n\n@term[root]: Root\n\ntext\n')
+    assert root.data == {'terms': {'nested': 'Nested', 'root': 'Root'}}
+    assert not hasattr(BlockState([]), 'references')
+    assert not hasattr(BlockState([]), 'footnotes')
+    assert not hasattr(BlockState([]), 'abbreviations')
+
+    assert parser.parse('text\n').data == {'terms': {}}
 
 
 def test_parser_replaces_dynamic_rules_by_name() -> None:

@@ -97,13 +97,10 @@ class Parser:
     def parse_blocks(self, text: str, parent_state: BlockState) -> list[Node]:
         state = BlockState(
             text.splitlines(keepends=True),
-            references=parent_state.references,
-            footnotes=parent_state.footnotes,
-            abbreviations=parent_state.abbreviations,
+            store=parent_state.store,
             depth=parent_state.depth + 1,
             pending_inlines=parent_state.pending_inlines,
             pending_inline_callbacks=parent_state.pending_inline_callbacks,
-            inline_cache=parent_state.inline_cache,
             defer_inlines=parent_state.defer_inlines,
         )
         return self._parse_block_nodes(state)

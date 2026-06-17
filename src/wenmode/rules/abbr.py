@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING
 
 from wenmode.nodes import Abbreviation as AbbreviationNode
 from wenmode.nodes import Node, Parent, Text
+from wenmode.state import ABBREVIATIONS, BlockState
 from wenmode.state import Abbreviation as AbbreviationDefinitionNode
-from wenmode.state import BlockState
 
 from .base import BlockRule, Rule
 
@@ -38,7 +38,7 @@ class AbbreviationDefinition(BlockRule):
             return None
 
         next_index, label, title = parsed
-        state.abbreviations[label] = AbbreviationDefinitionNode(label=label, title=title)
+        state.store.get(ABBREVIATIONS)[label] = AbbreviationDefinitionNode(label=label, title=title)
         state.index = next_index
         return None
 
@@ -52,10 +52,11 @@ class AbbreviationTransform:
         pass
 
     def transform(self, parser: Parser, root: Root, state: BlockState) -> None:
-        if not state.abbreviations:
+        abbreviations = state.store.get(ABBREVIATIONS)
+        if not abbreviations:
             return
-        pattern = re.compile('|'.join(re.escape(label) for label in sorted(state.abbreviations, key=len, reverse=True)))
-        transform_abbreviations(root, state, pattern)
+        pattern = re.compile('|'.join(re.escape(label) for label in sorted(abbreviations, key=len, reverse=True)))
+        transform_abbreviations(root, abbreviations, pattern)
 
 
 def parse_abbreviation_definition(state: BlockState, index: int) -> tuple[int, str, str] | None:
@@ -77,30 +78,34 @@ def parse_abbreviation_definition(state: BlockState, index: int) -> tuple[int, s
     return index, label, '\n'.join(title_lines).strip()
 
 
-def transform_abbreviations(node: Parent, state: BlockState, pattern: re.Pattern[str]) -> None:
+def transform_abbreviations(
+    node: Parent, definitions: dict[str, AbbreviationDefinitionNode], pattern: re.Pattern[str]
+) -> None:
     children: list[Node] = []
     changed = False
     for child in node.children:
         if isinstance(child, Text):
-            replaced = replace_abbreviations(child, state, pattern)
+            replaced = replace_abbreviations(child, definitions, pattern)
             children.extend(replaced)
             changed = changed or replaced != [child]
         else:
             if isinstance(child, Parent):
-                transform_abbreviations(child, state, pattern)
+                transform_abbreviations(child, definitions, pattern)
             children.append(child)
     if changed:
         node.children = children
 
 
-def replace_abbreviations(node: Text, state: BlockState, pattern: re.Pattern[str]) -> list[Node]:
+def replace_abbreviations(
+    node: Text, definitions: dict[str, AbbreviationDefinitionNode], pattern: re.Pattern[str]
+) -> list[Node]:
     nodes: list[Node] = []
     pos = 0
     for match in pattern.finditer(node.value):
         if match.start() > pos:
             nodes.append(Text(value=node.value[pos : match.start()], _parse_emphasis=node._parse_emphasis))
         label = match.group(0)
-        definition = state.get_abbreviation(label)
+        definition = definitions.get(label)
         if definition is None:
             nodes.append(Text(value=label, _parse_emphasis=node._parse_emphasis))
         else:

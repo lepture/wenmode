@@ -17,11 +17,13 @@ from wenmode.nodes import (
     DefinitionList,
     DefinitionTerm,
     Delete,
+    Emphasis,
     FootnoteDefinition,
     FootnoteReference,
+    Heading,
     Html,
-    HtmlAttrValue,
     Image,
+    InlineCode,
     InlineMath,
     InlineSpoiler,
     Insert,
@@ -35,6 +37,7 @@ from wenmode.nodes import (
     Paragraph,
     Root,
     Ruby,
+    Strong,
     Subscript,
     Superscript,
     Table,
@@ -42,10 +45,12 @@ from wenmode.nodes import (
     TableRow,
     Text,
     TextDirective,
+    ThematicBreak,
 )
 
 from .base import BaseRenderer, RenderContext
 
+HtmlAttrValue = str | int | bool | None
 SOFT_BREAK_SPACE_RE = re.compile(r'(?<! ) (?=\r?\n)')
 
 
@@ -148,31 +153,6 @@ class HTMLRenderer(BaseRenderer):
     def escape_html(self, value: str) -> str:
         return value.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;')
 
-    def render_unknown(self, node: Node, context: RenderContext) -> str:
-        tag = node.get_html_tag()
-        if tag is not None:
-            return self.render_element(node, tag, context)
-        return super().render_unknown(node, context)
-
-    def render_element(self, node: Node, tag: str, context: RenderContext) -> str:
-        attrs = self.render_attrs(node.get_html_attrs())
-        if node.html_void:
-            return f'<{tag}{attrs} />' + ('\n' if node.block else '')
-
-        content = self.render_element_content(node, context)
-        return f'<{tag}{attrs}>{content}</{tag}>' + ('\n' if node.block else '')
-
-    def render_element_content(self, node: Node, context: RenderContext) -> str:
-        children = getattr(node, 'children', None)
-        if isinstance(children, list):
-            return self.render_children(children, context)
-
-        value = getattr(node, 'value', None)
-        if isinstance(value, str):
-            return self.escape_html(value)
-
-        return ''
-
     def render_attrs(self, attrs: Mapping[str, HtmlAttrValue]) -> str:
         rendered: list[str] = []
         for name, value in attrs.items():
@@ -243,10 +223,24 @@ def render_root(renderer: HTMLRenderer, node: Root, context: HTMLRenderContext) 
     return out
 
 
+@HTMLRenderer.register('paragraph')
+def render_paragraph(renderer: HTMLRenderer, node: Paragraph, context: HTMLRenderContext) -> str:
+    return f'<p>{renderer.render_children(node.children, context)}</p>\n'
+
+
 @HTMLRenderer.register('abbreviation')
 def render_abbreviation(renderer: HTMLRenderer, node: Abbreviation, context: HTMLRenderContext) -> str:
     attrs = {'title': node.title} if node.title else {}
     return f'<abbr{renderer.render_attrs(attrs)}>{renderer.render_children(node.children, context)}</abbr>'
+
+
+@HTMLRenderer.register('heading')
+def render_heading(renderer: HTMLRenderer, node: Heading, context: HTMLRenderContext) -> str:
+    attrs: dict[str, HtmlAttrValue] = {}
+    identifier = node.data.get('id') if node.data else None
+    if isinstance(identifier, str):
+        attrs['id'] = identifier
+    return f'<h{node.depth}{renderer.render_attrs(attrs)}>{renderer.render_children(node.children, context)}</h{node.depth}>\n'
 
 
 @HTMLRenderer.register('blockquote')
@@ -412,6 +406,11 @@ def render_math(renderer: HTMLRenderer, node: Math, context: HTMLRenderContext) 
     return f'<div class="math math-display">{renderer.escape_html(node.value)}</div>\n'
 
 
+@HTMLRenderer.register('thematicBreak')
+def render_thematic_break(renderer: HTMLRenderer, node: ThematicBreak, context: HTMLRenderContext) -> str:
+    return '<hr />\n'
+
+
 @HTMLRenderer.register('html')
 def render_html(renderer: HTMLRenderer, node: Html, context: HTMLRenderContext) -> str:
     if node.data and node.data.get('escaped'):
@@ -424,30 +423,46 @@ def render_text(renderer: HTMLRenderer, node: Text, context: HTMLRenderContext) 
     return renderer.escape_html(SOFT_BREAK_SPACE_RE.sub('', node.value))
 
 
+@HTMLRenderer.register('inlineCode')
+def render_inline_code(renderer: HTMLRenderer, node: InlineCode, context: HTMLRenderContext) -> str:
+    return f'<code>{renderer.escape_html(node.value)}</code>'
+
+
 @HTMLRenderer.register('inlineMath')
 def render_inline_math(renderer: HTMLRenderer, node: InlineMath, context: HTMLRenderContext) -> str:
     return f'<span class="math math-inline">{renderer.escape_html(node.value)}</span>'
 
 
+@HTMLRenderer.register('strong')
+def render_strong(renderer: HTMLRenderer, node: Strong, context: HTMLRenderContext) -> str:
+    return f'<strong>{renderer.render_children(node.children, context)}</strong>'
+
+
+@HTMLRenderer.register('emphasis')
+def render_emphasis(renderer: HTMLRenderer, node: Emphasis, context: HTMLRenderContext) -> str:
+    return f'<em>{renderer.render_children(node.children, context)}</em>'
+
+
 @HTMLRenderer.register('link')
 def render_link(renderer: HTMLRenderer, node: Link, context: HTMLRenderContext) -> str:
-    attrs = node.get_html_attrs()
+    attrs: dict[str, HtmlAttrValue] = {}
     href = renderer.sanitize_url(node.url)
-    if href is None:
-        attrs.pop('href', None)
-    else:
+    if href is not None:
         attrs['href'] = href
+    if node.title:
+        attrs['title'] = node.title
     return f'<a{renderer.render_attrs(attrs)}>{renderer.render_children(node.children, context)}</a>'
 
 
 @HTMLRenderer.register('image')
 def render_image(renderer: HTMLRenderer, node: Image, context: HTMLRenderContext) -> str:
-    attrs = node.get_html_attrs()
+    attrs: dict[str, HtmlAttrValue] = {}
     src = renderer.sanitize_url(node.url)
-    if src is None:
-        attrs.pop('src', None)
-    else:
+    if src is not None:
         attrs['src'] = src
+    attrs['alt'] = node.alt
+    if node.title:
+        attrs['title'] = node.title
     return f'<img{renderer.render_attrs(attrs)} />'
 
 

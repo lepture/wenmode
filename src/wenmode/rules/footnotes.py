@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 from wenmode.nodes import FootnoteDefinition as FootnoteDefinitionNode
 from wenmode.nodes import FootnoteReference, Node, Root
+from wenmode.state import FOOTNOTES
 from wenmode.state import Footnote as FootnoteState
 from wenmode.utils import count_indent, normalize_label, normalize_label_text
 
@@ -36,7 +37,7 @@ class Footnote(InlineRule):
             return None, match.start()
 
         identifier = normalize_label(match.group('label'))
-        footnote = state.get_footnote(identifier)
+        footnote = state.store.get(FOOTNOTES).get(identifier)
         if footnote is None:
             return None, match.start()
 
@@ -68,8 +69,9 @@ class FootnoteTransform:
     required_rules: Sequence[type[Rule] | Rule] = [FootnoteDefinition]
 
     def prepare(self, parser: Parser, root: Root, state: BlockState) -> None:
+        footnotes = state.store.get(FOOTNOTES)
         for identifier, definition in collect_footnote_definitions(root).items():
-            state.footnotes.setdefault(
+            footnotes.setdefault(
                 identifier,
                 FootnoteState(identifier=identifier, label=definition.label, children=definition.children),
             )

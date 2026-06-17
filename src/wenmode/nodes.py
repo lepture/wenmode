@@ -1,24 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, ClassVar
-
-HtmlAttrValue = str | int | bool | None
+from typing import Any
 
 
 @dataclass
 class Node:
-    html_tag: ClassVar[str | None] = None
-    html_void: ClassVar[bool] = False
-    block: ClassVar[bool] = False
     type: str
     data: dict[str, Any] | None = None
-
-    def get_html_tag(self) -> str | None:
-        return self.html_tag
-
-    def get_html_attrs(self) -> dict[str, HtmlAttrValue]:
-        return {}
 
     def to_ast(self) -> dict[str, Any]:
         data: dict[str, Any] = {'type': self.type}
@@ -60,42 +49,27 @@ class Root(Parent):
 
 @dataclass
 class Paragraph(Parent):
-    html_tag: ClassVar[str | None] = 'p'
-    block: ClassVar[bool] = True
     type: str = 'paragraph'
 
 
 @dataclass
 class Heading(Parent):
-    block: ClassVar[bool] = True
     depth: int = 1
     type: str = 'heading'
-
-    def get_html_tag(self) -> str:
-        return f'h{self.depth}'
-
-    def get_html_attrs(self) -> dict[str, HtmlAttrValue]:
-        if not self.data:
-            return {}
-        identifier = self.data.get('id')
-        return {'id': identifier} if isinstance(identifier, str) else {}
 
 
 @dataclass
 class Blockquote(Parent):
-    block: ClassVar[bool] = True
     type: str = 'blockquote'
 
 
 @dataclass
 class BlockSpoiler(Parent):
-    block: ClassVar[bool] = True
     type: str = 'blockSpoiler'
 
 
 @dataclass
 class List(Parent):
-    block: ClassVar[bool] = True
     ordered: bool = False
     start: int | None = None
     spread: bool = False
@@ -104,7 +78,6 @@ class List(Parent):
 
 @dataclass
 class ListItem(Parent):
-    block: ClassVar[bool] = True
     checked: bool | None = None
     spread: bool = False
     type: str = 'listItem'
@@ -112,7 +85,6 @@ class ListItem(Parent):
 
 @dataclass
 class DefinitionList(Parent):
-    block: ClassVar[bool] = True
     type: str = 'definitionList'
 
 
@@ -123,14 +95,12 @@ class DefinitionTerm(Parent):
 
 @dataclass
 class DefinitionDescription(Parent):
-    block: ClassVar[bool] = True
     spread: bool = False
     type: str = 'definitionDescription'
 
 
 @dataclass
 class Code(Literal):
-    block: ClassVar[bool] = True
     lang: str | None = None
     meta: str | None = None
     type: str = 'code'
@@ -138,15 +108,11 @@ class Code(Literal):
 
 @dataclass
 class Math(Literal):
-    block: ClassVar[bool] = True
     type: str = 'math'
 
 
 @dataclass
 class ThematicBreak(Node):
-    html_tag: ClassVar[str | None] = 'hr'
-    html_void: ClassVar[bool] = True
-    block: ClassVar[bool] = True
     type: str = 'thematicBreak'
 
 
@@ -163,7 +129,6 @@ class Text(Literal):
 
 @dataclass
 class InlineCode(Literal):
-    html_tag: ClassVar[str | None] = 'code'
     type: str = 'inlineCode'
 
 
@@ -174,43 +139,36 @@ class InlineMath(Literal):
 
 @dataclass
 class Strong(Parent):
-    html_tag: ClassVar[str | None] = 'strong'
     type: str = 'strong'
 
 
 @dataclass
 class Emphasis(Parent):
-    html_tag: ClassVar[str | None] = 'em'
     type: str = 'emphasis'
 
 
 @dataclass
 class Delete(Parent):
-    html_tag: ClassVar[str | None] = 'del'
     type: str = 'delete'
 
 
 @dataclass
 class Mark(Parent):
-    html_tag: ClassVar[str | None] = 'mark'
     type: str = 'mark'
 
 
 @dataclass
 class Insert(Parent):
-    html_tag: ClassVar[str | None] = 'ins'
     type: str = 'insert'
 
 
 @dataclass
 class Superscript(Parent):
-    html_tag: ClassVar[str | None] = 'sup'
     type: str = 'superscript'
 
 
 @dataclass
 class Subscript(Parent):
-    html_tag: ClassVar[str | None] = 'sub'
     type: str = 'subscript'
 
 
@@ -233,7 +191,6 @@ class Abbreviation(Parent):
 
 @dataclass
 class Table(Parent):
-    block: ClassVar[bool] = True
     align: list[str | None] = field(default_factory=list)
     type: str = 'table'
 
@@ -250,38 +207,21 @@ class TableCell(Parent):
 
 @dataclass
 class Link(Parent):
-    html_tag: ClassVar[str | None] = 'a'
     url: str = ''
     title: str | None = None
     type: str = 'link'
 
-    def get_html_attrs(self) -> dict[str, HtmlAttrValue]:
-        attrs: dict[str, HtmlAttrValue] = {'href': self.url}
-        if self.title:
-            attrs['title'] = self.title
-        return attrs
-
 
 @dataclass
 class Image(Node):
-    html_tag: ClassVar[str | None] = 'img'
-    html_void: ClassVar[bool] = True
     url: str = ''
     alt: str = ''
     title: str | None = None
     type: str = 'image'
 
-    def get_html_attrs(self) -> dict[str, HtmlAttrValue]:
-        attrs: dict[str, HtmlAttrValue] = {'src': self.url, 'alt': self.alt}
-        if self.title:
-            attrs['title'] = self.title
-        return attrs
-
 
 @dataclass
 class Break(Node):
-    html_tag: ClassVar[str | None] = 'br'
-    html_void: ClassVar[bool] = True
     type: str = 'break'
 
 
@@ -294,7 +234,6 @@ class FootnoteReference(Node):
 
 @dataclass
 class FootnoteDefinition(Parent):
-    block: ClassVar[bool] = True
     identifier: str = ''
     label: str = ''
     type: str = 'footnoteDefinition'
@@ -309,7 +248,6 @@ class TextDirective(Parent):
 
 @dataclass
 class LeafDirective(Parent):
-    block: ClassVar[bool] = True
     name: str = ''
     attributes: dict[str, str] | None = None
     type: str = 'leafDirective'
@@ -317,7 +255,6 @@ class LeafDirective(Parent):
 
 @dataclass
 class ContainerDirective(Parent):
-    block: ClassVar[bool] = True
     name: str = ''
     attributes: dict[str, str] | None = None
     type: str = 'containerDirective'

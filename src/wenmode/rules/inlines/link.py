@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 from wenmode.nodes import Break, InlineCode, Node, Parent, Text
 from wenmode.nodes import Image as ImageNode
 from wenmode.nodes import Link as LinkNode
-from wenmode.state import BlockState
+from wenmode.state import REFERENCES, BlockState, StateKey
 from wenmode.utils import normalize_label, normalize_label_text, normalize_uri_text
 
 from ..base import InlineRule
@@ -19,6 +19,13 @@ if TYPE_CHECKING:
 
 ANGLE_SPAN_RE = re.compile(rf'{URI_RE}|{EMAIL_RE}|{HTML_RE}')
 ClosingBracketCache = dict[int, tuple[str, dict[int, int]]]
+
+
+def create_closing_bracket_cache() -> ClosingBracketCache:
+    return {}
+
+
+CLOSING_BRACKET_CACHE = StateKey('wenmode.inline.closing_brackets', create_closing_bracket_cache)
 
 
 class Image(InlineRule):
@@ -98,7 +105,7 @@ def parse_link_or_image(
         return None
 
     if state:
-        reference = state.get_reference(normalize_label(reference_label))
+        reference = state.store.get(REFERENCES).get(normalize_label(reference_label))
         if reference is not None:
             return label, reference.url, reference.title, end
     return None
@@ -107,7 +114,7 @@ def parse_link_or_image(
 def closing_bracket_cache(state: BlockState | None) -> ClosingBracketCache | None:
     if state is None:
         return None
-    return cast(ClosingBracketCache, state.inline_cache.setdefault('closing_brackets', {}))
+    return state.store.get(CLOSING_BRACKET_CACHE)
 
 
 def find_closing_bracket(text: str, start: int, cache: ClosingBracketCache | None = None) -> int | None:

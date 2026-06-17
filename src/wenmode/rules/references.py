@@ -4,7 +4,7 @@ import re
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
-from wenmode.state import Reference
+from wenmode.state import REFERENCES, Reference
 from wenmode.utils import normalize_label, normalize_label_text, normalize_uri_text
 
 from .base import BlockRule, Rule
@@ -29,7 +29,7 @@ class ReferenceDefinition(BlockRule):
         multiline_label = parse_multiline_label_reference(state, state.index)
         if multiline_label is not None:
             next_index, label, url, title = multiline_label
-            state.references.setdefault(normalize_label(label), Reference(url=url, title=title))
+            state.store.get(REFERENCES).setdefault(normalize_label(label), Reference(url=url, title=title))
             state.index = next_index
             return None
 
@@ -38,7 +38,7 @@ class ReferenceDefinition(BlockRule):
             return None
 
         next_index, label, url, title = parsed
-        state.references.setdefault(normalize_label(label), Reference(url=url, title=title))
+        state.store.get(REFERENCES).setdefault(normalize_label(label), Reference(url=url, title=title))
         state.index = next_index
         return None
 

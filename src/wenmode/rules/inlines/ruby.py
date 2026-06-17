@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from wenmode.nodes import Link as LinkNode
 from wenmode.nodes import Node
 from wenmode.nodes import Ruby as RubyNode
-from wenmode.state import BlockState
+from wenmode.state import REFERENCES, BlockState
 from wenmode.utils import normalize_label
 
 from ..base import InlineRule
@@ -63,7 +63,7 @@ def parse_ruby_link(
     if not label or invalid_reference_label(label):
         return None
 
-    reference = state.get_reference(normalize_label(label)) if state is not None else None
+    reference = state.store.get(REFERENCES).get(normalize_label(label)) if state is not None else None
     if reference is None:
         return None
 
