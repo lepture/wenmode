@@ -33,5 +33,20 @@
     "name": "inline code containing dollars",
     "markdown": "`$x$` and $y$\n",
     "html": "<p><code>$x$</code> and <span class=\"math math-inline\">y</span></p>\n"
+  },
+  {
+    "name": "escaped dollar inside inline math",
+    "markdown": "$x=\\$$\n",
+    "html": "<p><span class=\"math math-inline\">x=\\$</span></p>\n"
+  },
+  {
+    "name": "currency is not inline math",
+    "markdown": "Price $51,300 and $2,000 today\n",
+    "html": "<p>Price $51,300 and $2,000 today</p>\n"
+  },
+  {
+    "name": "inline math does not cross lines",
+    "markdown": "$a\nb$\n",
+    "html": "<p>$a\nb$</p>\n"
   }
 ]
