@@ -25,7 +25,7 @@ def collect_until(
     return lines
 
 
-def parse_shallow_block(parser: Parser, regex: re.Pattern, state: BlockState) -> list[Node]:
+def parse_shallow_block(parser: Parser, regex: re.Pattern[str], state: BlockState) -> list[Node]:
     lines: list[str] = []
     while not state.done:
         quote = regex.match(state.line)
