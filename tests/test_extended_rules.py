@@ -6,9 +6,9 @@ from typing import TypedDict
 
 import pytest
 
-from wenmode import HTMLRenderer, Parser
+from wenmode import HTMLRenderer, MarkdownRenderer, Parser
 from wenmode.presets import commonmark, github
-from wenmode.rules import Blockquote, Emphasis, Footnote, InlineCode, InlineMath, Link, MathBlock
+from wenmode.rules import BackslashEscape, Blockquote, Emphasis, Footnote, InlineCode, InlineMath, Link, Mark, MathBlock
 
 FIXTURES_DIR = Path(__file__).parent / 'fixtures'
 
@@ -54,6 +54,22 @@ def test_math_is_not_enabled_by_presets() -> None:
 
     assert render(Parser(commonmark), markdown) == '<p>$x$</p>\n<p>$$\nx\n$$</p>\n'
     assert render(Parser(github), markdown) == '<p>$x$</p>\n<p>$$\nx\n$$</p>\n'
+
+
+def test_mark_rule() -> None:
+    parser = Parser([Mark, BackslashEscape, Emphasis])
+    root = parser.parse('==marked *text*== and ==mark \\== equal==\n')
+
+    assert HTMLRenderer().render(root) == '<p><mark>marked <em>text</em></mark> and <mark>mark == equal</mark></p>\n'
+    assert MarkdownRenderer().render(root) == '==marked *text*== and ==mark == equal==\n'
+
+
+def test_mark_requires_tight_delimiters() -> None:
+    parser = Parser([Mark])
+
+    assert render(parser, '== no mark==\n') == '<p>== no mark==</p>\n'
+    assert render(parser, '==no mark ==\n') == '<p>==no mark ==</p>\n'
+    assert render(parser, '===no mark===\n') == '<p>===no mark===</p>\n'
 
 
 def test_footnote_identifiers_disallow_spaces() -> None:

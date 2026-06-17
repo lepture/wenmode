@@ -16,6 +16,7 @@ from .inlines.code import InlineCode
 from .inlines.directive import Role, TextDirective
 from .inlines.emphasis import Emphasis
 from .inlines.extended_autolink import ExtendedAutolink
+from .inlines.formatting import Mark
 from .inlines.html import Autolink, RawHtml
 from .inlines.link import Image, Link
 from .inlines.math import InlineMath
@@ -45,6 +46,7 @@ __all__ = [
     'LeafDirective',
     'Link',
     'List',
+    'Mark',
     'MathBlock',
     'RawHtml',
     'Role',

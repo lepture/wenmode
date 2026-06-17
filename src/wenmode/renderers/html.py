@@ -22,6 +22,7 @@ from wenmode.nodes import (
     Link,
     List,
     ListItem,
+    Mark,
     Math,
     Node,
     Paragraph,
@@ -256,6 +257,11 @@ def render_list_item(renderer: HTMLRenderer, node: ListItem, context: HTMLRender
 @HTMLRenderer.register('delete')
 def render_delete(renderer: HTMLRenderer, node: Delete, context: HTMLRenderContext) -> str:
     return f'<del>{renderer.render_children(node.children, context)}</del>'
+
+
+@HTMLRenderer.register('mark')
+def render_mark(renderer: HTMLRenderer, node: Mark, context: HTMLRenderContext) -> str:
+    return f'<mark>{renderer.render_children(node.children, context)}</mark>'
 
 
 @HTMLRenderer.register('textDirective')

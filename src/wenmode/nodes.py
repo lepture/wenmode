@@ -167,6 +167,12 @@ class Delete(Parent):
 
 
 @dataclass
+class Mark(Parent):
+    html_tag: ClassVar[str | None] = 'mark'
+    type: str = 'mark'
+
+
+@dataclass
 class Table(Parent):
     block: ClassVar[bool] = True
     align: list[str | None] = field(default_factory=list)

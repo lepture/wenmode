@@ -20,6 +20,7 @@ from wenmode.nodes import (
     Link,
     List,
     ListItem,
+    Mark,
     Math,
     Node,
     Paragraph,
@@ -147,6 +148,11 @@ def render_list_item(renderer: MarkdownRenderer, node: ListItem, context: Render
 @MarkdownRenderer.register('delete')
 def render_delete(renderer: MarkdownRenderer, node: Delete, context: RenderContext) -> str:
     return f'~~{renderer.render_children(node.children, context)}~~'
+
+
+@MarkdownRenderer.register('mark')
+def render_mark(renderer: MarkdownRenderer, node: Mark, context: RenderContext) -> str:
+    return f'=={renderer.render_children(node.children, context)}=='
 
 
 @MarkdownRenderer.register('textDirective')
