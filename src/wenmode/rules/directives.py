@@ -53,8 +53,6 @@ def find_balanced(text: str, start: int, opener: str, closer: str) -> int | None
 def parse_attributes(text: str) -> dict[str, str]:
     attributes: dict[str, str] = {}
     classes: list[str] = []
-    if 'class' in attributes:
-        classes.append(attributes['class'])
 
     for token in tokenize_attributes(text):
         if token.startswith('#') or token.startswith('.'):
@@ -136,4 +134,3 @@ def unquote_attribute_value(value: str) -> str:
     if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
         return value[1:-1].replace('\\' + value[0], value[0]).replace('\\\\', '\\')
     return value
-

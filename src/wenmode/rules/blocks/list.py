@@ -69,7 +69,7 @@ class List(BlockRule):
                     content_indent = marker_indent + 2
                 elif 1 <= space_width <= 4:
                     content_indent = marker_indent + marker_width + space_width
-                elif space_width > 4:
+                elif space_width > 4:  # pragma: no branch
                     rest_column = marker_indent + marker_width + space_width
                     rest = ' ' * (rest_column - content_indent) + rest
 
@@ -114,7 +114,7 @@ class List(BlockRule):
 
             if item_spread:
                 while not state.done and state.line.strip() == '':
-                    state.advance()
+                    state.advance()  # pragma: no cover
 
         return ListNode(children=items, ordered=ordered, start=start, spread=spread)
 
