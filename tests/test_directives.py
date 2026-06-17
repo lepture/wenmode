@@ -7,8 +7,17 @@ from typing import Any, NotRequired, TypedDict
 import pytest
 
 from wenmode import HTMLRenderer, MarkdownRenderer, Parser
-from wenmode.directives import Admonition, Figure
-from wenmode.rules import ContainerDirective, Emphasis, FencedCode, FencedDirective, LeafDirective, Role, TextDirective
+from wenmode.directives import Admonition, Figure, TableOfContents
+from wenmode.rules import (
+    AtxHeading,
+    ContainerDirective,
+    Emphasis,
+    FencedCode,
+    FencedDirective,
+    LeafDirective,
+    Role,
+    TextDirective,
+)
 from wenmode.rules import Image as ImageRule
 
 FIXTURES_DIR = Path(__file__).parent / 'fixtures'
@@ -107,4 +116,40 @@ def test_fenced_directive_order_is_before_fenced_code() -> None:
 
     assert MarkdownRenderer().render(parser.parse('```{note} Important\nBody.\n```\n')) == (
         ':::note[Important]\nBody\\.\n:::\n'
+    )
+
+
+def test_toc_leaf_directive_renders_heading_links() -> None:
+    parser = Parser([AtxHeading, LeafDirective, ContainerDirective, Emphasis])
+    root = parser.parse('::toc[On this page]{min=2 max=3 .wide}\n\n# Title\n\n## Usage *Guide*\n\n### Install\n\n## Usage Guide\n')
+
+    assert HTMLRenderer(directives=[TableOfContents()]).render(root) == (
+        '<nav class="wide toc" aria-label="On this page">\n'
+        '<ol>\n'
+        '<li><a href="#usage-guide">Usage Guide</a>\n'
+        '<ol>\n'
+        '<li><a href="#install">Install</a></li>\n'
+        '</ol>\n'
+        '</li>\n'
+        '<li><a href="#usage-guide-1">Usage Guide</a></li>\n'
+        '</ol>\n'
+        '</nav>\n'
+        '<h1 id="title">Title</h1>\n'
+        '<h2 id="usage-guide">Usage <em>Guide</em></h2>\n'
+        '<h3 id="install">Install</h3>\n'
+        '<h2 id="usage-guide-1">Usage Guide</h2>\n'
+    )
+
+
+def test_toc_directive_prepares_heading_ids_even_when_rendered_late() -> None:
+    parser = Parser([AtxHeading, LeafDirective])
+    root = parser.parse('## Before\n\n::toc{min-depth=2 max-depth=2 id=contents label=Contents}\n')
+
+    assert HTMLRenderer(directives=[TableOfContents()]).render(root) == (
+        '<h2 id="before">Before</h2>\n'
+        '<nav id="contents" aria-label="Contents" class="toc">\n'
+        '<ol>\n'
+        '<li><a href="#before">Before</a></li>\n'
+        '</ol>\n'
+        '</nav>\n'
     )

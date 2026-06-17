@@ -50,6 +50,7 @@ class FootnoteRenderState:
 @dataclass
 class HTMLRenderContext(RenderContext):
     footnotes: FootnoteRenderState = field(default_factory=FootnoteRenderState)
+    root: Root | None = None
 
 
 class DirectiveHtmlRenderer(Protocol):
@@ -72,7 +73,16 @@ class HTMLRenderer(BaseRenderer):
 
     def create_context(self, node: Node | None = None) -> HTMLRenderContext:
         definitions = node.footnote_definitions if isinstance(node, Root) else None
-        return HTMLRenderContext(FootnoteRenderState(definitions=definitions or {}))
+        context = HTMLRenderContext(
+            footnotes=FootnoteRenderState(definitions=definitions or {}),
+            root=node if isinstance(node, Root) else None,
+        )
+        if context.root is not None:
+            for directive in self.directives:
+                prepare = getattr(directive, 'prepare', None)
+                if callable(prepare):
+                    prepare(self, context.root, context)
+        return context
 
     def register_directive_renderer(self, directive: DirectiveHtmlRenderer) -> None:
         self.directives.append(directive)

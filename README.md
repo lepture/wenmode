@@ -278,6 +278,17 @@ toc = collect_toc(root, min_depth=2, max_depth=3)
 html = render_toc_html(toc) + HTMLRenderer().render(root)
 ```
 
+You can also render an in-document table of contents with the `toc` directive:
+
+```python
+from wenmode import HTMLRenderer, Parser, commonmark
+from wenmode.directives import TableOfContents
+from wenmode.rules import LeafDirective
+
+root = Parser([*commonmark, LeafDirective]).parse('::toc{min=2 max=3}\n\n## Intro\n')
+html = HTMLRenderer(directives=[TableOfContents()]).render(root)
+```
+
 ## Rule Layout
 
 The implementation is split by rule type:
