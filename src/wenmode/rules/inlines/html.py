@@ -48,7 +48,10 @@ class RawHtml(InlineRule):
     def parse(
         self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
     ) -> tuple[Node | None, int]:
-        return Html(value=filter_disallowed_html(match.group(0), self.disallowed_tags)), match.end()
+        value = match.group(0)
+        filtered = filter_disallowed_html(value, self.disallowed_tags)
+        data = {'escaped': True} if filtered != value else None
+        return Html(value=filtered, data=data), match.end()
 
 
 def normalize_uri(value: str) -> str:

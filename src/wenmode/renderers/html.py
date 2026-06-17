@@ -330,6 +330,8 @@ def render_math(renderer: HTMLRenderer, node: Math, context: HTMLRenderContext) 
 
 @HTMLRenderer.register('html')
 def render_html(renderer: HTMLRenderer, node: Html, context: HTMLRenderContext) -> str:
+    if node.data and node.data.get('escaped'):
+        return node.value
     return renderer.escape(node.value)
 
 

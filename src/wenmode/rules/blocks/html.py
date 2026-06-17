@@ -109,19 +109,21 @@ class HtmlBlock(BlockRule):
                     state.advance()
                     break
                 state.advance()
-            return Html(value=self.html_value(''.join(lines)))
+            return self.html_node(''.join(lines))
 
         if is_html_block_tag(stripped) or is_complete_html_tag(stripped):
             while not state.done and state.line.strip() != '':
                 lines.append(state.line)
                 state.advance()
-            return Html(value=self.html_value(''.join(lines)))
+            return self.html_node(''.join(lines))
 
         state.advance()
-        return Html(value=self.html_value(first))
+        return self.html_node(first)
 
-    def html_value(self, value: str) -> str:
-        return filter_disallowed_html(value, self.disallowed_tags)
+    def html_node(self, value: str) -> Html:
+        filtered = filter_disallowed_html(value, self.disallowed_tags)
+        data = {'escaped': True} if filtered != value else None
+        return Html(value=filtered, data=data)
 
 
 def html_end_pattern(line: str) -> re.Pattern[str] | None:
