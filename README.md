@@ -58,12 +58,12 @@ assert ast == {
 Pass a different renderer when you want another output format:
 
 ```python
-from wenmode import MarkdownRenderer, Wenmode
+from wenmode import RSTRenderer, Wenmode
 
-wenmode = Wenmode(renderer=MarkdownRenderer())
+wenmode = Wenmode(renderer=RSTRenderer())
 
-markdown = wenmode.render('# Hello\n')
-assert markdown == '# Hello\n'
+rst = wenmode.render('# Hello\n')
+assert rst == 'Hello\n=====\n'
 ```
 
 ## Rules
