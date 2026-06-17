@@ -173,6 +173,12 @@ class Mark(Parent):
 
 
 @dataclass
+class Insert(Parent):
+    html_tag: ClassVar[str | None] = 'ins'
+    type: str = 'insert'
+
+
+@dataclass
 class Table(Parent):
     block: ClassVar[bool] = True
     align: list[str | None] = field(default_factory=list)

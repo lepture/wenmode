@@ -16,6 +16,7 @@ from wenmode.nodes import (
     Image,
     InlineCode,
     InlineMath,
+    Insert,
     LeafDirective,
     Link,
     List,
@@ -153,6 +154,11 @@ def render_delete(renderer: MarkdownRenderer, node: Delete, context: RenderConte
 @MarkdownRenderer.register('mark')
 def render_mark(renderer: MarkdownRenderer, node: Mark, context: RenderContext) -> str:
     return f'=={renderer.render_children(node.children, context)}=='
+
+
+@MarkdownRenderer.register('insert')
+def render_insert(renderer: MarkdownRenderer, node: Insert, context: RenderContext) -> str:
+    return f'^^{renderer.render_children(node.children, context)}^^'
 
 
 @MarkdownRenderer.register('textDirective')

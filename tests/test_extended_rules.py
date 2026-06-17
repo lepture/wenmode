@@ -8,7 +8,18 @@ import pytest
 
 from wenmode import HTMLRenderer, MarkdownRenderer, Parser
 from wenmode.presets import commonmark, github
-from wenmode.rules import BackslashEscape, Blockquote, Emphasis, Footnote, InlineCode, InlineMath, Link, Mark, MathBlock
+from wenmode.rules import (
+    BackslashEscape,
+    Blockquote,
+    Emphasis,
+    Footnote,
+    InlineCode,
+    InlineMath,
+    Insert,
+    Link,
+    Mark,
+    MathBlock,
+)
 
 FIXTURES_DIR = Path(__file__).parent / 'fixtures'
 
@@ -70,6 +81,22 @@ def test_mark_requires_tight_delimiters() -> None:
     assert render(parser, '== no mark==\n') == '<p>== no mark==</p>\n'
     assert render(parser, '==no mark ==\n') == '<p>==no mark ==</p>\n'
     assert render(parser, '===no mark===\n') == '<p>===no mark===</p>\n'
+
+
+def test_insert_rule() -> None:
+    parser = Parser([Insert, BackslashEscape, Emphasis])
+    root = parser.parse('^^insert *text*^^ and ^^insert \\^^ caret^^\n')
+
+    assert HTMLRenderer().render(root) == '<p><ins>insert <em>text</em></ins> and <ins>insert ^^ caret</ins></p>\n'
+    assert MarkdownRenderer().render(root) == '^^insert *text*^^ and ^^insert ^^ caret^^\n'
+
+
+def test_insert_requires_tight_delimiters() -> None:
+    parser = Parser([Insert])
+
+    assert render(parser, '^^ no insert^^\n') == '<p>^^ no insert^^</p>\n'
+    assert render(parser, '^^no insert ^^\n') == '<p>^^no insert ^^</p>\n'
+    assert render(parser, '^^^no insert^^^\n') == '<p>^^^no insert^^^</p>\n'
 
 
 def test_footnote_identifiers_disallow_spaces() -> None:

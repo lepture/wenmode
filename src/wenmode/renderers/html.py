@@ -18,6 +18,7 @@ from wenmode.nodes import (
     HtmlAttrValue,
     Image,
     InlineMath,
+    Insert,
     LeafDirective,
     Link,
     List,
@@ -262,6 +263,11 @@ def render_delete(renderer: HTMLRenderer, node: Delete, context: HTMLRenderConte
 @HTMLRenderer.register('mark')
 def render_mark(renderer: HTMLRenderer, node: Mark, context: HTMLRenderContext) -> str:
     return f'<mark>{renderer.render_children(node.children, context)}</mark>'
+
+
+@HTMLRenderer.register('insert')
+def render_insert(renderer: HTMLRenderer, node: Insert, context: HTMLRenderContext) -> str:
+    return f'<ins>{renderer.render_children(node.children, context)}</ins>'
 
 
 @HTMLRenderer.register('textDirective')
