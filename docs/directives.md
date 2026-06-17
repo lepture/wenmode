@@ -67,6 +67,21 @@ All three rules use mdast-compatible node names:
 - `LeafDirective` creates `leafDirective`.
 - `ContainerDirective` creates `containerDirective`.
 
+### Directive attributes
+
+Directive heads can include labels and attributes. Attribute shortcuts map
+`#id` to `id` and `.class` to `class`.
+
+```markdown
+:::note[Title]{#intro .wide data-kind=guide}
+Body.
+:::
+```
+
+Parsed directive nodes store the directive name, optional attributes, and child
+nodes. Container directive labels are stored as the first paragraph child with
+`data={"directiveLabel": True}`.
+
 ## MyST-style directives and roles
 
 Fenced directives use code-fence-style syntax and serialize back to container
@@ -90,7 +105,7 @@ Read this first.
 Roles are inline:
 
 ```markdown
-{abbr}`HTML`
+{term}`HTML`
 ```
 
 `FencedDirective` creates a `containerDirective` node. Its first-line argument
@@ -121,16 +136,33 @@ You can also pass directive renderers at construction time:
 
 ```python
 from wenmode import Wenmode
-from wenmode.directives import Admonition, Figure, TableOfContents
+from wenmode.directives import Abbreviation, Admonition, Figure, TableOfContents
 from wenmode.rules import AtxHeading, ContainerDirective, LeafDirective
 
 wenmode = Wenmode(
     [AtxHeading(id_transform=True), LeafDirective, ContainerDirective],
-    directives=[Admonition(), Figure(), TableOfContents()],
+    directives=[Abbreviation(), Admonition(), Figure(), TableOfContents()],
 )
 ```
 
 ## Built-in directive renderers
+
+### Abbreviation
+
+`Abbreviation` renders text directives named `abbr` with a `title` attribute as
+`<abbr>` elements.
+
+```python
+from wenmode.directives import Abbreviation
+
+Abbreviation()
+```
+
+```markdown
+:abbr[HTML]{title="HyperText Markup Language"}
+```
+
+### Admonition
 
 `Admonition` renders container directives such as `note`, `tip`, `caution`, and
 `danger` as `<aside>` elements with admonition classes.
@@ -142,8 +174,12 @@ Admonition()
 Admonition(names=['warning', 'important'])
 ```
 
+### Figure
+
 `Figure` renders `figure` container directives as `<figure>` with an optional
 `<figcaption>` from the directive label.
+
+### TableOfContents
 
 `TableOfContents` renders a `toc` leaf directive from heading IDs already
 present in the parsed tree. Use heading rules with `id_transform=True` when you
@@ -173,18 +209,3 @@ add_heading_ids(root, slugger=Slugger(), min_depth=2)
 toc = collect_toc(root, min_depth=2, max_depth=3)
 html = render_toc_html(toc) + HTMLRenderer().render(root)
 ```
-
-## Directive attributes
-
-Directive heads can include labels and attributes. Attribute shortcuts map
-`#id` to `id` and `.class` to `class`.
-
-```markdown
-:::note[Title]{#intro .wide data-kind=guide}
-Body.
-:::
-```
-
-Parsed directive nodes store the directive name, optional attributes, and child
-nodes. Container directive labels are stored as the first paragraph child with
-`data={"directiveLabel": True}`.

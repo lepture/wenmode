@@ -3,15 +3,19 @@
 This page lists Wenmode's public rules and the nodes they produce. Each rule is
 opt-in: the parser only recognizes syntax for the rules you enable.
 
-AST examples use `root.to_ast()`. The top-level shape is always:
+AST examples are JSON-style output from `root.to_ast()`. The top-level shape is
+always:
 
-```python
-{'type': 'root', 'children': [...]}
+```json
+{
+  "type": "root",
+  "children": []
+}
 ```
 
-HTML examples use the default `HTMLRenderer`, which escapes raw HTML unless you
-construct it with `HTMLRenderer(escape=False)`. Directive HTML can be replaced
-by registering directive renderers.
+Directive HTML can be replaced by registering directive renderers. Raw HTML is
+escaped by the default `HTMLRenderer` unless you construct it with
+`HTMLRenderer(escape=False)`.
 
 ## Node model
 
@@ -29,278 +33,1606 @@ explicit node types.
 | Wenmode extensions | `ruby`, `inlineSpoiler`, `blockSpoiler` |
 | Directives | `textDirective`, `leafDirective`, `containerDirective` |
 
-## Block rules
+## AtxHeading
 
-| Rule | Syntax | Main node | AST child shape | Default HTML |
-| --- | --- | --- | --- | --- |
-| `AtxHeading` | `# Title` through `###### Title` | `heading` | `{'type': 'heading', 'children': [...], 'depth': 1}` | `<h1>Title</h1>` |
-| `SetextHeading` | `Title` followed by `---` or `===` | `heading` | `{'type': 'heading', 'children': [...], 'depth': 2}` | `<h2>Title</h2>` |
-| `ThematicBreak` | `---`, `***`, or `___` | `thematicBreak` | `{'type': 'thematicBreak'}` | `<hr />` |
-| `FencedCode` | Triple backticks or tildes | `code` | `{'type': 'code', 'value': 'print(1)\n', 'lang': 'python'}` | `<pre><code class="language-python">...</code></pre>` |
-| `IndentedCode` | Lines indented by four spaces or one tab | `code` | `{'type': 'code', 'value': 'print(1)\n'}` | `<pre><code>...</code></pre>` |
-| `HtmlBlock` | CommonMark HTML block starts | `html` | `{'type': 'html', 'value': '<div>Hi</div>\n'}` | `&lt;div&gt;Hi&lt;/div&gt;` |
-| `Blockquote` | `> quote` | `blockquote` | `{'type': 'blockquote', 'children': [...]}` | `<blockquote>...</blockquote>` |
-| `List` | `- item`, `1. item`; with `task=True`, `- [x] done` | `list`, `listItem` | `{'type': 'list', 'ordered': False, 'children': [...]}` | `<ul><li>...</li></ul>` |
-| `Table` | GFM pipe table | `table`, `tableRow`, `tableCell` | `{'type': 'table', 'align': ['left', 'right'], 'children': [...]}` | `<table>...</table>` |
-| `Footnote` | `[^id]` and `[^id]: note` | `footnoteReference`, `footnoteDefinition` | reference nodes in paragraphs; definitions attached to root | `<sup>...</sup>` plus a footnotes section |
-| `Abbreviation` | `*[HTML]: HyperText Markup Language` | `abbreviation` | `{'type': 'abbreviation', 'children': [...], 'title': '...'}` | `<abbr title="...">HTML</abbr>` |
-| `DefinitionList` | `Term` followed by `: definition` | `definitionList` | `{'type': 'definitionList', 'children': [...]}` | `<dl>...</dl>` |
-| `MathBlock` | `$$` fenced display math | `math` | `{'type': 'math', 'value': 'x + y\n'}` | `<div class="math math-display">...</div>` |
-| `BlockSpoiler` | `>! hidden` | `blockSpoiler` | `{'type': 'blockSpoiler', 'children': [...]}` | `<div class="spoiler">...</div>` |
-| `LeafDirective` | `::name[label]{attrs}` | `leafDirective` | `{'type': 'leafDirective', 'name': 'name', 'attributes': {...}, 'children': [...]}` | children fallback unless a directive renderer handles it |
-| `ContainerDirective` | `:::name[label]{attrs}` body `:::` | `containerDirective` | `{'type': 'containerDirective', 'name': 'name', 'children': [...]}` | children fallback unless a directive renderer handles it |
-| `FencedDirective` | ```` ```{name} label ```` with optional `:key: value` lines | `containerDirective` | same node as `ContainerDirective` | children fallback unless a directive renderer handles it |
+`AtxHeading` parses hash-prefixed ATX headings from level 1 through level 6.
 
-### Structured block examples
-
-Tables produce mdast-style table nodes:
-
-```python
-from wenmode import HTMLRenderer, Parser
-from wenmode.rules import Emphasis, Table
-
-root = Parser([Table, Emphasis]).parse(
-    '| A | B |\n'
-    '| :--- | ---: |\n'
-    '| *x* | y |\n'
-)
+```markdown
+# Title
 ```
 
-```python
+Output node is `Heading`, and its AST is:
+
+```json
 {
-    'type': 'root',
-    'children': [{
-        'type': 'table',
-        'align': ['left', 'right'],
-        'children': [
+  "type": "root",
+  "children": [
+    {
+      "type": "heading",
+      "children": [
+        {
+          "type": "text",
+          "value": "Title"
+        }
+      ],
+      "depth": 1
+    }
+  ]
+}
+```
+
+Option example: use `AtxHeading(id_transform=True)` to add generated heading
+IDs.
+
+```markdown
+# Hello World
+```
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "heading",
+      "data": {
+        "id": "hello-world"
+      },
+      "children": [
+        {
+          "type": "text",
+          "value": "Hello World"
+        }
+      ],
+      "depth": 1
+    }
+  ]
+}
+```
+
+## SetextHeading
+
+`SetextHeading` parses paragraph continuations followed by `===` or `---` as
+level 1 or level 2 headings.
+
+```markdown
+Title
+---
+```
+
+Output node is `Heading`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "heading",
+      "children": [
+        {
+          "type": "text",
+          "value": "Title"
+        }
+      ],
+      "depth": 2
+    }
+  ]
+}
+```
+
+Option example: use `SetextHeading(id_transform=True)` to add generated heading
+IDs.
+
+```markdown
+Hello World
+===
+```
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "heading",
+      "data": {
+        "id": "hello-world"
+      },
+      "children": [
+        {
+          "type": "text",
+          "value": "Hello World"
+        }
+      ],
+      "depth": 1
+    }
+  ]
+}
+```
+
+## ThematicBreak
+
+`ThematicBreak` parses horizontal rules made from `---`, `***`, or `___`.
+
+```markdown
+---
+```
+
+Output node is `ThematicBreak`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "thematicBreak"
+    }
+  ]
+}
+```
+
+## FencedCode
+
+`FencedCode` parses fenced code blocks opened by backtick or tilde fences.
+
+````markdown
+```python
+print(1)
+```
+````
+
+Output node is `Code`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "code",
+      "value": "print(1)\n",
+      "lang": "python"
+    }
+  ]
+}
+```
+
+## IndentedCode
+
+`IndentedCode` parses code blocks indented by four spaces or one tab.
+
+```markdown
+    print(1)
+```
+
+Output node is `Code`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "code",
+      "value": "print(1)\n"
+    }
+  ]
+}
+```
+
+## HtmlBlock
+
+`HtmlBlock` parses CommonMark HTML block starts.
+
+```markdown
+<div>Hi</div>
+```
+
+Output node is `Html`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "html",
+      "value": "<div>Hi</div>\n"
+    }
+  ]
+}
+```
+
+Option example: use `HtmlBlock(disallowed_tags=["script"])` to escape selected
+tags during parsing.
+
+```markdown
+<script>alert(1)</script>
+```
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "html",
+      "data": {
+        "escaped": true
+      },
+      "value": "&lt;script>alert(1)&lt;/script>\n"
+    }
+  ]
+}
+```
+
+## Blockquote
+
+`Blockquote` parses `>`-prefixed blockquote containers.
+
+```markdown
+> *quote*
+```
+
+Output node is `Blockquote`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "blockquote",
+      "children": [
+        {
+          "type": "paragraph",
+          "children": [
             {
-                'type': 'tableRow',
-                'children': [
-                    {'type': 'tableCell', 'children': [{'type': 'text', 'value': 'A'}]},
-                    {'type': 'tableCell', 'children': [{'type': 'text', 'value': 'B'}]},
-                ],
-            },
+              "type": "emphasis",
+              "children": [
+                {
+                  "type": "text",
+                  "value": "quote"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+## List
+
+`List` parses bullet and ordered lists.
+
+```markdown
+- *item*
+```
+
+Output nodes are `List` and `ListItem`, and their AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "list",
+      "children": [
+        {
+          "type": "listItem",
+          "children": [
             {
-                'type': 'tableRow',
-                'children': [
+              "type": "paragraph",
+              "children": [
+                {
+                  "type": "emphasis",
+                  "children": [
                     {
-                        'type': 'tableCell',
-                        'children': [{'type': 'emphasis', 'children': [{'type': 'text', 'value': 'x'}]}],
-                    },
-                    {'type': 'tableCell', 'children': [{'type': 'text', 'value': 'y'}]},
-                ],
-            },
-        ],
-    }],
+                      "type": "text",
+                      "value": "item"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "spread": false
+        }
+      ],
+      "ordered": false,
+      "spread": false
+    }
+  ]
 }
 ```
 
-```html
-<table>
-<thead>
-<tr>
-<th align="left">A</th>
-<th align="right">B</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td align="left"><em>x</em></td>
-<td align="right">y</td>
-</tr>
-</tbody>
-</table>
+Option example: use `List(task=True)` to parse GFM task list markers.
+
+```markdown
+- [x] done
+- [ ] todo
 ```
 
-Footnotes use a document-wide transform. The reference is parsed inline, and
-definitions are collected on the root.
-
-```python
-from wenmode import Parser
-from wenmode.rules import Emphasis, Footnote
-
-root = Parser([Footnote, Emphasis]).parse(
-    'A note[^a].\n\n'
-    '[^a]: *Footnote*.\n'
-)
-```
-
-```python
+```json
 {
-    'type': 'root',
-    'children': [
+  "type": "root",
+  "children": [
+    {
+      "type": "list",
+      "children": [
         {
-            'type': 'paragraph',
-            'children': [
-                {'type': 'text', 'value': 'A note'},
-                {'type': 'footnoteReference', 'identifier': 'a', 'label': 'a'},
-                {'type': 'text', 'value': '.'},
-            ],
-        },
-        {
-            'type': 'footnoteDefinition',
-            'identifier': 'a',
-            'label': 'a',
-            'children': [{
-                'type': 'paragraph',
-                'children': [
-                    {'type': 'emphasis', 'children': [{'type': 'text', 'value': 'Footnote'}]},
-                    {'type': 'text', 'value': '.'},
-                ],
-            }],
-        },
-    ],
-}
-```
-
-The default HTML renderer emits the reference and appends a footnotes section.
-
-```html
-<p>A note<sup><a href="#user-content-fn-a" id="user-content-fnref-a" data-footnote-ref aria-describedby="footnote-label">1</a></sup>.</p>
-<section data-footnotes class="footnotes">
-...
-</section>
-```
-
-## Inline rules
-
-| Rule | Syntax | Main node | AST child shape | Default HTML |
-| --- | --- | --- | --- | --- |
-| `InlineCode` | `` `code` `` | `inlineCode` | `{'type': 'inlineCode', 'value': 'code'}` | `<code>code</code>` |
-| `Emphasis` | `*em*`, `_em_`, `**strong**`, `__strong__` | `emphasis`, `strong` | `{'type': 'emphasis', 'children': [...]}` | `<em>em</em>`, `<strong>strong</strong>` |
-| `Link` | `[label](/url "title")`; optionally references | `link` | `{'type': 'link', 'url': '/url', 'title': 'title', 'children': [...]}` | `<a href="/url" title="title">...</a>` |
-| `Image` | `![alt](/img.png "title")`; optionally references | `image` | `{'type': 'image', 'url': '/img.png', 'alt': 'alt', 'title': 'title'}` | `<img src="/img.png" alt="alt" title="title" />` |
-| `Autolink` | `<https://example.com>`, `<me@example.com>` | `link` | `{'type': 'link', 'url': 'https://example.com', 'children': [...]}` | `<a href="https://example.com">https://example.com</a>` |
-| `RawHtml` | `<span>` or `</span>` inline HTML | `html` | `{'type': 'html', 'value': '<span>'}` | escaped by default |
-| `BackslashEscape` | `\*` for escapable punctuation | `text` | `{'type': 'text', 'value': '*'}` | `*` |
-| `CharacterReference` | `&copy;`, `&#169;`, `&amp;` | `text` | `{'type': 'text', 'value': '©'}` | `©` |
-| `HardBreak` | backslash newline or two spaces before newline | `break` | `{'type': 'break'}` | `<br />` |
-| `Strikethrough` | `~~delete~~` or `~delete~` | `delete` | `{'type': 'delete', 'children': [...]}` | `<del>delete</del>` |
-| `ExtendedAutolink` | bare `https://example.com` or email | `link` | `{'type': 'link', 'url': 'https://example.com', 'children': [...]}` | `<a href="https://example.com">...</a>` |
-| `Mark` | `==marked==` | `mark` | `{'type': 'mark', 'children': [...]}` | `<mark>marked</mark>` |
-| `Insert` | `^^inserted^^` | `insert` | `{'type': 'insert', 'children': [...]}` | `<ins>inserted</ins>` |
-| `Superscript` | `2^10^` | `superscript` | `{'type': 'superscript', 'children': [...]}` | `<sup>10</sup>` |
-| `Subscript` | `H~2~O` | `subscript` | `{'type': 'subscript', 'children': [...]}` | `<sub>2</sub>` |
-| `Ruby` | `[漢字(kanji)]` | `ruby` | `{'type': 'ruby', 'segments': [{'base': '漢字', 'text': 'kanji'}]}` | `<ruby>漢字<rt>kanji</rt></ruby>` |
-| `InlineSpoiler` | `>! secret !<` | `inlineSpoiler` | `{'type': 'inlineSpoiler', 'children': [...]}` | `<span class="spoiler">secret</span>` |
-| `InlineMath` | `$x + y$` | `inlineMath` | `{'type': 'inlineMath', 'value': 'x + y'}` | `<span class="math math-inline">x + y</span>` |
-| `TextDirective` | `:name[label]{attrs}` | `textDirective` | `{'type': 'textDirective', 'name': 'name', 'attributes': {...}, 'children': [...]}` | children fallback unless a directive renderer handles it |
-| `Role` | `` {name}`label` `` | `textDirective` | `{'type': 'textDirective', 'name': 'name', 'children': [...]}` | children fallback unless a directive renderer handles it |
-
-### Inline examples
-
-```python
-from wenmode import Parser
-from wenmode.rules import Emphasis, InlineCode, Link
-
-root = Parser([Emphasis, Link, InlineCode]).parse(
-    'A [*link*](/url) with `code`.\n'
-)
-```
-
-```python
-{
-    'type': 'root',
-    'children': [{
-        'type': 'paragraph',
-        'children': [
-            {'type': 'text', 'value': 'A '},
+          "type": "listItem",
+          "children": [
             {
-                'type': 'link',
-                'url': '/url',
-                'children': [{'type': 'emphasis', 'children': [{'type': 'text', 'value': 'link'}]}],
-            },
-            {'type': 'text', 'value': ' with '},
-            {'type': 'inlineCode', 'value': 'code'},
-            {'type': 'text', 'value': '.'},
-        ],
-    }],
+              "type": "paragraph",
+              "children": [
+                {
+                  "type": "text",
+                  "value": "done"
+                }
+              ]
+            }
+          ],
+          "checked": true,
+          "spread": false
+        },
+        {
+          "type": "listItem",
+          "children": [
+            {
+              "type": "paragraph",
+              "children": [
+                {
+                  "type": "text",
+                  "value": "todo"
+                }
+              ]
+            }
+          ],
+          "checked": false,
+          "spread": false
+        }
+      ],
+      "ordered": false,
+      "spread": false
+    }
+  ]
 }
 ```
 
-```html
-<p>A <a href="/url"><em>link</em></a> with <code>code</code>.</p>
+## Table
+
+`Table` parses GFM pipe tables.
+
+```markdown
+| A | B |
+| :--- | ---: |
+| *x* | y |
 ```
 
-## Directive rule examples
+Output nodes are `Table`, `TableRow`, and `TableCell`, and their AST is:
 
-The text/leaf/container directive rules use the mdast directive node family.
-
-```python
-from wenmode import Parser
-from wenmode.rules import ContainerDirective, Emphasis, LeafDirective, TextDirective
-
-root = Parser([TextDirective, LeafDirective, ContainerDirective, Emphasis]).parse(
-    ':abbr[HTML]{title="HyperText Markup Language"}\n\n'
-    '::youtube[Video]{#abc}\n\n'
-    ':::note[Title]{.wide}\n'
-    '*Body*.\n'
-    ':::\n'
-)
-```
-
-```python
+```json
 {
-    'type': 'root',
-    'children': [
+  "type": "root",
+  "children": [
+    {
+      "type": "table",
+      "children": [
         {
-            'type': 'paragraph',
-            'children': [{
-                'type': 'textDirective',
-                'name': 'abbr',
-                'attributes': {'title': 'HyperText Markup Language'},
-                'children': [{'type': 'text', 'value': 'HTML'}],
-            }],
-        },
-        {
-            'type': 'leafDirective',
-            'name': 'youtube',
-            'attributes': {'id': 'abc'},
-            'children': [{'type': 'text', 'value': 'Video'}],
-        },
-        {
-            'type': 'containerDirective',
-            'name': 'note',
-            'attributes': {'class': 'wide'},
-            'children': [
+          "type": "tableRow",
+          "children": [
+            {
+              "type": "tableCell",
+              "children": [
                 {
-                    'type': 'paragraph',
-                    'data': {'directiveLabel': True},
-                    'children': [{'type': 'text', 'value': 'Title'}],
-                },
+                  "type": "text",
+                  "value": "A"
+                }
+              ]
+            },
+            {
+              "type": "tableCell",
+              "children": [
                 {
-                    'type': 'paragraph',
-                    'children': [
-                        {'type': 'emphasis', 'children': [{'type': 'text', 'value': 'Body'}]},
-                        {'type': 'text', 'value': '.'},
-                    ],
-                },
-            ],
+                  "type": "text",
+                  "value": "B"
+                }
+              ]
+            }
+          ]
         },
-    ],
+        {
+          "type": "tableRow",
+          "children": [
+            {
+              "type": "tableCell",
+              "children": [
+                {
+                  "type": "emphasis",
+                  "children": [
+                    {
+                      "type": "text",
+                      "value": "x"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "tableCell",
+              "children": [
+                {
+                  "type": "text",
+                  "value": "y"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "align": [
+        "left",
+        "right"
+      ]
+    }
+  ]
 }
 ```
 
-Without directive renderers, HTML falls back to child content:
+## Footnote
 
-```html
-<p>HTML</p>
-Video<p>Title</p>
-<p><em>Body</em>.</p>
+`Footnote` parses inline footnote references and collects matching footnote
+definitions with a document-wide transform.
+
+```markdown
+A note[^a].
+
+[^a]: *Footnote*.
 ```
 
-`FencedDirective` and `Role` produce the same node types as container and text
-directives, but use MyST-style syntax:
+Output nodes are `FootnoteReference` and `FootnoteDefinition`, and their AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "A note"
+        },
+        {
+          "type": "footnoteReference",
+          "identifier": "a",
+          "label": "a"
+        },
+        {
+          "type": "text",
+          "value": "."
+        }
+      ]
+    },
+    {
+      "type": "footnoteDefinition",
+      "children": [
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "type": "emphasis",
+              "children": [
+                {
+                  "type": "text",
+                  "value": "Footnote"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "value": "."
+            }
+          ]
+        }
+      ],
+      "identifier": "a",
+      "label": "a"
+    }
+  ]
+}
+```
+
+## Abbreviation
+
+`Abbreviation` parses abbreviation definitions and rewrites matching text into
+abbreviation nodes.
+
+```markdown
+The HTML spec.
+
+*[HTML]: HyperText Markup Language
+```
+
+Output node is `Abbreviation`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "The "
+        },
+        {
+          "type": "abbreviation",
+          "children": [
+            {
+              "type": "text",
+              "value": "HTML"
+            }
+          ],
+          "title": "HyperText Markup Language"
+        },
+        {
+          "type": "text",
+          "value": " spec."
+        }
+      ]
+    }
+  ]
+}
+```
+
+## DefinitionList
+
+`DefinitionList` parses a paragraph followed by colon-prefixed definition
+continuations.
+
+```markdown
+Apple
+: *fruit*
+```
+
+Output nodes are `DefinitionList`, `DefinitionTerm`, and
+`DefinitionDescription`, and their AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "definitionList",
+      "children": [
+        {
+          "type": "definitionTerm",
+          "children": [
+            {
+              "type": "text",
+              "value": "Apple"
+            }
+          ]
+        },
+        {
+          "type": "definitionDescription",
+          "children": [
+            {
+              "type": "paragraph",
+              "children": [
+                {
+                  "type": "emphasis",
+                  "children": [
+                    {
+                      "type": "text",
+                      "value": "fruit"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "spread": false
+        }
+      ]
+    }
+  ]
+}
+```
+
+## MathBlock
+
+`MathBlock` parses display math fenced by `$$` markers.
+
+```markdown
+$$
+x + y
+$$
+```
+
+Output node is `Math`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "math",
+      "value": "x + y\n"
+    }
+  ]
+}
+```
+
+## BlockSpoiler
+
+`BlockSpoiler` parses `>!`-prefixed spoiler blocks.
+
+```markdown
+>! hidden *thing*
+```
+
+Output node is `BlockSpoiler`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "blockSpoiler",
+      "children": [
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "type": "text",
+              "value": "hidden "
+            },
+            {
+              "type": "emphasis",
+              "children": [
+                {
+                  "type": "text",
+                  "value": "thing"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+## LeafDirective
+
+`LeafDirective` parses leaf directives such as `::name[label]{attrs}`.
+
+```markdown
+::youtube[*Video*]{#abc}
+```
+
+Output node is `LeafDirective`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "leafDirective",
+      "children": [
+        {
+          "type": "emphasis",
+          "children": [
+            {
+              "type": "text",
+              "value": "Video"
+            }
+          ]
+        }
+      ],
+      "name": "youtube",
+      "attributes": {
+        "id": "abc"
+      }
+    }
+  ]
+}
+```
+
+## ContainerDirective
+
+`ContainerDirective` parses colon-fenced block directives with optional labels
+and attributes.
+
+```markdown
+:::note[Title]{.wide}
+*Body*.
+:::
+```
+
+Output node is `ContainerDirective`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "containerDirective",
+      "children": [
+        {
+          "type": "paragraph",
+          "data": {
+            "directiveLabel": true
+          },
+          "children": [
+            {
+              "type": "text",
+              "value": "Title"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "type": "emphasis",
+              "children": [
+                {
+                  "type": "text",
+                  "value": "Body"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "value": "."
+            }
+          ]
+        }
+      ],
+      "name": "note",
+      "attributes": {
+        "class": "wide"
+      }
+    }
+  ]
+}
+```
+
+## FencedDirective
+
+`FencedDirective` parses MyST-style fenced directives.
 
 ````markdown
 ```{note} Title
 :class: wide
 
-Body.
+*Body*.
 ```
-
-{abbr}`HTML`
 ````
 
-The fenced directive becomes a `containerDirective` node. The role becomes a
-`textDirective` node.
+Output node is `ContainerDirective`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "containerDirective",
+      "children": [
+        {
+          "type": "paragraph",
+          "data": {
+            "directiveLabel": true
+          },
+          "children": [
+            {
+              "type": "text",
+              "value": "Title"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "type": "emphasis",
+              "children": [
+                {
+                  "type": "text",
+                  "value": "Body"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "value": "."
+            }
+          ]
+        }
+      ],
+      "name": "note",
+      "attributes": {
+        "class": "wide"
+      }
+    }
+  ]
+}
+```
+
+## InlineCode
+
+`InlineCode` parses inline code spans.
+
+```markdown
+`code`
+```
+
+Output node is `InlineCode`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "inlineCode",
+          "value": "code"
+        }
+      ]
+    }
+  ]
+}
+```
+
+## Emphasis
+
+`Emphasis` parses emphasis and strong emphasis delimiters.
+
+```markdown
+*em* and **strong**
+```
+
+Output nodes are `Emphasis` and `Strong`, and their AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "emphasis",
+          "children": [
+            {
+              "type": "text",
+              "value": "em"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "value": " and "
+        },
+        {
+          "type": "strong",
+          "children": [
+            {
+              "type": "text",
+              "value": "strong"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+## Link
+
+`Link` parses inline links and, by default, reference-style links.
+
+```markdown
+[*label*](/url "Title")
+```
+
+Output node is `Link`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "link",
+          "children": [
+            {
+              "type": "emphasis",
+              "children": [
+                {
+                  "type": "text",
+                  "value": "label"
+                }
+              ]
+            }
+          ],
+          "url": "/url",
+          "title": "Title"
+        }
+      ]
+    }
+  ]
+}
+```
+
+Option example: use `Link(references=False)` when only inline links should be
+resolved.
+
+```markdown
+[label][id]
+
+[id]: /url
+```
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "[label][id]"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "[id]: /url"
+        }
+      ]
+    }
+  ]
+}
+```
+
+## Image
+
+`Image` parses inline images and, by default, reference-style images.
+
+```markdown
+![*alt*](/img.png "Title")
+```
+
+Output node is `Image`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "image",
+          "url": "/img.png",
+          "alt": "alt",
+          "title": "Title"
+        }
+      ]
+    }
+  ]
+}
+```
+
+Option example: use `Image(references=False)` when only inline images should be
+resolved.
+
+```markdown
+![alt][id]
+
+[id]: /img.png
+```
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "![alt][id]"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "[id]: /img.png"
+        }
+      ]
+    }
+  ]
+}
+```
+
+## Autolink
+
+`Autolink` parses angle-bracket URI and email autolinks.
+
+```markdown
+<https://example.com>
+```
+
+Output node is `Link`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "link",
+          "children": [
+            {
+              "type": "text",
+              "value": "https://example.com"
+            }
+          ],
+          "url": "https://example.com"
+        }
+      ]
+    }
+  ]
+}
+```
+
+## RawHtml
+
+`RawHtml` parses inline HTML tags and comments.
+
+```markdown
+<span>hi</span>
+```
+
+Output node is `Html`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "html",
+          "value": "<span>"
+        },
+        {
+          "type": "text",
+          "value": "hi"
+        },
+        {
+          "type": "html",
+          "value": "</span>"
+        }
+      ]
+    }
+  ]
+}
+```
+
+Option example: use `RawHtml(disallowed_tags=["span"])` to escape selected
+inline tags during parsing.
+
+```markdown
+<span>hi</span>
+```
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "html",
+          "data": {
+            "escaped": true
+          },
+          "value": "&lt;span>"
+        },
+        {
+          "type": "text",
+          "value": "hi"
+        },
+        {
+          "type": "html",
+          "data": {
+            "escaped": true
+          },
+          "value": "&lt;/span>"
+        }
+      ]
+    }
+  ]
+}
+```
+
+## BackslashEscape
+
+`BackslashEscape` parses backslash escapes for escapable punctuation.
+
+```markdown
+\*
+```
+
+Output node is `Text`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "*"
+        }
+      ]
+    }
+  ]
+}
+```
+
+## CharacterReference
+
+`CharacterReference` parses named and numeric character references.
+
+```markdown
+&copy;
+```
+
+Output node is `Text`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "©"
+        }
+      ]
+    }
+  ]
+}
+```
+
+## HardBreak
+
+`HardBreak` parses hard line breaks created with a trailing backslash or two
+trailing spaces.
+
+```markdown
+line\
+break
+```
+
+Output node is `Break`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "line"
+        },
+        {
+          "type": "break"
+        },
+        {
+          "type": "text",
+          "value": "break"
+        }
+      ]
+    }
+  ]
+}
+```
+
+## Strikethrough
+
+`Strikethrough` parses single- or double-tilde deletion spans.
+
+```markdown
+~~delete~~
+```
+
+Output node is `Delete`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "delete",
+          "children": [
+            {
+              "type": "text",
+              "value": "delete"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+## ExtendedAutolink
+
+`ExtendedAutolink` parses bare URL and email autolinks.
+
+```markdown
+https://example.com
+```
+
+Output node is `Link`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "link",
+          "children": [
+            {
+              "type": "text",
+              "value": "https://example.com"
+            }
+          ],
+          "url": "https://example.com"
+        }
+      ]
+    }
+  ]
+}
+```
+
+## Mark
+
+`Mark` parses highlighted text delimited by `==`.
+
+```markdown
+==marked==
+```
+
+Output node is `Mark`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "mark",
+          "children": [
+            {
+              "type": "text",
+              "value": "marked"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+## Insert
+
+`Insert` parses inserted text delimited by `^^`.
+
+```markdown
+^^inserted^^
+```
+
+Output node is `Insert`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "insert",
+          "children": [
+            {
+              "type": "text",
+              "value": "inserted"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+## Superscript
+
+`Superscript` parses caret-delimited superscript spans.
+
+```markdown
+2^10^
+```
+
+Output node is `Superscript`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "2"
+        },
+        {
+          "type": "superscript",
+          "children": [
+            {
+              "type": "text",
+              "value": "10"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+## Subscript
+
+`Subscript` parses tilde-delimited subscript spans.
+
+```markdown
+H~2~O
+```
+
+Output node is `Subscript`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "H"
+        },
+        {
+          "type": "subscript",
+          "children": [
+            {
+              "type": "text",
+              "value": "2"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "value": "O"
+        }
+      ]
+    }
+  ]
+}
+```
+
+## Ruby
+
+`Ruby` parses ruby annotation syntax.
+
+```markdown
+[漢字(kanji)]
+```
+
+Output node is `Ruby`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "ruby",
+          "segments": [
+            {
+              "base": "漢字",
+              "text": "kanji"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+## InlineSpoiler
+
+`InlineSpoiler` parses spoiler spans delimited by `>!` and `!<`.
+
+```markdown
+>! secret !<
+```
+
+Output node is `InlineSpoiler`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "inlineSpoiler",
+          "children": [
+            {
+              "type": "text",
+              "value": "secret"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+## InlineMath
+
+`InlineMath` parses inline math delimited by `$`.
+
+```markdown
+$x + y$
+```
+
+Output node is `InlineMath`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "inlineMath",
+          "value": "x + y"
+        }
+      ]
+    }
+  ]
+}
+```
+
+## TextDirective
+
+`TextDirective` parses inline directives such as `:name[label]{attrs}`.
+
+```markdown
+:abbr[*HTML*]{title="HyperText Markup Language"}
+```
+
+Output node is `TextDirective`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "textDirective",
+          "children": [
+            {
+              "type": "emphasis",
+              "children": [
+                {
+                  "type": "text",
+                  "value": "HTML"
+                }
+              ]
+            }
+          ],
+          "name": "abbr",
+          "attributes": {
+            "title": "HyperText Markup Language"
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+## Role
+
+`Role` parses MyST-style inline roles.
+
+```markdown
+{abbr}`HTML`
+```
+
+Output node is `TextDirective`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "textDirective",
+          "children": [
+            {
+              "type": "text",
+              "value": "HTML"
+            }
+          ],
+          "name": "abbr"
+        }
+      ]
+    }
+  ]
+}
+```

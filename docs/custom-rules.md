@@ -1,7 +1,27 @@
 # Custom rules
 
 Create a custom rule when you want Wenmode to recognize syntax that is not part
-of an existing preset.
+of an existing preset. Custom rules use the same base classes as built-in rules:
+`InlineRule`, `BlockRule`, `ContinueRule`, and plain `Rule` for extensions that
+only provide root transforms.
+
+## Rule API
+
+Every rule has a stable `name`. Parser rule names are used as dictionary keys
+in `parser.rules`, and block rule names are also used as regex group names when
+the parser compiles block openers, so use snake_case identifier-style names.
+
+Rules also have an `order` class attribute. Block and inline rules default to
+`order = 100`; lower values run earlier when syntax overlaps.
+
+```python
+class MyRule(InlineRule):
+    order = 90
+```
+
+`Parser` and `Wenmode` accept either rule classes or configured rule instances.
+Classes are instantiated automatically. Instances are useful for rules with
+options.
 
 ## Custom inline rule
 
@@ -16,8 +36,9 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING
 
-from wenmode.nodes import Mark, Node
-from wenmode.rules.base import InlineRule
+from wenmode.nodes import Mark as MarkNode
+from wenmode.nodes import Node
+from wenmode.rules import InlineRule
 from wenmode.state import BlockState
 
 if TYPE_CHECKING:
@@ -39,8 +60,8 @@ class PlusMark(InlineRule):
         if end == -1:
             return None, match.start()
 
-        children = parser.parse_inlines(text[match.end():end], state)
-        return Mark(children=children), end + 2
+        children = parser.parse_inlines(text[match.end() : end], state)
+        return MarkNode(children=children), end + 2
 ```
 
 Register it like any other rule.
@@ -56,44 +77,102 @@ assert wenmode.render('++very *important*++\n') == (
 )
 ```
 
-Use `trigger_chars` when possible. It lets the parser quickly find candidate
-positions instead of running a search across every inline rule for every step.
+The third `InlineRule` constructor argument is `trigger_chars`. Use it when a
+rule starts with known literal characters. The parser then jumps directly to
+those characters and calls `rule.compiled.match()` there. If `trigger_chars` is
+empty, the parser calls `rule.search(text, pos)`; override `search()` for rules
+that need custom scanning behavior.
+
+If an inline rule decides not to handle a match, return
+`(None, match.start())`. The parser will emit the marker as text and continue.
 
 ## Custom block rule
 
 A block rule inherits from `BlockRule`. The constructor passes a rule name and a
-block opener pattern. The `parse()` method can consume lines from `BlockState`
-and return a node.
+block opener pattern. The parser wraps each block opener as a named regex group,
+matches the current line, and calls the matched rule's `parse()` method.
+
+The `parse()` method receives the parser, the current `BlockState`, and the
+matched opener. It must advance `state` when it consumes input.
 
 ```python
-import re
+from __future__ import annotations
 
-from wenmode.nodes import Paragraph
-from wenmode.rules.base import BlockRule
+import re
+from typing import TYPE_CHECKING
+
+from wenmode.nodes import Node, Paragraph
+from wenmode.rules import BlockRule
 from wenmode.state import BlockState
+
+if TYPE_CHECKING:
+    from wenmode.parser import Parser
 
 
 class BangParagraph(BlockRule):
     def __init__(self) -> None:
         super().__init__('bang_paragraph', r'[ \t]{0,3}!')
 
-    def parse(self, parser, state: BlockState, match: re.Match[str]):
+    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
         text = state.line.lstrip(' \t!').rstrip('\r\n')
         state.advance()
         return Paragraph(children=parser.parse_inlines(text, state))
 ```
 
-The parser expects a block rule to advance the state when it consumes input. If
-the rule decides not to handle a match, return `None`.
+If the rule decides not to handle a matched opener, return `None` without
+advancing. The parser will fall back to paragraph parsing for that line.
+
+Use `parser.parse_blocks(text, parent_state=state)` when your block rule
+contains nested Markdown content. Nested parsing shares the same state store and
+increments `state.depth`.
 
 ## Custom continuation rule
 
 A continuation rule inherits from `ContinueRule` and implements
 `parse_paragraph_continuation()`. It receives the paragraph lines collected so
-far and may return a replacement node.
+far and may return a replacement node. Setext headings and definition lists are
+implemented this way.
 
-Setext headings are implemented this way: the parser starts reading a paragraph,
-then a following underline line turns that paragraph into a heading.
+```python
+from __future__ import annotations
+
+import re
+from typing import TYPE_CHECKING
+
+from wenmode.nodes import Heading, Node
+from wenmode.rules import ContinueRule
+from wenmode.state import BlockState
+
+if TYPE_CHECKING:
+    from wenmode.parser import Parser
+
+
+BANG_HEADING_RE = re.compile(r'[ \t]{0,3}!+[ \t]*$')
+
+
+class BangHeading(ContinueRule):
+    def __init__(self) -> None:
+        super().__init__('bang_heading')
+
+    def matches(self, line: str) -> bool:
+        return line.lstrip(' \t').startswith('!')
+
+    def parse_paragraph_continuation(
+        self,
+        parser: Parser,
+        state: BlockState,
+        lines: list[str],
+    ) -> Node | None:
+        if BANG_HEADING_RE.match(state.line) is None:
+            return None
+
+        state.advance()
+        text = ''.join(lines).strip()
+        return Heading(depth=6, children=parser.parse_inlines(text, state))
+```
+
+`matches()` is optional, but it is useful as a cheap pre-check before doing more
+expensive parsing.
 
 ## Rule options
 
@@ -112,7 +191,14 @@ parser = Parser([
 Wenmode stores enabled rules by `name`, so registering another instance with the
 same name replaces the previous configuration.
 
-## Extension state
+```python
+parser.register_rule(Link(references=False))
+```
+
+Root transforms can declare `required_rules`; the parser automatically
+registers missing required rules when it rebuilds the rule set.
+
+## Extension state and transforms
 
 Parser, rule, and transform instances should not store per-parse mutable state.
 Use `BlockState.store` with a `StateKey` when a rule or transform needs shared
@@ -122,10 +208,16 @@ state for one parse.
 from __future__ import annotations
 
 import re
+from typing import TYPE_CHECKING
 
 from wenmode.nodes import Node, Root
-from wenmode.rules.base import BlockRule, Rule
+from wenmode.rules import BlockRule, Rule
 from wenmode.state import BlockState, StateKey
+
+if TYPE_CHECKING:
+    from wenmode.parser import Parser
+    from wenmode.rules import RootTransform
+
 
 TERMS = StateKey('my_package.terms', lambda: {})
 TERM_RE = re.compile(r'^[ \t]{0,3}@term\[(?P<label>[^\]]+)]:[ \t]*(?P<title>.*)$')
@@ -134,14 +226,14 @@ TERM_RE = re.compile(r'^[ \t]{0,3}@term\[(?P<label>[^\]]+)]:[ \t]*(?P<title>.*)$
 class Glossary(Rule):
     def __init__(self) -> None:
         super().__init__('glossary')
-        self.root_transforms = [GlossaryTransform()]
+        self.root_transforms: list[RootTransform] = [GlossaryTransform()]
 
 
 class TermDefinition(BlockRule):
     def __init__(self) -> None:
         super().__init__('term_definition', r'[ \t]{0,3}@term\[')
 
-    def parse(self, parser, state: BlockState, match: re.Match[str]) -> Node | None:
+    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
         term = TERM_RE.match(state.line.rstrip('\r\n'))
         if term is None:
             return None
@@ -156,24 +248,45 @@ class GlossaryTransform:
     defer_inlines = False
     required_rules = [TermDefinition]
 
-    def prepare(self, parser, root: Root, state: BlockState) -> None:
+    def prepare(self, parser: Parser, root: Root, state: BlockState) -> None:
         pass
 
-    def transform(self, parser, root: Root, state: BlockState) -> None:
+    def transform(self, parser: Parser, root: Root, state: BlockState) -> None:
         root.data = {'terms': dict(state.store.get(TERMS))}
 ```
 
-`RootTransform.required_rules` are registered automatically. Nested block
-parsing shares the same store, while each top-level parse gets a fresh store.
+`StateKey.factory` creates the value the first time it is requested for a parse.
+Each top-level parse gets a fresh store. Nested block parsing shares the same
+store, so definitions inside block quotes, lists, directives, or footnotes are
+visible to document-level transforms.
+
+Root transforms follow the `RootTransform` protocol. Custom transforms do not
+need to inherit from it; use the protocol for type annotations when you want
+type checkers to validate the transform shape. Each transform must provide:
+
+- `name`, used for deduplication when multiple rules attach the same transform.
+- `required_rules`, a sequence of rule classes or configured rule instances to
+  auto-register.
+- `defer_inlines`, which tells the parser whether inline parsing must wait
+  until after `prepare()`.
+- `prepare(parser, root, state)`, run after block parsing.
+- `transform(parser, root, state)`, run after deferred inline parsing is
+  resolved.
+
+Set `defer_inlines = True` only when inline rules need document-wide state
+collected by `prepare()`, such as reference-style links. Rule sets with deferred
+inlines cannot be used with streaming output.
 
 ## Testing a rule
 
 Test custom rules at the parser and renderer boundary. A small rule usually
-needs three cases:
+needs these cases:
 
 - recognized syntax renders as expected,
 - unmatched or incomplete syntax stays as text,
-- nested inline parsing works if the rule calls `parser.parse_inlines()`.
+- nested inline parsing works if the rule calls `parser.parse_inlines()`,
+- any rule option changes the enabled behavior,
+- per-parse state does not leak between parser calls.
 
 ```python
 from wenmode import HTMLRenderer, Parser
