@@ -16,8 +16,27 @@ import mistune
 from markdown_it import MarkdownIt
 
 from wenmode import HTMLRenderer, Wenmode
-from wenmode.presets import commonmark
-from wenmode.rules import Table
+from wenmode.presets import commonmark, github
+from wenmode.rules import (
+    Abbreviation,
+    BlockSpoiler,
+    ContainerDirective,
+    DefinitionList,
+    FencedDirective,
+    InlineMath,
+    InlineSpoiler,
+    Insert,
+    LeafDirective,
+    Mark,
+    MathBlock,
+    Role,
+    Ruby,
+    Subscript,
+    Superscript,
+    Table,
+    TextDirective,
+)
+from wenmode.rules.base import Rule
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / 'docs'
@@ -179,11 +198,13 @@ def load_cases(selected: str) -> list[Case]:
 
 
 def make_targets() -> list[Target]:
-    # Keep the benchmark feature set aligned across renderers:
-    # CommonMark-compatible parsing plus pipe tables. GFM-only extensions such as
-    # strikethrough, footnotes, and bare URL autolinks are intentionally disabled
-    # because they are not equally available in the current target set.
-    wenmode = Wenmode([Table, *commonmark], HTMLRenderer(escape=False, sanitize_urls=False))
+    # The non-Wenmode parsers are configured to match wenmode-core's feature set
+    # as closely as their APIs allow: CommonMark-style parsing plus pipe tables.
+    # wenmode-all intentionally enables many extra Wenmode rules that are mostly
+    # unused by these corpora, so it measures dispatch overhead under a broad
+    # rule set rather than a syntax-equivalent comparison.
+    wenmode_core = Wenmode([Table, *commonmark], HTMLRenderer(escape=False, sanitize_urls=False))
+    wenmode_all = Wenmode(all_wenmode_rules(), HTMLRenderer(escape=False, sanitize_urls=False))
 
     mistune_renderer = mistune.create_markdown(renderer='html', plugins=['table', 'speedup'])
 
@@ -192,10 +213,33 @@ def make_targets() -> list[Target]:
     markdown_it = MarkdownIt('commonmark', {'html': True}).enable('table')
 
     return [
-        Target('wenmode', wenmode.render),
+        Target('wenmode-core', wenmode_core.render),
+        Target('wenmode-all', wenmode_all.render),
         Target('mistune', mistune_renderer),
         Target('python-markdown', lambda text: python_markdown.reset().convert(text)),
         Target('markdown-it-py', markdown_it.render),
+    ]
+
+
+def all_wenmode_rules() -> list[type[Rule] | Rule]:
+    return [
+        *github,
+        FencedDirective,
+        MathBlock,
+        BlockSpoiler,
+        LeafDirective,
+        ContainerDirective,
+        DefinitionList,
+        Abbreviation,
+        InlineMath,
+        TextDirective,
+        Role,
+        Ruby,
+        InlineSpoiler,
+        Mark,
+        Insert,
+        Superscript,
+        Subscript,
     ]
 
 
@@ -228,11 +272,11 @@ def benchmark(target: Target, case: Case, iterations: int, warmup: int) -> Resul
     )
 
 
-def add_relative_speeds(results: list[Result]) -> list[Result]:
-    wenmode_by_case = {result.case: result.mean for result in results if result.target == 'wenmode'}
+def add_relative_speeds(results: list[Result], baseline_target: str = 'wenmode-core') -> list[Result]:
+    baseline_by_case = {result.case: result.mean for result in results if result.target == baseline_target}
     updated = []
     for result in results:
-        baseline = wenmode_by_case[result.case]
+        baseline = baseline_by_case[result.case]
         updated.append(
             Result(
                 target=result.target,
@@ -257,7 +301,7 @@ def format_duration(seconds: float) -> str:
 
 
 def print_table(results: list[Result]) -> None:
-    headers = ['library', 'case', 'bytes', 'iters', 'best', 'mean', 'MB/s', 'vs wenmode']
+    headers = ['library', 'case', 'bytes', 'iters', 'best', 'mean', 'MB/s', 'vs core']
     rows = [
         [
             result.target,
