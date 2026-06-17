@@ -28,7 +28,7 @@
   },
   {
     "name": "role directive",
-    "markdown": "{abbr}`HTML *content*`\n",
+    "markdown": "{term}`HTML *content*`\n",
     "ast": {
       "type": "root",
       "children": [
@@ -37,7 +37,7 @@
           "children": [
             {
               "type": "textDirective",
-              "name": "abbr",
+              "name": "term",
               "children": [
                 {
                   "type": "text",

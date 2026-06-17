@@ -7,7 +7,7 @@ from typing import Any, TypedDict
 import pytest
 
 from wenmode import HTMLRenderer, MarkdownRenderer, Parser
-from wenmode.directives import Admonition, Figure, TableOfContents
+from wenmode.directives import Abbreviation, Admonition, Figure, TableOfContents
 from wenmode.rules import (
     AtxHeading,
     ContainerDirective,
@@ -76,11 +76,11 @@ def test_directive_html_examples(example: DirectiveHtmlExample) -> None:
 
 
 def test_directives_are_plain_text_without_rules() -> None:
-    markdown = ':abbr[HTML]{title="HyperText Markup Language"}\n\n{abbr}`HTML`\n\n::youtube[Video]{#abc}\n'
+    markdown = ':abbr[HTML]{title="HyperText Markup Language"}\n\n{term}`HTML`\n\n::youtube[Video]{#abc}\n'
 
     assert render(Parser([]), markdown) == (
         '<p>:abbr[HTML]{title=&quot;HyperText Markup Language&quot;}</p>\n'
-        '<p>{abbr}`HTML`</p>\n'
+        '<p>{term}`HTML`</p>\n'
         '<p>::youtube[Video]{#abc}</p>\n'
     )
 
@@ -90,6 +90,22 @@ def test_html_renderer_falls_back_to_directive_children() -> None:
     html = HTMLRenderer().render(parser.parse(':i[inline]\n\n::hr[leaf]\n\n:::note[Title]\nBody.\n:::\n'))
 
     assert html == '<p>inline</p>\nleaf<p>Title</p>\n<p>Body.</p>\n'
+
+
+def test_abbreviation_directive_renders_html() -> None:
+    parser = Parser([TextDirective, Emphasis])
+    root = parser.parse(':abbr[*HTML*]{title="HyperText Markup Language" .term}\n')
+
+    assert HTMLRenderer(directives=[Abbreviation()]).render(root) == (
+        '<p><abbr title="HyperText Markup Language" class="term"><em>HTML</em></abbr></p>\n'
+    )
+
+
+def test_abbreviation_directive_falls_back_without_title() -> None:
+    parser = Parser([TextDirective, Role])
+    root = parser.parse(':abbr[HTML]\n')
+
+    assert HTMLRenderer(directives=[Abbreviation()]).render(root) == '<p>HTML</p>\n'
 
 
 def test_markdown_renderer_outputs_directives() -> None:
