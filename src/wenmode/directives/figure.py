@@ -19,8 +19,10 @@ class Figure:
 
     def render(self, renderer: HTMLRenderer, node: ContainerDirective, context: HTMLRenderContext) -> str:
         label, children = split_directive_label(node)
-        parts = [f'<figure{renderer.render_attrs(node.attributes or {})}>\n']
-        parts.append(renderer.render_children(children, context))
+        parts = [
+            f'<figure{renderer.render_attrs(node.attributes or {})}>\n',
+            renderer.render_children(children, context),
+        ]
         if label is not None:
             parts.append(f'<figcaption>{renderer.render_children(label.children, context)}</figcaption>\n')
         parts.append('</figure>\n')

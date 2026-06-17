@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .abbr import Abbreviation
+from .blocks.abbr import Abbreviation
 from .blocks.blank_line import BlankLine
 from .blocks.blockquote import Blockquote
 from .blocks.definition_list import DefinitionList

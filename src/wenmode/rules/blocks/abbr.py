@@ -9,7 +9,7 @@ from wenmode.nodes import Node, Parent, Text
 from wenmode.state import ABBREVIATIONS, BlockState
 from wenmode.state import Abbreviation as AbbreviationDefinitionNode
 
-from .base import BlockRule, Rule
+from ..base import BlockRule, Rule
 
 if TYPE_CHECKING:
     from wenmode.nodes import Root
