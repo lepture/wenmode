@@ -221,7 +221,7 @@ class Parser:
 
         found: tuple[int, InlineRule, re.Match[str]] | None = None
         for rule in self._search_inline_rules:
-            match = rule.compiled.search(text, pos)
+            match = rule.search(text, pos)
             if match is None:
                 continue
             candidate = (match.start(), rule, match)
