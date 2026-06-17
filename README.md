@@ -85,6 +85,41 @@ from wenmode.presets import github
 wenmode = Wenmode(github)
 ```
 
+## Benchmark
+
+Wenmode is designed so enabling more rules adds limited dispatch overhead. The
+benchmark script compares Markdown-to-HTML throughput across several real-world
+Markdown corpora:
+
+```bash
+uv run --group benchmark python scripts/benchmark.py --case all --iterations 3 --warmup 1
+```
+
+`wenmode-core` uses CommonMark-style rules plus pipe tables. The other parsers
+are configured to match that feature set as closely as their APIs allow:
+CommonMark-style parsing plus pipe table support.
+
+`wenmode-all` uses the `github` preset plus Wenmode's remaining built-in rules,
+including directives, math, definition lists, abbreviations, spoilers, ruby
+text, and additional inline formatting. These extra rules are mostly unused by
+the benchmark corpora, so `wenmode-all` measures the overhead of carrying many
+additional rules rather than a syntax-equivalent comparison with the other
+parsers.
+
+Mean time from one local run:
+
+| Library | docs | rust-book | progit | github-docs |
+| --- | ---: | ---: | ---: | ---: |
+| wenmode-core | 4.69ms | 146.90ms | 31.47ms | 3.764s |
+| wenmode-all | 5.20ms | 164.07ms | 33.89ms | 4.095s |
+| mistune | 7.46ms | 189.56ms | 42.65ms | 5.226s |
+| markdown-it-py | 10.53ms | 348.96ms | 71.92ms | 6.738s |
+| python-markdown | 23.68ms | 715.83ms | 143.70ms | 8.414s |
+
+In this run, `wenmode-all` still remains faster than the other parsers on every
+corpus even after loading many extra rules that the benchmark inputs mostly do
+not use. It runs about 7-10% slower than `wenmode-core`.
+
 ## Streaming
 
 Use the `streaming` preset when you want to render HTML chunks without waiting

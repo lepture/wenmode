@@ -11,11 +11,13 @@ uv run --group test pytest -q
 Run linting and type checks:
 
 ```bash
-uv run ruff check .
-uv run mypy
+uv run --group lint ruff check .
+uv run --group lint mypy
 ```
 
 Build the documentation:
+
+Documentation tooling currently requires Python 3.11+.
 
 ```bash
 uv run --group docs sphinx-build -b html docs docs/_build/html
