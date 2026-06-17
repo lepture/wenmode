@@ -8,6 +8,7 @@ from urllib.parse import quote, urlsplit
 
 from wenmode.nodes import (
     Blockquote,
+    BlockSpoiler,
     Break,
     Code,
     ContainerDirective,
@@ -241,6 +242,11 @@ def render_root(renderer: HTMLRenderer, node: Root, context: HTMLRenderContext) 
 @HTMLRenderer.register('blockquote')
 def render_blockquote(renderer: HTMLRenderer, node: Blockquote, context: HTMLRenderContext) -> str:
     return '<blockquote>\n' + renderer.render_children(node.children, context) + '</blockquote>\n'
+
+
+@HTMLRenderer.register('blockSpoiler')
+def render_block_spoiler(renderer: HTMLRenderer, node: BlockSpoiler, context: HTMLRenderContext) -> str:
+    return '<div class="spoiler">\n' + renderer.render_children(node.children, context) + '</div>\n'
 
 
 @HTMLRenderer.register('list')

@@ -4,6 +4,7 @@ import re
 
 from wenmode.nodes import (
     Blockquote,
+    BlockSpoiler,
     Break,
     Code,
     ContainerDirective,
@@ -131,6 +132,15 @@ def render_blockquote(renderer: MarkdownRenderer, node: Blockquote, context: Ren
         return '>\n\n'
     lines = body.splitlines()
     return '\n'.join('> ' + line if line else '>' for line in lines) + '\n\n'
+
+
+@MarkdownRenderer.register('blockSpoiler')
+def render_block_spoiler(renderer: MarkdownRenderer, node: BlockSpoiler, context: RenderContext) -> str:
+    body = renderer.render_children(node.children, context).rstrip('\n')
+    if not body:
+        return '>!\n\n'
+    lines = body.splitlines()
+    return '\n'.join('>! ' + line if line else '>!' for line in lines) + '\n\n'
 
 
 @MarkdownRenderer.register('list')

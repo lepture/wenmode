@@ -9,6 +9,7 @@ from .blocks.html import HtmlBlock
 from .blocks.indented_code import IndentedCode
 from .blocks.list import List
 from .blocks.math import MathBlock
+from .blocks.spoiler import BlockSpoiler
 from .blocks.table import Table
 from .blocks.thematic_break import ThematicBreak
 from .footnotes import Footnote
@@ -31,6 +32,7 @@ __all__ = [
     'BackslashEscape',
     'BlankLine',
     'Blockquote',
+    'BlockSpoiler',
     'CharacterReference',
     'ContainerDirective',
     'Emphasis',

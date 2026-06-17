@@ -11,6 +11,7 @@ from wenmode.presets import commonmark, github
 from wenmode.rules import (
     BackslashEscape,
     Blockquote,
+    BlockSpoiler,
     Emphasis,
     Footnote,
     InlineCode,
@@ -164,6 +165,17 @@ def test_inline_spoiler_rule() -> None:
 
     assert HTMLRenderer().render(root) == '<p>A <span class="spoiler">hidden <em>thing</em></span> appears.</p>\n'
     assert MarkdownRenderer().render(root) == 'A >! hidden *thing* !< appears\\.\n'
+
+
+def test_block_spoiler_rule() -> None:
+    parser = Parser([BlockSpoiler, Emphasis])
+    root = parser.parse('>! hidden *thing*\n>!\n>! second paragraph\n')
+
+    assert (
+        HTMLRenderer().render(root)
+        == '<div class="spoiler">\n<p>hidden <em>thing</em></p>\n<p>second paragraph</p>\n</div>\n'
+    )
+    assert MarkdownRenderer().render(root) == '>! hidden *thing*\n>!\n>! second paragraph\n'
 
 
 def test_footnote_identifiers_disallow_spaces() -> None:

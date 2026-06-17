@@ -88,6 +88,12 @@ class Blockquote(Parent):
 
 
 @dataclass
+class BlockSpoiler(Parent):
+    block: ClassVar[bool] = True
+    type: str = 'blockSpoiler'
+
+
+@dataclass
 class List(Parent):
     block: ClassVar[bool] = True
     ordered: bool = False

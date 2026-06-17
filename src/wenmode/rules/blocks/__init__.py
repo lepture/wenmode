@@ -9,12 +9,14 @@ from .html import HtmlBlock
 from .indented_code import IndentedCode
 from .list import List
 from .math import MathBlock
+from .spoiler import BlockSpoiler
 from .thematic_break import ThematicBreak
 
 __all__ = [
     'AtxHeading',
     'BlankLine',
     'Blockquote',
+    'BlockSpoiler',
     'ContainerDirective',
     'FencedDirective',
     'FencedCode',
