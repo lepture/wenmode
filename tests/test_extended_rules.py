@@ -19,6 +19,7 @@ from wenmode.rules import (
     Link,
     Mark,
     MathBlock,
+    Superscript,
 )
 
 FIXTURES_DIR = Path(__file__).parent / 'fixtures'
@@ -97,6 +98,22 @@ def test_insert_requires_tight_delimiters() -> None:
     assert render(parser, '^^ no insert^^\n') == '<p>^^ no insert^^</p>\n'
     assert render(parser, '^^no insert ^^\n') == '<p>^^no insert ^^</p>\n'
     assert render(parser, '^^^no insert^^^\n') == '<p>^^^no insert^^^</p>\n'
+
+
+def test_superscript_rule() -> None:
+    parser = Parser([Superscript, BackslashEscape, Emphasis])
+    root = parser.parse('2^10^ and ^with\\ space^ and ^escaped\\^caret^\n')
+
+    assert (
+        HTMLRenderer().render(root) == '<p>2<sup>10</sup> and <sup>with space</sup> and <sup>escaped^caret</sup></p>\n'
+    )
+    assert MarkdownRenderer().render(root) == '2^10^ and ^with\\ space^ and ^escaped\\^caret^\n'
+
+
+def test_superscript_does_not_allow_plain_spaces() -> None:
+    parser = Parser([Superscript])
+
+    assert render(parser, '^no script^\n') == '<p>^no script^</p>\n'
 
 
 def test_footnote_identifiers_disallow_spaces() -> None:

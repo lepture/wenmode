@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from wenmode.nodes import Insert as InsertNode
 from wenmode.nodes import Mark as MarkNode
 from wenmode.nodes import Node
+from wenmode.nodes import Superscript as SuperscriptNode
 from wenmode.state import BlockState
 
 from ..base import InlineRule
@@ -51,6 +52,17 @@ class Insert(InlineRule):
 
         value = text[match.end() : close]
         return InsertNode(children=parser.parse_inlines(value, state)), close + 2
+
+
+class Superscript(InlineRule):
+    def __init__(self) -> None:
+        super().__init__('superscript', r'\^(?:(?<!\\)(?:\\\\)*\\\^|\S|\\ )+?\^', '^')
+
+    def parse(
+        self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
+    ) -> tuple[Node | None, int]:
+        value = match.group(0)[1:-1].replace('\\ ', ' ')
+        return SuperscriptNode(children=parser.parse_inlines(value, state)), match.end()
 
 
 def find_closing_marker(text: str, start: int, marker: str) -> int:

@@ -16,7 +16,7 @@ from .inlines.code import InlineCode
 from .inlines.directive import Role, TextDirective
 from .inlines.emphasis import Emphasis
 from .inlines.extended_autolink import ExtendedAutolink
-from .inlines.formatting import Insert, Mark
+from .inlines.formatting import Insert, Mark, Superscript
 from .inlines.html import Autolink, RawHtml
 from .inlines.link import Image, Link
 from .inlines.math import InlineMath
@@ -53,6 +53,7 @@ __all__ = [
     'Role',
     'SetextHeading',
     'Strikethrough',
+    'Superscript',
     'Table',
     'TextDirective',
     'ThematicBreak',

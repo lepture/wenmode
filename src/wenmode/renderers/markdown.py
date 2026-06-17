@@ -28,6 +28,7 @@ from wenmode.nodes import (
     Parent,
     Root,
     Strong,
+    Superscript,
     Table,
     TableCell,
     TableRow,
@@ -98,6 +99,10 @@ class MarkdownRenderer(BaseRenderer):
 
         return '{' + ' '.join(parts) + '}' if parts else ''
 
+    def render_script_children(self, node: Parent, marker: str, context: RenderContext) -> str:
+        content = self.render_children(node.children, context)
+        return content.replace(' ', '\\ ').replace(marker, '\\' + marker)
+
 
 @MarkdownRenderer.register('root')
 def render_root(renderer: MarkdownRenderer, node: Root, context: RenderContext) -> str:
@@ -159,6 +164,11 @@ def render_mark(renderer: MarkdownRenderer, node: Mark, context: RenderContext) 
 @MarkdownRenderer.register('insert')
 def render_insert(renderer: MarkdownRenderer, node: Insert, context: RenderContext) -> str:
     return f'^^{renderer.render_children(node.children, context)}^^'
+
+
+@MarkdownRenderer.register('superscript')
+def render_superscript(renderer: MarkdownRenderer, node: Superscript, context: RenderContext) -> str:
+    return f'^{renderer.render_script_children(node, "^", context)}^'
 
 
 @MarkdownRenderer.register('textDirective')

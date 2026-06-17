@@ -179,6 +179,12 @@ class Insert(Parent):
 
 
 @dataclass
+class Superscript(Parent):
+    html_tag: ClassVar[str | None] = 'sup'
+    type: str = 'superscript'
+
+
+@dataclass
 class Table(Parent):
     block: ClassVar[bool] = True
     align: list[str | None] = field(default_factory=list)
