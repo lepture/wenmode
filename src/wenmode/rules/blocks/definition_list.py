@@ -21,6 +21,9 @@ class DefinitionList(ContinueRule):
     def __init__(self) -> None:
         super().__init__('definition_list')
 
+    def matches(self, line: str) -> bool:
+        return line.lstrip(' \t').startswith(':')
+
     def parse_paragraph_continuation(
         self, parser: Parser, state: BlockState, lines: list[str]
     ) -> DefinitionListNode | None:

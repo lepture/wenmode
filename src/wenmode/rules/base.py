@@ -30,6 +30,9 @@ class BlockRule(Rule):
 
 @dataclass
 class ContinueRule(Rule):
+    def matches(self, line: str) -> bool:
+        return True
+
     def parse_paragraph_continuation(self, parser: Parser, state: BlockState, lines: list[str]) -> Node | None:
         raise NotImplementedError
 

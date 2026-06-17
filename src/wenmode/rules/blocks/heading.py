@@ -70,6 +70,10 @@ class SetextHeading(ContinueRule):
         super().__init__('setext_heading')
         self.root_transforms = resolve_heading_id_transform(id_transform)
 
+    def matches(self, line: str) -> bool:
+        stripped = line.lstrip(' \t')
+        return stripped.startswith(('=', '-'))
+
     def parse_paragraph_continuation(
         self, parser: Parser, state: BlockState, lines: list[str]
     ) -> Node | None:
