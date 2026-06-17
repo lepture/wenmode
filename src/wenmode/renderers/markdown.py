@@ -34,20 +34,20 @@ from wenmode.nodes import (
     ThematicBreak,
 )
 
-from .base import BaseRenderer
+from .base import BaseRenderer, RenderContext
 
 ESCAPABLE_TEXT_RE = re.compile(r'([\\`*_{}\[\]<>()#+\-.!|])')
 DESTINATION_WRAP_RE = re.compile(r'[\s()]')
 
 
 class MarkdownRenderer(BaseRenderer):
-    def render_list_item(self, item: ListItem, marker: str) -> str:
+    def render_list_item(self, item: ListItem, marker: str, context: RenderContext) -> str:
         if item.checked is not None:
             marker += '[x] ' if item.checked else '[ ] '
         if not item.children:
             return marker.rstrip()
 
-        body = self.render_children(item.children).rstrip('\n')
+        body = self.render_children(item.children, context).rstrip('\n')
         lines = body.splitlines() or ['']
         indent = ' ' * len(marker)
         parts = [marker + lines[0]]
@@ -65,13 +65,13 @@ class MarkdownRenderer(BaseRenderer):
     def escape_title(self, value: str) -> str:
         return value.replace('\\', '\\\\').replace('"', '\\"')
 
-    def render_table_cell_content(self, cell: TableCell) -> str:
-        return self.render_children(cell.children).replace('\n', ' ').strip()
+    def render_table_cell_content(self, cell: TableCell, context: RenderContext) -> str:
+        return self.render_children(cell.children, context).replace('\n', ' ').strip()
 
-    def render_directive_label(self, node: Node) -> str:
+    def render_directive_label(self, node: Node, context: RenderContext) -> str:
         if not isinstance(node, Parent):
             return ''
-        return '[' + self.render_children(node.children).strip() + ']' if node.children else ''
+        return '[' + self.render_children(node.children, context).strip() + ']' if node.children else ''
 
     def render_directive_attributes(self, attributes: dict[str, str] | None) -> str:
         if not attributes:
@@ -98,25 +98,25 @@ class MarkdownRenderer(BaseRenderer):
 
 
 @MarkdownRenderer.register('root')
-def render_root(renderer: MarkdownRenderer, node: Root) -> str:
-    output = renderer.render_children(node.children).rstrip()
+def render_root(renderer: MarkdownRenderer, node: Root, context: RenderContext) -> str:
+    output = renderer.render_children(node.children, context).rstrip()
     return output + '\n' if output else ''
 
 
 @MarkdownRenderer.register('paragraph')
-def render_paragraph(renderer: MarkdownRenderer, node: Paragraph) -> str:
-    return renderer.render_children(node.children) + '\n\n'
+def render_paragraph(renderer: MarkdownRenderer, node: Paragraph, context: RenderContext) -> str:
+    return renderer.render_children(node.children, context) + '\n\n'
 
 
 @MarkdownRenderer.register('heading')
-def render_heading(renderer: MarkdownRenderer, node: Heading) -> str:
+def render_heading(renderer: MarkdownRenderer, node: Heading, context: RenderContext) -> str:
     marker = '#' * node.depth
-    return f'{marker} {renderer.render_children(node.children)}\n\n'
+    return f'{marker} {renderer.render_children(node.children, context)}\n\n'
 
 
 @MarkdownRenderer.register('blockquote')
-def render_blockquote(renderer: MarkdownRenderer, node: Blockquote) -> str:
-    body = renderer.render_children(node.children).rstrip('\n')
+def render_blockquote(renderer: MarkdownRenderer, node: Blockquote, context: RenderContext) -> str:
+    body = renderer.render_children(node.children, context).rstrip('\n')
     if not body:
         return '>\n\n'
     lines = body.splitlines()
@@ -124,58 +124,58 @@ def render_blockquote(renderer: MarkdownRenderer, node: Blockquote) -> str:
 
 
 @MarkdownRenderer.register('list')
-def render_list(renderer: MarkdownRenderer, node: List) -> str:
+def render_list(renderer: MarkdownRenderer, node: List, context: RenderContext) -> str:
     parts: list[str] = []
     start = node.start or 1
     separator = '\n\n' if node.spread else '\n'
 
     for index, child in enumerate(node.children):
         if not isinstance(child, ListItem):
-            parts.append(renderer.render(child).rstrip('\n'))
+            parts.append(renderer.render_node(child, context).rstrip('\n'))
             continue
         marker = f'{start + index}. ' if node.ordered else '- '
-        parts.append(renderer.render_list_item(child, marker))
+        parts.append(renderer.render_list_item(child, marker, context))
 
     return separator.join(parts) + '\n\n'
 
 
 @MarkdownRenderer.register('listItem')
-def render_list_item(renderer: MarkdownRenderer, node: ListItem) -> str:
-    return renderer.render_children(node.children)
+def render_list_item(renderer: MarkdownRenderer, node: ListItem, context: RenderContext) -> str:
+    return renderer.render_children(node.children, context)
 
 
 @MarkdownRenderer.register('delete')
-def render_delete(renderer: MarkdownRenderer, node: Delete) -> str:
-    return f'~~{renderer.render_children(node.children)}~~'
+def render_delete(renderer: MarkdownRenderer, node: Delete, context: RenderContext) -> str:
+    return f'~~{renderer.render_children(node.children, context)}~~'
 
 
 @MarkdownRenderer.register('textDirective')
-def render_text_directive(renderer: MarkdownRenderer, node: TextDirective) -> str:
+def render_text_directive(renderer: MarkdownRenderer, node: TextDirective, context: RenderContext) -> str:
     return (
         f':{node.name}'
-        f'{renderer.render_directive_label(node)}'
+        f'{renderer.render_directive_label(node, context)}'
         f'{renderer.render_directive_attributes(node.attributes)}'
     )
 
 
 @MarkdownRenderer.register('leafDirective')
-def render_leaf_directive(renderer: MarkdownRenderer, node: LeafDirective) -> str:
+def render_leaf_directive(renderer: MarkdownRenderer, node: LeafDirective, context: RenderContext) -> str:
     return (
         f'::{node.name}'
-        f'{renderer.render_directive_label(node)}'
+        f'{renderer.render_directive_label(node, context)}'
         f'{renderer.render_directive_attributes(node.attributes)}'
         '\n\n'
     )
 
 
 @MarkdownRenderer.register('containerDirective')
-def render_container_directive(renderer: MarkdownRenderer, node: ContainerDirective) -> str:
+def render_container_directive(renderer: MarkdownRenderer, node: ContainerDirective, context: RenderContext) -> str:
     children = list(node.children)
     label = ''
     if children and isinstance(children[0], Paragraph) and children[0].data == {'directiveLabel': True}:
-        label = renderer.render_directive_label(children.pop(0))
+        label = renderer.render_directive_label(children.pop(0), context)
 
-    body = renderer.render_children(children).rstrip('\n')
+    body = renderer.render_children(children, context).rstrip('\n')
     head = f':::{node.name}{label}{renderer.render_directive_attributes(node.attributes)}'
     if body:
         return f'{head}\n{body}\n:::\n\n'
@@ -183,29 +183,31 @@ def render_container_directive(renderer: MarkdownRenderer, node: ContainerDirect
 
 
 @MarkdownRenderer.register('table')
-def render_table(renderer: MarkdownRenderer, node: Table) -> str:
+def render_table(renderer: MarkdownRenderer, node: Table, context: RenderContext) -> str:
     if not node.children:
         return ''
 
     header = normalize_table_row(node.children[0], len(node.align))
     body = [normalize_table_row(row, len(node.align)) for row in node.children[1:]]
     lines = [
-        '| ' + ' | '.join(renderer.render_table_cell_content(cell) for cell in header) + ' |',
+        '| ' + ' | '.join(renderer.render_table_cell_content(cell, context) for cell in header) + ' |',
         '| ' + ' | '.join(delimiter_for_align(align) for align in node.align) + ' |',
     ]
-    lines.extend('| ' + ' | '.join(renderer.render_table_cell_content(cell) for cell in row) + ' |' for row in body)
+    lines.extend(
+        '| ' + ' | '.join(renderer.render_table_cell_content(cell, context) for cell in row) + ' |' for row in body
+    )
     return '\n'.join(lines) + '\n\n'
 
 
 @MarkdownRenderer.register('tableRow')
-def render_table_row(renderer: MarkdownRenderer, node: TableRow) -> str:
+def render_table_row(renderer: MarkdownRenderer, node: TableRow, context: RenderContext) -> str:
     cells = [cell for cell in node.children if isinstance(cell, TableCell)]
-    return '| ' + ' | '.join(renderer.render_table_cell_content(cell) for cell in cells) + ' |\n'
+    return '| ' + ' | '.join(renderer.render_table_cell_content(cell, context) for cell in cells) + ' |\n'
 
 
 @MarkdownRenderer.register('tableCell')
-def render_table_cell(renderer: MarkdownRenderer, node: TableCell) -> str:
-    return renderer.render_table_cell_content(node)
+def render_table_cell(renderer: MarkdownRenderer, node: TableCell, context: RenderContext) -> str:
+    return renderer.render_table_cell_content(node, context)
 
 
 def normalize_table_row(row: Node, size: int) -> list[TableCell]:
@@ -232,7 +234,7 @@ def quote_directive_attribute(value: str) -> str:
 
 
 @MarkdownRenderer.register('code')
-def render_code(renderer: MarkdownRenderer, node: Code) -> str:
+def render_code(renderer: MarkdownRenderer, node: Code, context: RenderContext) -> str:
     longest_fence = max((len(match.group(0)) for match in re.finditer(r'`+', node.value)), default=2)
     fence = '`' * max(3, longest_fence + 1)
     info = node.lang or ''
@@ -243,30 +245,30 @@ def render_code(renderer: MarkdownRenderer, node: Code) -> str:
 
 
 @MarkdownRenderer.register('math')
-def render_math(renderer: MarkdownRenderer, node: Math) -> str:
+def render_math(renderer: MarkdownRenderer, node: Math, context: RenderContext) -> str:
     value = node.value if node.value.endswith('\n') else node.value + '\n'
     return f'$$\n{value}$$\n\n'
 
 
 @MarkdownRenderer.register('thematicBreak')
-def render_thematic_break(renderer: MarkdownRenderer, node: ThematicBreak) -> str:
+def render_thematic_break(renderer: MarkdownRenderer, node: ThematicBreak, context: RenderContext) -> str:
     return '---\n\n'
 
 
 @MarkdownRenderer.register('html')
-def render_html(renderer: MarkdownRenderer, node: Html) -> str:
+def render_html(renderer: MarkdownRenderer, node: Html, context: RenderContext) -> str:
     if node.value.endswith('\n'):
         return node.value.rstrip('\n') + '\n\n'
     return node.value
 
 
 @MarkdownRenderer.register('text')
-def render_text(renderer: MarkdownRenderer, node: Text) -> str:
+def render_text(renderer: MarkdownRenderer, node: Text, context: RenderContext) -> str:
     return renderer.escape_text(node.value)
 
 
 @MarkdownRenderer.register('inlineCode')
-def render_inline_code(renderer: MarkdownRenderer, node: InlineCode) -> str:
+def render_inline_code(renderer: MarkdownRenderer, node: InlineCode, context: RenderContext) -> str:
     longest_fence = max((len(match.group(0)) for match in re.finditer(r'`+', node.value)), default=0)
     fence = '`' * (longest_fence + 1)
     needs_padding = node.value.startswith(('`', ' ')) or node.value.endswith(('`', ' '))
@@ -276,46 +278,46 @@ def render_inline_code(renderer: MarkdownRenderer, node: InlineCode) -> str:
 
 
 @MarkdownRenderer.register('inlineMath')
-def render_inline_math(renderer: MarkdownRenderer, node: InlineMath) -> str:
+def render_inline_math(renderer: MarkdownRenderer, node: InlineMath, context: RenderContext) -> str:
     return f'${node.value}$'
 
 
 @MarkdownRenderer.register('strong')
-def render_strong(renderer: MarkdownRenderer, node: Strong) -> str:
-    return f'**{renderer.render_children(node.children)}**'
+def render_strong(renderer: MarkdownRenderer, node: Strong, context: RenderContext) -> str:
+    return f'**{renderer.render_children(node.children, context)}**'
 
 
 @MarkdownRenderer.register('emphasis')
-def render_emphasis(renderer: MarkdownRenderer, node: Emphasis) -> str:
-    return f'*{renderer.render_children(node.children)}*'
+def render_emphasis(renderer: MarkdownRenderer, node: Emphasis, context: RenderContext) -> str:
+    return f'*{renderer.render_children(node.children, context)}*'
 
 
 @MarkdownRenderer.register('link')
-def render_link(renderer: MarkdownRenderer, node: Link) -> str:
+def render_link(renderer: MarkdownRenderer, node: Link, context: RenderContext) -> str:
     title = f' "{renderer.escape_title(node.title)}"' if node.title else ''
-    return f'[{renderer.render_children(node.children)}]({renderer.escape_destination(node.url)}{title})'
+    return f'[{renderer.render_children(node.children, context)}]({renderer.escape_destination(node.url)}{title})'
 
 
 @MarkdownRenderer.register('image')
-def render_image(renderer: MarkdownRenderer, node: Image) -> str:
+def render_image(renderer: MarkdownRenderer, node: Image, context: RenderContext) -> str:
     title = f' "{renderer.escape_title(node.title)}"' if node.title else ''
     return f'![{renderer.escape_text(node.alt)}]({renderer.escape_destination(node.url)}{title})'
 
 
 @MarkdownRenderer.register('break')
-def render_break(renderer: MarkdownRenderer, node: Break) -> str:
+def render_break(renderer: MarkdownRenderer, node: Break, context: RenderContext) -> str:
     return '  \n'
 
 
 @MarkdownRenderer.register('footnoteReference')
-def render_footnote_reference(renderer: MarkdownRenderer, node: FootnoteReference) -> str:
+def render_footnote_reference(renderer: MarkdownRenderer, node: FootnoteReference, context: RenderContext) -> str:
     return f'[^{renderer.escape_text(node.label or node.identifier)}]'
 
 
 @MarkdownRenderer.register('footnoteDefinition')
-def render_footnote_definition(renderer: MarkdownRenderer, node: FootnoteDefinition) -> str:
+def render_footnote_definition(renderer: MarkdownRenderer, node: FootnoteDefinition, context: RenderContext) -> str:
     label = renderer.escape_text(node.label or node.identifier)
-    body = renderer.render_children(node.children).rstrip('\n')
+    body = renderer.render_children(node.children, context).rstrip('\n')
     if not body:
         return f'[^{label}]:\n\n'
 

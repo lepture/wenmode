@@ -92,6 +92,22 @@ def test_stream_footnote_continuation_lookahead() -> None:
     assert HTMLRenderer().render(parser.parse(lines(markdown))) == HTMLRenderer().render(parser.parse(markdown))
 
 
+def test_parser_binds_footnote_definitions_to_root() -> None:
+    parser = Parser([Footnote])
+    root = parser.parse('a[^one]\n\n[^one]: note\n')
+
+    assert root.footnote_definitions is not None
+    assert list(root.footnote_definitions) == ['one']
+    assert root.footnote_definitions['one'].label == 'one'
+
+
+def test_parser_skips_root_footnote_definitions_without_footnote_rule() -> None:
+    parser = Parser([AtxHeading])
+    root = parser.parse('# Title\n\n[^one]: note\n')
+
+    assert root.footnote_definitions is None
+
+
 def test_stream_list_blank_line_lookahead() -> None:
     parser = Parser([List])
     markdown = '- a\n\n  b\n- c\n'

@@ -7,21 +7,21 @@ from wenmode.nodes import ContainerDirective, DirectiveNode
 from .util import split_directive_label
 
 if TYPE_CHECKING:
-    from wenmode.renderers.html import HTMLRenderer
+    from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 
 
 class Figure:
     def __init__(self, name: str = 'figure') -> None:
         self.name = name
 
-    def render(self, renderer: HTMLRenderer, node: DirectiveNode) -> str | None:
+    def render(self, renderer: HTMLRenderer, node: DirectiveNode, context: HTMLRenderContext) -> str | None:
         if not isinstance(node, ContainerDirective) or node.name != self.name:
             return None
 
         label, children = split_directive_label(node)
         parts = [f'<figure{renderer.render_attrs(node.attributes or {})}>\n']
-        parts.append(renderer.render_children(children))
+        parts.append(renderer.render_children(children, context))
         if label is not None:
-            parts.append(f'<figcaption>{renderer.render_children(label.children)}</figcaption>\n')
+            parts.append(f'<figcaption>{renderer.render_children(label.children, context)}</figcaption>\n')
         parts.append('</figure>\n')
         return ''.join(parts)

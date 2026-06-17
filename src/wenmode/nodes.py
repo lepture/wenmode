@@ -46,7 +46,16 @@ class Literal(Node):
 
 @dataclass
 class Root(Parent):
+    _footnote_definitions: dict[str, FootnoteDefinition] | None = field(default=None, repr=False)
     type: str = 'root'
+
+    @property
+    def footnote_definitions(self) -> dict[str, FootnoteDefinition] | None:
+        return self._footnote_definitions
+
+    @footnote_definitions.setter
+    def footnote_definitions(self, definitions: dict[str, FootnoteDefinition] | None) -> None:
+        self._footnote_definitions = definitions
 
 
 @dataclass

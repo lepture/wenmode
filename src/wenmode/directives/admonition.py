@@ -8,14 +8,14 @@ from wenmode.nodes import ContainerDirective, DirectiveNode
 from .util import split_directive_label
 
 if TYPE_CHECKING:
-    from wenmode.renderers.html import HTMLRenderer
+    from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 
 
 class Admonition:
     def __init__(self, types: Iterable[str] = ('note', 'tip', 'caution', 'danger')) -> None:
         self.types = frozenset(types)
 
-    def render(self, renderer: HTMLRenderer, node: DirectiveNode) -> str | None:
+    def render(self, renderer: HTMLRenderer, node: DirectiveNode, context: HTMLRenderContext) -> str | None:
         if not isinstance(node, ContainerDirective) or node.name not in self.types:
             return None
 
@@ -26,8 +26,8 @@ class Admonition:
 
         parts = [f'<aside{renderer.render_attrs(attrs)}>\n']
         if label is not None:
-            parts.append(f'<p class="admonition-title">{renderer.render_children(label.children)}</p>\n')
-        parts.append(renderer.render_children(children))
+            parts.append(f'<p class="admonition-title">{renderer.render_children(label.children, context)}</p>\n')
+        parts.append(renderer.render_children(children, context))
         parts.append('</aside>\n')
         return ''.join(parts)
 

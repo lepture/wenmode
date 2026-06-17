@@ -31,6 +31,7 @@ from wenmode.nodes import (
     ThematicBreak,
 )
 from wenmode.renderers import BaseRenderer
+from wenmode.renderers.base import RenderContext
 from wenmode.rules import Footnote, MathBlock
 from wenmode.rules import InlineMath as InlineMathRule
 
@@ -64,9 +65,30 @@ class CustomVoidElement(Node):
         return {'checked': True, 'label': '<x>'}
 
 
+def root_with_footnote_definitions(children: list[Node]) -> Root:
+    root = Root(children=children)
+    root.footnote_definitions = collect_footnote_definitions(root)
+    return root
+
+
+def collect_footnote_definitions(node: Node) -> dict[str, FootnoteDefinition]:
+    definitions: dict[str, FootnoteDefinition] = {}
+    collect_footnote_definitions_into(node, definitions)
+    return definitions
+
+
+def collect_footnote_definitions_into(node: Node, definitions: dict[str, FootnoteDefinition]) -> None:
+    if isinstance(node, FootnoteDefinition):
+        definitions.setdefault(node.identifier, node)
+    children = getattr(node, 'children', None)
+    if isinstance(children, list):
+        for child in children:
+            collect_footnote_definitions_into(child, definitions)
+
+
 def test_renderer_registers_custom_node_handler() -> None:
     @HTMLRenderer.register('customLiteral')
-    def render_custom_literal(renderer: HTMLRenderer, node: CustomLiteral) -> str:
+    def render_custom_literal(renderer: HTMLRenderer, node: CustomLiteral, context: RenderContext) -> str:
         return f'<custom>{renderer.escape(node.value)}</custom>'
 
     assert HTMLRenderer().render(CustomLiteral(value='<x>')) == '<custom>&lt;x&gt;</custom>'
@@ -272,8 +294,8 @@ def test_markdown_renderer_round_trips_to_equivalent_html() -> None:
 
 
 def test_html_renderer_outputs_single_footnote() -> None:
-    node = Root(
-        children=[
+    node = root_with_footnote_definitions(
+        [
             Paragraph(children=[Text(value='a'), FootnoteReference(identifier='one', label='one')]),
             FootnoteDefinition(identifier='one', label='one', children=[Paragraph(children=[Text(value='note')])]),
         ]
@@ -295,8 +317,8 @@ def test_html_renderer_outputs_single_footnote() -> None:
 
 
 def test_html_renderer_orders_multiple_footnotes_by_first_reference() -> None:
-    node = Root(
-        children=[
+    node = root_with_footnote_definitions(
+        [
             FootnoteDefinition(identifier='one', label='one', children=[Paragraph(children=[Text(value='one')])]),
             FootnoteDefinition(identifier='two', label='two', children=[Paragraph(children=[Text(value='two')])]),
             Paragraph(
@@ -317,8 +339,8 @@ def test_html_renderer_orders_multiple_footnotes_by_first_reference() -> None:
 
 
 def test_html_renderer_reuses_number_for_repeated_footnote_references() -> None:
-    node = Root(
-        children=[
+    node = root_with_footnote_definitions(
+        [
             Paragraph(
                 children=[
                     FootnoteReference(identifier='one', label='one'),
@@ -337,9 +359,21 @@ def test_html_renderer_reuses_number_for_repeated_footnote_references() -> None:
     assert 'href="#user-content-fnref-one-2" data-footnote-backref' in html
 
 
+def test_html_renderer_reuses_instance_without_leaking_footnote_state() -> None:
+    parser = Parser([Footnote])
+    renderer = HTMLRenderer()
+    root = parser.parse('a[^one]\n\n[^one]: note\n')
+
+    first = renderer.render(root)
+    second = renderer.render(root)
+
+    assert second == first
+    assert 'id="user-content-fnref-one-2"' not in second
+
+
 def test_html_renderer_escapes_footnotes() -> None:
-    node = Root(
-        children=[
+    node = root_with_footnote_definitions(
+        [
             Paragraph(children=[FootnoteReference(identifier='a<b', label='a<b')]),
             FootnoteDefinition(identifier='a<b', label='a<b', children=[Paragraph(children=[Text(value='<note>')])]),
         ]

@@ -5,10 +5,11 @@ import string
 from collections.abc import Callable, Iterable
 from typing import TypeVar, cast
 
+from .nodes import FootnoteDefinition as FootnoteDefinitionNode
 from .nodes import Node, Paragraph, Root, Text
 from .rules.base import BlockRule, InlineRule, Rule
 from .rules.blocks.html import is_html_block_tag
-from .rules.footnotes import FootnoteDefinition
+from .rules.footnotes import FootnoteDefinition as FootnoteDefinitionRule
 from .rules.inlines.emphasis import parse_emphasis_sequence
 from .rules.references import ReferenceDefinition
 from .state import BlockState, LineSource, StreamBlockState, StreamLineBuffer
@@ -55,18 +56,23 @@ class Parser:
         if any(rule.has_references for rule in resolved_rules) and 'reference_definition' not in rule_names:
             resolved_rules.append(ReferenceDefinition())
         if any(rule.has_footnotes for rule in resolved_rules) and 'footnote_definition' not in rule_names:
-            resolved_rules.append(FootnoteDefinition())
+            resolved_rules.append(FootnoteDefinitionRule())
+
         self.rules = {rule.name: rule for rule in resolved_rules}
         self.block_rules = sorted_by_order([rule for rule in resolved_rules if isinstance(rule, BlockRule)])
         self.inline_rules = sorted_by_order([rule for rule in resolved_rules if isinstance(rule, InlineRule)])
-        self._emphasis_enabled = 'emphasis' in rule_names
+        self._emphasis_enabled = 'emphasis' in self.rules
+        self._footnotes_enabled = 'footnote_definition' in self.rules
         self._inline_rule_order = {rule.name: index for index, rule in enumerate(self.inline_rules)}
         self._triggered_inline_rules, self._search_inline_rules = self._prepare_inline_dispatch(self.inline_rules)
         self._inline_trigger_re = self._compile_inline_trigger_re(self._triggered_inline_rules)
         self._block_openers = self._compile_block_openers(self.block_rules)
 
     def parse(self, source: LineSource) -> Root:
-        return Root(children=self._parse_document(source))
+        root = Root(children=self._parse_document(source))
+        if self._footnotes_enabled:
+            root.footnote_definitions = collect_footnote_definitions(root)
+        return root
 
     def parse_blocks(self, text: str, parent_state: BlockState) -> list[Node]:
         state = BlockState(
@@ -318,3 +324,18 @@ def contains_emphasis_marker(nodes: list[Node]) -> bool:
 
 def sorted_by_order(rules: list[T]) -> list[T]:
     return [rule for _, rule in sorted(enumerate(rules), key=lambda item: (item[1].order, item[0]))]
+
+
+def collect_footnote_definitions(node: Node) -> dict[str, FootnoteDefinitionNode]:
+    definitions: dict[str, FootnoteDefinitionNode] = {}
+    collect_footnote_definitions_into(node, definitions)
+    return definitions
+
+
+def collect_footnote_definitions_into(node: Node, definitions: dict[str, FootnoteDefinitionNode]) -> None:
+    if isinstance(node, FootnoteDefinitionNode):
+        definitions.setdefault(node.identifier, node)
+    children = getattr(node, 'children', None)
+    if isinstance(children, list):
+        for child in children:
+            collect_footnote_definitions_into(child, definitions)
