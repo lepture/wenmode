@@ -6,7 +6,7 @@ from typing import TypedDict
 
 import pytest
 
-from wenmode import HTMLRenderer, Wenmode, commonmark, github
+from wenmode import HTMLRenderer, Parser, commonmark, github
 from wenmode.rules import Blockquote, Emphasis, Footnote, InlineCode, InlineMath, Link, MathBlock
 
 FIXTURES_DIR = Path(__file__).parent / 'fixtures'
@@ -22,7 +22,7 @@ def load_examples(name: str) -> list[ExtendedRuleExample]:
     return json.loads((FIXTURES_DIR / name).read_text())
 
 
-def render(parser: Wenmode, markdown: str) -> str:
+def render(parser: Parser, markdown: str) -> str:
     return HTMLRenderer().render(parser.parse(markdown))
 
 
@@ -32,7 +32,7 @@ def render(parser: Wenmode, markdown: str) -> str:
     ids=lambda example: example['name'],
 )
 def test_footnote_examples(example: ExtendedRuleExample) -> None:
-    parser = Wenmode([Footnote, Emphasis, Blockquote, Link])
+    parser = Parser([Footnote, Emphasis, Blockquote, Link])
 
     assert render(parser, example['markdown']) == example['html']
 
@@ -43,7 +43,7 @@ def test_footnote_examples(example: ExtendedRuleExample) -> None:
     ids=lambda example: example['name'],
 )
 def test_math_examples(example: ExtendedRuleExample) -> None:
-    parser = Wenmode([MathBlock, InlineCode, InlineMath])
+    parser = Parser([MathBlock, InlineCode, InlineMath])
 
     assert render(parser, example['markdown']) == example['html']
 
@@ -51,5 +51,5 @@ def test_math_examples(example: ExtendedRuleExample) -> None:
 def test_math_is_not_enabled_by_presets() -> None:
     markdown = '$x$\n\n$$\nx\n$$\n'
 
-    assert render(Wenmode(commonmark), markdown) == '<p>$x$</p>\n<p>$$\nx\n$$</p>\n'
-    assert render(Wenmode(github), markdown) == '<p>$x$</p>\n<p>$$\nx\n$$</p>\n'
+    assert render(Parser(commonmark), markdown) == '<p>$x$</p>\n<p>$$\nx\n$$</p>\n'
+    assert render(Parser(github), markdown) == '<p>$x$</p>\n<p>$$\nx\n$$</p>\n'

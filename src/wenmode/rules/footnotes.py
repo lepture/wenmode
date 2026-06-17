@@ -10,7 +10,7 @@ from wenmode.state import Footnote as FootnoteState
 from wenmode.utils import count_indent, normalize_label, normalize_label_text
 
 if TYPE_CHECKING:
-    from wenmode.parser import Wenmode
+    from wenmode.parser import Parser
     from wenmode.state import BlockState
 
 
@@ -28,7 +28,7 @@ class Footnote(InlineRule):
         super().__init__('footnote', FOOTNOTE_REFERENCE_RE, '[')
 
     def parse(
-        self, parser: Wenmode, text: str, match: re.Match[str], state: BlockState | None = None
+        self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
     ) -> tuple[Node | None, int]:
         if state is None:
             return None, match.start()
@@ -45,7 +45,7 @@ class FootnoteDefinition(BlockRule):
     def __init__(self) -> None:
         super().__init__('footnote_definition', r'[ \t]{0,3}\[\^')
 
-    def parse(self, parser: Wenmode, state: BlockState, match: re.Match[str]) -> FootnoteDefinitionNode | None:
+    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> FootnoteDefinitionNode | None:
         parsed = FOOTNOTE_DEFINITION_RE.match(state.line.rstrip('\r\n'))
         if parsed is None:
             return None

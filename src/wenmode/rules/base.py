@@ -8,7 +8,7 @@ from wenmode.nodes import Node
 from wenmode.state import BlockState
 
 if TYPE_CHECKING:
-    from wenmode.parser import Wenmode
+    from wenmode.parser import Parser
 
 
 @dataclass
@@ -19,7 +19,7 @@ class Rule:
     has_footnotes: ClassVar[bool] = False
 
     def parse_paragraph_continuation(
-        self, parser: Wenmode, state: BlockState, lines: list[str]
+        self, parser: Parser, state: BlockState, lines: list[str]
     ) -> Node | None:
         return None
 
@@ -28,7 +28,7 @@ class Rule:
 class BlockRule(Rule):
     pattern: str
 
-    def parse(self, parser: Wenmode, state: BlockState, match: re.Match[str]) -> Node | None:
+    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
         raise NotImplementedError
 
 
@@ -42,6 +42,6 @@ class InlineRule(Rule):
         self.compiled = re.compile(self.pattern)
 
     def parse(
-        self, parser: Wenmode, text: str, match: re.Match[str], state: BlockState | None = None
+        self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
     ) -> tuple[Node | None, int]:
         raise NotImplementedError

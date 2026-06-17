@@ -9,7 +9,7 @@ from wenmode.rules.base import InlineRule
 from wenmode.state import BlockState
 
 if TYPE_CHECKING:
-    from wenmode.parser import Wenmode
+    from wenmode.parser import Parser
 
 
 ESCAPABLE = r'!"#$%&\'()*+,\-./:;<=>?@\[\\\]^_`{|}~'
@@ -21,7 +21,7 @@ class BackslashEscape(InlineRule):
         super().__init__('backslash_escape', rf'\\(?=[{ESCAPABLE}])', '\\')
 
     def parse(
-        self, parser: Wenmode, text: str, match: re.Match[str], state: BlockState | None = None
+        self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
     ) -> tuple[Node | None, int]:
         return Text(value=text[match.end()], _parse_emphasis=False), match.end() + 1
 
@@ -31,7 +31,7 @@ class CharacterReference(InlineRule):
         super().__init__('character_reference', r'&(?:#[xX][0-9A-Fa-f]+|#[0-9]+|[A-Za-z][A-Za-z0-9]{1,31});', '&')
 
     def parse(
-        self, parser: Wenmode, text: str, match: re.Match[str], state: BlockState | None = None
+        self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
     ) -> tuple[Node | None, int]:
         value = match.group(0)
         numeric = NUMERIC_CHARACTER_REFERENCE_RE.match(value)
@@ -50,6 +50,6 @@ class HardBreak(InlineRule):
         super().__init__('hard_break', r'(?:\\| {2,})\r?\n', '\\ ')
 
     def parse(
-        self, parser: Wenmode, text: str, match: re.Match[str], state: BlockState | None = None
+        self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
     ) -> tuple[Node | None, int]:
         return Break(), match.end()

@@ -9,7 +9,7 @@ from wenmode.rules.base import InlineRule
 from wenmode.state import BlockState
 
 if TYPE_CHECKING:
-    from wenmode.parser import Wenmode
+    from wenmode.parser import Parser
 
 
 class InlineMath(InlineRule):
@@ -17,7 +17,7 @@ class InlineMath(InlineRule):
         super().__init__('inline_math', r'\$', '$')
 
     def parse(
-        self, parser: Wenmode, text: str, match: re.Match[str], state: BlockState | None = None
+        self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
     ) -> tuple[Node | None, int]:
         start = match.start()
         if is_escaped(text, start) or is_adjacent_to_dollar(text, start):

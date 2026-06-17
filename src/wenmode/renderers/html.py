@@ -66,6 +66,9 @@ class HTMLRenderer(BaseRenderer):
         self.directives = list(directives)
         self.footnotes = FootnoteRenderState()
 
+    def register_directive_renderer(self, directive: DirectiveHtmlRenderer) -> None:
+        self.directives.append(directive)
+
     def render_list_item(self, item: Node, loose: bool) -> str:
         if not isinstance(item, ListItem):
             return self.render(item)

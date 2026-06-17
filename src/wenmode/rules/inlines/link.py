@@ -12,7 +12,7 @@ from wenmode.state import BlockState
 from wenmode.utils import normalize_label, normalize_label_text, normalize_uri_text
 
 if TYPE_CHECKING:
-    from wenmode.parser import Wenmode
+    from wenmode.parser import Parser
 
 
 ANGLE_SPAN_RE = re.compile(rf'{URI_RE}|{EMAIL_RE}|{HTML_RE}')
@@ -25,7 +25,7 @@ class Image(InlineRule):
         super().__init__('image', r'!\[', '!')
 
     def parse(
-        self, parser: Wenmode, text: str, match: re.Match[str], state: BlockState | None = None
+        self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
     ) -> tuple[Node | None, int]:
         parsed = parse_link_or_image(parser, text, match.start(), image=True, state=state)
         if parsed is None:
@@ -42,7 +42,7 @@ class Link(InlineRule):
         super().__init__('link', r'\[', '[')
 
     def parse(
-        self, parser: Wenmode, text: str, match: re.Match[str], state: BlockState | None = None
+        self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
     ) -> tuple[Node | None, int]:
         if match.start() > 0 and text[match.start() - 1] == '!' and not is_escaped(text, match.start() - 1):
             return None, match.start()
@@ -59,7 +59,7 @@ def normalize_optional_text(value: str | None) -> str | None:
 
 
 def parse_link_or_image(
-    parser: Wenmode, text: str, start: int, image: bool, state: BlockState | None
+    parser: Parser, text: str, start: int, image: bool, state: BlockState | None
 ) -> tuple[str, str, str | None, int] | None:
     label_start = start + 2 if image else start + 1
     label_end = find_closing_bracket(text, label_start)
@@ -126,7 +126,7 @@ def find_closing_bracket(text: str, start: int) -> int | None:
     return None
 
 
-def label_contains_link(parser: Wenmode, label: str, state: BlockState | None) -> bool:
+def label_contains_link(parser: Parser, label: str, state: BlockState | None) -> bool:
     if '[' not in label:
         return False
     return any(contains_link(node) for node in parser.parse_inlines(label, state))

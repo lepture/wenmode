@@ -8,7 +8,7 @@ from wenmode.rules.base import BlockRule
 from wenmode.state import BlockState
 
 if TYPE_CHECKING:
-    from wenmode.parser import Wenmode
+    from wenmode.parser import Parser
 
 
 MATH_OPENER_RE = re.compile(r'^[ \t]{0,3}\$\$[ \t]*(?P<rest>.*?)(?:\r?\n)?$')
@@ -19,7 +19,7 @@ class MathBlock(BlockRule):
     def __init__(self) -> None:
         super().__init__('math_block', r'[ \t]{0,3}\$\$')
 
-    def parse(self, parser: Wenmode, state: BlockState, match: re.Match[str]) -> Node:
+    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node:
         opener = MATH_OPENER_RE.match(state.line)
         if opener is None:
             state.advance()

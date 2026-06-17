@@ -10,7 +10,7 @@ from wenmode.state import BlockState
 from wenmode.utils import expand_leading_tabs
 
 if TYPE_CHECKING:
-    from wenmode.parser import Wenmode
+    from wenmode.parser import Parser
 
 
 BLOCKQUOTE_RE = re.compile(r'[ \t]{0,3}> ?(.*)')
@@ -22,7 +22,7 @@ class Blockquote(BlockRule):
     def __init__(self) -> None:
         super().__init__('blockquote', r'[ \t]{0,3}>')
 
-    def parse(self, parser: Wenmode, state: BlockState, match: re.Match[str]) -> BlockquoteNode:
+    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> BlockquoteNode:
         if state.depth >= parser.max_container_depth - 1:
             return parse_shallow_blockquote(parser, state)
 
@@ -51,7 +51,7 @@ class Blockquote(BlockRule):
         return BlockquoteNode(children=parser.parse_blocks(''.join(lines), parent_state=state))
 
 
-def parse_shallow_blockquote(parser: Wenmode, state: BlockState) -> BlockquoteNode:
+def parse_shallow_blockquote(parser: Parser, state: BlockState) -> BlockquoteNode:
     lines: list[str] = []
     while not state.done:
         quote = BLOCKQUOTE_RE.match(state.line)
@@ -68,7 +68,7 @@ def has_nested_blockquote(line: str) -> bool:
     return NESTED_BLOCKQUOTE_RE.match(line) is not None
 
 
-def starts_nonparagraph_block(parser: Wenmode, line: str) -> bool:
+def starts_nonparagraph_block(parser: Parser, line: str) -> bool:
     rule_names = {
         'atx_heading',
         'container_directive',

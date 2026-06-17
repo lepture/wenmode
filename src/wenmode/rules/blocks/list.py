@@ -10,7 +10,7 @@ from wenmode.state import BlockState
 from wenmode.utils import count_indent, count_indent_from, expand_leading_tabs
 
 if TYPE_CHECKING:
-    from wenmode.parser import Wenmode
+    from wenmode.parser import Parser
 
 
 MARKER_RE = re.compile(
@@ -24,7 +24,7 @@ class List(BlockRule):
         super().__init__('list', r'[ \t]{0,3}(?:[*+-](?:[ \t]+|$)|\d{1,9}[.)](?:[ \t]+|$))')
         self.task = task
 
-    def parse(self, parser: Wenmode, state: BlockState, match: re.Match[str]) -> ListNode:
+    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> ListNode:
         first = MARKER_RE.match(state.line.rstrip('\r\n'))
         if first is None:
             state.advance()
@@ -118,7 +118,7 @@ class List(BlockRule):
         return ListNode(children=items, ordered=ordered, start=start, spread=spread)
 
 
-def parse_shallow_list(parser: Wenmode, state: BlockState, first: re.Match[str], task: bool = False) -> ListNode:
+def parse_shallow_list(parser: Parser, state: BlockState, first: re.Match[str], task: bool = False) -> ListNode:
     ordered = first.group('ordered') is not None
     start = int(first.group('ordered')) if ordered else None
     delimiter = first.group('delimiter')

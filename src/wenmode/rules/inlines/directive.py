@@ -10,7 +10,7 @@ from wenmode.rules.directives import parse_directive_head
 from wenmode.state import BlockState
 
 if TYPE_CHECKING:
-    from wenmode.parser import Wenmode
+    from wenmode.parser import Parser
 
 
 ROLE_NAME_RE = re.compile(r'[A-Za-z][A-Za-z0-9_-]*')
@@ -21,7 +21,7 @@ class TextDirective(InlineRule):
         super().__init__('text_directive', r':(?=[A-Za-z])', ':')
 
     def parse(
-        self, parser: Wenmode, text: str, match: re.Match[str], state: BlockState | None = None
+        self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
     ) -> tuple[Node | None, int]:
         parsed = parse_directive_head(text, match.start() + 1)
         if parsed is None:
@@ -37,7 +37,7 @@ class Role(InlineRule):
         super().__init__('role', r'\{(?=[A-Za-z])', '{')
 
     def parse(
-        self, parser: Wenmode, text: str, match: re.Match[str], state: BlockState | None = None
+        self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
     ) -> tuple[Node | None, int]:
         parsed = parse_role(text, match.start())
         if parsed is None:

@@ -8,7 +8,7 @@ from wenmode.rules.base import InlineRule
 from wenmode.state import BlockState
 
 if TYPE_CHECKING:
-    from wenmode.parser import Wenmode
+    from wenmode.parser import Parser
 
 
 class Strikethrough(InlineRule):
@@ -16,7 +16,7 @@ class Strikethrough(InlineRule):
         super().__init__('strikethrough', r'~{1,2}', '~')
 
     def parse(
-        self, parser: Wenmode, text: str, match: re.Match[str], state: BlockState | None = None
+        self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
     ) -> tuple[Node | None, int]:
         marker = match.group(0)
         start = match.start()

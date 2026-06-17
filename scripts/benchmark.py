@@ -12,7 +12,7 @@ import markdown
 import mistune
 from markdown_it import MarkdownIt
 
-from wenmode import HTMLRenderer, Wenmode, github
+from wenmode import HTMLRenderer, Parser, github
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -65,7 +65,7 @@ def load_cases(selected: str) -> list[Case]:
 
 
 def make_targets() -> list[Target]:
-    wenmode_parser = Wenmode(github)
+    wenmode_parser = Parser(github)
     wenmode_renderer = HTMLRenderer(escape=False, sanitize_urls=False)
 
     mistune_renderer = mistune.create_markdown(renderer='html', plugins=['table', 'strikethrough', 'speedup'])

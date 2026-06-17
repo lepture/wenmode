@@ -6,7 +6,7 @@ from typing import TypedDict
 
 import pytest
 
-from wenmode import HTMLRenderer, Wenmode, commonmark
+from wenmode import HTMLRenderer, Parser, commonmark
 
 
 class CommonMarkExample(TypedDict):
@@ -29,7 +29,7 @@ def load_examples() -> list[CommonMarkExample]:
     ids=lambda example: f'{example["example"]}: {example["section"]}',
 )
 def test_commonmark_spec(example: CommonMarkExample) -> None:
-    parser = Wenmode(commonmark)
+    parser = Parser(commonmark)
     renderer = HTMLRenderer(escape=False, sanitize_urls=False)
 
     assert renderer.render(parser.parse(example['markdown'])) == example['html']

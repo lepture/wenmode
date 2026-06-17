@@ -6,7 +6,7 @@ from typing import Any, TypedDict
 
 import pytest
 
-from wenmode import HTMLRenderer, Wenmode, github
+from wenmode import HTMLRenderer, Parser, github
 
 
 class GFMExample(TypedDict):
@@ -61,7 +61,7 @@ def example_parameters() -> list[Any]:
     ids=lambda example: f'{example["example"]}: {example["section"]}',
 )
 def test_gfm_spec(example: GFMExample) -> None:
-    parser = Wenmode(github)
+    parser = Parser(github)
     renderer = HTMLRenderer(escape=False, sanitize_urls=False)
 
     assert renderer.render(parser.parse(example['markdown'])) == example['html']

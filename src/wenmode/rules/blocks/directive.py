@@ -11,7 +11,7 @@ from wenmode.rules.directives import parse_directive_head
 from wenmode.state import BlockState
 
 if TYPE_CHECKING:
-    from wenmode.parser import Wenmode
+    from wenmode.parser import Parser
 
 
 LEAF_DIRECTIVE_RE = re.compile(r'[ \t]{0,3}::(?=[A-Za-z])(.+?)[ \t]*$')
@@ -24,7 +24,7 @@ class LeafDirective(BlockRule):
     def __init__(self) -> None:
         super().__init__('leaf_directive', r'[ \t]{0,3}::(?=[A-Za-z])')
 
-    def parse(self, parser: Wenmode, state: BlockState, match: re.Match[str]) -> Node | None:
+    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
         line = state.line.rstrip('\r\n')
         leaf = LEAF_DIRECTIVE_RE.match(line)
         if leaf is None:
@@ -46,7 +46,7 @@ class ContainerDirective(BlockRule):
     def __init__(self) -> None:
         super().__init__('container_directive', r'[ \t]{0,3}:{3,}(?=[A-Za-z])')
 
-    def parse(self, parser: Wenmode, state: BlockState, match: re.Match[str]) -> Node | None:
+    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
         opener = CONTAINER_DIRECTIVE_RE.match(state.line.rstrip('\r\n'))
         if opener is None:
             return None
@@ -80,7 +80,7 @@ class FencedDirective(BlockRule):
     def __init__(self) -> None:
         super().__init__('fenced_directive', r'[ \t]{0,3}(?:`{3,}|~{3,})\{[A-Za-z][A-Za-z0-9_-]*}')
 
-    def parse(self, parser: Wenmode, state: BlockState, match: re.Match[str]) -> Node | None:
+    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
         opener = FENCED_DIRECTIVE_RE.match(state.line.rstrip('\r\n'))
         if opener is None:
             return None
@@ -117,7 +117,7 @@ class FencedDirective(BlockRule):
         return ContainerDirectiveNode(name=name, attributes=attributes or None, children=children)
 
 
-def directive_label_children(parser: Wenmode, label: str | None, state: BlockState) -> list[Node]:
+def directive_label_children(parser: Parser, label: str | None, state: BlockState) -> list[Node]:
     if label is None:
         return []
     return [Paragraph(children=parser.parse_inlines(label, state), data={'directiveLabel': True})]

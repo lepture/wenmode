@@ -10,7 +10,7 @@ from wenmode.state import BlockState
 from wenmode.utils import filter_disallowed_html
 
 if TYPE_CHECKING:
-    from wenmode.parser import Wenmode
+    from wenmode.parser import Parser
 
 
 BLOCK_TAGS = (
@@ -95,7 +95,7 @@ class HtmlBlock(BlockRule):
         )
         self.disallowed_tags = tuple(disallowed_tags)
 
-    def parse(self, parser: Wenmode, state: BlockState, match: re.Match[str]) -> Html:
+    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Html:
         first = state.line
         stripped = first.rstrip('\r\n').lstrip(' \t')
         lines: list[str] = []

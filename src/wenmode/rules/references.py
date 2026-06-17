@@ -8,7 +8,7 @@ from wenmode.state import Reference
 from wenmode.utils import normalize_label, normalize_label_text, normalize_uri_text
 
 if TYPE_CHECKING:
-    from wenmode.parser import Wenmode
+    from wenmode.parser import Parser
     from wenmode.state import BlockState
 
 
@@ -22,7 +22,7 @@ class ReferenceDefinition(BlockRule):
     def __init__(self) -> None:
         super().__init__('reference_definition', r'[ \t]{0,3}\[(?!\^)')
 
-    def parse(self, parser: Wenmode, state: BlockState, match: re.Match[str]) -> None:
+    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> None:
         multiline_label = parse_multiline_label_reference(state, state.index)
         if multiline_label is not None:
             next_index, label, url, title = multiline_label

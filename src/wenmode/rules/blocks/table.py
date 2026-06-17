@@ -9,7 +9,7 @@ from wenmode.rules.base import BlockRule
 from wenmode.state import BlockState
 
 if TYPE_CHECKING:
-    from wenmode.parser import Wenmode
+    from wenmode.parser import Parser
 
 
 DELIMITER_CELL_RE = re.compile(r'^:?-{3,}:?$')
@@ -20,7 +20,7 @@ class Table(BlockRule):
     def __init__(self) -> None:
         super().__init__('table', r'[ \t]{0,3}.*\|.*(?:\r?\n)?$')
 
-    def parse(self, parser: Wenmode, state: BlockState, match: re.Match[str]) -> TableNode | None:
+    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> TableNode | None:
         if not state.has(1):
             return None
 
@@ -48,7 +48,7 @@ class Table(BlockRule):
         return TableNode(children=rows, align=align)
 
 
-def parse_cells(parser: Wenmode, cells: list[str], state: BlockState) -> list[Node]:
+def parse_cells(parser: Parser, cells: list[str], state: BlockState) -> list[Node]:
     return [TableCell(children=parser.parse_inlines(cell.strip(), state)) for cell in cells]
 
 

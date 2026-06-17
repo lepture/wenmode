@@ -11,7 +11,7 @@ from wenmode.state import BlockState
 from wenmode.utils import filter_disallowed_html
 
 if TYPE_CHECKING:
-    from wenmode.parser import Wenmode
+    from wenmode.parser import Parser
 
 
 URI_RE = r'<(?P<uri>[A-Za-z][A-Za-z0-9.+-]{1,31}:[^<>\s]*)>'
@@ -29,7 +29,7 @@ class Autolink(InlineRule):
         super().__init__('autolink', rf'{URI_RE}|{EMAIL_RE}', '<')
 
     def parse(
-        self, parser: Wenmode, text: str, match: re.Match[str], state: BlockState | None = None
+        self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
     ) -> tuple[Node | None, int]:
         uri = match.groupdict().get('uri')
         if uri is not None:
@@ -45,7 +45,7 @@ class RawHtml(InlineRule):
         self.disallowed_tags = tuple(disallowed_tags)
 
     def parse(
-        self, parser: Wenmode, text: str, match: re.Match[str], state: BlockState | None = None
+        self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
     ) -> tuple[Node | None, int]:
         return Html(value=filter_disallowed_html(match.group(0), self.disallowed_tags)), match.end()
 

@@ -9,7 +9,7 @@ from wenmode.state import BlockState
 from wenmode.utils import normalize_label_text
 
 if TYPE_CHECKING:
-    from wenmode.parser import Wenmode
+    from wenmode.parser import Parser
 
 
 FENCE_OPENER_RE = re.compile(r'(?P<indent>[ \t]{0,3})(`{3,}|~{3,})(.*)$')
@@ -19,7 +19,7 @@ class FencedCode(BlockRule):
     def __init__(self) -> None:
         super().__init__('fenced_code', r'[ \t]{0,3}(?:`{3,}|~{3,})')
 
-    def parse(self, parser: Wenmode, state: BlockState, match: re.Match[str]) -> Node:
+    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node:
         opener = FENCE_OPENER_RE.match(state.line.rstrip('\r\n'))
         if opener is None:
             state.advance()

@@ -9,7 +9,7 @@ from wenmode.rules.inlines.html import normalize_uri
 from wenmode.state import BlockState
 
 if TYPE_CHECKING:
-    from wenmode.parser import Wenmode
+    from wenmode.parser import Parser
 
 
 EXTENDED_AUTOLINK_RE = (
@@ -32,7 +32,7 @@ class ExtendedAutolink(InlineRule):
         super().__init__('extended_autolink', EXTENDED_AUTOLINK_RE)
 
     def parse(
-        self, parser: Wenmode, text: str, match: re.Match[str], state: BlockState | None = None
+        self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
     ) -> tuple[Node | None, int]:
         value = match.group(0)
         value = trim_trailing_punctuation(value)

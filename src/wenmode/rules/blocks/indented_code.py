@@ -8,14 +8,14 @@ from wenmode.rules.base import BlockRule
 from wenmode.state import BlockState
 
 if TYPE_CHECKING:
-    from wenmode.parser import Wenmode
+    from wenmode.parser import Parser
 
 
 class IndentedCode(BlockRule):
     def __init__(self) -> None:
         super().__init__('indented_code', r'(?: {4,}|[ \t]{0,3}\t)')
 
-    def parse(self, parser: Wenmode, state: BlockState, match: re.Match[str]) -> Code:
+    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Code:
         lines: list[str] = []
 
         while not state.done:

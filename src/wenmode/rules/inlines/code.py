@@ -9,7 +9,7 @@ from wenmode.rules.base import InlineRule
 from wenmode.state import BlockState
 
 if TYPE_CHECKING:
-    from wenmode.parser import Wenmode
+    from wenmode.parser import Parser
 
 
 CODE_LINE_ENDING_RE = re.compile(r'\r\n?|\n')
@@ -20,7 +20,7 @@ class InlineCode(InlineRule):
         super().__init__('inline_code', r'`+', '`')
 
     def parse(
-        self, parser: Wenmode, text: str, match: re.Match[str], state: BlockState | None = None
+        self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
     ) -> tuple[Node | None, int]:
         if match.start() > 0 and text[match.start() - 1] == '`':
             return None, match.start()

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import re
 import string
-from collections.abc import Iterable
-from typing import Any, TypeVar
+from collections.abc import Callable, Iterable
+from typing import TypeVar, cast
 
 from .nodes import Node, Paragraph, Root, Text
 from .rules.base import BlockRule, InlineRule, Rule
@@ -22,19 +22,44 @@ PUNCTUATION = set(string.punctuation)
 T = TypeVar('T', bound=Rule)
 
 
-class Wenmode:
+class Parser:
     max_container_depth = 100
 
-    def __init__(self, rules: Iterable[type[Any] | Rule]) -> None:
-        resolved_rules: list[Rule] = [rule() if isinstance(rule, type) else rule for rule in rules]
-        if any(rule.has_references for rule in resolved_rules):
+    def __init__(self, rules: Iterable[type[Rule] | Rule]) -> None:
+        self._registered_rules: list[Rule] = []
+        self.register_rules(rules)
+
+    def register_rule(self, rule: type[Rule] | Rule) -> None:
+        self._register_resolved_rule(self._resolve_rule(rule))
+        self._rebuild_rules()
+
+    def register_rules(self, rules: Iterable[type[Rule] | Rule]) -> None:
+        for rule in rules:
+            self._register_resolved_rule(self._resolve_rule(rule))
+        self._rebuild_rules()
+
+    def _register_resolved_rule(self, rule: Rule) -> None:
+        for index, registered in enumerate(self._registered_rules):
+            if registered.name == rule.name:
+                self._registered_rules[index] = rule
+                return
+        self._registered_rules.append(rule)
+
+    @staticmethod
+    def _resolve_rule(rule: type[Rule] | Rule) -> Rule:
+        return cast(Callable[[], Rule], rule)() if isinstance(rule, type) else rule
+
+    def _rebuild_rules(self) -> None:
+        resolved_rules = list(self._registered_rules)
+        rule_names = {rule.name for rule in resolved_rules}
+        if any(rule.has_references for rule in resolved_rules) and 'reference_definition' not in rule_names:
             resolved_rules.append(ReferenceDefinition())
-        if any(rule.has_footnotes for rule in resolved_rules):
+        if any(rule.has_footnotes for rule in resolved_rules) and 'footnote_definition' not in rule_names:
             resolved_rules.append(FootnoteDefinition())
         self.rules = {rule.name: rule for rule in resolved_rules}
         self.block_rules = sorted_by_order([rule for rule in resolved_rules if isinstance(rule, BlockRule)])
         self.inline_rules = sorted_by_order([rule for rule in resolved_rules if isinstance(rule, InlineRule)])
-        self._emphasis_enabled = 'emphasis' in self.rules
+        self._emphasis_enabled = 'emphasis' in rule_names
         self._inline_rule_order = {rule.name: index for index, rule in enumerate(self.inline_rules)}
         self._triggered_inline_rules, self._search_inline_rules = self._prepare_inline_dispatch(self.inline_rules)
         self._inline_trigger_re = self._compile_inline_trigger_re(self._triggered_inline_rules)

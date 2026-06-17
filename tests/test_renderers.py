@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import ClassVar
 
-from wenmode import HTMLRenderer, MarkdownRenderer, Wenmode, commonmark
+from wenmode import HTMLRenderer, MarkdownRenderer, Parser, commonmark
 from wenmode.nodes import (
     Blockquote,
     Break,
@@ -251,7 +251,7 @@ def test_markdown_renderer_outputs_block_nodes() -> None:
 
 
 def test_markdown_renderer_round_trips_to_equivalent_html() -> None:
-    parser = Wenmode(commonmark)
+    parser = Parser(commonmark)
     html_renderer = HTMLRenderer()
     markdown_renderer = MarkdownRenderer()
     markdown = (
@@ -371,7 +371,7 @@ def test_markdown_renderer_outputs_footnotes() -> None:
 
 
 def test_markdown_renderer_round_trips_footnotes_to_equivalent_html() -> None:
-    parser = Wenmode([Footnote])
+    parser = Parser([Footnote])
     html_renderer = HTMLRenderer()
     markdown_renderer = MarkdownRenderer()
     markdown = 'a[^one]\n\n[^one]: first\n  \n  second\n'
@@ -408,7 +408,7 @@ def test_markdown_renderer_outputs_math_nodes() -> None:
 
 
 def test_markdown_renderer_round_trips_math_to_equivalent_html() -> None:
-    parser = Wenmode([MathBlock, InlineMathRule])
+    parser = Parser([MathBlock, InlineMathRule])
     html_renderer = HTMLRenderer()
     markdown_renderer = MarkdownRenderer()
     markdown = 'inline $x < y$\n\n$$\na & b\n$$\n'
