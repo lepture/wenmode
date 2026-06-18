@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import json
 import re
+from pathlib import Path
+from typing import TypedDict
 
 import pytest
 
@@ -56,6 +59,50 @@ from ._edge_helpers import (
     render_html,
 )
 
+FIXTURES_DIR = Path(__file__).parent / 'fixtures'
+BLOCK_EDGE_RULES = {
+    'abbreviation': Abbreviation,
+    'atx_heading': AtxHeading,
+    'block_spoiler': BlockSpoilerRule,
+    'container_directive': ContainerDirectiveRule,
+    'fenced_code': FencedCode,
+    'fenced_directive': FencedDirective,
+    'html_block': HtmlBlock,
+    'leaf_directive': LeafDirectiveBlockRule,
+    'list': ListRule,
+    'math_block': MathBlockRule,
+    'setext_heading': SetextHeading,
+    'table': TableRule,
+}
+
+
+class BlockRuleEdgeExample(TypedDict, total=False):
+    name: str
+    rules: list[str]
+    markdown: str
+    html: str
+    max_container_depth: int
+
+
+def load_block_rule_edge_examples() -> list[BlockRuleEdgeExample]:
+    return json.loads((FIXTURES_DIR / 'block_rule_edges.json').read_text())
+
+
+def parser_for_block_rule_edge(example: BlockRuleEdgeExample) -> Parser:
+    parser = Parser([BLOCK_EDGE_RULES[name] for name in example['rules']])
+    if 'max_container_depth' in example:
+        parser.max_container_depth = example['max_container_depth']
+    return parser
+
+
+@pytest.mark.parametrize(
+    'example',
+    load_block_rule_edge_examples(),
+    ids=lambda example: example['name'],
+)
+def test_block_rule_edge_examples(example: BlockRuleEdgeExample) -> None:
+    assert render_html(parser_for_block_rule_edge(example), example['markdown']) == example['html']
+
 
 def test_block_rule_edge_branches() -> None:
     assert parse_abbreviation_definition(BlockState(['*[HTML]:\n', '   Hyper\n', 'nope\n']), 0) == (
@@ -87,7 +134,6 @@ def test_block_rule_edge_branches() -> None:
     )
     assert replace_abbreviations(Text(value='none'), {}, re.compile('MISS')) == [Text(value='none')]
     transform_abbreviations(Paragraph(children=[Node(type='child')]), {}, re.compile('MISS'))
-    assert render_html(Parser([Abbreviation]), 'text\n') == '<p>text</p>\n'
 
     state = BlockState(['\n'])
     assert collect_description_continuation(state, []) is False
@@ -122,27 +168,14 @@ def test_block_rule_edge_branches() -> None:
     assert fence_match is not None
     assert FencedDirective().parse(Parser([]), BlockState(['```\n']), fence_match) is None
     assert FencedDirective().parse(Parser([]), BlockState(['```{note}\n']), fence_match).type == 'containerDirective'
-    assert render_html(Parser([LeafDirectiveBlockRule]), '::bad trailing text\n') == '<p>::bad trailing text</p>\n'
-    assert (
-        render_html(Parser([ContainerDirectiveRule]), ':::bad trailing text\n:::\n')
-        == '<p>:::bad trailing text\n:::</p>\n'
-    )
-    assert render_html(Parser([FencedDirective]), '```{bad} title\n:not option\nbody\n```\n') == (
-        '<p>title</p>\n<p>:not option\nbody</p>\n'
-    )
 
-    assert render_html(Parser([FencedCode]), '`` `bad`\n') == '<p>`` `bad`</p>\n'
     assert FencedCode().parse(
         Parser([]), BlockState(['nope\n']), re.match(r'.*', 'nope') is not None and re.match(r'.*', 'nope')
     ) == Code(value='')
     assert strip_fence_indent('  code\n', 1) == ' code\n'
-    assert render_html(Parser([AtxHeading]), '####### nope\n') == '<p>####### nope</p>\n'
     assert AtxHeading().parse(
         Parser([]), BlockState(['####### nope\n']), re.match(r'.*', '#') is not None and re.match(r'.*', '#')
     ) == Heading(children=[])
-    assert render_html(Parser([SetextHeading]), 'a\n+\n') == '<p>a\n+</p>\n'
-    assert render_html(Parser([HtmlBlock]), '<x>\n') == '&lt;x&gt;\n'
-    assert render_html(Parser([HtmlBlock]), '<script>\ntext\n</script>\n') == '&lt;script&gt;\ntext\n&lt;/script&gt;\n'
     assert HtmlBlock().parse(
         Parser([]), BlockState(['<!bad\n']), re.match(r'.*', '<') is not None and re.match(r'.*', '<')
     ) == Html(value='<!bad\n')
@@ -151,17 +184,9 @@ def test_block_rule_edge_branches() -> None:
     assert strip_indented_code('     too much\n', 4) == ' too much\n'
     assert strip_indented_code('  no\n', 4) == 'no\n'
 
-    assert render_html(Parser([MathBlockRule]), '$$ x\n$$\n') == '<div class="math math-display">x\n</div>\n'
     assert MathBlockRule().parse(
         Parser([]), BlockState(['nope\n']), re.match(r'.*', 'nope') is not None and re.match(r'.*', 'nope')
     ) == Math(value='')
-    assert (
-        render_html(Parser([BlockSpoilerRule]), '>! one\nplain\n')
-        == '<div class="spoiler">\n<p>one</p>\n</div>\n<p>plain</p>\n'
-    )
-    shallow_spoiler_parser = Parser([BlockSpoilerRule])
-    shallow_spoiler_parser.max_container_depth = 1
-    assert render_html(shallow_spoiler_parser, '>! one\n') == '<div class="spoiler">\n<p>one</p>\n</div>\n'
     shallow_state = BlockState(['>! a\n', 'plain\n'])
     assert parse_shallow_block(Parser([]), BLOCK_SPOILER_RE, shallow_state) == [Paragraph(children=[Text(value='a')])]
 
@@ -173,7 +198,6 @@ def test_block_rule_edge_branches() -> None:
         )
         is None
     )
-    assert render_html(Parser([TableRule]), 'a | b\n| --- |\n') == '<p>a | b\n| --- |</p>\n'
     assert parse_delimiter_row('--- ---') is None
     assert parse_delimiter_row('| --- | bad |') is None
     assert parse_delimiter_row('| :--- | ---: | :---: |') == ['left', 'right', 'center']
@@ -205,11 +229,6 @@ def test_list_and_task_edge_branches() -> None:
     bullet = MARKER_RE.match('+ a')
     assert bullet is not None
     assert parse_shallow_list(Parser([]), BlockState(['- b\n']), bullet).children == []
-    assert render_html(Parser([ListRule]), '-      far\n') == '<ul>\n<li>far</li>\n</ul>\n'
-    assert render_html(Parser([ListRule]), '- a\n\n  b\n\n\n- c\n') == (
-        '<ul>\n<li>\n<p>a</p>\n<p>b</p>\n</li>\n<li>\n<p>c</p>\n</li>\n</ul>\n'
-    )
-    assert render_html(Parser([ListRule]), '- a\n\n  b\n\n\n\n- c\n').endswith('</ul>\n')
     assert ListRule().parse(
         Parser([]), BlockState(['plain\n']), re.match(r'.*', 'plain') is not None and re.match(r'.*', 'plain')
     ) == List(children=[])

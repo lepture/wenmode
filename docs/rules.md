@@ -64,8 +64,10 @@ wenmode.register_rule(AtxHeading)
 `register_rules()` accepts multiple rules:
 
 ```python
+from wenmode import Wenmode
 from wenmode.rules import AtxHeading, Emphasis, InlineCode
 
+wenmode = Wenmode([])
 wenmode.register_rules([AtxHeading, InlineCode, Emphasis])
 ```
 

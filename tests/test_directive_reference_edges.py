@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import json
 import re
+from pathlib import Path
+from typing import TypedDict
 
 import pytest
 
@@ -35,6 +38,34 @@ from ._edge_helpers import (
     render_html,
 )
 
+FIXTURES_DIR = Path(__file__).parent / 'fixtures'
+DIRECTIVE_REFERENCE_EDGE_RULES = {
+    'footnote': FootnoteRule,
+    'text_directive': TextDirectiveInlineRule,
+}
+
+
+class DirectiveReferenceEdgeExample(TypedDict):
+    name: str
+    rules: list[str]
+    markdown: str
+    html: str
+
+
+def load_directive_reference_edge_examples() -> list[DirectiveReferenceEdgeExample]:
+    return json.loads((FIXTURES_DIR / 'directive_reference_edges.json').read_text())
+
+
+@pytest.mark.parametrize(
+    'example',
+    load_directive_reference_edge_examples(),
+    ids=lambda example: example['name'],
+)
+def test_directive_reference_edge_examples(example: DirectiveReferenceEdgeExample) -> None:
+    parser = Parser([DIRECTIVE_REFERENCE_EDGE_RULES[name] for name in example['rules']])
+
+    assert render_html(parser, example['markdown']) == example['html']
+
 
 def test_directive_parsing_helpers_and_invalid_inline_directives(monkeypatch: pytest.MonkeyPatch) -> None:
     assert parse_directive_head('1bad') is None
@@ -61,8 +92,6 @@ def test_directive_parsing_helpers_and_invalid_inline_directives(monkeypatch: py
     parse_shortcuts('x#id', attributes, classes)
     assert attributes == {}
 
-    parser = Parser([TextDirectiveInlineRule])
-    assert render_html(parser, ':1\n') == '<p>:1</p>\n'
     text_directive_match = re.match(r':', ':1')
     assert text_directive_match is not None
     assert TextDirectiveInlineRule().parse(Parser([]), ':1', text_directive_match, BlockState([])) == (None, 0)
@@ -78,7 +107,6 @@ def test_directive_parsing_helpers_and_invalid_inline_directives(monkeypatch: py
 
 def test_reference_and_footnote_edge_branches(monkeypatch: pytest.MonkeyPatch) -> None:
     assert FootnoteRule().parse(Parser([]), '[^x]', re.match(r'\[\^x]', '[^x]')) == (None, 0)  # type: ignore[arg-type]
-    assert render_html(Parser([FootnoteRule]), '[^]: bad\n') == '<p>[^]: bad</p>\n'
     footnote_match = re.match(r'.*', '[^x]: note')
     assert footnote_match is not None
     monkeypatch.setattr(footnotes_module, 'normalize_label', lambda label: '')

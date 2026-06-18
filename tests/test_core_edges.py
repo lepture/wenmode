@@ -158,6 +158,11 @@ def test_parser_internal_edge_branches() -> None:
     assert second_match is not None
     assert not parser._inline_candidate_before((0, second, second_match), (0, first, first_match))
     assert parser._inline_candidate_before((0, first, first_match), (0, second, second_match))
+    text = 'xx'
+    search_cache = {}
+    cached_found = parser._find_search_inline_match(text, 0, search_cache)
+    assert cached_found is not None
+    assert parser._find_search_inline_match(text, 0, search_cache) == cached_found
 
     with pytest.raises(RuntimeError, match='without a named group'):
         Parser([])._match_block_rule(re.match('x', 'x'))  # type: ignore[arg-type]

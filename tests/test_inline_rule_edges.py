@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import json
 import re
+from pathlib import Path
+from typing import TypedDict
 
 import pytest
 
@@ -25,6 +28,7 @@ from wenmode.rules.inlines.emphasis import (
     parse_emphasis_sequence,
     process_delimiters,
 )
+from wenmode.rules.inlines.extended_autolink import trim_mailto_or_xmpp, trim_xmpp
 from wenmode.rules.inlines.link import (
     build_closing_bracket_map,
     closing_bracket_cache,
@@ -49,12 +53,43 @@ from ._edge_helpers import (
     render_html,
 )
 
+FIXTURES_DIR = Path(__file__).parent / 'fixtures'
+
+
+class InlineRuleEdgeExample(TypedDict):
+    name: str
+    rules: list[str]
+    markdown: str
+    html: str
+
+
+def load_inline_rule_edge_examples() -> list[InlineRuleEdgeExample]:
+    return json.loads((FIXTURES_DIR / 'inline_rule_edges.json').read_text())
+
+
+def inline_edge_rule(name: str):
+    if name == 'link_no_references':
+        return LinkRule(references=False)
+    return {
+        'image': ImageRule,
+        'inline_math': InlineMathRule,
+        'link': LinkRule,
+        'strikethrough': Strikethrough,
+    }[name]
+
+
+@pytest.mark.parametrize(
+    'example',
+    load_inline_rule_edge_examples(),
+    ids=lambda example: example['name'],
+)
+def test_inline_rule_edge_examples(example: InlineRuleEdgeExample) -> None:
+    parser = Parser([inline_edge_rule(name) for name in example['rules']])
+
+    assert render_html(parser, example['markdown']) == example['html']
+
 
 def test_inline_link_and_math_edge_branches(monkeypatch: pytest.MonkeyPatch) -> None:
-    parser = Parser([LinkRule, ImageRule])
-    assert render_html(parser, '![alt\n') == '<p>![alt</p>\n'
-    assert render_html(parser, '![[link](/url)](/image)\n') == '<p><img src="/image" alt="link" /></p>\n'
-    assert render_html(Parser([LinkRule(references=False)]), '[x][ref]\n') == '<p>[x][ref]</p>\n'
     assert normalize_optional_text(None) is None
     assert normalize_optional_text('a\nb') == 'a\nb'
     assert parse_link_or_image(Parser([]), '[x]', 0, False, None, references=True) is None
@@ -88,7 +123,6 @@ def test_inline_link_and_math_edge_branches(monkeypatch: pytest.MonkeyPatch) -> 
     assert link_plain_text([Node(type='plain')]) == ''
     assert find_code_span_end('`unterminated', 0) is None
 
-    assert render_html(Parser([InlineMathRule]), '$ $\n') == '<p>$ $</p>\n'
     inline_math_match = re.match(r'\$', '$ $')
     assert inline_math_match is not None
     assert InlineMathRule().parse(Parser([]), '$ $', inline_math_match, BlockState([])) == (None, 0)
@@ -112,7 +146,6 @@ def test_ruby_strikethrough_autolink_and_emphasis_edge_branches(monkeypatch: pyt
     )  # type: ignore[arg-type]
     assert ruby == [{'base': '漢', 'text': 'kan'}]
 
-    assert render_html(Parser([Strikethrough]), '~~~~\n') == '<p>~~~~</p>\n'
     strike_match = re.match(r'~~', '~~')
     assert strike_match is not None
     monkeypatch.setattr(strikethrough_module, 'find_closing_marker', lambda text, marker, start: start)
@@ -124,7 +157,12 @@ def test_ruby_strikethrough_autolink_and_emphasis_edge_branches(monkeypatch: pyt
     assert match is not None
     assert autolink.parse(Parser([]), '...', match) == (None, 0)
     assert autolink.search('ahttp://example.com') is None
+    assert autolink.search_email('xx@example.com', 1) is None
+    assert autolink.search_email('x@example.com-', 0) is None
     assert autolink.search('x@example.com') is not None
+    assert trim_mailto_or_xmpp('https://example.com') == 'https://example.com'
+    assert trim_xmpp('xmpp:x@example.com-') == ''
+    assert trim_xmpp('xmpp:not-email/path') == ''
 
     assert Emphasis().parse(Parser([]), '*', re.match(r'\*', '*')) == (None, 0)  # type: ignore[arg-type]
     assert parse_emphasis_sequence([Text(value='**a*')]) == [

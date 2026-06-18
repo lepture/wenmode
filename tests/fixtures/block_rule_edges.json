@@ -1,0 +1,99 @@
+[
+  {
+    "name": "abbreviation without definition keeps text",
+    "rules": ["abbreviation"],
+    "markdown": "text\n",
+    "html": "<p>text</p>\n"
+  },
+  {
+    "name": "invalid leaf directive stays paragraph",
+    "rules": ["leaf_directive"],
+    "markdown": "::bad trailing text\n",
+    "html": "<p>::bad trailing text</p>\n"
+  },
+  {
+    "name": "invalid container directive stays paragraph",
+    "rules": ["container_directive"],
+    "markdown": ":::bad trailing text\n:::\n",
+    "html": "<p>:::bad trailing text\n:::</p>\n"
+  },
+  {
+    "name": "fenced directive invalid option body falls back to children",
+    "rules": ["fenced_directive"],
+    "markdown": "```{bad} title\n:not option\nbody\n```\n",
+    "html": "<p>title</p>\n<p>:not option\nbody</p>\n"
+  },
+  {
+    "name": "invalid fenced code marker stays paragraph",
+    "rules": ["fenced_code"],
+    "markdown": "`` `bad`\n",
+    "html": "<p>`` `bad`</p>\n"
+  },
+  {
+    "name": "atx heading too deep stays paragraph",
+    "rules": ["atx_heading"],
+    "markdown": "####### nope\n",
+    "html": "<p>####### nope</p>\n"
+  },
+  {
+    "name": "invalid setext underline stays paragraph",
+    "rules": ["setext_heading"],
+    "markdown": "a\n+\n",
+    "html": "<p>a\n+</p>\n"
+  },
+  {
+    "name": "html block open tag",
+    "rules": ["html_block"],
+    "markdown": "<x>\n",
+    "html": "&lt;x&gt;\n"
+  },
+  {
+    "name": "html block script close",
+    "rules": ["html_block"],
+    "markdown": "<script>\ntext\n</script>\n",
+    "html": "&lt;script&gt;\ntext\n&lt;/script&gt;\n"
+  },
+  {
+    "name": "math block trims single-line opener",
+    "rules": ["math_block"],
+    "markdown": "$$ x\n$$\n",
+    "html": "<div class=\"math math-display\">x\n</div>\n"
+  },
+  {
+    "name": "block spoiler stops before plain paragraph",
+    "rules": ["block_spoiler"],
+    "markdown": ">! one\nplain\n",
+    "html": "<div class=\"spoiler\">\n<p>one</p>\n</div>\n<p>plain</p>\n"
+  },
+  {
+    "name": "shallow block spoiler respects container depth",
+    "rules": ["block_spoiler"],
+    "max_container_depth": 1,
+    "markdown": ">! one\n",
+    "html": "<div class=\"spoiler\">\n<p>one</p>\n</div>\n"
+  },
+  {
+    "name": "table bad delimiter remains paragraph",
+    "rules": ["table"],
+    "markdown": "a | b\n| --- |\n",
+    "html": "<p>a | b\n| --- |</p>\n"
+  },
+  {
+    "name": "list preserves far-indented first item",
+    "rules": ["list"],
+    "markdown": "-      far\n",
+    "html": "<ul>\n<li>far</li>\n</ul>\n"
+  },
+  {
+    "name": "loose list with blank continuation",
+    "rules": ["list"],
+    "markdown": "- a\n\n  b\n\n\n- c\n",
+    "html": "<ul>\n<li>\n<p>a</p>\n<p>b</p>\n</li>\n<li>\n<p>c</p>\n</li>\n</ul>\n"
+  },
+  {
+    "name": "loose list with extra blank before next item",
+    "rules": ["list"],
+    "markdown": "- a\n\n  b\n\n\n\n- c\n",
+    "html": "<ul>\n<li>\n<p>a</p>\n<p>b</p>\n</li>\n<li>\n<p>c</p>\n</li>\n</ul>\n"
+  }
+]

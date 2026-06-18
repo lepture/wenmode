@@ -1,0 +1,32 @@
+[
+  {
+    "name": "unclosed image opener stays text",
+    "rules": ["link", "image"],
+    "markdown": "![alt\n",
+    "html": "<p>![alt</p>\n"
+  },
+  {
+    "name": "nested link image uses plain alt text",
+    "rules": ["link", "image"],
+    "markdown": "![[link](/url)](/image)\n",
+    "html": "<p><img src=\"/image\" alt=\"link\" /></p>\n"
+  },
+  {
+    "name": "shortcut reference ignored when references disabled",
+    "rules": ["link_no_references"],
+    "markdown": "[x][ref]\n",
+    "html": "<p>[x][ref]</p>\n"
+  },
+  {
+    "name": "empty inline math stays text",
+    "rules": ["inline_math"],
+    "markdown": "$ $\n",
+    "html": "<p>$ $</p>\n"
+  },
+  {
+    "name": "empty strikethrough stays text",
+    "rules": ["strikethrough"],
+    "markdown": "~~~~\n",
+    "html": "<p>~~~~</p>\n"
+  }
+]

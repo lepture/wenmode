@@ -1,0 +1,338 @@
+[
+  {
+    "name": "inline nodes",
+    "node": {
+      "type": "root",
+      "children": [
+        {"type": "heading", "depth": 2, "children": [{"type": "text", "value": "Title"}]},
+        {
+          "type": "paragraph",
+          "children": [
+            {"type": "text", "value": "Hello "},
+            {"type": "emphasis", "children": [{"type": "text", "value": "em"}]},
+            {"type": "text", "value": " "},
+            {"type": "strong", "children": [{"type": "text", "value": "strong"}]},
+            {"type": "text", "value": " "},
+            {"type": "inlineCode", "value": "code"},
+            {"type": "text", "value": " "},
+            {"type": "inlineMath", "value": "x + y"},
+            {"type": "text", "value": " "},
+            {"type": "link", "url": "/url", "title": "T", "children": [{"type": "text", "value": "link"}]},
+            {"type": "text", "value": " "},
+            {"type": "image", "url": "/img.png", "alt": "alt"}
+          ]
+        }
+      ]
+    },
+    "output": "Title\n-----\n\nHello *em* **strong** ``code`` :math:`x + y` `link </url>`__ |image-1|\n\n.. |image-1| image:: /img.png\n   :alt: alt\n"
+  },
+  {
+    "name": "block nodes",
+    "node": {
+      "type": "root",
+      "children": [
+        {"type": "blockquote", "children": [{"type": "paragraph", "children": [{"type": "text", "value": "quote"}]}]},
+        {
+          "type": "list",
+          "children": [
+            {"type": "listItem", "children": [{"type": "paragraph", "children": [{"type": "text", "value": "one"}]}]},
+            {"type": "listItem", "children": [{"type": "paragraph", "children": [{"type": "text", "value": "two"}]}]}
+          ]
+        },
+        {
+          "type": "list",
+          "ordered": true,
+          "start": 3,
+          "children": [
+            {"type": "listItem", "children": [{"type": "paragraph", "children": [{"type": "text", "value": "three"}]}]},
+            {"type": "listItem", "children": [{"type": "paragraph", "children": [{"type": "text", "value": "four"}]}]}
+          ]
+        },
+        {"type": "code", "value": "print(1)\n", "lang": "py"},
+        {"type": "thematicBreak"},
+        {
+          "type": "paragraph",
+          "children": [
+            {"type": "text", "value": "a"},
+            {"type": "break"},
+            {"type": "text", "value": "b"}
+          ]
+        }
+      ]
+    },
+    "output": "   quote\n\n- one\n- two\n\n3. three\n4. four\n\n.. code-block:: py\n\n   print(1)\n\n----\n\na\nb\n"
+  },
+  {
+    "name": "tables definitions and directives",
+    "node": {
+      "type": "root",
+      "children": [
+        {
+          "type": "definitionList",
+          "children": [
+            {"type": "definitionTerm", "children": [{"type": "text", "value": "Apple"}]},
+            {"type": "definitionDescription", "children": [{"type": "paragraph", "children": [{"type": "text", "value": "Fruit"}]}]}
+          ]
+        },
+        {
+          "type": "table",
+          "children": [
+            {
+              "type": "tableRow",
+              "children": [
+                {"type": "tableCell", "children": [{"type": "text", "value": "Name"}]},
+                {"type": "tableCell", "children": [{"type": "text", "value": "Value"}]}
+              ]
+            },
+            {
+              "type": "tableRow",
+              "children": [
+                {"type": "tableCell", "children": [{"type": "text", "value": "A"}]},
+                {"type": "tableCell", "children": [{"type": "text", "value": "1"}]}
+              ]
+            }
+          ]
+        },
+        {
+          "type": "containerDirective",
+          "name": "note",
+          "attributes": {"class": "warning"},
+          "children": [
+            {"type": "paragraph", "data": {"directiveLabel": true}, "children": [{"type": "text", "value": "Important"}]},
+            {"type": "paragraph", "children": [{"type": "text", "value": "Body."}]}
+          ]
+        }
+      ]
+    },
+    "output": "Apple\n  Fruit\n\n====  =====\nName  Value\n====  =====\nA     1\n====  =====\n\n.. note:: Important\n   :class: warning\n\n   Body.\n"
+  },
+  {
+    "name": "footnotes",
+    "node": {
+      "type": "root",
+      "children": [
+        {
+          "type": "paragraph",
+          "children": [
+            {"type": "text", "value": "a"},
+            {"type": "footnoteReference", "identifier": "one", "label": "one"}
+          ]
+        },
+        {
+          "type": "footnoteDefinition",
+          "identifier": "one",
+          "label": "one",
+          "children": [{"type": "paragraph", "children": [{"type": "text", "value": "note"}]}]
+        },
+        {
+          "type": "footnoteDefinition",
+          "identifier": "two",
+          "label": "two",
+          "children": [
+            {"type": "paragraph", "children": [{"type": "text", "value": "first"}]},
+            {"type": "paragraph", "children": [{"type": "text", "value": "second"}]}
+          ]
+        }
+      ]
+    },
+    "output": "a[#one]_\n\n.. [#one] note\n\n.. [#two] first\n\n   second\n"
+  },
+  {
+    "name": "math",
+    "node": {
+      "type": "root",
+      "children": [
+        {
+          "type": "paragraph",
+          "children": [
+            {"type": "text", "value": "a "},
+            {"type": "inlineMath", "value": "x + y"}
+          ]
+        },
+        {"type": "math", "value": "z = 1\n"}
+      ]
+    },
+    "output": "a :math:`x + y`\n\n.. math::\n\n   z = 1\n"
+  },
+  {
+    "name": "extended inline nodes",
+    "node": {
+      "type": "paragraph",
+      "children": [
+        {"type": "abbreviation", "title": "HyperText", "children": [{"type": "text", "value": "HTML"}]},
+        {"type": "text", "value": " "},
+        {"type": "abbreviation", "children": [{"type": "text", "value": "W3C"}]},
+        {"type": "text", "value": " "},
+        {"type": "delete", "children": [{"type": "text", "value": "gone"}]},
+        {"type": "text", "value": " "},
+        {"type": "mark", "children": [{"type": "text", "value": "mark"}]},
+        {"type": "text", "value": " "},
+        {"type": "insert", "children": [{"type": "text", "value": "insert"}]},
+        {"type": "text", "value": " "},
+        {"type": "superscript", "children": [{"type": "text", "value": "2"}]},
+        {"type": "text", "value": " "},
+        {"type": "subscript", "children": [{"type": "text", "value": "n"}]},
+        {"type": "text", "value": " "},
+        {"type": "ruby", "segments": [{"base": "\u6f22", "text": "kan"}]},
+        {"type": "text", "value": " "},
+        {"type": "inlineSpoiler", "children": [{"type": "text", "value": "secret"}]},
+        {"type": "text", "value": " "},
+        {"type": "textDirective", "name": "kbd", "children": [{"type": "text", "value": "Ctrl+C"}]}
+      ]
+    },
+    "output": ":abbr:`HTML (HyperText)` W3C gone mark insert :sup:`2` :sub:`n` \u6f22 (kan) secret :kbd:`Ctrl+C`\n\n"
+  },
+  {
+    "name": "empty root",
+    "node": {"type": "root"},
+    "output": ""
+  },
+  {
+    "name": "root with image definition",
+    "node": {"type": "root", "children": [{"type": "image", "url": "/only.png", "title": "Only"}]},
+    "output": "|image-1|\n\n.. |image-1| image:: /only.png\n   :title: Only\n"
+  },
+  {
+    "name": "checked list item",
+    "node": {"type": "list", "children": [{"type": "listItem", "checked": true}]},
+    "output": "- [x]\n\n"
+  },
+  {
+    "name": "unchecked list item",
+    "node": {"type": "list", "children": [{"type": "listItem", "checked": false}]},
+    "output": "- [ ]\n\n"
+  },
+  {
+    "name": "list with raw child",
+    "node": {"type": "list", "children": [{"type": "text", "value": "raw"}]},
+    "output": "raw\n\n"
+  },
+  {
+    "name": "direct list item",
+    "node": {"type": "listItem", "children": [{"type": "text", "value": "direct"}]},
+    "output": "direct"
+  },
+  {
+    "name": "empty definition description",
+    "node": {"type": "definitionDescription"},
+    "output": "  \n"
+  },
+  {
+    "name": "multi paragraph definition description",
+    "node": {
+      "type": "definitionDescription",
+      "children": [
+        {"type": "paragraph", "children": [{"type": "text", "value": "first"}]},
+        {"type": "paragraph", "children": [{"type": "text", "value": "second"}]}
+      ]
+    },
+    "output": "  first\n\n  second\n"
+  },
+  {
+    "name": "empty blockquote",
+    "node": {"type": "blockquote"},
+    "output": ""
+  },
+  {
+    "name": "empty block spoiler",
+    "node": {"type": "blockSpoiler"},
+    "output": ".. admonition:: Spoiler\n\n"
+  },
+  {
+    "name": "block spoiler with body",
+    "node": {"type": "blockSpoiler", "children": [{"type": "paragraph", "children": [{"type": "text", "value": "hidden"}]}]},
+    "output": ".. admonition:: Spoiler\n\n   hidden\n\n"
+  },
+  {
+    "name": "plain code block",
+    "node": {"type": "code", "value": "plain"},
+    "output": "::\n\n   plain\n\n"
+  },
+  {
+    "name": "inline html",
+    "node": {"type": "html", "value": "<span>x</span>"},
+    "output": "<span>x</span>"
+  },
+  {
+    "name": "block html",
+    "node": {"type": "html", "value": "<div>\nx</div>\n"},
+    "output": ".. raw:: html\n\n   <div>\n   x</div>\n\n"
+  },
+  {
+    "name": "direct image with options",
+    "node": {"type": "image", "url": "/direct.png", "alt": "Direct", "title": "Title"},
+    "output": ".. image:: /direct.png\n   :alt: Direct\n   :title: Title\n\n"
+  },
+  {
+    "name": "plain direct image",
+    "node": {"type": "image", "url": "/plain.png"},
+    "output": ".. image:: /plain.png\n\n"
+  },
+  {
+    "name": "footnote label sanitized",
+    "node": {"type": "footnoteDefinition", "identifier": "bad label!", "label": "bad label!"},
+    "output": ".. [#bad-label]\n\n"
+  },
+  {
+    "name": "empty leaf directive",
+    "node": {"type": "leafDirective", "name": "toc"},
+    "output": ".. toc::\n\n"
+  },
+  {
+    "name": "leaf directive with options",
+    "node": {"type": "leafDirective", "name": "note", "attributes": {"id": "intro", "empty": ""}},
+    "output": ".. note::\n   :name: intro\n   :empty:\n\n"
+  },
+  {
+    "name": "leaf directive with argument",
+    "node": {"type": "leafDirective", "name": "note", "children": [{"type": "text", "value": "Title"}]},
+    "output": ".. note:: Title\n\n"
+  },
+  {
+    "name": "empty container directive",
+    "node": {"type": "containerDirective", "name": "note"},
+    "output": ".. note::\n\n"
+  },
+  {
+    "name": "container directive with options",
+    "node": {"type": "containerDirective", "name": "note", "attributes": {"class": "warning"}},
+    "output": ".. note::\n   :class: warning\n\n"
+  },
+  {
+    "name": "container directive with body",
+    "node": {
+      "type": "containerDirective",
+      "name": "note",
+      "children": [
+        {"type": "text", "value": "lead"},
+        {"type": "paragraph", "children": [{"type": "text", "value": "body"}]}
+      ]
+    },
+    "output": ".. note::\n\n   leadbody\n\n"
+  },
+  {
+    "name": "empty table",
+    "node": {"type": "table"},
+    "output": ""
+  },
+  {
+    "name": "table with empty row",
+    "node": {"type": "table", "children": [{"type": "tableRow"}]},
+    "output": ""
+  },
+  {
+    "name": "empty table row",
+    "node": {"type": "tableRow"},
+    "output": ""
+  },
+  {
+    "name": "single cell table row",
+    "node": {"type": "tableRow", "children": [{"type": "tableCell", "children": [{"type": "text", "value": "cell"}]}]},
+    "output": "cell\n"
+  },
+  {
+    "name": "table cell",
+    "node": {"type": "tableCell", "children": [{"type": "text", "value": "cell"}]},
+    "output": "cell"
+  }
+]

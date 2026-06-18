@@ -1,0 +1,14 @@
+[
+  {
+    "name": "invalid text directive name stays text",
+    "rules": ["text_directive"],
+    "markdown": ":1\n",
+    "html": "<p>:1</p>\n"
+  },
+  {
+    "name": "empty footnote label stays paragraph",
+    "rules": ["footnote"],
+    "markdown": "[^]: bad\n",
+    "html": "<p>[^]: bad</p>\n"
+  }
+]

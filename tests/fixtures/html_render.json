@@ -1,0 +1,205 @@
+[
+  {
+    "name": "escapes text code and attrs",
+    "node": {
+      "type": "root",
+      "children": [
+        {
+          "type": "paragraph",
+          "children": [
+            {"type": "text", "value": "<span>x</span> & y"},
+            {"type": "inlineCode", "value": "<code>"},
+            {
+              "type": "link",
+              "url": "/a?x=1&y=2",
+              "title": "<title>",
+              "children": [{"type": "text", "value": "<link>"}]
+            }
+          ]
+        },
+        {"type": "code", "value": "<raw>\n", "lang": "html<script>"}
+      ]
+    },
+    "output": "<p>&lt;span&gt;x&lt;/span&gt; &amp; y<code>&lt;code&gt;</code><a href=\"/a?x=1&amp;y=2\" title=\"&lt;title&gt;\">&lt;link&gt;</a></p>\n<pre><code class=\"language-html&lt;script&gt;\">&lt;raw&gt;\n</code></pre>\n"
+  },
+  {
+    "name": "raw html escaped by default",
+    "node": {
+      "type": "root",
+      "children": [
+        {"type": "heading", "depth": 1, "children": [{"type": "text", "value": "h1"}]},
+        {"type": "html", "value": "<div>div</div>\n"},
+        {
+          "type": "paragraph",
+          "children": [
+            {"type": "text", "value": "a "},
+            {"type": "html", "value": "<span>b</span>"}
+          ]
+        }
+      ]
+    },
+    "output": "<h1>h1</h1>\n&lt;div&gt;div&lt;/div&gt;\n<p>a &lt;span&gt;b&lt;/span&gt;</p>\n"
+  },
+  {
+    "name": "raw html passthrough when escape disabled",
+    "options": {"escape": false},
+    "node": {
+      "type": "root",
+      "children": [
+        {"type": "heading", "depth": 1, "children": [{"type": "text", "value": "h1"}]},
+        {"type": "html", "value": "<div>div</div>\n"},
+        {
+          "type": "paragraph",
+          "children": [
+            {"type": "text", "value": "a "},
+            {"type": "html", "value": "<span>b</span>"}
+          ]
+        }
+      ]
+    },
+    "output": "<h1>h1</h1>\n<div>div</div>\n<p>a <span>b</span></p>\n"
+  },
+  {
+    "name": "unsafe urls sanitized by default",
+    "node": {
+      "type": "root",
+      "children": [
+        {
+          "type": "paragraph",
+          "children": [
+            {"type": "link", "url": "javascript:alert(1)", "children": [{"type": "text", "value": "bad link"}]},
+            {"type": "text", "value": " "},
+            {"type": "image", "url": "java\nscript:alert(1)", "alt": "bad image"},
+            {"type": "text", "value": " "},
+            {"type": "link", "url": "/safe?x=1&y=2", "children": [{"type": "text", "value": "relative"}]},
+            {"type": "text", "value": " "},
+            {"type": "link", "url": "mailto:me@example.com", "children": [{"type": "text", "value": "mail"}]}
+          ]
+        }
+      ]
+    },
+    "output": "<p><a>bad link</a> <img alt=\"bad image\" /> <a href=\"/safe?x=1&amp;y=2\">relative</a> <a href=\"mailto:me@example.com\">mail</a></p>\n"
+  },
+  {
+    "name": "unsafe urls allowed when disabled",
+    "options": {"sanitize_urls": false},
+    "node": {
+      "type": "paragraph",
+      "children": [
+        {"type": "link", "url": "javascript:alert(1)", "children": [{"type": "text", "value": "bad"}]}
+      ]
+    },
+    "output": "<p><a href=\"javascript:alert(1)\">bad</a></p>\n"
+  },
+  {
+    "name": "single footnote",
+    "footnote_definitions": true,
+    "node": {
+      "type": "root",
+      "children": [
+        {
+          "type": "paragraph",
+          "children": [
+            {"type": "text", "value": "a"},
+            {"type": "footnoteReference", "identifier": "one", "label": "one"}
+          ]
+        },
+        {
+          "type": "footnoteDefinition",
+          "identifier": "one",
+          "label": "one",
+          "children": [
+            {"type": "paragraph", "children": [{"type": "text", "value": "note"}]}
+          ]
+        }
+      ]
+    },
+    "output": "<p>a<sup><a href=\"#user-content-fn-one\" id=\"user-content-fnref-one\" data-footnote-ref aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes class=\"footnotes\">\n<h2 class=\"sr-only\" id=\"footnote-label\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-one\">\n<p>note <a href=\"#user-content-fnref-one\" data-footnote-backref class=\"data-footnote-backref\" aria-label=\"Back to content\">&#8617;</a></p>\n</li>\n</ol>\n</section>\n"
+  },
+  {
+    "name": "math nodes",
+    "node": {
+      "type": "root",
+      "children": [
+        {
+          "type": "paragraph",
+          "children": [
+            {"type": "text", "value": "a "},
+            {"type": "inlineMath", "value": "x < y"}
+          ]
+        },
+        {"type": "math", "value": "x & y\n"}
+      ]
+    },
+    "output": "<p>a <span class=\"math math-inline\">x &lt; y</span></p>\n<div class=\"math math-display\">x &amp; y\n</div>\n"
+  },
+  {
+    "name": "empty list item",
+    "node": {"type": "listItem"},
+    "output": "<li></li>\n"
+  },
+  {
+    "name": "tight task item",
+    "node": {
+      "type": "listItem",
+      "checked": false,
+      "children": [{"type": "paragraph", "children": [{"type": "text", "value": "task"}]}]
+    },
+    "output": "<li><input disabled=\"\" type=\"checkbox\"> task</li>\n"
+  },
+  {
+    "name": "loose task item",
+    "node": {
+      "type": "listItem",
+      "checked": false,
+      "spread": true,
+      "children": [{"type": "paragraph", "children": [{"type": "text", "value": "task"}]}]
+    },
+    "output": "<li>\n<p><input disabled=\"\" type=\"checkbox\"> task</p>\n</li>\n"
+  },
+  {
+    "name": "loose task item before non paragraph",
+    "node": {
+      "type": "listItem",
+      "checked": false,
+      "spread": true,
+      "children": [{"type": "blockquote"}]
+    },
+    "output": "<li>\n<input disabled=\"\" type=\"checkbox\"> <blockquote>\n</blockquote>\n</li>\n"
+  },
+  {
+    "name": "spread definition description",
+    "node": {
+      "type": "definitionDescription",
+      "spread": true,
+      "children": [{"type": "paragraph", "children": [{"type": "text", "value": "x"}]}]
+    },
+    "output": "<dd>\n<p>x</p>\n</dd>\n"
+  },
+  {
+    "name": "empty table",
+    "node": {"type": "table"},
+    "output": "<table>\n</table>\n"
+  },
+  {
+    "name": "table with raw header",
+    "node": {"type": "table", "align": [], "children": [{"type": "text", "value": "caption"}]},
+    "output": "<table>\n<thead>\ncaption</thead>\n</table>\n"
+  },
+  {
+    "name": "table row with raw child",
+    "node": {
+      "type": "tableRow",
+      "children": [
+        {"type": "text", "value": "raw"},
+        {"type": "tableCell", "children": [{"type": "text", "value": "cell"}]}
+      ]
+    },
+    "output": "<tr>\nraw<td>cell</td>\n</tr>\n"
+  },
+  {
+    "name": "table cell",
+    "node": {"type": "tableCell", "children": [{"type": "text", "value": "cell"}]},
+    "output": "<td>cell</td>"
+  }
+]
