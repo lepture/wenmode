@@ -14,6 +14,15 @@ if TYPE_CHECKING:
 
 
 class InlineSpoiler(InlineRule):
+    """Parse spoiler spans delimited by ``>!`` and ``!<``.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       >! secret !<
+    """
+
     def __init__(self) -> None:
         super().__init__('inline_spoiler', r'>!\s*(?P<spoiler_text>.+?)\s*!<', '>')
 

@@ -12,6 +12,11 @@ if TYPE_CHECKING:
 
 
 class Figure:
+    """Render ``figure`` container directives as HTML ``figure`` elements.
+
+    :param names: Directive names handled by this renderer.
+    """
+
     node_type = 'containerDirective'
 
     def __init__(self, names: Iterable[str] = ('figure',)) -> None:

@@ -14,6 +14,11 @@ if TYPE_CHECKING:
 
 
 class TableOfContents:
+    """Render ``toc`` leaf directives as HTML tables of contents.
+
+    :param names: Directive names handled by this renderer.
+    """
+
     node_type = 'leafDirective'
 
     def __init__(self, names: Iterable[str] = ('toc',)) -> None:

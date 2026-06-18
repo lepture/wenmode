@@ -31,6 +31,15 @@ EMAIL_RE = re.compile(
 
 
 class ExtendedAutolink(InlineRule):
+    """Parse bare URL and email autolinks.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       https://example.com
+    """
+
     def __init__(self) -> None:
         super().__init__('extended_autolink', EXTENDED_AUTOLINK_RE)
 

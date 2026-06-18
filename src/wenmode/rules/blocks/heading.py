@@ -21,6 +21,11 @@ SETEXT_HEADING_RE = re.compile(r'[ \t]{0,3}(=+|-+)[ \t]*$')
 
 
 class HeadingIdTransform:
+    """Root transform that adds generated IDs to heading nodes.
+
+    :param slugger_factory: Slugger class used to generate heading IDs.
+    """
+
     defer_inlines = False
     required_rules: Sequence[type[Rule] | Rule] = ()
 
@@ -47,6 +52,17 @@ def resolve_heading_id_transform(option: HeadingIdTransformOption) -> list[RootT
 
 
 class AtxHeading(BlockRule):
+    """Parse hash-prefixed ATX headings.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       # Heading
+
+    :param id_transform: ``True`` or a custom transform to generate heading IDs.
+    """
+
     def __init__(self, id_transform: HeadingIdTransformOption = False) -> None:
         super().__init__('atx_heading', r'[ \t]{0,3}#{1,6}(?:[ \t]+|$)')
         self.root_transforms = resolve_heading_id_transform(id_transform)
@@ -66,6 +82,18 @@ class AtxHeading(BlockRule):
 
 
 class SetextHeading(ContinueRule):
+    """Parse setext headings from paragraph continuations.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       Heading
+       ---
+
+    :param id_transform: ``True`` or a custom transform to generate heading IDs.
+    """
+
     def __init__(self, id_transform: HeadingIdTransformOption = False) -> None:
         super().__init__('setext_heading')
         self.root_transforms = resolve_heading_id_transform(id_transform)

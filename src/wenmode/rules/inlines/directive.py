@@ -18,6 +18,15 @@ ROLE_NAME_RE = re.compile(r'[A-Za-z][A-Za-z0-9_-]*')
 
 
 class TextDirective(InlineRule):
+    """Parse mdast-style text directives such as ``:name[label]``.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       :abbr[HTML]{title="HyperText Markup Language"}
+    """
+
     def __init__(self) -> None:
         super().__init__('text_directive', r':(?=[A-Za-z])', ':')
 
@@ -34,6 +43,15 @@ class TextDirective(InlineRule):
 
 
 class Role(InlineRule):
+    """Parse MyST-style inline roles.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       {abbr}`HTML`
+    """
+
     def __init__(self) -> None:
         super().__init__('role', r'\{(?=[A-Za-z])', '{')
 

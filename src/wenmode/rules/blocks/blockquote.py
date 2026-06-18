@@ -20,6 +20,15 @@ SETEXT_MARKER_RE = re.compile(r'[ \t]{0,3}(=+|-+)[ \t]*$')
 
 
 class Blockquote(BlockRule):
+    """Parse ``>`` block quote containers.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       > blockquote
+    """
+
     def __init__(self) -> None:
         super().__init__('blockquote', r'[ \t]{0,3}>')
 

@@ -89,6 +89,18 @@ COMPLETE_HTML_TAG_RE = re.compile(
 
 
 class HtmlBlock(BlockRule):
+    """Parse CommonMark HTML block starts.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       <div>HTML</div>
+
+    :param disallowed_tags: HTML tag names that should be escaped during
+        parsing.
+    """
+
     def __init__(self, disallowed_tags: Sequence[str] = ()) -> None:
         super().__init__(
             'html_block',

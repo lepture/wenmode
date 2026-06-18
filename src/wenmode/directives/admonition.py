@@ -12,6 +12,11 @@ if TYPE_CHECKING:
 
 
 class Admonition:
+    """Render container directives as admonition ``aside`` elements.
+
+    :param names: Directive names handled by this renderer.
+    """
+
     node_type = 'containerDirective'
 
     def __init__(self, names: Iterable[str] = ('note', 'tip', 'caution', 'danger')) -> None:

@@ -26,6 +26,15 @@ HTML_RE = rf'<!--(?!>|->)[\s\S]*?-->|<!---?>|<\?.*?\?>|<![A-Z]+[^>]*>|<!\[CDATA\
 
 
 class Autolink(InlineRule):
+    """Parse angle-bracket URI and email autolinks.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       <https://example.com>
+    """
+
     def __init__(self) -> None:
         super().__init__('autolink', rf'{URI_RE}|{EMAIL_RE}', '<')
 
@@ -41,6 +50,18 @@ class Autolink(InlineRule):
 
 
 class RawHtml(InlineRule):
+    """Parse inline raw HTML.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       <span>HTML</span>
+
+    :param disallowed_tags: HTML tag names that should be escaped during
+        parsing.
+    """
+
     def __init__(self, disallowed_tags: Sequence[str] = ()) -> None:
         super().__init__('raw_html', HTML_RE, '<')
         self.disallowed_html_filter = compile_disallowed_html_filter(disallowed_tags)

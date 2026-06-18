@@ -18,6 +18,15 @@ NUMERIC_CHARACTER_REFERENCE_RE = re.compile(r'&#(?P<base>[xX]?)(?P<digits>[0-9A-
 
 
 class BackslashEscape(InlineRule):
+    """Parse backslash escapes for Markdown punctuation.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       \\*
+    """
+
     def __init__(self) -> None:
         super().__init__('backslash_escape', rf'\\(?=[{ESCAPABLE}])', '\\')
 
@@ -28,6 +37,15 @@ class BackslashEscape(InlineRule):
 
 
 class CharacterReference(InlineRule):
+    """Parse named and numeric character references.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       &copy;
+    """
+
     def __init__(self) -> None:
         super().__init__('character_reference', r'&(?:#[xX][0-9A-Fa-f]+|#[0-9]+|[A-Za-z][A-Za-z0-9]{1,31});', '&')
 
@@ -47,6 +65,16 @@ class CharacterReference(InlineRule):
 
 
 class HardBreak(InlineRule):
+    """Parse hard line breaks created with backslash or trailing spaces.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       line\\
+       break
+    """
+
     def __init__(self) -> None:
         super().__init__('hard_break', r'(?:\\| {2,})\r?\n')
 

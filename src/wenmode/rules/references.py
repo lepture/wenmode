@@ -36,6 +36,15 @@ REFERENCES_KEY = StateKey('wenmode.references', create_references)
 
 
 class ReferenceDefinition(BlockRule):
+    """Parse link and image reference definitions.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       [label]: https://example.com "Title"
+    """
+
     def __init__(self) -> None:
         super().__init__('reference_definition', r'[ \t]{0,3}\[(?!\^)')
 

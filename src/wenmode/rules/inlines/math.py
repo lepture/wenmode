@@ -15,6 +15,15 @@ if TYPE_CHECKING:
 
 
 class InlineMath(InlineRule):
+    """Parse inline math delimited by dollar signs.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       $x + y$
+    """
+
     def __init__(self) -> None:
         super().__init__('inline_math', r'\$', '$')
 

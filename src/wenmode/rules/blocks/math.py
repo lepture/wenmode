@@ -18,6 +18,17 @@ MATH_CLOSER_RE = re.compile(r'^[ \t]{0,3}\$\$[ \t]*(?:\r?\n)?$')
 
 
 class MathBlock(BlockRule):
+    """Parse display math blocks fenced by ``$$`` markers.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       $$
+       x + y
+       $$
+    """
+
     def __init__(self) -> None:
         super().__init__('math_block', r'[ \t]{0,3}\$\$')
 

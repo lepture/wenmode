@@ -54,29 +54,39 @@ FOOTNOTE_LABEL_RE = re.compile(r'[^A-Za-z0-9_.:-]+')
 
 @dataclass
 class ImageReference:
+    """Deferred reStructuredText image substitution."""
+
     name: str
     node: Image
 
 
 @dataclass
 class RSTRenderContext(RenderContext):
+    """Render context for :class:`RSTRenderer`."""
+
     root: Root | None = None
     image_references: list[ImageReference] = field(default_factory=list)
 
 
 class RSTRenderer(BaseRenderer):
+    """Render Wenmode nodes as reStructuredText."""
+
     heading_markers = ('=', '-', '~', '^', '"', '#')
 
     def create_context(self, node: Node | None = None) -> RSTRenderContext:
+        """Create a reStructuredText render context."""
         return RSTRenderContext(root=node if isinstance(node, Root) else None)
 
     def escape_text(self, value: str) -> str:
+        """Escape reStructuredText punctuation in plain text."""
         return ESCAPABLE_TEXT_RE.sub(r'\\\1', value)
 
     def escape_inline_literal(self, value: str) -> str:
+        """Escape text inside an inline literal."""
         return value.replace('``', '`\\`')
 
     def escape_link_target(self, value: str) -> str:
+        """Escape a link or image target."""
         return value.replace('\n', ' ').replace('`', '\\`').replace('>', '\\>')
 
     def render_list_item(self, item: ListItem, marker: str, context: RSTRenderContext) -> str:
@@ -102,8 +112,12 @@ class RSTRenderer(BaseRenderer):
     def render_table_cell_content(self, cell: TableCell, context: RSTRenderContext) -> str:
         return self.render_children(cell.children, context).replace('\n', ' ').strip()
 
-    def render_directive_argument(self, node: Parent, context: RSTRenderContext) -> str:
-        return self.render_children(node.children, context).strip()
+    def render_directive_argument(self, node: Node, context: RSTRenderContext) -> str:
+        """Render a directive argument from a directive or label node."""
+        children = getattr(node, 'children', None)
+        if not isinstance(children, list):
+            return ''
+        return self.render_children(children, context).strip()
 
     def render_directive_options(self, attributes: dict[str, str] | None) -> list[str]:
         if not attributes:

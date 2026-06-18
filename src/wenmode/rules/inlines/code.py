@@ -17,6 +17,15 @@ CODE_LINE_ENDING_RE = re.compile(r'\r\n?|\n')
 
 
 class InlineCode(InlineRule):
+    """Parse inline code spans.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       `code`
+    """
+
     def __init__(self) -> None:
         super().__init__('inline_code', r'`+', '`')
 

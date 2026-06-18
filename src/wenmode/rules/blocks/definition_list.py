@@ -18,6 +18,16 @@ INDENTED_RE = re.compile(r'^(?: {4}|\t)(?P<text>.*)$')
 
 
 class DefinitionList(ContinueRule):
+    """Parse colon-prefixed definition list continuations.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       Term
+       : Definition
+    """
+
     def __init__(self) -> None:
         super().__init__('definition_list')
 

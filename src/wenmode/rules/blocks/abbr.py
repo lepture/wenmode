@@ -34,6 +34,17 @@ ABBREVIATIONS_KEY = StateKey('wenmode.abbreviations', create_abbreviations)
 
 
 class Abbreviation(Rule):
+    """Parse abbreviation definitions and rewrite matching text nodes.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       HTML
+
+       *[HTML]: HyperText Markup Language
+    """
+
     def __init__(self) -> None:
         super().__init__('abbreviation')
         self.root_transforms = [AbbreviationTransform()]

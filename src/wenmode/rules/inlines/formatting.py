@@ -18,6 +18,15 @@ if TYPE_CHECKING:
 
 
 class Mark(InlineRule):
+    """Parse highlighted text delimited by ``==``.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       ==marked==
+    """
+
     def __init__(self) -> None:
         super().__init__('mark', r'==(?=[^\s=])', '=')
 
@@ -37,6 +46,15 @@ class Mark(InlineRule):
 
 
 class Insert(InlineRule):
+    """Parse inserted text delimited by ``^^``.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       ^^inserted^^
+    """
+
     def __init__(self) -> None:
         super().__init__('insert', r'\^\^(?=[^\s\^])', '^')
 
@@ -56,6 +74,15 @@ class Insert(InlineRule):
 
 
 class Superscript(InlineRule):
+    """Parse caret-delimited superscript spans.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       2^10^
+    """
+
     def __init__(self) -> None:
         super().__init__('superscript', r'\^(?:(?<!\\)(?:\\\\)*\\\^|\S|\\ )+?\^', '^')
 
@@ -67,6 +94,15 @@ class Superscript(InlineRule):
 
 
 class Subscript(InlineRule):
+    """Parse tilde-delimited subscript spans.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       H~2~O
+    """
+
     order = 90
 
     def __init__(self) -> None:

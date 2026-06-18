@@ -13,6 +13,15 @@ if TYPE_CHECKING:
 
 
 class ThematicBreak(BlockRule):
+    """Parse thematic breaks such as ``---``, ``***``, and ``___``.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       ---
+    """
+
     order: ClassVar[int] = 50
 
     def __init__(self) -> None:

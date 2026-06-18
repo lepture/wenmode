@@ -18,6 +18,15 @@ BLOCK_SPOILER_RE = re.compile(r'[ \t]{0,3}>! ?(.*)')
 
 
 class BlockSpoiler(BlockRule):
+    """Parse ``>!`` block spoiler containers.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       >! hidden text
+    """
+
     order = 90
 
     def __init__(self) -> None:

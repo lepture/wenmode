@@ -14,6 +14,15 @@ if TYPE_CHECKING:
 
 
 class Strikethrough(InlineRule):
+    """Parse deletion spans delimited by tildes.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       ~~deleted~~
+    """
+
     def __init__(self) -> None:
         super().__init__('strikethrough', r'~{1,2}', '~')
 

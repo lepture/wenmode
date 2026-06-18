@@ -52,6 +52,12 @@ DESTINATION_WRAP_RE = re.compile(r'[\s()]')
 
 
 class MarkdownRenderer(BaseRenderer):
+    """Render Wenmode nodes as normalized Markdown.
+
+    The renderer serializes the AST and is not source preserving. Syntax details
+    that are not represented in the node tree may be normalized.
+    """
+
     def render_list_item(self, item: ListItem, marker: str, context: RenderContext) -> str:
         if item.checked is not None:
             marker += '[x] ' if item.checked else '[ ] '
@@ -66,14 +72,17 @@ class MarkdownRenderer(BaseRenderer):
         return '\n'.join(parts)
 
     def escape_text(self, value: str) -> str:
+        """Escape Markdown punctuation in plain text."""
         return ESCAPABLE_TEXT_RE.sub(r'\\\1', value)
 
     def escape_destination(self, value: str) -> str:
+        """Escape a link or image destination."""
         if DESTINATION_WRAP_RE.search(value):
             return '<' + value.replace('\\', '\\\\').replace('<', '\\<').replace('>', '\\>') + '>'
         return value.replace('\\', '\\\\').replace(')', '\\)')
 
     def escape_title(self, value: str) -> str:
+        """Escape a link or image title."""
         return value.replace('\\', '\\\\').replace('"', '\\"')
 
     def render_table_cell_content(self, cell: TableCell, context: RenderContext) -> str:
@@ -85,6 +94,7 @@ class MarkdownRenderer(BaseRenderer):
         return '[' + self.render_children(node.children, context).strip() + ']' if node.children else ''
 
     def render_directive_attributes(self, attributes: dict[str, str] | None) -> str:
+        """Render directive attributes in Markdown directive syntax."""
         if not attributes:
             return ''
 
@@ -286,6 +296,7 @@ def render_table_cell(renderer: MarkdownRenderer, node: TableCell, context: Rend
 
 
 def normalize_table_row(row: Node, size: int) -> list[TableCell]:
+    """Return exactly ``size`` table cells for Markdown serialization."""
     cells = [cell for cell in row.children if isinstance(cell, TableCell)] if isinstance(row, TableRow) else []
     if len(cells) < size:
         cells.extend(TableCell() for _ in range(size - len(cells)))
@@ -293,6 +304,7 @@ def normalize_table_row(row: Node, size: int) -> list[TableCell]:
 
 
 def delimiter_for_align(align: str | None) -> str:
+    """Return a Markdown table delimiter cell for an alignment value."""
     if align == 'left':
         return ':---'
     if align == 'right':
@@ -303,6 +315,7 @@ def delimiter_for_align(align: str | None) -> str:
 
 
 def quote_directive_attribute(value: str) -> str:
+    """Quote a directive attribute value when required by Markdown syntax."""
     if value and not re.search(r'[\s"\'=<>`{}]', value):
         return value
     return '"' + value.replace('\\', '\\\\').replace('"', '\\"') + '"'

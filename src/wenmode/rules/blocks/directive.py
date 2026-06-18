@@ -25,6 +25,15 @@ OPTION_RE = re.compile(r'[ \t]*:([A-Za-z][A-Za-z0-9_-]*):(?:[ \t]*(.*))?$')
 
 
 class LeafDirective(BlockRule):
+    """Parse mdast-style leaf directives such as ``::name[label]``.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       ::toc[On this page]{min=2 max=3}
+    """
+
     def __init__(self) -> None:
         super().__init__('leaf_directive', r'[ \t]{0,3}::(?=[A-Za-z])')
 
@@ -47,6 +56,17 @@ class LeafDirective(BlockRule):
 
 
 class ContainerDirective(BlockRule):
+    """Parse mdast-style container directives fenced with colons.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       :::note[Title]
+       Body.
+       :::
+    """
+
     def __init__(self) -> None:
         super().__init__('container_directive', r'[ \t]{0,3}:{3,}(?=[A-Za-z])')
 
@@ -73,6 +93,17 @@ class ContainerDirective(BlockRule):
 
 
 class FencedDirective(BlockRule):
+    """Parse MyST-style fenced directives such as code fences with ``{name}``.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       ```{note} Title
+       Body.
+       ```
+    """
+
     order: ClassVar[int] = 60
 
     def __init__(self) -> None:

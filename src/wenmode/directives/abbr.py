@@ -10,6 +10,11 @@ if TYPE_CHECKING:
 
 
 class Abbreviation:
+    """Render text directives as HTML ``abbr`` elements.
+
+    :param names: Directive names handled by this renderer.
+    """
+
     node_type = 'textDirective'
 
     def __init__(self, names: Iterable[str] = ('abbr',)) -> None:

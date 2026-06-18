@@ -19,6 +19,17 @@ CELL_SPACE_RE = re.compile(r'[ \t]+')
 
 
 class Table(BlockRule):
+    """Parse GFM pipe tables.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       | A | B |
+       | --- | --- |
+       | x | y |
+    """
+
     def __init__(self) -> None:
         super().__init__('table', r'[ \t]{0,3}.*\|.*(?:\r?\n)?$')
 

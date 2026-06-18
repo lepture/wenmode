@@ -12,12 +12,20 @@ if TYPE_CHECKING:
 
 
 class RootTransform(Protocol):
+    """Protocol for document-wide transforms attached by rules.
+
+    Root transforms can collect definitions, request helper rules, defer inline
+    parsing, and update the parsed root after block parsing completes.
+    """
+
     name: str
     defer_inlines: bool
     required_rules: Sequence[type[Rule] | Rule]
 
     def prepare(self, parser: Parser, root: Root, state: BlockState) -> None:
+        """Prepare document-wide state before deferred inlines resolve."""
         pass
 
     def transform(self, parser: Parser, root: Root, state: BlockState) -> None:
+        """Update the root after deferred inlines have resolved."""
         pass

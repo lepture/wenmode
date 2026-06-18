@@ -56,6 +56,8 @@ SOFT_BREAK_SPACE_RE = re.compile(r'(?<! ) (?=\r?\n)')
 
 @dataclass
 class FootnoteRenderState:
+    """Mutable render state used while rendering footnotes."""
+
     definitions: dict[str, FootnoteDefinition] = field(default_factory=dict)
     numbers: dict[str, int] = field(default_factory=dict)
     order: list[str] = field(default_factory=list)
@@ -64,19 +66,36 @@ class FootnoteRenderState:
 
 @dataclass
 class HTMLRenderContext(RenderContext):
+    """Render context for :class:`HTMLRenderer`."""
+
     footnotes: FootnoteRenderState = field(default_factory=FootnoteRenderState)
     root: Root | None = None
 
 
 class DirectiveHtmlRenderer(Protocol):
+    """Protocol for HTML directive renderers.
+
+    Implementations are registered on :class:`HTMLRenderer` and are selected by
+    ``node_type`` plus directive name.
+    """
+
     node_type: str
     names: Iterable[str]
 
     def render(self, renderer: HTMLRenderer, node: Any, context: HTMLRenderContext) -> str:
+        """Render a matched directive node to HTML."""
         pass
 
 
 class HTMLRenderer(BaseRenderer):
+    """Render Wenmode nodes as HTML.
+
+    :param escape: Escape raw HTML nodes when ``True``.
+    :param sanitize_urls: Drop unsafe URL schemes from links and images when
+        ``True``.
+    :param directives: Directive renderers to register at construction time.
+    """
+
     allowed_url_schemes = frozenset({'http', 'https', 'irc', 'ircs', 'mailto', 'tel'})
 
     def __init__(
@@ -92,6 +111,7 @@ class HTMLRenderer(BaseRenderer):
             self.register_directive_renderer(directive)
 
     def create_context(self, node: Node | None = None) -> HTMLRenderContext:
+        """Create an HTML render context."""
         definitions = node.footnote_definitions if isinstance(node, Root) else None
         context = HTMLRenderContext(
             footnotes=FootnoteRenderState(definitions=definitions or {}),
@@ -100,6 +120,10 @@ class HTMLRenderer(BaseRenderer):
         return context
 
     def register_directive_renderer(self, directive: DirectiveHtmlRenderer) -> None:
+        """Register one directive renderer.
+
+        :param directive: Directive renderer implementation.
+        """
         for name in directive.names:
             self.directives[(directive.node_type, name)] = directive
 
@@ -146,14 +170,21 @@ class HTMLRenderer(BaseRenderer):
         return '<input disabled="" type="checkbox"> '
 
     def escape(self, value: str) -> str:
+        """Escape raw HTML when renderer escaping is enabled."""
         if not self.escape_enabled:
             return value
         return self.escape_html(value)
 
     def escape_html(self, value: str) -> str:
+        """Escape a string for HTML text or attribute output."""
         return value.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;')
 
     def render_attrs(self, attrs: Mapping[str, HtmlAttrValue]) -> str:
+        """Render a mapping as HTML attributes.
+
+        ``None`` and ``False`` values are omitted. ``True`` values render as
+        boolean attributes.
+        """
         rendered: list[str] = []
         for name, value in attrs.items():
             if value is None or value is False:
@@ -165,6 +196,7 @@ class HTMLRenderer(BaseRenderer):
         return (' ' + ' '.join(rendered)) if rendered else ''
 
     def sanitize_url(self, value: str) -> str | None:
+        """Return a URL if its scheme is allowed, otherwise ``None``."""
         if not self.sanitize_urls:
             return value
 

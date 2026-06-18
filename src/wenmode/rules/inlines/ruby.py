@@ -22,6 +22,15 @@ RUBY_SEGMENT_RE = re.compile(r'(\w+)\(([\w ]+)\)')
 
 
 class Ruby(InlineRule):
+    """Parse ruby annotation syntax.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       [漢字(kanji)]
+    """
+
     order = 90
 
     def __init__(self) -> None:

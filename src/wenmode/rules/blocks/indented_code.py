@@ -14,6 +14,15 @@ if TYPE_CHECKING:
 
 
 class IndentedCode(BlockRule):
+    """Parse indented code blocks.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+           print(1)
+    """
+
     def __init__(self) -> None:
         super().__init__('indented_code', r'(?: {4,}|[ \t]{0,3}\t)')
 

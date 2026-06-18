@@ -9,6 +9,8 @@ from .nodes import Node
 
 @dataclass
 class TocItem:
+    """One table-of-contents entry."""
+
     id: str
     title: str
     depth: int
@@ -16,6 +18,13 @@ class TocItem:
 
 
 def collect_toc(node: Node, *, min_depth: int = 1, max_depth: int = 6) -> list[TocItem]:
+    """Collect heading nodes with IDs into a nested table of contents.
+
+    :param node: Root or subtree to inspect.
+    :param min_depth: Minimum heading depth to include.
+    :param max_depth: Maximum heading depth to include.
+    :returns: Nested table-of-contents items.
+    """
     items: list[TocItem] = []
     stack: list[TocItem] = []
 
@@ -39,12 +48,19 @@ def collect_toc(node: Node, *, min_depth: int = 1, max_depth: int = 6) -> list[T
 
 
 def render_toc_html(items: list[TocItem], *, label: str = 'Table of contents') -> str:
+    """Render table-of-contents items as an HTML ``nav`` element.
+
+    :param items: Items returned by :func:`collect_toc`.
+    :param label: Accessible label for the navigation element.
+    :returns: HTML string, or an empty string when ``items`` is empty.
+    """
     if not items:
         return ''
     return f'<nav class="toc" aria-label="{escape(label, quote=True)}">\n{render_toc_list(items)}</nav>\n'
 
 
 def render_toc_list(items: list[TocItem]) -> str:
+    """Render table-of-contents items as a nested ordered list."""
     parts = ['<ol>\n']
     for item in items:
         parts.append(

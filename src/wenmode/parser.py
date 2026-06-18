@@ -23,10 +23,19 @@ InlineSearchCache = dict[str, object]
 
 
 class StreamingUnsupportedError(ValueError):
-    pass
+    """Raised when a rule set cannot be used for streaming output."""
 
 
 class Parser:
+    """Parse Markdown into Wenmode nodes with an explicit rule set.
+
+    Parser instances are reusable. Per-document state such as reference
+    definitions, footnotes, abbreviation definitions, and deferred inline queues
+    is created for each parse.
+
+    :param rules: Rule classes or configured rule instances to enable.
+    """
+
     max_container_depth = 20
 
     def __init__(self, rules: Iterable[type[Rule] | Rule]) -> None:
@@ -34,10 +43,18 @@ class Parser:
         self.register_rules(rules)
 
     def register_rule(self, rule: type[Rule] | Rule) -> None:
+        """Register or replace one rule by name.
+
+        :param rule: Rule class or configured rule instance.
+        """
         self._register_resolved_rule(self._resolve_rule(rule))
         self._rebuild_rules()
 
     def register_rules(self, rules: Iterable[type[Rule] | Rule]) -> None:
+        """Register or replace multiple rules by name.
+
+        :param rules: Rule classes or configured rule instances.
+        """
         for rule in rules:
             self._register_resolved_rule(self._resolve_rule(rule))
         self._rebuild_rules()
@@ -75,6 +92,11 @@ class Parser:
         self._block_openers = self._compile_block_openers(self.block_rules)
 
     def parse(self, source: LineSource) -> Root:
+        """Parse Markdown into a root node.
+
+        :param source: Markdown source as a string or an iterable of lines.
+        :returns: Parsed document root.
+        """
         state = self._create_block_state(source, defer_inlines=self._defer_inlines)
         root = Root(children=self._parse_block_nodes(state))
         for transform in self.root_transforms:
@@ -85,6 +107,16 @@ class Parser:
         return root
 
     def parse_iter(self, source: LineSource) -> Iterator[Node]:
+        """Yield top-level block nodes as they are parsed.
+
+        This API is intended for streaming renderers and rejects rule sets that
+        need deferred inline resolution.
+
+        :param source: Markdown source as a string or an iterable of lines.
+        :returns: Iterator of parsed block nodes.
+        :raises StreamingUnsupportedError: If enabled rules require deferred
+            inline transforms.
+        """
         self._assert_streaming_supported()
         state = self._create_block_state(source, defer_inlines=False)
         while not state.done:
@@ -93,6 +125,16 @@ class Parser:
                 yield node
 
     def parse_blocks(self, text: str, parent_state: BlockState) -> list[Node]:
+        """Parse nested block content using a parent parse state.
+
+        Custom block rules should use this helper for nested Markdown content so
+        extension state and deferred inline queues are shared with the enclosing
+        parse.
+
+        :param text: Markdown block content.
+        :param parent_state: Current block state from the outer parse.
+        :returns: Parsed child nodes.
+        """
         state = BlockState(
             text.splitlines(keepends=True),
             store=parent_state.store,
@@ -149,6 +191,16 @@ class Parser:
         )
 
     def parse_inlines(self, text: str, state: BlockState | None = None) -> list[Node]:
+        """Parse inline Markdown into child nodes.
+
+        Custom inline, block, and continuation rules can call this method when
+        they need nested inline parsing.
+
+        :param text: Inline Markdown source.
+        :param state: Current block state, if parsing happens inside a document
+            parse.
+        :returns: Parsed inline nodes.
+        """
         if state is not None and state.defer_inlines:
             pending_nodes: list[Node] = []
             state.pending_inlines.append((pending_nodes, text))
@@ -291,6 +343,15 @@ class Parser:
         return transforms
 
     def is_paragraph_interrupt(self, line: str, state: BlockState | None = None) -> bool:
+        """Return whether a line would interrupt a paragraph.
+
+        Custom block parsing code can use this helper to mirror the parser's
+        paragraph-interruption behavior.
+
+        :param line: Candidate source line.
+        :param state: Current block state, if available.
+        :returns: ``True`` if the line starts an interrupting block.
+        """
         if self._block_openers is None:
             return False
         match = self._block_openers.match(line)

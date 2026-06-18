@@ -45,6 +45,17 @@ FOOTNOTE_DEFINITIONS_KEY = StateKey('wenmode.footnote_definitions', create_footn
 
 
 class Footnote(InlineRule):
+    """Parse footnote references and collect matching definitions.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       A note[^a].
+
+       [^a]: Footnote text.
+    """
+
     order: ClassVar[int] = 50
 
     def __init__(self) -> None:
@@ -66,6 +77,15 @@ class Footnote(InlineRule):
 
 
 class FootnoteDefinition(BlockRule):
+    """Parse footnote definition blocks.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       [^a]: Footnote text.
+    """
+
     def __init__(self) -> None:
         super().__init__('footnote_definition', r'[ \t]{0,3}\[\^')
 

@@ -21,6 +21,17 @@ TASK_MARKER_RE = re.compile(r'^\[([ xX])][ \t]+')
 
 
 class List(BlockRule):
+    """Parse ordered and unordered lists.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       - item
+
+    :param task: Parse GFM task list markers when ``True``.
+    """
+
     def __init__(self, task: bool = False) -> None:
         super().__init__('list', r'[ \t]{0,3}(?:[*+-](?:[ \t]+|$)|\d{1,9}[.)](?:[ \t]+|$))')
         self.task = task

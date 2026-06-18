@@ -18,6 +18,17 @@ FENCE_OPENER_RE = re.compile(r'(?P<indent>[ \t]{0,3})(`{3,}|~{3,})(.*)$')
 
 
 class FencedCode(BlockRule):
+    """Parse fenced code blocks opened by backticks or tildes.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       ```python
+       print(1)
+       ```
+    """
+
     def __init__(self) -> None:
         super().__init__('fenced_code', r'[ \t]{0,3}(?:`{3,}|~{3,})')
 

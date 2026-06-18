@@ -29,6 +29,17 @@ CLOSING_BRACKET_CACHE = StateKey('wenmode.inline.closing_brackets', create_closi
 
 
 class Image(InlineRule):
+    """Parse inline and reference-style images.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       ![alt](/image.png)
+
+    :param references: Enable reference-style images and reference definitions.
+    """
+
     def __init__(self, references: bool = True) -> None:
         super().__init__('image', r'!\[', '!')
         self.references = references
@@ -46,6 +57,17 @@ class Image(InlineRule):
 
 
 class Link(InlineRule):
+    """Parse inline and reference-style links.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       [label](https://example.com)
+
+    :param references: Enable reference-style links and reference definitions.
+    """
+
     def __init__(self, references: bool = True) -> None:
         super().__init__('link', r'\[', '[')
         self.references = references

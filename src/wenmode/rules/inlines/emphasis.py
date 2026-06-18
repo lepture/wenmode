@@ -17,6 +17,15 @@ if TYPE_CHECKING:
 
 
 class Emphasis(InlineRule):
+    """Parse emphasis and strong emphasis delimiters.
+
+    Markdown syntax:
+
+    .. code-block:: markdown
+
+       *emphasis* and **strong**
+    """
+
     def __init__(self) -> None:
         super().__init__('emphasis', r'(?:\*+|_+)')
 
