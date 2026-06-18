@@ -35,10 +35,11 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/lepture/wenmode"
+Homepage = "https://wenmode.lepture.com"
 Repository = "https://github.com/lepture/wenmode"
 Issues = "https://github.com/lepture/wenmode/issues"
 Documentation = "https://wenmode.lepture.com"
+Donate = "https://github.com/sponsors/lepture"
 
 [build-system]
 requires = ["hatchling"]
