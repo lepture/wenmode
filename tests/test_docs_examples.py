@@ -8,6 +8,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 DOC_EXAMPLE_FILES = [
     ROOT / 'README.md',
+    ROOT / 'docs' / 'index.md',
     ROOT / 'docs' / 'usage.md',
     ROOT / 'docs' / 'security.md',
     ROOT / 'docs' / 'recipes.md',

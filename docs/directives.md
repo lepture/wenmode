@@ -1,4 +1,12 @@
+(directives)=
 # Directives
+
+```{rst-class} lead
+Use directive syntax and directive renderers to add structured Markdown
+extensions.
+```
+
+---
 
 Directives are parsed by rules and rendered by optional renderer plugins. These
 are separate steps:

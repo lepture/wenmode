@@ -1,4 +1,12 @@
+(recipes)=
 # Recipes
+
+```{rst-class} lead
+Copy common integration patterns for GFM, tables of contents, heading IDs,
+custom renderers, and AST JSON output.
+```
+
+---
 
 This page collects common tasks that are one step beyond the quick start.
 
@@ -88,7 +96,8 @@ assert root.to_ast()['children'][0]['children'][0] == {
 assert html == '<p>&lt;span&gt;text&lt;/span&gt;</p>\n'
 ```
 
-See [](security.md) for renderer-level escaping and URL sanitization behavior.
+See {ref}`Security <security>` for renderer-level escaping and URL sanitization
+behavior.
 
 ## Generate heading IDs
 

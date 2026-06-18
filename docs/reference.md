@@ -1,4 +1,12 @@
+(reference)=
 # Reference
+
+```{rst-class} lead
+Look up Wenmode's public rules, generated node types, AST shapes, and default
+HTML output.
+```
+
+---
 
 This page lists Wenmode's public rules and the nodes they produce. Each rule is
 opt-in: the parser only recognizes syntax for the rules you enable.
@@ -96,7 +104,7 @@ level 1 or level 2 headings.
 
 ```markdown
 Title
----
+-----
 ```
 
 Output node is `Heading`, and its AST is:
@@ -124,7 +132,7 @@ IDs.
 
 ```markdown
 Hello World
-===
+===========
 ```
 
 ```json
@@ -401,9 +409,9 @@ Option example: use `List(task=True)` to parse GFM task list markers.
 `Table` parses GFM pipe tables.
 
 ```markdown
-| A | B |
+| A    | B    |
 | :--- | ---: |
-| *x* | y |
+| *x*  | y    |
 ```
 
 Output nodes are `Table`, `TableRow`, and `TableCell`, and their AST is:

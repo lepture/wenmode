@@ -1,4 +1,12 @@
+(internals)=
 # Internals
+
+```{rst-class} lead
+Explore Wenmode's node model, parser flow, rule dispatch, root transforms, state,
+and renderer internals.
+```
+
+---
 
 Wenmode is organized around a small set of data objects and dispatch points:
 AST nodes, parser rules, root transforms, parser state, and renderers.

@@ -1,4 +1,12 @@
+(security)=
 # Security
+
+```{rst-class} lead
+Understand Wenmode's default HTML escaping, URL sanitization, and raw HTML
+controls.
+```
+
+---
 
 Wenmode parses Markdown into an AST and then renders that AST. Security behavior
 comes mostly from the renderer you choose and the rules you enable.

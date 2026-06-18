@@ -1,4 +1,12 @@
+(usage)=
 # Usage
+
+```{rst-class} lead
+Learn the main APIs for parsing Markdown, rendering output, and streaming HTML
+chunks.
+```
+
+---
 
 ## Quick start
 
@@ -141,8 +149,8 @@ If unsupported rules are enabled, `stream()` raises `StreamingUnsupportedError`.
 `Wenmode.stream()` returns a synchronous iterator of HTML chunks. Web frameworks
 that accept iterable response bodies can send those chunks directly.
 
-See [](presets.md) for choosing a rule preset, [](security.md) for HTML and URL
-safety behavior, and [](recipes.md) for common integration tasks.
+See {ref}`choosing a rule preset <presets>`, {ref}`HTML and URL safety behavior
+<security>`, and {ref}`common integration tasks <recipes>`.
 
 ### FastAPI
 

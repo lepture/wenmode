@@ -1,4 +1,12 @@
+(custom-rules)=
 # Custom rules
+
+```{rst-class} lead
+Create custom inline, block, continuation, and transform rules for new Markdown
+syntax.
+```
+
+---
 
 Create a custom rule when you want Wenmode to recognize syntax that is not part
 of an existing preset. Custom rules use the same base classes as built-in rules:
@@ -29,6 +37,12 @@ An inline rule inherits from `InlineRule`, defines a regex pattern, and returns
 a node plus the index where parsing should resume.
 
 This example parses `++marked++` as a `Mark` node.
+
+The target Markdown syntax is:
+
+```markdown
+This is ++marked++ text.
+```
 
 ```python
 from __future__ import annotations
@@ -95,6 +109,13 @@ matches the current line, and calls the matched rule's `parse()` method.
 The `parse()` method receives the parser, the current `BlockState`, and the
 matched opener. It must advance `state` when it consumes input.
 
+This example treats a line that starts with `!` as a paragraph after removing
+the marker:
+
+```markdown
+! Pay attention to *this*.
+```
+
 ```python
 from __future__ import annotations
 
@@ -132,6 +153,14 @@ A continuation rule inherits from `ContinueRule` and implements
 `parse_paragraph_continuation()`. It receives the paragraph lines collected so
 far and may return a replacement node. Setext headings and definition lists are
 implemented this way.
+
+This example turns a paragraph followed by a line of `!` markers into a level 6
+heading:
+
+```markdown
+Important title
+!!!
+```
 
 ```python
 from __future__ import annotations
@@ -203,6 +232,14 @@ registers missing required rules when it rebuilds the rule set.
 Parser, rule, and transform instances should not store per-parse mutable state.
 Use `BlockState.store` with a `StateKey` when a rule or transform needs shared
 state for one parse.
+
+This example collects glossary term definitions from block syntax and stores the
+result on the root node:
+
+```markdown
+@term[HTML]: HyperText Markup Language
+@term[AST]: Abstract Syntax Tree
+```
 
 ```python
 from __future__ import annotations

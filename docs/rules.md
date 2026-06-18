@@ -1,4 +1,11 @@
+(rules)=
 # Rules
+
+```{rst-class} lead
+Understand how Wenmode composes Markdown syntax from opt-in parser rules.
+```
+
+---
 
 Rules are opt-in and composable. A parser only recognizes syntax for rules that
 you enable.
@@ -104,4 +111,4 @@ This is useful for rules that need to check whether another feature is enabled
 without assuming a fixed preset.
 
 For the syntax, generated node type, AST shape, and default HTML output of each
-public rule, see [](reference.md).
+public rule, see {ref}`Reference <reference>`.

@@ -1,4 +1,12 @@
+(development)=
 # Development
+
+```{rst-class} lead
+Run Wenmode's local test, lint, type-check, benchmark, and documentation build
+tasks.
+```
+
+---
 
 Wenmode uses `uv` for local development tasks.
 

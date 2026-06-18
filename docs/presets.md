@@ -1,4 +1,12 @@
+(presets)=
 # Presets
+
+```{rst-class} lead
+Choose a ready-made rule set for CommonMark-style Markdown, GitHub-flavored
+Markdown, or streaming output.
+```
+
+---
 
 Presets are lists of rules. Pass one to `Wenmode` or `Parser` to select a
 Markdown dialect.
