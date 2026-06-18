@@ -121,6 +121,9 @@ Benchmark numbers are hardware- and corpus-dependent, so treat them as a local
 comparison rather than a universal ranking. Run the command above in your own
 environment before making performance-sensitive migration decisions.
 
+For benchmark methodology, parser configuration, corpus descriptions, and
+versions, see {ref}`benchmarks`.
+
 ## Common replacements
 
 | Existing behavior | Wenmode replacement |

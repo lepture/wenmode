@@ -54,7 +54,12 @@ the user-facing surface:
 - `usage.md` for high-level API behavior.
 - `presets.md` for ready-made rule sets.
 - `security.md` for renderer escaping, URL handling, and raw HTML behavior.
+- `rule-matrix.md` for rule options, preset membership, and streaming support.
+- `compliance.md` for CommonMark/GFM fixture coverage and known differences.
+- `benchmarks.md` for benchmark methodology, versions, and results.
+- `troubleshooting.md` for common integration failures and fixes.
 - `recipes.md` for copyable integration patterns.
+- `integrations.md` for end-to-end application pipelines.
 - `migration/*.md` for parser-to-Wenmode migration guides.
 - `rules.md` and `custom-rules.md` for parser extension behavior.
 - `references/*.md` for rule syntax, AST shape, and default HTML output.

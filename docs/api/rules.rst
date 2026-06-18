@@ -5,6 +5,9 @@ Rules
 
 .. automodule:: wenmode.rules
 
+For a compact lookup table of preset membership, generated nodes, rule options,
+and streaming compatibility, see :ref:`rule-matrix`.
+
 Rule Base Classes
 -----------------
 

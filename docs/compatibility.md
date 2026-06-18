@@ -16,7 +16,7 @@ may still refine edge-case behavior and smaller public APIs before a stable
 ## Python support
 
 Wenmode supports Python 3.10 and newer. The test matrix and package metadata
-cover Python 3.10, 3.11, 3.12, and 3.13.
+cover Python 3.10, 3.11, 3.12, 3.13, and 3.14.
 
 Documentation tooling currently requires Python 3.11 or newer because the docs
 dependency group follows the supported versions of Sphinx and the selected

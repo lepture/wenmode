@@ -288,6 +288,10 @@ Output node is `Html`, and its AST is:
 Option example: use `RawHtml(disallowed_tags=["span"])` to escape selected
 inline tags during parsing.
 
+Use `RawHtml(comment_style="gfm")` when a custom rule list needs the stricter
+GFM 0.29 inline HTML comment grammar. The default `comment_style="commonmark"`
+matches the CommonMark preset.
+
 ```markdown
 <span>hi</span>
 ```
@@ -412,4 +416,3 @@ Output node is `Break`, and its AST is:
   ]
 }
 ```
-

@@ -108,6 +108,21 @@ For trusted Markdown, `HTMLRenderer(escape=False)` can preserve raw HTML output.
 Use it only when the source is controlled by your application or has already
 passed through an HTML sanitizer.
 
+## Security profiles
+
+Use the narrowest profile that matches the source of the Markdown.
+
+| Scenario | Parser rules | Renderer | Notes |
+| --- | --- | --- | --- |
+| Public comments, issue text, chat, or profile Markdown | default `Wenmode()` or a preset without extra raw HTML rules | `HTMLRenderer()` | Escapes raw HTML and removes unsafe URL attributes. |
+| Product docs written by trusted maintainers | `commonmark` or `github` | `HTMLRenderer(escape=False)` only if raw HTML is intentional | Keep an HTML sanitizer in the publishing pipeline if authors can paste arbitrary HTML. |
+| CMS content sanitized before rendering | rules that match the CMS dialect | `HTMLRenderer(escape=False, sanitize_urls=False)` only after upstream validation | Wenmode will not re-sanitize trusted HTML or URLs in this mode. |
+| Plain-text-only Markdown fields | custom rule list without `HtmlBlock` and `RawHtml` | `HTMLRenderer()` | Raw HTML syntax stays as text in the AST and renders escaped. |
+| Streaming untrusted Markdown | `streaming` preset | `HTMLRenderer()` | Direct links work, reference-style links stay as text, unsafe URLs are sanitized. |
+
+For untrusted content, avoid `escape=False` and `sanitize_urls=False` unless a
+separate sanitizer or policy check has already accepted the HTML and URLs.
+
 ## Disallowed HTML tags
 
 The `github` preset configures HTML block and inline HTML handling with GitHub's
@@ -123,7 +138,7 @@ text = '''
 <script>alert(1)</script>
 '''
 expected = '''
-&lt;script>alert(1)&lt;/script>
+&lt;script&gt;alert(1)&lt;/script&gt;
 '''
 
 html = wenmode.render(text)

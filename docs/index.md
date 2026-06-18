@@ -115,9 +115,12 @@ assert html == expected.lstrip()
 | Choose CommonMark, GFM, streaming, or a custom dialect | {doc}`Presets <presets>` |
 | Render user-authored Markdown safely | {doc}`Security <security>` |
 | Add a table of contents, heading IDs, or a custom renderer | {doc}`Recipes <recipes>` |
+| Build application pipelines around Wenmode | {doc}`Integrations <integrations>` |
+| Troubleshoot escaping, directives, streaming, or custom renderers | {doc}`Troubleshooting <troubleshooting>` |
 | Migrate from another Markdown parser | {doc}`Migration guides <migration/index>` |
+| Review benchmark methodology and results | {doc}`Benchmarks <benchmarks>` |
 | Build new syntax rules | {doc}`Custom rules <custom-rules>` |
-| Check implementation status and compatibility | {doc}`Compatibility <compatibility>` |
+| Check compatibility, compliance, and project status | {doc}`Compatibility <compatibility>` and {doc}`Compliance <compliance>` |
 
 ```{toctree}
 :caption: User Guide
@@ -128,9 +131,13 @@ usage
 presets
 security
 compatibility
+compliance
+benchmarks
 recipes
+integrations
 migration/index
 directives
+troubleshooting
 ```
 
 ```{toctree}
@@ -139,6 +146,7 @@ directives
 :maxdepth: 2
 
 rules
+rule-matrix
 custom-rules
 internals
 references/index

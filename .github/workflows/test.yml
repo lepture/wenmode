@@ -55,6 +55,7 @@ jobs:
           - "3.11"
           - "3.12"
           - "3.13"
+          - "3.14"
 
     steps:
       - uses: actions/checkout@v6
@@ -73,7 +74,7 @@ jobs:
         run: uv run --group test pytest --cov=wenmode --cov-report=xml
 
       - name: Upload coverage to GitHub
-        if: ${{ matrix.python-version == '3.13' }}
+        if: ${{ matrix.python-version == '3.14' }}
         uses: actions/upload-code-coverage@v1
         with:
           file: coverage.xml
