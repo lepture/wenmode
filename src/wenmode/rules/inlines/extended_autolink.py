@@ -96,11 +96,15 @@ class ExtendedAutolink(InlineRule):
 
 
 def trim_trailing_punctuation(value: str) -> str:
-    while value and value[-1] in TRAILING_PUNCTUATION:
-        value = value[:-1]
+    value = value.rstrip(TRAILING_PUNCTUATION)
 
-    while value.endswith(')') and value.count(')') > value.count('('):
-        value = value[:-1]
+    extra_closing_parens = value.count(')') - value.count('(')
+    if extra_closing_parens > 0:
+        end = len(value)
+        while extra_closing_parens > 0 and end > 0 and value[end - 1] == ')':
+            end -= 1
+            extra_closing_parens -= 1
+        value = value[:end]
 
     return value
 
@@ -148,9 +152,7 @@ def trim_xmpp(value: str) -> str:
 
 
 def trim_scheme_email_suffix(value: str) -> str:
-    while value.endswith(('/', '?', '!', '.', ',', ':', '*', '~')):
-        value = value[:-1]
-    return value
+    return value.rstrip('/?!.,:*~')
 
 
 def is_email(value: str) -> bool:

@@ -24,7 +24,7 @@ from wenmode.rules.directives import (
 )
 from wenmode.rules.footnotes import collect_definition_lines, collect_footnote_definitions, has_later_continuation
 from wenmode.rules.footnotes import strip_indent as strip_footnote_indent
-from wenmode.rules.inlines.directive import parse_role
+from wenmode.rules.inlines.directive import build_directive_bracket_pairs, parse_role, parse_text_directive_head
 from wenmode.rules.references import (
     parse_multiline_label_reference,
     parse_multiline_reference_title,
@@ -73,6 +73,9 @@ def test_directive_parsing_helpers_and_invalid_inline_directives(monkeypatch: py
     assert parse_directive_head('name{unterminated') is None
     assert find_balanced(r'[a\[b]', 0, '[', ']') == 5
     assert find_balanced('[a[b]c]', 0, '[', ']') == 6
+    assert build_directive_bracket_pairs(r':name[a\[b]{#id}') == ({5: 10}, {11: 15})
+    assert parse_text_directive_head(r':name[a\[b]{#id}', 1, BlockState([])) == ('name', r'a\[b', {'id': 'id'}, 16)
+    assert parse_text_directive_head(':name[unterminated', 1, BlockState([])) is None
     assert parse_attributes("#id .one..two key='a\\'b' empty =bad") == {
         'id': 'id',
         'key': "a'b",

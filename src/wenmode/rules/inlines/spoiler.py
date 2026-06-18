@@ -24,9 +24,44 @@ class InlineSpoiler(InlineRule):
     """
 
     def __init__(self) -> None:
-        super().__init__('inline_spoiler', r'>!\s*(?P<spoiler_text>.+?)\s*!<', '>')
+        super().__init__('inline_spoiler', r'>!', '>')
 
     def parse(
         self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
     ) -> tuple[Node | None, int]:
-        return InlineSpoilerNode(children=parser.parse_inlines(match.group('spoiler_text'), state)), match.end()
+        parsed = parse_spoiler_span(text, match.start())
+        if parsed is None:
+            return None, match.start()
+
+        spoiler_text, end = parsed
+        return InlineSpoilerNode(children=parser.parse_inlines(spoiler_text, state)), end
+
+
+def parse_spoiler_span(text: str, start: int) -> tuple[str, int] | None:
+    content_start = start + 2
+    close = text.find('!<', content_start)
+    while close != -1:
+        spoiler_text = trim_spoiler_text(text[content_start:close])
+        if spoiler_text is not None:
+            return spoiler_text, close + 2
+        close = text.find('!<', close + 2)
+    return None
+
+
+def trim_spoiler_text(text: str) -> str | None:
+    start = 0
+    while start < len(text) and text[start].isspace():
+        start += 1
+
+    end = len(text)
+    while end > start and text[end - 1].isspace():
+        end -= 1
+
+    if end > start:
+        value = text[start:end]
+        return None if '\n' in value else value
+
+    for char in reversed(text):
+        if char != '\n':
+            return char
+    return None

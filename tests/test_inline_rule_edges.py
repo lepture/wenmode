@@ -28,7 +28,12 @@ from wenmode.rules.inlines.emphasis import (
     parse_emphasis_sequence,
     process_delimiters,
 )
-from wenmode.rules.inlines.extended_autolink import trim_mailto_or_xmpp, trim_xmpp
+from wenmode.rules.inlines.extended_autolink import (
+    trim_mailto_or_xmpp,
+    trim_scheme_email_suffix,
+    trim_trailing_punctuation,
+    trim_xmpp,
+)
 from wenmode.rules.inlines.link import (
     build_closing_bracket_map,
     closing_bracket_cache,
@@ -46,6 +51,7 @@ from wenmode.rules.inlines.link import (
 from wenmode.rules.inlines.link import plain_text as link_plain_text
 from wenmode.rules.inlines.math import find_closing_dollar
 from wenmode.rules.inlines.ruby import parse_ruby_link, parse_ruby_segments
+from wenmode.rules.inlines.spoiler import parse_spoiler_span
 from wenmode.rules.inlines.strikethrough import find_closing_marker
 from wenmode.state import BlockState
 
@@ -160,9 +166,19 @@ def test_ruby_strikethrough_autolink_and_emphasis_edge_branches(monkeypatch: pyt
     assert autolink.search_email('xx@example.com', 1) is None
     assert autolink.search_email('x@example.com-', 0) is None
     assert autolink.search('x@example.com') is not None
+    assert trim_trailing_punctuation('https://example.com/a).') == 'https://example.com/a'
+    assert trim_trailing_punctuation('https://example.com/(a))') == 'https://example.com/(a)'
+    assert trim_scheme_email_suffix('x@example.com/?!.,:*~') == 'x@example.com'
     assert trim_mailto_or_xmpp('https://example.com') == 'https://example.com'
     assert trim_xmpp('xmpp:x@example.com-') == ''
     assert trim_xmpp('xmpp:not-email/path') == ''
+
+    assert parse_spoiler_span('>! hidden !<', 0) == ('hidden', 12)
+    assert parse_spoiler_span('>!!<', 0) is None
+    assert parse_spoiler_span('>!   !<', 0) == (' ', 7)
+    assert parse_spoiler_span('>!!<a!<', 0) == ('!<a', 7)
+    assert parse_spoiler_span('>!a\n !<', 0) == ('a', 7)
+    assert parse_spoiler_span('>!a\nb!<', 0) is None
 
     assert Emphasis().parse(Parser([]), '*', re.match(r'\*', '*')) == (None, 0)  # type: ignore[arg-type]
     assert parse_emphasis_sequence([Text(value='**a*')]) == [

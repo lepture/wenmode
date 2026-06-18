@@ -16,7 +16,6 @@ if TYPE_CHECKING:
     from wenmode.parser import Parser
 
 
-LEAF_DIRECTIVE_RE = re.compile(r'[ \t]{0,3}::(?=[A-Za-z])(.+?)[ \t]*$')
 CONTAINER_DIRECTIVE_RE = re.compile(r'(?P<indent>[ \t]{0,3})(?P<fence>:{3,})(?P<head>.*)$')
 FENCED_DIRECTIVE_RE = re.compile(
     r'(?P<indent>[ \t]{0,3})(?P<fence>`{3,}|~{3,})\{(?P<name>[A-Za-z][A-Za-z0-9_-]*)}(?P<title>.*)$'
@@ -39,15 +38,15 @@ class LeafDirective(BlockRule):
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
         line = state.line.rstrip('\r\n')
-        leaf = LEAF_DIRECTIVE_RE.match(line)
-        if leaf is None:
+        head = parse_leaf_directive_head(line)
+        if head is None:
             return None
 
-        parsed = parse_directive_head(leaf.group(1), 0)
+        parsed = parse_directive_head(head, 0)
         if parsed is None:
             return None
         name, label, attributes, end = parsed
-        if leaf.group(1)[end:].strip():
+        if head[end:].strip():
             return None
 
         state.advance()
@@ -144,6 +143,19 @@ def directive_label_children(parser: Parser, label: str | None, state: BlockStat
     if label is None:
         return []
     return [Paragraph(children=parser.parse_inlines(label, state), data={'directiveLabel': True})]
+
+
+def parse_leaf_directive_head(line: str) -> str | None:
+    index = 0
+    while index < len(line) and index < 3 and line[index] in {' ', '\t'}:
+        index += 1
+    if not line.startswith('::', index):
+        return None
+
+    head = line[index + 2 :]
+    if not head or not head[0].isalpha() or not head[0].isascii():
+        return None
+    return head.rstrip(' \t')
 
 
 def parse_option_line(line: str) -> tuple[str, str] | None:

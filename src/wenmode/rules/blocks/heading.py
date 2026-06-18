@@ -16,7 +16,6 @@ if TYPE_CHECKING:
     from wenmode.parser import Parser
 
 
-ATX_HEADING_RE = re.compile(r'[ \t]{0,3}(#{1,6})(?:[ \t]+|$)(.*?)(?:[ \t]+#+[ \t]*)?$')
 SETEXT_HEADING_RE = re.compile(r'[ \t]{0,3}(=+|-+)[ \t]*$')
 
 
@@ -69,12 +68,12 @@ class AtxHeading(BlockRule):
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Heading:
         line = state.line.rstrip('\r\n')
-        heading = ATX_HEADING_RE.match(line)
-        if heading is None:
+        parsed = parse_atx_heading_line(line)
+        if parsed is None:
             state.advance()
             return Heading(children=[])
 
-        marker, content = heading.groups()
+        marker, content = parsed
         if content.strip('#').strip() == '':
             content = ''
         state.advance()
@@ -102,9 +101,7 @@ class SetextHeading(ContinueRule):
         stripped = line.lstrip(' \t')
         return stripped.startswith(('=', '-'))
 
-    def parse_paragraph_continuation(
-        self, parser: Parser, state: BlockState, lines: list[str]
-    ) -> Node | None:
+    def parse_paragraph_continuation(self, parser: Parser, state: BlockState, lines: list[str]) -> Node | None:
         marker = SETEXT_HEADING_RE.match(state.line)
         if marker is None:
             return None
@@ -113,3 +110,39 @@ class SetextHeading(ContinueRule):
         depth = 1 if marker.group(1).startswith('=') else 2
         text = ''.join(lines).strip()
         return Heading(depth=depth, children=parser.parse_inlines(text, state))
+
+
+def parse_atx_heading_line(line: str) -> tuple[str, str] | None:
+    index = 0
+    while index < len(line) and index < 3 and line[index] in {' ', '\t'}:
+        index += 1
+
+    marker_start = index
+    while index < len(line) and line[index] == '#' and index - marker_start < 6:
+        index += 1
+    if index == marker_start:
+        return None
+    if index < len(line) and line[index] not in {' ', '\t'}:
+        return None
+
+    marker = line[marker_start:index]
+    while index < len(line) and line[index] in {' ', '\t'}:
+        index += 1
+    return marker, strip_atx_closing_sequence(line[index:])
+
+
+def strip_atx_closing_sequence(content: str) -> str:
+    end = len(content)
+    while end > 0 and content[end - 1] in {' ', '\t'}:
+        end -= 1
+
+    marker_start = end
+    while marker_start > 0 and content[marker_start - 1] == '#':
+        marker_start -= 1
+    if marker_start == end or marker_start == 0 or content[marker_start - 1] not in {' ', '\t'}:
+        return content
+
+    content_end = marker_start - 1
+    while content_end > 0 and content[content_end - 1] in {' ', '\t'}:
+        content_end -= 1
+    return content[:content_end]

@@ -55,7 +55,7 @@ def parse_attributes(text: str) -> dict[str, str]:
     classes: list[str] = []
 
     for token in tokenize_attributes(text):
-        if token.startswith('#') or token.startswith('.'):
+        if token.startswith(('#', '.')):
             parse_shortcuts(token, attributes, classes)
             continue
 
