@@ -13,6 +13,8 @@ here while preparing a release, then move them under the final version heading.
 
 ## 0.1.0
 
+Released **Jun 18, 2026**.
+
 Initial beta release.
 
 - CommonMark-style parser and HTML renderer.
