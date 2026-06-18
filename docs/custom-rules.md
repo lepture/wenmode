@@ -357,12 +357,11 @@ import re
 from typing import TYPE_CHECKING
 
 from wenmode.nodes import Node, Root
-from wenmode.rules import BlockRule, Rule
+from wenmode.rules import BlockRule, RootTransform, Rule
 from wenmode.state import BlockState, StateKey
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
-    from wenmode.rules import RootTransform
 
 
 TERMS = StateKey('my_package.terms', lambda: {})
@@ -389,13 +388,9 @@ class TermDefinition(BlockRule):
         return None
 
 
-class GlossaryTransform:
+class GlossaryTransform(RootTransform):
     name = 'glossary'
-    defer_inlines = False
     required_rules = [TermDefinition]
-
-    def prepare(self, parser: Parser, root: Root, state: BlockState) -> None:
-        pass
 
     def transform(self, parser: Parser, root: Root, state: BlockState) -> None:
         root.data = {'terms': dict(state.store.get(TERMS))}
@@ -406,17 +401,21 @@ Each top-level parse gets a fresh store. Nested block parsing shares the same
 store, so definitions inside block quotes, lists, directives, or footnotes are
 visible to document-level transforms.
 
-Root transforms follow the `RootTransform` protocol. Custom transforms do not
-need to inherit from it; use the protocol for type annotations when you want
-type checkers to validate the transform shape. Each transform must provide:
+Root transforms inherit from the `RootTransform` base class. The base provides
+no-op `prepare()` and `transform()` methods plus default `defer_inlines` and
+`required_rules` values, so subclasses only need to override the parts they use.
+A transform must set:
 
 - `name`, used for deduplication when multiple rules attach the same transform.
-- `required_rules`, a sequence of rule classes or configured rule instances to
+
+Subclasses can also configure:
+
+- `required_rules`, when it needs rule classes or configured rule instances to
   auto-register.
-- `defer_inlines`, which tells the parser whether inline parsing must wait
-  until after `prepare()`.
-- `prepare(parser, root, state)`, run after block parsing.
-- `transform(parser, root, state)`, run after deferred inline parsing is
+- `defer_inlines = True`, when inline parsing must wait until after
+  `prepare()`.
+- `prepare(parser, root, state)`, when it needs to run after block parsing.
+- `transform(parser, root, state)`, when it needs to run after deferred inline parsing is
   resolved.
 
 Set `defer_inlines = True` only when inline rules need document-wide state
