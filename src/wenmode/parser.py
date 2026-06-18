@@ -359,9 +359,7 @@ class Parser:
             return False
         if self._container_depth_exceeded(match, state):
             return False
-        if match.lastgroup == 'reference_definition':
-            return False
-        if match.lastgroup == 'table':
+        if match.lastgroup in {'reference_definition', 'table'}:
             return False
         if match.lastgroup == 'list':
             marker = LIST_MARKER_RE.match(line.rstrip('\r\n'))
