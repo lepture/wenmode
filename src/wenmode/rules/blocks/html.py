@@ -121,6 +121,8 @@ class HtmlBlock(BlockRule):
                     state.advance()
                     break
                 state.advance()
+            if HTML_SCRIPT_STYLE_RE.match(stripped):
+                return Html(value=''.join(lines))
             return self.html_node(''.join(lines))
 
         if is_html_block_tag(stripped) or is_complete_html_tag(stripped):

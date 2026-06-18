@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 from urllib.parse import quote
 
 from wenmode.nodes import Html, Link, Node, Text
@@ -22,7 +22,14 @@ HTML_OPEN_TAG_RE = (
 )
 HTML_CLOSE_TAG_RE = r'</[A-Za-z][A-Za-z0-9-]*\s*>'
 HTML_TAG_RE = rf'(?:{HTML_OPEN_TAG_RE}|{HTML_CLOSE_TAG_RE})'
-HTML_RE = rf'<!--(?!>|->)[\s\S]*?-->|<!---?>|<\?.*?\?>|<![A-Z]+[^>]*>|<!\[CDATA\[.*?\]\]>|{HTML_TAG_RE}'
+COMMONMARK_HTML_COMMENT_RE = r'<!-->|<!--->|<!--[\s\S]*?-->'
+GFM_HTML_COMMENT_RE = r'<!--(?!>|->)(?:(?!--)[\s\S])*?(?<!-)-->'
+HTML_COMMENT_RE = GFM_HTML_COMMENT_RE
+HTML_RE = rf'{HTML_COMMENT_RE}|<\?.*?\?>|<![A-Z]+[^>]*>|<!\[CDATA\[.*?\]\]>|{HTML_TAG_RE}'
+HTML_COMMENT_STYLE_RE = {
+    'commonmark': COMMONMARK_HTML_COMMENT_RE,
+    'gfm': GFM_HTML_COMMENT_RE,
+}
 
 
 class Autolink(InlineRule):
@@ -60,11 +67,20 @@ class RawHtml(InlineRule):
 
     :param disallowed_tags: HTML tag names that should be escaped during
         parsing.
+    :param comment_style: ``"commonmark"`` uses CommonMark 0.31-style inline
+        comments. ``"gfm"`` uses the stricter GFM 0.29 comment grammar.
     """
 
-    def __init__(self, disallowed_tags: Sequence[str] = ()) -> None:
-        super().__init__('raw_html', HTML_RE, '<')
+    def __init__(
+        self,
+        disallowed_tags: Sequence[str] = (),
+        comment_style: Literal['commonmark', 'gfm'] = 'commonmark',
+    ) -> None:
+        comment_re = HTML_COMMENT_STYLE_RE[comment_style]
+        html_re = rf'{comment_re}|<\?.*?\?>|<![A-Z]+[^>]*>|<!\[CDATA\[.*?\]\]>|{HTML_TAG_RE}'
+        super().__init__('raw_html', html_re, '<')
         self.disallowed_html_filter = compile_disallowed_html_filter(disallowed_tags)
+        self.comment_style = comment_style
 
     def parse(
         self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None

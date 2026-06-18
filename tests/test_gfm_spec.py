@@ -19,21 +19,8 @@ class GFMExample(TypedDict):
 
 SPEC_PATH = Path(__file__).parent / 'fixtures' / 'gfm-0.29.json'
 SKIPPED_EXAMPLES = {
-    140: 'configured tagfilter currently applies to earlier HTML block examples',
-    141: 'configured tagfilter currently applies to earlier HTML block examples',
-    142: 'configured tagfilter currently applies to earlier HTML block examples',
-    145: 'configured tagfilter currently applies to earlier HTML block examples',
-    147: 'configured tagfilter currently applies to earlier HTML block examples',
-    611: 'extended autolinks currently link inside invalid angle autolinks',
-    617: 'extended autolinks currently link inside invalid angle autolinks',
     620: 'extended autolinks are enabled in the GITHUB preset',
     621: 'extended autolinks are enabled in the GITHUB preset',
-    627: 'extended autolink entity boundary handling is incomplete',
-    632: 'extended email autolink trailing hyphen/underscore handling is incomplete',
-    633: 'mailto/xmpp extended autolink path boundary handling is incomplete',
-    635: 'xmpp extended autolink path boundary handling is incomplete',
-    649: 'invalid HTML comment detection is incomplete',
-    650: 'invalid HTML comment detection is incomplete',
 }
 
 

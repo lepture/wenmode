@@ -10,7 +10,16 @@ from wenmode.headings import Slugger, add_heading_ids, plain_text
 from wenmode.nodes import FootnoteReference, Heading, Image, Node, Root, Text
 from wenmode.parser import contains_emphasis_marker, merge_text
 from wenmode.renderers import BaseRenderer, DirectiveHtmlRenderer, RenderContext
-from wenmode.rules import AtxHeading, BlockRule, ContinueRule, HtmlBlock, InlineRule, ReferenceDefinition, RootTransform
+from wenmode.rules import (
+    AtxHeading,
+    BlockRule,
+    ContinueRule,
+    HtmlBlock,
+    InlineRule,
+    RawHtml,
+    ReferenceDefinition,
+    RootTransform,
+)
 from wenmode.rules import Link as LinkRule
 from wenmode.rules import List as ListRule
 from wenmode.rules.blocks.heading import resolve_heading_id_transform
@@ -85,6 +94,25 @@ def test_base_rule_methods_and_wenmode_edges() -> None:
 
     with pytest.raises(TypeError):
         Wenmode(renderer=MarkdownRenderer()).register_directive_renderer(Figure())
+
+
+def test_raw_html_comment_styles() -> None:
+    commonmark = Parser([RawHtml])
+    gfm = Parser([RawHtml(comment_style='gfm')])
+    renderer = HTMLRenderer(escape=False, sanitize_urls=False)
+
+    assert (
+        renderer.render(commonmark.parse('foo <!-- this is a --\ncomment - with hyphens -->\n'))
+        == '<p>foo <!-- this is a --\ncomment - with hyphens --></p>\n'
+    )
+    assert renderer.render(commonmark.parse('foo <!--> foo -->\n')) == '<p>foo <!--> foo --&gt;</p>\n'
+    assert renderer.render(commonmark.parse('foo <!---> foo -->\n')) == '<p>foo <!---> foo --&gt;</p>\n'
+
+    assert (
+        renderer.render(gfm.parse('foo <!-- not a comment -- two hyphens -->\n'))
+        == '<p>foo &lt;!-- not a comment -- two hyphens --&gt;</p>\n'
+    )
+    assert renderer.render(gfm.parse('foo <!--> foo -->\n')) == '<p>foo &lt;!--&gt; foo --&gt;</p>\n'
 
 
 def test_heading_and_toc_helper_edges() -> None:

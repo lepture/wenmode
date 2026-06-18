@@ -88,7 +88,7 @@ github = [
     Blockquote,
     HardBreak,
     Autolink,
-    RawHtml(disallowed_tags=GFM_DISALLOWED_HTML_TAGS),
+    RawHtml(disallowed_tags=GFM_DISALLOWED_HTML_TAGS, comment_style='gfm'),
     BackslashEscape,
     CharacterReference,
     Footnote,

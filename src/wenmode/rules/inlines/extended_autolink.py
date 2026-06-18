@@ -25,6 +25,7 @@ EXTENDED_AUTOLINK_RE = (
 TRAILING_PUNCTUATION = '?!.,:*_~'
 URL_PREFIXES = ('http://', 'https://', 'mailto:', 'xmpp:', 'www.')
 EMAIL_LOCAL_CHARS = frozenset("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.!#$%&'*+/=?^_`{|}~-")
+ENTITY_SUFFIX_RE = re.compile(r'&[A-Za-z][A-Za-z0-9]*;$')
 EMAIL_RE = re.compile(
     r"(?i)[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+"
 )
@@ -56,7 +57,7 @@ class ExtendedAutolink(InlineRule):
         lower_text = text.lower()
         start = find_url_prefix(lower_text, pos)
         while start is not None:
-            match = self.compiled.match(text, start) if is_autolink_boundary(text, start) else None
+            match = self.compiled.match(text, start) if is_url_boundary(text, start) else None
             if match is not None:
                 return match
             start = find_url_prefix(lower_text, start + 1)
@@ -68,7 +69,7 @@ class ExtendedAutolink(InlineRule):
             start = email_start(text, cursor)
             if start >= pos and is_email_boundary(text, start):
                 match = self.compiled.match(text, start)
-                if match is not None:
+                if match is not None and is_valid_bare_email_match(text, match):
                     return match
             cursor = text.find('@', cursor + 1)
         return None
@@ -77,7 +78,11 @@ class ExtendedAutolink(InlineRule):
         self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
     ) -> tuple[Node | None, int]:
         value = match.group(0)
-        value = trim_trailing_punctuation(value)
+        if is_mailto_or_xmpp(value):
+            value = trim_mailto_or_xmpp(value)
+        else:
+            value = trim_trailing_punctuation(value)
+            value = trim_entity_suffix(value)
         if not value:
             return None, match.start()
 
@@ -100,6 +105,54 @@ def trim_trailing_punctuation(value: str) -> str:
     return value
 
 
+def trim_entity_suffix(value: str) -> str:
+    return ENTITY_SUFFIX_RE.sub('', value)
+
+
+def trim_mailto_or_xmpp(value: str) -> str:
+    lower = value.lower()
+    if lower.startswith('mailto:'):
+        return trim_mailto(value)
+    if lower.startswith('xmpp:'):
+        return trim_xmpp(value)
+    return value
+
+
+def is_mailto_or_xmpp(value: str) -> bool:
+    lower = value.lower()
+    return lower.startswith(('mailto:', 'xmpp:'))
+
+
+def trim_mailto(value: str) -> str:
+    prefix = value[:7]
+    address = trim_scheme_email_suffix(value[7:])
+    if address.endswith(('-', '_')) or not is_email(address):
+        return ''
+    return prefix + address
+
+
+def trim_xmpp(value: str) -> str:
+    prefix = value[:5]
+    body = value[5:]
+    if '/' in body:
+        address, path = body.split('/', 1)
+        segment = path.split('/', 1)[0]
+        body = address + ('/' + segment if segment else '')
+    body = trim_scheme_email_suffix(body)
+    if body.endswith(('-', '_')):
+        return ''
+    address = body.split('/', 1)[0]
+    if not is_email(address):
+        return ''
+    return prefix + body
+
+
+def trim_scheme_email_suffix(value: str) -> str:
+    while value.endswith(('/', '?', '!', '.', ',', ':', '*', '~')):
+        value = value[:-1]
+    return value
+
+
 def is_email(value: str) -> bool:
     return EMAIL_RE.fullmatch(value) is not None
 
@@ -115,8 +168,22 @@ def is_email_boundary(text: str, start: int) -> bool:
     return is_autolink_boundary(text, start)
 
 
+def is_url_boundary(text: str, start: int) -> bool:
+    return is_autolink_boundary(text, start) and not is_inside_angle_span(text, start)
+
+
 def is_autolink_boundary(text: str, start: int) -> bool:
     return start == 0 or not (text[start - 1].isalnum() or text[start - 1] == '@')
+
+
+def is_inside_angle_span(text: str, start: int) -> bool:
+    opener = text.rfind('<', 0, start)
+    closer = text.rfind('>', 0, start)
+    return opener > closer and '>' in text[start:]
+
+
+def is_valid_bare_email_match(text: str, match: re.Match[str]) -> bool:
+    return match.end() >= len(text) or text[match.end()] not in {'-', '_'}
 
 
 def find_url_prefix(lower_text: str, pos: int) -> int | None:

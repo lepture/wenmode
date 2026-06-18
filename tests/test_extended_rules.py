@@ -212,8 +212,8 @@ def test_footnote_identifiers_disallow_spaces() -> None:
 
 
 def test_github_disallowed_html_is_not_double_escaped() -> None:
-    markdown = '<script>alert(1)</script>\n'
+    markdown = 'a <script>alert(1)</script>\n'
     root = Parser(github).parse(markdown)
 
-    assert root.children[0].data == {'escaped': True}
-    assert HTMLRenderer().render(root) == '&lt;script>alert(1)&lt;/script>\n'
+    assert root.children[0].children[1].data == {'escaped': True}
+    assert HTMLRenderer().render(root) == '<p>a &lt;script>alert(1)&lt;/script></p>\n'
