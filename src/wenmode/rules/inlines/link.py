@@ -86,10 +86,6 @@ class Link(InlineRule):
         return LinkNode(url=url, title=title, children=parser.parse_inlines(label, state)), end
 
 
-def normalize_optional_text(value: str | None) -> str | None:
-    return normalize_label_text(value) if value is not None else None
-
-
 def parse_link_or_image(
     parser: Parser, text: str, start: int, image: bool, state: BlockState | None, references: bool = True
 ) -> tuple[str, str, str | None, int] | None:

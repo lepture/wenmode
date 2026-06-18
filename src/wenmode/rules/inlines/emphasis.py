@@ -209,15 +209,6 @@ def can_match_delimiters(opener: Delimiter, closer: Delimiter) -> bool:
     return True
 
 
-def find_closing_delimiter(text: str, marker: str, start: int) -> int:
-    index = text.find(marker, start)
-    while index != -1:
-        if not is_inside_code_span(text, index) and can_close(text, index, len(marker), marker[0]):
-            return index
-        index = text.find(marker, index + 1)
-    return -1
-
-
 def can_open(text: str, start: int, size: int, marker: str) -> bool:
     previous = text[start - 1] if start > 0 else '\n'
     next_char = text[start + size] if start + size < len(text) else '\n'
@@ -244,25 +235,3 @@ def can_close(text: str, start: int, size: int, marker: str) -> bool:
 
 def is_punctuation(char: str) -> bool:
     return not char.isspace() and not char.isalnum()
-
-
-def is_inside_code_span(text: str, position: int) -> bool:
-    index = 0
-    while index < position:
-        if text[index] != '`':
-            index += 1
-            continue
-        marker_end = index
-        while marker_end < len(text) and text[marker_end] == '`':
-            marker_end += 1
-        marker = text[index:marker_end]
-        closer = re.search(rf'(?<!`){re.escape(marker)}(?!`)', text[marker_end:])
-        if closer is None:
-            index = marker_end
-            continue
-        closer_start = marker_end + closer.start()
-        closer_end = closer_start + len(marker)
-        if index < position < closer_end:
-            return True
-        index = closer_end
-    return False
