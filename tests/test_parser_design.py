@@ -16,6 +16,7 @@ from wenmode.rules import (
     FencedCode,
     Footnote,
     Image,
+    InlineCode,
     Link,
     List,
     RootTransform,
@@ -244,6 +245,50 @@ def test_link_and_image_can_disable_references() -> None:
     )
     assert app.render('[x]: /url\n\n[x]\n\n![x]\n') == '<p>[x]: /url</p>\n<p>[x]</p>\n<p>![x]</p>\n'
     assert 'reference_definition' not in app.parser.rules
+
+
+def test_parse_inlines_without_document_state_handles_link_brackets() -> None:
+    assert [node.to_ast() for node in Parser([Link]).parse_inlines('[a \\] b](/url)')] == [
+        {
+            'type': 'link',
+            'children': [{'type': 'text', 'value': 'a \\] b'}],
+            'url': '/url',
+        }
+    ]
+    assert [node.to_ast() for node in Parser([Link, InlineCode]).parse_inlines('[a `[b]` c](/url)')] == [
+        {
+            'type': 'link',
+            'children': [
+                {'type': 'text', 'value': 'a '},
+                {'type': 'inlineCode', 'value': '[b]'},
+                {'type': 'text', 'value': ' c'},
+            ],
+            'url': '/url',
+        }
+    ]
+    assert [node.to_ast() for node in Parser([Link]).parse_inlines('[a <https://e.test/[x]> c](/url)')] == [
+        {
+            'type': 'link',
+            'children': [{'type': 'text', 'value': 'a <https://e.test/[x]> c'}],
+            'url': '/url',
+        }
+    ]
+    assert [node.to_ast() for node in Parser([Link]).parse_inlines('[a [b]](/url)')] == [
+        {
+            'type': 'link',
+            'children': [{'type': 'text', 'value': 'a [b]'}],
+            'url': '/url',
+        }
+    ]
+    assert [node.to_ast() for node in Parser([Link]).parse_inlines('[a [b](/url')] == [
+        {'type': 'text', 'value': '[a [b](/url'}
+    ]
+
+
+def test_parse_inlines_without_document_state_leaves_footnote_reference_text() -> None:
+    assert [node.to_ast() for node in Parser([Footnote]).parse_inlines('[^x]')] == [
+        {'type': 'text', 'value': '[^x]'}
+    ]
 
 
 def test_streaming_preset_disables_references() -> None:

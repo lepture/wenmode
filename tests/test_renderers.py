@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TypedDict
 
@@ -8,6 +9,8 @@ import pytest
 
 from wenmode import HTMLRenderer, MarkdownRenderer, RSTRenderer, Wenmode
 from wenmode.directives import Admonition, Details, Figure, TableOfContents
+from wenmode.nodes import Literal, Paragraph, Parent, Text
+from wenmode.renderers import BaseRenderer, RenderContext
 from wenmode.rules import (
     Abbreviation,
     AtxHeading,
@@ -138,6 +141,25 @@ HTML_DIRECTIVES = {
 DEFAULT_HTML_DIRECTIVES = ['admonition', 'details', 'figure', 'toc']
 
 
+@dataclass
+class CustomLiteral(Literal):
+    type: str = 'customLiteral'
+
+
+@dataclass
+class CustomParent(Parent):
+    type: str = 'customParent'
+
+
+@dataclass
+class CustomElement(Parent):
+    type: str = 'customElement'
+
+
+class CustomRenderer(BaseRenderer):
+    pass
+
+
 class RendererExample(TypedDict, total=False):
     name: str
     input: str
@@ -186,3 +208,43 @@ def test_renderer_examples(example: RendererExample) -> None:
     assert html == example['html']
     assert markdown == example['markdown']
     assert rst == example['rst']
+
+
+def test_renderer_registers_custom_node_handler() -> None:
+    @CustomRenderer.register('customLiteral')
+    def render_custom_literal(renderer: CustomRenderer, node: CustomLiteral, context: RenderContext) -> str:
+        return f'<custom>{node.value}</custom>'
+
+    assert CustomRenderer().render(CustomLiteral(value='<x>')) == '<custom><x></custom>'
+
+
+def test_base_renderer_unknown_nodes_fall_back_to_children_or_value() -> None:
+    renderer = BaseRenderer()
+
+    assert renderer.render(CustomParent(children=[CustomLiteral(value='a'), CustomLiteral(value='b')])) == 'ab'
+    assert renderer.render(CustomLiteral(value='literal')) == 'literal'
+
+
+def test_html_renderer_custom_elements_require_registered_handler() -> None:
+    node = Paragraph(children=[CustomElement(children=[Text(value='marked')])])
+
+    assert HTMLRenderer().render(node) == '<p>marked</p>\n'
+
+    @HTMLRenderer.register('customElement')
+    def render_custom_element(renderer: HTMLRenderer, node: CustomElement, context: RenderContext) -> str:
+        attrs = renderer.render_attrs({'data-custom': 'yes', 'hidden': False})
+        return f'<mark{attrs}>{renderer.render_children(node.children, context)}</mark>'
+
+    assert HTMLRenderer().render(node) == '<p><mark data-custom="yes">marked</mark></p>\n'
+
+
+def test_html_renderer_reuses_instance_without_leaking_footnote_state() -> None:
+    app = Wenmode([Footnote])
+    renderer = HTMLRenderer()
+    root = app.parse('a[^one]\n\n[^one]: note\n')
+
+    first = renderer.render(root)
+    second = renderer.render(root)
+
+    assert second == first
+    assert 'id="user-content-fnref-one-2"' not in second
