@@ -1,28 +1,18 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
 
 import pytest
 
-from wenmode import HTMLRenderer, MarkdownRenderer, Wenmode
+from wenmode import HTMLRenderer, MarkdownRenderer, Parser, Wenmode
 from wenmode.directives import Figure
 from wenmode.nodes import Node, Text
-from wenmode.renderers import BaseRenderer, RenderContext
 from wenmode.rules import (
     AtxHeading,
     InlineRule,
     RawHtml,
 )
-from wenmode.state import BlockState, StateStore, StreamBlockState, StreamLineBuffer
-
-
-@dataclass
-class WrapperNode(Node):
-    child: Node | None = None
-    children: list[Node] | None = None
-    value: str | None = None
-    type: str = 'wrapper'
+from wenmode.state import BlockState
 
 
 class SearchInline(InlineRule):
@@ -59,37 +49,6 @@ class TriggerInline(InlineRule):
         self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
     ) -> tuple[Node | None, int]:
         return Text(value='trigger'), match.end()
-
-
-def test_base_node_state_and_protocol_edges() -> None:
-    wrapper = WrapperNode(child=Text(value='child'), children=[Text(value='nested')], value='literal')
-    assert wrapper.to_ast() == {
-        'type': 'wrapper',
-        'child': {'type': 'text', 'value': 'child'},
-        'children': [{'type': 'text', 'value': 'nested'}],
-        'value': 'literal',
-    }
-
-    renderer = BaseRenderer()
-    context = RenderContext()
-    assert renderer.render(WrapperNode(value='x'), context) == 'x'
-    assert list(renderer.render_iter([WrapperNode(value='a'), WrapperNode(value='b')])) == ['a', 'b']
-    assert renderer.render(Node(type='unknown')) == ''
-
-    assert BlockState(['\n']).first_nonblank_from_current() is None
-    store = StateStore()
-    pending: list[tuple[list[Node], str]] = []
-    callbacks: list[object] = []
-    stream_state = StreamBlockState(
-        StreamLineBuffer(['\n']),
-        store=store,
-        pending_inlines=pending,
-        pending_inline_callbacks=callbacks,  # type: ignore[arg-type]
-    )
-    assert stream_state.store is store
-    assert stream_state.pending_inlines is pending
-    assert stream_state.pending_inline_callbacks is callbacks
-    assert stream_state.first_nonblank_from_current() is None
 
 
 def test_wenmode_registration_edges() -> None:

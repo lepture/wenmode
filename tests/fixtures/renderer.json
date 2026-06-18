@@ -1,0 +1,191 @@
+[
+  {
+    "name": "inline nodes",
+    "input": "## Title\n\nHello *em* **strong** `code` $x + y$ [link](/url \"T\") ![alt](/img.png)\n",
+    "html": "<h2>Title</h2>\n<p>Hello <em>em</em> <strong>strong</strong> <code>code</code> <span class=\"math math-inline\">x + y</span> <a href=\"/url\" title=\"T\">link</a> <img src=\"/img.png\" alt=\"alt\" /></p>\n",
+    "markdown": "## Title\n\nHello *em* **strong** `code` $x + y$ [link](/url \"T\") ![alt](/img.png)\n",
+    "rst": "Title\n-----\n\nHello *em* **strong** ``code`` :math:`x + y` `link </url>`__ |image-1|\n\n.. |image-1| image:: /img.png\n   :alt: alt\n"
+  },
+  {
+    "name": "block nodes",
+    "input": "> quote\n\n- one\n- two\n\n3. three\n4. four\n\n- loose\n  \n  item\n\n- next\n\n```py\nprint(1)\n```\n\n---\n\na  \nb\n",
+    "html": "<blockquote>\n<p>quote</p>\n</blockquote>\n<ul>\n<li>\n<p>one</p>\n</li>\n<li>\n<p>two</p>\n</li>\n</ul>\n<ol start=\"3\">\n<li>\n<p>three</p>\n</li>\n<li>\n<p>four</p>\n</li>\n</ol>\n<ul>\n<li>\n<p>loose</p>\n<p>item</p>\n</li>\n<li>\n<p>next</p>\n</li>\n</ul>\n<pre><code class=\"language-py\">print(1)\n</code></pre>\n<hr />\n<p>a<br />\nb</p>\n",
+    "markdown": "> quote\n\n- one\n\n- two\n\n3. three\n\n4. four\n\n- loose\n  \n  item\n\n- next\n\n```py\nprint(1)\n```\n\n---\n\na  \nb\n",
+    "rst": "   quote\n\n- one\n\n- two\n\n3. three\n\n4. four\n\n- loose\n\n  item\n\n- next\n\n.. code-block:: py\n\n   print(1)\n\n----\n\na\nb\n"
+  },
+  {
+    "name": "commonmark roundtrip",
+    "input": "# A\n\n> hi *there*\n\n- one\n- two\n\n```py\nprint(1)\n```\n\n[link](/url \"t\") and ![alt](/img.png)\n",
+    "rules": [
+      "thematic_break",
+      "fenced_code",
+      "indented_code",
+      "html_block",
+      "list",
+      "atx_heading",
+      "setext_heading",
+      "blockquote",
+      "hard_break",
+      "autolink",
+      "raw_html",
+      "backslash_escape",
+      "character_reference",
+      "image",
+      "link",
+      "inline_code",
+      "emphasis"
+    ],
+    "roundtrip_html": true,
+    "html": "<h1>A</h1>\n<blockquote>\n<p>hi <em>there</em></p>\n</blockquote>\n<ul>\n<li>one</li>\n<li>two</li>\n</ul>\n<pre><code class=\"language-py\">print(1)\n</code></pre>\n<p><a href=\"/url\" title=\"t\">link</a> and <img src=\"/img.png\" alt=\"alt\" /></p>\n",
+    "markdown": "# A\n\n> hi *there*\n\n- one\n- two\n\n```py\nprint(1)\n```\n\n[link](/url \"t\") and ![alt](/img.png)\n",
+    "rst": "A\n=\n\n   hi *there*\n\n- one\n- two\n\n.. code-block:: py\n\n   print(1)\n\n`link </url>`__ and |image-1|\n\n.. |image-1| image:: /img.png\n   :alt: alt\n"
+  },
+  {
+    "name": "footnotes",
+    "input": "a[^one]\n\n[^one]: note\n\n[^two]: first\n  \n  second\n",
+    "rules": [
+      "footnote"
+    ],
+    "roundtrip_html": true,
+    "html": "<p>a<sup><a href=\"#user-content-fn-one\" id=\"user-content-fnref-one\" data-footnote-ref aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes class=\"footnotes\">\n<h2 class=\"sr-only\" id=\"footnote-label\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-one\">\n<p>note <a href=\"#user-content-fnref-one\" data-footnote-backref class=\"data-footnote-backref\" aria-label=\"Back to content\">&#8617;</a></p>\n</li>\n</ol>\n</section>\n",
+    "markdown": "a[^one]\n\n[^one]: note\n\n[^two]: first\n  \n  second\n",
+    "rst": "a[#one]_\n\n.. [#one] note\n\n.. [#two] first\n\n   second\n"
+  },
+  {
+    "name": "footnote reference order",
+    "input": "[^one]: one\n\n[^two]: two\n\n[^two] [^one]\n",
+    "rules": [
+      "footnote"
+    ],
+    "html": "<p><sup><a href=\"#user-content-fn-two\" id=\"user-content-fnref-two\" data-footnote-ref aria-describedby=\"footnote-label\">1</a></sup> <sup><a href=\"#user-content-fn-one\" id=\"user-content-fnref-one\" data-footnote-ref aria-describedby=\"footnote-label\">2</a></sup></p>\n<section data-footnotes class=\"footnotes\">\n<h2 class=\"sr-only\" id=\"footnote-label\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-two\">\n<p>two <a href=\"#user-content-fnref-two\" data-footnote-backref class=\"data-footnote-backref\" aria-label=\"Back to content\">&#8617;</a></p>\n</li>\n<li id=\"user-content-fn-one\">\n<p>one <a href=\"#user-content-fnref-one\" data-footnote-backref class=\"data-footnote-backref\" aria-label=\"Back to content\">&#8617;</a></p>\n</li>\n</ol>\n</section>\n",
+    "markdown": "[^one]: one\n\n[^two]: two\n\n[^two] [^one]\n",
+    "rst": ".. [#one] one\n\n.. [#two] two\n\n[#two]_ [#one]_\n"
+  },
+  {
+    "name": "repeated footnote references",
+    "input": "[^one] [^one]\n\n[^one]: note\n",
+    "rules": [
+      "footnote"
+    ],
+    "html": "<p><sup><a href=\"#user-content-fn-one\" id=\"user-content-fnref-one\" data-footnote-ref aria-describedby=\"footnote-label\">1</a></sup> <sup><a href=\"#user-content-fn-one\" id=\"user-content-fnref-one-2\" data-footnote-ref aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes class=\"footnotes\">\n<h2 class=\"sr-only\" id=\"footnote-label\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-one\">\n<p>note <a href=\"#user-content-fnref-one\" data-footnote-backref class=\"data-footnote-backref\" aria-label=\"Back to content\">&#8617;</a> <a href=\"#user-content-fnref-one-2\" data-footnote-backref class=\"data-footnote-backref\" aria-label=\"Back to content\">&#8617;</a></p>\n</li>\n</ol>\n</section>\n",
+    "markdown": "[^one] [^one]\n\n[^one]: note\n",
+    "rst": "[#one]_ [#one]_\n\n.. [#one] note\n"
+  },
+  {
+    "name": "escaped footnote labels",
+    "input": "[^a<b]: <note>\n\n[^a<b]\n",
+    "rules": [
+      "footnote"
+    ],
+    "html": "<p><sup><a href=\"#user-content-fn-a%3Cb\" id=\"user-content-fnref-a%3Cb\" data-footnote-ref aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes class=\"footnotes\">\n<h2 class=\"sr-only\" id=\"footnote-label\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-a%3Cb\">\n<p>&lt;note&gt; <a href=\"#user-content-fnref-a%3Cb\" data-footnote-backref class=\"data-footnote-backref\" aria-label=\"Back to content\">&#8617;</a></p>\n</li>\n</ol>\n</section>\n",
+    "markdown": "[^a\\<b]: \\<note\\>\n\n[^a\\<b]\n",
+    "rst": ".. [#a-b] <note>\n\n[#a-b]_\n"
+  },
+  {
+    "name": "math",
+    "input": "a $x + y$\n\n$$\nz = 1\n$$\n",
+    "rules": [
+      "math_block",
+      "inline_math"
+    ],
+    "roundtrip_html": true,
+    "html": "<p>a <span class=\"math math-inline\">x + y</span></p>\n<div class=\"math math-display\">z = 1\n</div>\n",
+    "markdown": "a $x + y$\n\n$$\nz = 1\n$$\n",
+    "rst": "a :math:`x + y`\n\n.. math::\n\n   z = 1\n"
+  },
+  {
+    "name": "tables and definitions",
+    "input": "Apple\n: Fruit\n\n| Name | Value |\n| --- | --- |\n| A | 1 |\n",
+    "html": "<dl>\n<dt>Apple</dt>\n<dd>Fruit</dd>\n</dl>\n<table>\n<thead>\n<tr>\n<th>Name</th>\n<th>Value</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>A</td>\n<td>1</td>\n</tr>\n</tbody>\n</table>\n",
+    "markdown": "Apple\n: Fruit\n\n| Name | Value |\n| --- | --- |\n| A | 1 |\n",
+    "rst": "Apple\n  Fruit\n\n====  =====\nName  Value\n====  =====\nA     1\n====  =====\n"
+  },
+  {
+    "name": "directives",
+    "input": ":::note[Important]{.warning}\nBody.\n:::\n",
+    "html": "<aside class=\"warning admonition admonition-note\">\n<p class=\"admonition-title\">Important</p>\n<p>Body.</p>\n</aside>\n",
+    "markdown": ":::note[Important]{.warning}\nBody\\.\n:::\n",
+    "rst": ".. note:: Important\n   :class: warning\n\n   Body.\n"
+  },
+  {
+    "name": "directive renderers without labels",
+    "input": ":::note\nbody\n:::\n\n:::figure\nimage\n:::\n\n::toc[Contents]{min=bad}\n",
+    "rules": [
+      "container_directive",
+      "leaf_directive"
+    ],
+    "html_directives": [
+      "admonition",
+      "figure",
+      "toc"
+    ],
+    "html": "<aside class=\"admonition admonition-note\">\n<p>body</p>\n</aside>\n<figure>\n<p>image</p>\n</figure>\n",
+    "markdown": ":::note\nbody\n:::\n\n:::figure\nimage\n:::\n\n::toc[Contents]{min=bad}\n",
+    "rst": ".. note::\n\n   body\n\n.. figure::\n\n   image\n\n.. toc:: Contents\n   :min: bad\n"
+  },
+  {
+    "name": "block spoiler",
+    "input": ">! hidden *thing*\n>!\n>! second paragraph\n",
+    "html": "<div class=\"spoiler\">\n<p>hidden <em>thing</em></p>\n<p>second paragraph</p>\n</div>\n",
+    "markdown": ">! hidden *thing*\n>!\n>! second paragraph\n",
+    "rst": ".. admonition:: Spoiler\n\n   hidden *thing*\n\n   second paragraph\n"
+  },
+  {
+    "name": "extended inline nodes",
+    "input": "*[HTML]: HyperText\n\nHTML ~~gone~~ ==mark== ^^insert^^ ^2^ ~n~ [漢(kan)] >! secret !< :kbd[Ctrl+C]\n",
+    "html": "<p><abbr title=\"HyperText\">HTML</abbr> <del>gone</del> <mark>mark</mark> <ins>insert</ins> <sup>2</sup> <sub>n</sub> <ruby>漢<rt>kan</rt></ruby> <span class=\"spoiler\">secret</span> Ctrl+C</p>\n",
+    "markdown": "HTML ~~gone~~ ==mark== ^^insert^^ ^2^ ~n~ [漢(kan)] >! secret !< :kbd[Ctrl\\+C]\n",
+    "rst": ":abbr:`HTML (HyperText)` gone mark insert :sup:`2` :sub:`n` 漢 (kan) secret :kbd:`Ctrl+C`\n"
+  },
+  {
+    "name": "raw html and unsafe urls",
+    "input": "# h1\n\n<div>div</div>\n\na <span>b</span>\n\n[bad](javascript:alert(1)) ![bad image](javascript:alert(1)) [safe](/safe?x=1&y=2) [mail](mailto:me@example.com)\n",
+    "html": "<h1>h1</h1>\n&lt;div&gt;div&lt;/div&gt;\n<p>a &lt;span&gt;b&lt;/span&gt;</p>\n<p><a>bad</a> <img alt=\"bad image\" /> <a href=\"/safe?x=1&amp;y=2\">safe</a> <a href=\"mailto:me@example.com\">mail</a></p>\n",
+    "markdown": "# h1\n\n<div>div</div>\n\na <span>b</span>\n\n[bad](<javascript:alert(1)>) ![bad image](<javascript:alert(1)>) [safe](/safe?x=1&y=2) [mail](mailto:me@example.com)\n",
+    "rst": "h1\n==\n\n.. raw:: html\n\n   <div>div</div>\n\na <span>b</span>\n\n`bad <javascript:alert(1)>`__ |image-1| `safe </safe?x=1&y=2>`__ `mail <mailto:me@example.com>`__\n\n.. |image-1| image:: javascript:alert(1)\n   :alt: bad image\n"
+  },
+  {
+    "name": "raw html and unsafe urls passthrough",
+    "input": "<div>div</div>\n\n[bad](javascript:alert(1))\n",
+    "rules": [
+      "html_block",
+      "raw_html",
+      "link"
+    ],
+    "html_options": {
+      "escape": false,
+      "sanitize_urls": false
+    },
+    "html": "<div>div</div>\n<p><a href=\"javascript:alert(1)\">bad</a></p>\n",
+    "markdown": "<div>div</div>\n\n[bad](<javascript:alert(1)>)\n",
+    "rst": ".. raw:: html\n\n   <div>div</div>\n\n`bad <javascript:alert(1)>`__\n"
+  },
+  {
+    "name": "task list",
+    "input": "- [x] done\n- [ ] todo\n",
+    "html": "<ul>\n<li><input checked=\"\" disabled=\"\" type=\"checkbox\"> done</li>\n<li><input disabled=\"\" type=\"checkbox\"> todo</li>\n</ul>\n",
+    "markdown": "- [x] done\n- [ ] todo\n",
+    "rst": "- [x] done\n- [ ] todo\n"
+  },
+  {
+    "name": "code fence grows past contained fence",
+    "input": "````meta\ncontains ``` fence\n````\n",
+    "html": "<pre><code class=\"language-meta\">contains ``` fence\n</code></pre>\n",
+    "markdown": "````meta\ncontains ``` fence\n````\n",
+    "rst": ".. code-block:: meta\n\n   contains ``` fence\n"
+  },
+  {
+    "name": "inline code with backticks",
+    "input": "`` `x` ``\n",
+    "html": "<p><code>`x`</code></p>\n",
+    "markdown": "`` `x` ``\n",
+    "rst": "```x```\n"
+  },
+  {
+    "name": "link and image escaping",
+    "input": "[link](</a b(1)> \"a \\\"quote\\\"\") ![a*b](</a)b> \"title\")\n",
+    "html": "<p><a href=\"/a%20b(1)\" title=\"a &quot;quote&quot;\">link</a> <img src=\"/a)b\" alt=\"a*b\" title=\"title\" /></p>\n",
+    "markdown": "[link](</a%20b(1)> \"a \\\"quote\\\"\") ![a\\*b](</a)b> \"title\")\n",
+    "rst": "`link </a%20b(1)>`__ |image-1|\n\n.. |image-1| image:: /a)b\n   :alt: a*b\n   :title: title\n"
+  }
+]

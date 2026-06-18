@@ -13,100 +13,143 @@
   },
   {
     "name": "mark parses emphasis and escaped delimiter",
-    "rules": ["mark", "backslash_escape", "emphasis"],
+    "rules": [
+      "mark",
+      "backslash_escape",
+      "emphasis"
+    ],
     "markdown": "==marked *text*== and ==mark \\== equal==\n",
     "html": "<p><mark>marked <em>text</em></mark> and <mark>mark == equal</mark></p>\n",
     "markdown_output": "==marked *text*== and ==mark == equal==\n"
   },
   {
     "name": "mark requires tight delimiters before content",
-    "rules": ["mark"],
+    "rules": [
+      "mark"
+    ],
     "markdown": "== no mark==\n==no mark ==\n===no mark===\n",
     "html": "<p>== no mark==\n==no mark ==\n===no mark===</p>\n"
   },
   {
     "name": "insert parses emphasis and escaped delimiter",
-    "rules": ["insert", "backslash_escape", "emphasis"],
+    "rules": [
+      "insert",
+      "backslash_escape",
+      "emphasis"
+    ],
     "markdown": "^^insert *text*^^ and ^^insert \\^^ caret^^\n",
     "html": "<p><ins>insert <em>text</em></ins> and <ins>insert ^^ caret</ins></p>\n",
     "markdown_output": "^^insert *text*^^ and ^^insert ^^ caret^^\n"
   },
   {
     "name": "insert requires tight delimiters before content",
-    "rules": ["insert"],
+    "rules": [
+      "insert"
+    ],
     "markdown": "^^ no insert^^\n^^no insert ^^\n^^^no insert^^^\n",
     "html": "<p>^^ no insert^^\n^^no insert ^^\n^^^no insert^^^</p>\n"
   },
   {
     "name": "superscript parses escaped spaces and carets",
-    "rules": ["superscript", "backslash_escape", "emphasis"],
+    "rules": [
+      "superscript",
+      "backslash_escape",
+      "emphasis"
+    ],
     "markdown": "2^10^ and ^with\\ space^ and ^escaped\\^caret^\n",
     "html": "<p>2<sup>10</sup> and <sup>with space</sup> and <sup>escaped^caret</sup></p>\n",
     "markdown_output": "2^10^ and ^with\\ space^ and ^escaped\\^caret^\n"
   },
   {
     "name": "superscript does not allow plain spaces",
-    "rules": ["superscript"],
+    "rules": [
+      "superscript"
+    ],
     "markdown": "^no script^\n",
     "html": "<p>^no script^</p>\n"
   },
   {
     "name": "subscript parses escaped spaces and strikethrough separately",
-    "rules": ["subscript", "strikethrough", "backslash_escape", "emphasis"],
+    "rules": [
+      "subscript",
+      "strikethrough",
+      "backslash_escape",
+      "emphasis"
+    ],
     "markdown": "H~2~O and ~with\\ space~ and ~escaped\\~tilde~ and ~~delete~~\n",
     "html": "<p>H<sub>2</sub>O and <sub>with space</sub> and <sub>escaped~tilde</sub> and <del>delete</del></p>\n",
     "markdown_output": "H~2~O and ~with\\ space~ and ~escaped\\~tilde~ and ~~delete~~\n"
   },
   {
     "name": "subscript does not allow plain spaces",
-    "rules": ["subscript"],
+    "rules": [
+      "subscript"
+    ],
     "markdown": "~no script~\n",
     "html": "<p>~no script~</p>\n"
   },
   {
     "name": "ruby parses compact annotations",
-    "rules": ["ruby"],
+    "rules": [
+      "ruby"
+    ],
     "markdown": "[汉字(hàn zì)] and [汉(hàn)字(zì)]\n",
     "html": "<p><ruby>汉字<rt>hàn zì</rt></ruby> and <ruby>汉<rt>hàn</rt>字<rt>zì</rt></ruby></p>\n",
     "markdown_output": "[汉字(hàn zì)] and [汉(hàn)字(zì)]\n"
   },
   {
     "name": "ruby can be wrapped by direct and reference links",
-    "rules": ["ruby", "link"],
+    "rules": [
+      "ruby",
+      "link"
+    ],
     "markdown": "[漢字(kanji)](/ruby \"Ruby\") and [漢字(kanji)][term]\n\n[term]: /term\n",
     "html": "<p><a href=\"/ruby\" title=\"Ruby\"><ruby>漢字<rt>kanji</rt></ruby></a> and <a href=\"/term\"><ruby>漢字<rt>kanji</rt></ruby></a></p>\n"
   },
   {
     "name": "inline spoiler parses emphasis inside",
-    "rules": ["inline_spoiler", "emphasis"],
+    "rules": [
+      "inline_spoiler",
+      "emphasis"
+    ],
     "markdown": "A >! hidden *thing* !< appears.\n",
     "html": "<p>A <span class=\"spoiler\">hidden <em>thing</em></span> appears.</p>\n",
     "markdown_output": "A >! hidden *thing* !< appears\\.\n"
   },
   {
     "name": "block spoiler parses block content",
-    "rules": ["block_spoiler", "emphasis"],
+    "rules": [
+      "block_spoiler",
+      "emphasis"
+    ],
     "markdown": ">! hidden *thing*\n>!\n>! second paragraph\n",
     "html": "<div class=\"spoiler\">\n<p>hidden <em>thing</em></p>\n<p>second paragraph</p>\n</div>\n",
     "markdown_output": ">! hidden *thing*\n>!\n>! second paragraph\n"
   },
   {
     "name": "abbreviation rewrites matching text",
-    "rules": ["abbreviation"],
+    "rules": [
+      "abbreviation"
+    ],
     "markdown": "The HTML spec is maintained by W3C.\n\n*[HTML]: Hyper Text Markup Language\n*[W3C]: Consortium\n",
     "html": "<p>The <abbr title=\"Hyper Text Markup Language\">HTML</abbr> spec is maintained by <abbr title=\"Consortium\">W3C</abbr>.</p>\n",
     "markdown_output": "The HTML spec is maintained by W3C\\.\n"
   },
   {
     "name": "definition list parses emphasis in descriptions",
-    "rules": ["definition_list", "emphasis"],
+    "rules": [
+      "definition_list",
+      "emphasis"
+    ],
     "markdown": "Apple\n: Pomaceous *fruit*\n\nOrange\n: Citrus fruit\n",
     "html": "<dl>\n<dt>Apple</dt>\n<dd>Pomaceous <em>fruit</em></dd>\n<dt>Orange</dt>\n<dd>Citrus fruit</dd>\n</dl>\n",
     "markdown_output": "Apple\n: Pomaceous *fruit*\nOrange\n: Citrus fruit\n"
   },
   {
     "name": "footnote identifiers disallow spaces",
-    "rules": ["footnote"],
+    "rules": [
+      "footnote"
+    ],
     "markdown": "a[^foot note]\n\n[^foot note]: bad\n",
     "html": "<p>a[^foot note]</p>\n<p>[^foot note]: bad</p>\n"
   },
@@ -115,5 +158,171 @@
     "preset": "github",
     "markdown": "a <script>alert(1)</script>\n",
     "html": "<p>a &lt;script>alert(1)&lt;/script></p>\n"
+  },
+  {
+    "name": "later definition",
+    "rules": [
+      "footnote",
+      "emphasis",
+      "blockquote",
+      "link"
+    ],
+    "markdown": "a[^one]\n\n[^one]: note\n",
+    "html": "<p>a<sup><a href=\"#user-content-fn-one\" id=\"user-content-fnref-one\" data-footnote-ref aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes class=\"footnotes\">\n<h2 class=\"sr-only\" id=\"footnote-label\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-one\">\n<p>note <a href=\"#user-content-fnref-one\" data-footnote-backref class=\"data-footnote-backref\" aria-label=\"Back to content\">&#8617;</a></p>\n</li>\n</ol>\n</section>\n"
+  },
+  {
+    "name": "definition interrupts paragraph with continuation block",
+    "rules": [
+      "footnote",
+      "emphasis",
+      "blockquote",
+      "link"
+    ],
+    "markdown": "paragraph [^fn]\n[^fn]: *emph*\n  > aaa\n",
+    "html": "<p>paragraph <sup><a href=\"#user-content-fn-fn\" id=\"user-content-fnref-fn\" data-footnote-ref aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes class=\"footnotes\">\n<h2 class=\"sr-only\" id=\"footnote-label\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-fn\">\n<p><em>emph</em></p>\n<blockquote>\n<p>aaa</p>\n</blockquote>\n <a href=\"#user-content-fnref-fn\" data-footnote-backref class=\"data-footnote-backref\" aria-label=\"Back to content\">&#8617;</a>\n</li>\n</ol>\n</section>\n"
+  },
+  {
+    "name": "earlier definition",
+    "rules": [
+      "footnote",
+      "emphasis",
+      "blockquote",
+      "link"
+    ],
+    "markdown": "[^one]: note\n\na[^one]\n",
+    "html": "<p>a<sup><a href=\"#user-content-fn-one\" id=\"user-content-fnref-one\" data-footnote-ref aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes class=\"footnotes\">\n<h2 class=\"sr-only\" id=\"footnote-label\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-one\">\n<p>note <a href=\"#user-content-fnref-one\" data-footnote-backref class=\"data-footnote-backref\" aria-label=\"Back to content\">&#8617;</a></p>\n</li>\n</ol>\n</section>\n"
+  },
+  {
+    "name": "missing definition",
+    "rules": [
+      "footnote",
+      "emphasis",
+      "blockquote",
+      "link"
+    ],
+    "markdown": "a[^missing]\n",
+    "html": "<p>a[^missing]</p>\n"
+  },
+  {
+    "name": "duplicate definitions use first definition",
+    "rules": [
+      "footnote",
+      "emphasis",
+      "blockquote",
+      "link"
+    ],
+    "markdown": "[^one]: first\n\n[^one]: second\n\na[^one]\n",
+    "html": "<p>a<sup><a href=\"#user-content-fn-one\" id=\"user-content-fnref-one\" data-footnote-ref aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes class=\"footnotes\">\n<h2 class=\"sr-only\" id=\"footnote-label\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-one\">\n<p>first <a href=\"#user-content-fnref-one\" data-footnote-backref class=\"data-footnote-backref\" aria-label=\"Back to content\">&#8617;</a></p>\n</li>\n</ol>\n</section>\n"
+  },
+  {
+    "name": "links and footnotes",
+    "rules": [
+      "footnote",
+      "emphasis",
+      "blockquote",
+      "link"
+    ],
+    "markdown": "[link](/url) and a[^one]\n\n[^one]: note\n",
+    "html": "<p><a href=\"/url\">link</a> and a<sup><a href=\"#user-content-fn-one\" id=\"user-content-fnref-one\" data-footnote-ref aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes class=\"footnotes\">\n<h2 class=\"sr-only\" id=\"footnote-label\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-one\">\n<p>note <a href=\"#user-content-fnref-one\" data-footnote-backref class=\"data-footnote-backref\" aria-label=\"Back to content\">&#8617;</a></p>\n</li>\n</ol>\n</section>\n"
+  },
+  {
+    "name": "inline math",
+    "rules": [
+      "math_block",
+      "inline_code",
+      "inline_math"
+    ],
+    "markdown": "area is $a < b$.\n",
+    "html": "<p>area is <span class=\"math math-inline\">a &lt; b</span>.</p>\n"
+  },
+  {
+    "name": "display math",
+    "rules": [
+      "math_block",
+      "inline_code",
+      "inline_math"
+    ],
+    "markdown": "$$\na < b\n$$\n",
+    "html": "<div class=\"math math-display\">a &lt; b\n</div>\n"
+  },
+  {
+    "name": "escaped dollar is text",
+    "rules": [
+      "math_block",
+      "inline_code",
+      "inline_math"
+    ],
+    "markdown": "\\$x$\n",
+    "html": "<p>\\$x$</p>\n"
+  },
+  {
+    "name": "empty inline math is text",
+    "rules": [
+      "math_block",
+      "inline_code",
+      "inline_math"
+    ],
+    "markdown": "$ $\n",
+    "html": "<p>$ $</p>\n"
+  },
+  {
+    "name": "unmatched inline math is text",
+    "rules": [
+      "math_block",
+      "inline_code",
+      "inline_math"
+    ],
+    "markdown": "$x\n",
+    "html": "<p>$x</p>\n"
+  },
+  {
+    "name": "double dollars are not inline math",
+    "rules": [
+      "math_block",
+      "inline_code",
+      "inline_math"
+    ],
+    "markdown": "a $$x$$\n",
+    "html": "<p>a $$x$$</p>\n"
+  },
+  {
+    "name": "inline code containing dollars",
+    "rules": [
+      "math_block",
+      "inline_code",
+      "inline_math"
+    ],
+    "markdown": "`$x$` and $y$\n",
+    "html": "<p><code>$x$</code> and <span class=\"math math-inline\">y</span></p>\n"
+  },
+  {
+    "name": "escaped dollar inside inline math",
+    "rules": [
+      "math_block",
+      "inline_code",
+      "inline_math"
+    ],
+    "markdown": "$x=\\$$\n",
+    "html": "<p><span class=\"math math-inline\">x=\\$</span></p>\n"
+  },
+  {
+    "name": "currency is not inline math",
+    "rules": [
+      "math_block",
+      "inline_code",
+      "inline_math"
+    ],
+    "markdown": "Price $51,300 and $2,000 today\n",
+    "html": "<p>Price $51,300 and $2,000 today</p>\n"
+  },
+  {
+    "name": "inline math does not cross lines",
+    "rules": [
+      "math_block",
+      "inline_code",
+      "inline_math"
+    ],
+    "markdown": "$a\nb$\n",
+    "html": "<p>$a\nb$</p>\n"
   }
 ]

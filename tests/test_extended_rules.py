@@ -33,6 +33,7 @@ FIXTURES_DIR = Path(__file__).parent / 'fixtures'
 EXTENDED_RULES = {
     'abbreviation': Abbreviation,
     'backslash_escape': BackslashEscape,
+    'blockquote': Blockquote,
     'block_spoiler': BlockSpoiler,
     'definition_list': DefinitionList,
     'emphasis': Emphasis,
@@ -75,28 +76,6 @@ def app_for_example(example: ExtendedRuleExample, renderer: MarkdownRenderer | N
         else [EXTENDED_RULES[name] for name in example['rules']]
     )
     return Wenmode(rules, renderer=renderer)
-
-
-@pytest.mark.parametrize(
-    'example',
-    load_examples('footnotes.json'),
-    ids=lambda example: example['name'],
-)
-def test_footnote_examples(example: ExtendedRuleExample) -> None:
-    app = Wenmode([Footnote, Emphasis, Blockquote, Link])
-
-    assert app.render(example['markdown']) == example['html']
-
-
-@pytest.mark.parametrize(
-    'example',
-    load_examples('math.json'),
-    ids=lambda example: example['name'],
-)
-def test_math_examples(example: ExtendedRuleExample) -> None:
-    app = Wenmode([MathBlock, InlineCode, InlineMath])
-
-    assert app.render(example['markdown']) == example['html']
 
 
 @pytest.mark.parametrize(
