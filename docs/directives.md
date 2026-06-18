@@ -149,12 +149,12 @@ You can also pass directive renderers at construction time:
 
 ```python
 from wenmode import Wenmode
-from wenmode.directives import Abbreviation, Admonition, Figure, TableOfContents
+from wenmode.directives import Abbreviation, Admonition, Details, Figure, TableOfContents
 from wenmode.rules import AtxHeading, ContainerDirective, LeafDirective
 
 wenmode = Wenmode(
     [AtxHeading(id_transform=True), LeafDirective, ContainerDirective],
-    directives=[Abbreviation(), Admonition(), Figure(), TableOfContents()],
+    directives=[Abbreviation(), Admonition(), Details(), Figure(), TableOfContents()],
 )
 ```
 
@@ -185,6 +185,23 @@ from wenmode.directives import Admonition
 
 Admonition()
 Admonition(names=['warning', 'important'])
+```
+
+### Details
+
+`Details` renders `details` container directives as native HTML
+`<details>` elements. The directive label becomes a `<summary>`.
+
+```python
+from wenmode.directives import Details
+
+Details()
+```
+
+```markdown
+:::details[Advanced options]{open}
+Hidden content.
+:::
 ```
 
 ### Figure

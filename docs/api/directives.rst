@@ -11,6 +11,9 @@ Directive Renderers
 .. autoclass:: wenmode.directives.Admonition
    :members:
 
+.. autoclass:: wenmode.directives.Details
+   :members:
+
 .. autoclass:: wenmode.directives.Figure
    :members:
 

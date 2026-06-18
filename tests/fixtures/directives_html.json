@@ -19,5 +19,10 @@
     "name": "figure",
     "markdown": ":::figure[Caption]{#fig .wide}\n![Alt](/img.png)\n:::\n",
     "html": "<figure id=\"fig\" class=\"wide\">\n<p><img src=\"/img.png\" alt=\"Alt\" /></p>\n<figcaption>Caption</figcaption>\n</figure>\n"
+  },
+  {
+    "name": "details",
+    "markdown": ":::details[Advanced options]{open .wide}\nHidden content.\n:::\n",
+    "html": "<details open=\"\" class=\"wide\">\n<summary>Advanced options</summary>\n<p>Hidden content.</p>\n</details>\n"
   }
 ]

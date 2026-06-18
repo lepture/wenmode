@@ -7,7 +7,7 @@ from typing import Any, TypedDict
 import pytest
 
 from wenmode import HTMLRenderer, MarkdownRenderer, Parser
-from wenmode.directives import Abbreviation, Admonition, Figure, TableOfContents
+from wenmode.directives import Abbreviation, Admonition, Details, Figure, TableOfContents
 from wenmode.rules import (
     AtxHeading,
     ContainerDirective,
@@ -71,8 +71,9 @@ def test_directive_html_examples(example: DirectiveHtmlExample) -> None:
     parser = Parser([ContainerDirective, TextDirective, ImageRule])
     admonition_names = example.get('admonition_names')
     admonition = Admonition(names=admonition_names) if admonition_names is not None else Admonition()
+    html = HTMLRenderer(directives=[admonition, Details(), Figure()]).render(parser.parse(example['markdown']))
 
-    assert HTMLRenderer(directives=[admonition, Figure()]).render(parser.parse(example['markdown'])) == example['html']
+    assert html == example['html']
 
 
 def test_directives_are_plain_text_without_rules() -> None:
