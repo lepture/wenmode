@@ -226,6 +226,34 @@
     "rst": "- [x] done\n- [ ] todo\n"
   },
   {
+    "name": "loose task list",
+    "input": "- [x] done\n\n  more\n",
+    "html": "<ul>\n<li>\n<p><input checked=\"\" disabled=\"\" type=\"checkbox\"> done</p>\n<p>more</p>\n</li>\n</ul>\n",
+    "markdown": "- [x] done\n      \n      more\n",
+    "rst": "- [x] done\n\n      more\n"
+  },
+  {
+    "name": "short table body row",
+    "input": "a | b | c\n| --- | --- | --- |\n| 1 | 2 |\n",
+    "html": "<table>\n<thead>\n<tr>\n<th>a</th>\n<th>b</th>\n<th>c</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>1</td>\n<td>2</td>\n<td></td>\n</tr>\n</tbody>\n</table>\n",
+    "markdown": "| a | b | c |\n| --- | --- | --- |\n| 1 | 2 |  |\n",
+    "rst": "===  ===  ===\na    b    c\n===  ===  ===\n1    2\n===  ===  ===\n"
+  },
+  {
+    "name": "loose definition list",
+    "input": "Term\n: one\n\n    two\n",
+    "html": "<dl>\n<dt>Term</dt>\n<dd>\n<p>one</p>\n<p>two</p>\n</dd>\n</dl>\n",
+    "markdown": "Term\n: one\n    \n    two\n",
+    "rst": "Term\n  one\n\n  two\n"
+  },
+  {
+    "name": "abbreviation without title",
+    "input": "*[HTML]:\n\nHTML\n",
+    "html": "<p><abbr>HTML</abbr></p>\n",
+    "markdown": "HTML\n",
+    "rst": "HTML\n"
+  },
+  {
     "name": "code fence grows past contained fence",
     "input": "````meta\ncontains ``` fence\n````\n",
     "html": "<pre><code class=\"language-meta\">contains ``` fence\n</code></pre>\n",

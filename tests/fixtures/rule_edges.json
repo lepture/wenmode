@@ -448,6 +448,48 @@
     "html": "<p>[x][ref]</p>\n"
   },
   {
+    "name": "collapsed reference uses link label",
+    "rules": [
+      "link"
+    ],
+    "markdown": "[x][]\n\n[x]: /url \"title\"\n",
+    "html": "<p><a href=\"/url\" title=\"title\">x</a></p>\n"
+  },
+  {
+    "name": "undefined full reference stays text",
+    "rules": [
+      "link"
+    ],
+    "markdown": "[x][missing]\n",
+    "html": "<p>[x][missing]</p>\n"
+  },
+  {
+    "name": "unclosed full reference opener stays text",
+    "rules": [
+      "link"
+    ],
+    "markdown": "[x][\n",
+    "html": "<p>[x][</p>\n"
+  },
+  {
+    "name": "invalid full reference label stays text",
+    "rules": [
+      "link"
+    ],
+    "markdown": "[x][bad\\q]\n",
+    "html": "<p>[x][bad\\q]</p>\n"
+  },
+  {
+    "name": "image alt flattens nested inline children",
+    "rules": [
+      "image",
+      "link",
+      "emphasis"
+    ],
+    "markdown": "![*a* ![b](/b)](/img)\n",
+    "html": "<p><img src=\"/img\" alt=\"a b\" /></p>\n"
+  },
+  {
     "name": "empty inline math stays text",
     "rules": [
       "inline_math"
@@ -951,5 +993,118 @@
     ],
     "markdown": "[x\n]: /url \"title\"\n\n[x\n]\n",
     "html": "<p><a href=\"/url\" title=\"title\">x\n</a></p>\n"
+  },
+  {
+    "name": "html inline tag does not interrupt paragraph",
+    "rules": [
+      "html_block"
+    ],
+    "markdown": "a\n<x>\n",
+    "html": "<p>a\n&lt;x&gt;</p>\n"
+  },
+  {
+    "name": "html comment interrupts paragraph",
+    "rules": [
+      "html_block"
+    ],
+    "markdown": "a\n<!-- c -->\n",
+    "html": "<p>a</p>\n&lt;!-- c --&gt;\n"
+  },
+  {
+    "name": "shallow block spoiler stops before plain line",
+    "rules": [
+      "block_spoiler"
+    ],
+    "max_container_depth": 1,
+    "markdown": ">! quote\nplain\n",
+    "html": "<div class=\"spoiler\">\n<p>quote</p>\n</div>\n<p>plain</p>\n"
+  },
+  {
+    "name": "definition following term followed by blank stops list",
+    "rules": [
+      "definition_list"
+    ],
+    "markdown": "Term\n: desc\n\nTerm2\n\n: d\n",
+    "html": "<dl>\n<dt>Term</dt>\n<dd>desc</dd>\n</dl>\n<p>Term2</p>\n<p>: d</p>\n"
+  },
+  {
+    "name": "definition following indented line stops list",
+    "rules": [
+      "definition_list"
+    ],
+    "markdown": "Term\n: desc\n\n  indented\n: d\n",
+    "html": "<dl>\n<dt>Term</dt>\n<dd>desc</dd>\n</dl>\n<dl>\n<dt>indented</dt>\n<dd>d</dd>\n</dl>\n"
+  },
+  {
+    "name": "leaf directive unterminated attributes stays paragraph",
+    "rules": [
+      "leaf_directive"
+    ],
+    "markdown": "::note{bad\n",
+    "html": "<p>::note{bad</p>\n"
+  },
+  {
+    "name": "container directive unterminated label stays paragraph",
+    "rules": [
+      "container_directive"
+    ],
+    "markdown": ":::note[unterminated\n:::\n",
+    "html": "<p>:::note[unterminated\n:::</p>\n"
+  },
+  {
+    "name": "fenced directive reaches eof before options",
+    "rules": [
+      "fenced_directive"
+    ],
+    "markdown": "```{note}\n",
+    "html": ""
+  },
+  {
+    "name": "text directive with only attributes renders empty",
+    "rules": [
+      "text_directive"
+    ],
+    "markdown": ":name{#id}\n",
+    "html": "<p></p>\n"
+  },
+  {
+    "name": "text directive unterminated attributes stays text",
+    "rules": [
+      "text_directive"
+    ],
+    "markdown": ":name{bad\n",
+    "html": "<p>:name{bad</p>\n"
+  },
+  {
+    "name": "footnote definition stops before unindented line",
+    "rules": [
+      "footnote"
+    ],
+    "markdown": "[^x]:\nplain\n",
+    "html": "<p>plain</p>\n"
+  },
+  {
+    "name": "footnote definition stops at trailing blank",
+    "rules": [
+      "footnote"
+    ],
+    "markdown": "[^x]: first\n\n",
+    "html": ""
+  },
+  {
+    "name": "footnote definition skips blank lines before continuation",
+    "rules": [
+      "footnote"
+    ],
+    "markdown": "[^x]: first\n\n\n  second\n\n[^x]\n",
+    "html": "<p><sup><a href=\"#user-content-fn-x\" id=\"user-content-fnref-x\" data-footnote-ref aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes class=\"footnotes\">\n<h2 class=\"sr-only\" id=\"footnote-label\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-x\">\n<p>first</p>\n<p>second <a href=\"#user-content-fnref-x\" data-footnote-backref class=\"data-footnote-backref\" aria-label=\"Back to content\">&#8617;</a></p>\n</li>\n</ol>\n</section>\n"
+  },
+  {
+    "name": "escaped caret reference label stays paragraph",
+    "rules": [
+      "link"
+    ],
+    "markdown": "[\\^x]: /url\n",
+    "html": "<p>[\\^x]: /url</p>\n"
   }
 ]
