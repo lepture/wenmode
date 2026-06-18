@@ -4,12 +4,20 @@ project = 'Wenmode'
 author = 'Hsiaoming Yang'
 copyright = '2026, Hsiaoming Yang'
 
-extensions = ['myst_parser', 'sphinx_design']
+extensions = ['myst_parser', 'sphinx.ext.autodoc', 'sphinx_design']
 myst_enable_extensions = ['colon_fence']
+autodoc_member_order = 'bysource'
+autodoc_typehints = 'description'
+autodoc_typehints_description_target = 'documented'
 
 root_doc = 'index'
 source_suffix = {
     '.md': 'markdown',
+    '.rst': 'restructuredtext',
+}
+
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
 }
 
 html_theme = 'shibuya'

@@ -49,7 +49,7 @@ class Role(InlineRule):
 
     .. code-block:: markdown
 
-       {abbr}`HTML`
+       {iconify}`devicon:pypi`
     """
 
     def __init__(self) -> None:

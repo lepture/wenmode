@@ -79,6 +79,7 @@ rules
 custom-rules
 internals
 reference
+api
 ```
 
 ```{toctree}

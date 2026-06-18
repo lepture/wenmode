@@ -113,7 +113,7 @@ Read this first.
 Roles are inline:
 
 ```markdown
-{term}`HTML`
+{iconify}`devicon:pypi`
 ```
 
 `FencedDirective` creates a `containerDirective` node. Its first-line argument
@@ -211,6 +211,11 @@ from wenmode.headings import Slugger, add_heading_ids
 from wenmode.presets import commonmark
 from wenmode.toc import collect_toc, render_toc_html
 
+markdown = '''# Title
+## Usage
+### Options
+### Example
+'''
 root = Parser(commonmark).parse(markdown)
 add_heading_ids(root, slugger=Slugger(), min_depth=2)
 
