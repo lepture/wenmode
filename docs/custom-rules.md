@@ -85,10 +85,12 @@ from wenmode import Wenmode
 from wenmode.rules import Emphasis
 
 wenmode = Wenmode([PlusMark, Emphasis])
+text = '++very *important*++'
+expected = '''
+<p><mark>very <em>important</em></mark></p>
+'''
 
-assert wenmode.render('++very *important*++\n') == (
-    '<p><mark>very <em>important</em></mark></p>\n'
-)
+assert wenmode.render(text) == expected.lstrip()
 ```
 
 The third `InlineRule` constructor argument is `trigger_chars`. Use it when a
@@ -99,6 +101,113 @@ that need custom scanning behavior.
 
 If an inline rule decides not to handle a match, return
 `(None, match.start())`. The parser will emit the marker as text and continue.
+
+## Custom node and renderers
+
+Use a custom node when your syntax does not map to one of Wenmode's built-in
+node types. The parser only creates the node; each renderer still needs to know
+how to serialize it.
+
+This example parses reStructuredText keyboard roles such as
+`` :kbd:`Ctrl+C` ``. Markdown has no native keyboard-input node, so the example
+creates a `KeyboardInput` node and registers renderers for HTML, Markdown, and
+reStructuredText output.
+
+```python
+import re
+
+from wenmode import HTMLRenderer, MarkdownRenderer, Parser, RSTRenderer
+from wenmode.nodes import Literal, Node
+from wenmode.renderers import RenderContext
+from wenmode.rules import InlineRule
+from wenmode.state import BlockState
+
+
+class KeyboardInput(Literal):
+    def __init__(self, value: str) -> None:
+        super().__init__(type='keyboardInput', value=value)
+
+
+class KeyboardInputRole(InlineRule):
+    def __init__(self) -> None:
+        super().__init__('keyboard_input_role', r':kbd:`', ':')
+
+    def parse(
+        self,
+        parser: Parser,
+        text: str,
+        match: re.Match[str],
+        state: BlockState | None = None,
+    ) -> tuple[Node | None, int]:
+        end = text.find('`', match.end())
+        if end == -1:
+            return None, match.start()
+
+        return KeyboardInput(value=text[match.end() : end]), end + 1
+
+
+@HTMLRenderer.register('keyboardInput')
+def render_keyboard_input_html(
+    renderer: HTMLRenderer,
+    node: KeyboardInput,
+    context: RenderContext,
+) -> str:
+    return f'<kbd>{renderer.escape_html(node.value)}</kbd>'
+
+
+@MarkdownRenderer.register('keyboardInput')
+def render_keyboard_input_markdown(
+    renderer: MarkdownRenderer,
+    node: KeyboardInput,
+    context: RenderContext,
+) -> str:
+    return f'<kbd>{renderer.escape_text(node.value)}</kbd>'
+
+
+@RSTRenderer.register('keyboardInput')
+def render_keyboard_input_rst(
+    renderer: RSTRenderer,
+    node: KeyboardInput,
+    context: RenderContext,
+) -> str:
+    return f':kbd:`{renderer.escape_inline_literal(node.value)}`'
+
+
+parser = Parser([KeyboardInputRole])
+root = parser.parse('Press :kbd:`Ctrl+C`.')
+expected_html = '''
+<p>Press <kbd>Ctrl+C</kbd>.</p>
+'''
+expected_markdown = r'''
+Press <kbd>Ctrl\+C</kbd>\.
+'''
+expected_rst = '''
+Press :kbd:`Ctrl+C`.
+'''
+
+assert root.to_ast() == {
+    'type': 'root',
+    'children': [
+        {
+            'type': 'paragraph',
+            'children': [
+                {'type': 'text', 'value': 'Press '},
+                {'type': 'keyboardInput', 'value': 'Ctrl+C'},
+                {'type': 'text', 'value': '.'},
+            ],
+        }
+    ],
+}
+assert HTMLRenderer().render(root) == expected_html.lstrip()
+assert MarkdownRenderer().render(root) == expected_markdown.lstrip()
+assert RSTRenderer().render(root) == expected_rst.lstrip()
+```
+
+Registering a handler mutates the renderer class, so do it during application
+startup or in the module that defines the extension. Without a registered
+handler, `BaseRenderer` falls back to rendering `children` or `value`; that may
+be useful for plain-text fallbacks, but it will not preserve your custom output
+format semantics.
 
 ## Custom block rule
 
@@ -322,6 +431,7 @@ needs these cases:
 - recognized syntax renders as expected,
 - unmatched or incomplete syntax stays as text,
 - nested inline parsing works if the rule calls `parser.parse_inlines()`,
+- custom node renderers are registered for each output format you support,
 - any rule option changes the enabled behavior,
 - per-parse state does not leak between parser calls.
 
@@ -335,7 +445,18 @@ def render(markdown: str) -> str:
     return HTMLRenderer().render(parser.parse(markdown))
 
 
+EXPECTED_MARKED = '''
+<p><mark>a <em>b</em></mark></p>
+'''
+EXPECTED_OPEN = '''
+<p>++open</p>
+'''
+
+
 def test_plus_mark() -> None:
-    assert render('++a *b*++\n') == '<p><mark>a <em>b</em></mark></p>\n'
-    assert render('++open\n') == '<p>++open</p>\n'
+    marked = '++a *b*++'
+    open_marker = '++open'
+
+    assert render(marked) == EXPECTED_MARKED.lstrip()
+    assert render(open_marker) == EXPECTED_OPEN.lstrip()
 ```

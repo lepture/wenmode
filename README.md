@@ -23,8 +23,18 @@ from wenmode import Wenmode
 
 wenmode = Wenmode()
 
-html = wenmode.render('# Hello\n\nThis is **wenmode**.')
-assert html == '<h1>Hello</h1>\n<p>This is <strong>wenmode</strong>.</p>\n'
+text = '''
+# Hello
+
+This is **wenmode**.
+'''
+expected = '''
+<h1>Hello</h1>
+<p>This is <strong>wenmode</strong>.</p>
+'''
+
+html = wenmode.render(text)
+assert html == expected.lstrip()
 ```
 
 Use `parse()` when you need the mdast-compatible syntax tree:
@@ -33,7 +43,9 @@ Use `parse()` when you need the mdast-compatible syntax tree:
 from wenmode import Wenmode
 
 wenmode = Wenmode()
-tree = wenmode.parse('A [link](https://example.com).\n')
+text = 'A [link](https://example.com).'
+
+tree = wenmode.parse(text)
 ast = tree.to_ast()
 
 assert ast == {
@@ -62,8 +74,14 @@ from wenmode import RSTRenderer, Wenmode
 
 wenmode = Wenmode(renderer=RSTRenderer())
 
-rst = wenmode.render('# Hello\n')
-assert rst == 'Hello\n=====\n'
+text = '# Hello'
+expected = '''
+Hello
+=====
+'''
+
+rst = wenmode.render(text)
+assert rst == expected.lstrip()
 ```
 
 ## Rules
@@ -76,10 +94,17 @@ from wenmode import Wenmode
 from wenmode.rules import AtxHeading, FencedCode, Image, InlineCode, Link
 
 wenmode = Wenmode([AtxHeading, FencedCode, Link, Image, InlineCode])
+text = '''
+# h1
 
-assert wenmode.render('# h1\n\nhi `code` **strong**') == (
-    '<h1>h1</h1>\n<p>hi <code>code</code> **strong**</p>\n'
-)
+hi `code` **strong**
+'''
+expected = '''
+<h1>h1</h1>
+<p>hi <code>code</code> **strong**</p>
+'''
+
+assert wenmode.render(text) == expected.lstrip()
 ```
 
 Because `Emphasis` is not enabled above, `**strong**` stays as text.
@@ -92,7 +117,9 @@ from wenmode import HTMLRenderer, Parser
 from wenmode.presets import commonmark
 
 parser = Parser(commonmark)
-tree = parser.parse('# Hello\n')
+text = '# Hello'
+
+tree = parser.parse(text)
 
 html = HTMLRenderer().render(tree)
 ```
@@ -110,16 +137,17 @@ wenmode = Wenmode(github)
 ## Benchmark
 
 Wenmode is designed so enabling more rules adds limited dispatch overhead. The
-benchmark script compares Markdown-to-HTML throughput across several real-world
-Markdown corpora:
+benchmark script compares Markdown-to-HTML throughput across Wenmode and the
+libraries covered by the migration guides:
 
 ```bash
-uv run --group benchmark python scripts/benchmark.py --case all --iterations 3 --warmup 1
+uv run --group benchmark python scripts/benchmark.py --case all
 ```
 
 `wenmode-core` uses CommonMark-style rules plus pipe tables. The other parsers
 are configured to match that feature set as closely as their APIs allow:
-CommonMark-style parsing plus pipe table support.
+CommonMark-style parsing plus pipe table support. `commonmark.py` is included
+as a CommonMark-only parser because it does not support pipe tables.
 
 `wenmode-all` uses the `github` preset plus Wenmode's remaining built-in rules,
 including directives, math, definition lists, abbreviations, spoilers, ruby
@@ -128,19 +156,63 @@ the benchmark corpora, so `wenmode-all` measures the overhead of carrying many
 additional rules rather than a syntax-equivalent comparison with the other
 parsers.
 
-Mean time from one local run:
+All benchmark targets are created once before warmup and timed iterations, then
+reused for every render call. Python-Markdown is the exception only in that the
+same `Markdown` instance is reset before each conversion, matching its reusable
+API shape. Marko uses `marko.ext.gfm.gfm`, which is a reusable `Markdown`
+instance rather than a newly created converter per iteration.
 
-| Library | docs | rust-book | progit | github-docs |
-| --- | ---: | ---: | ---: | ---: |
-| wenmode-core | 4.69ms | 146.90ms | 31.47ms | 3.764s |
-| wenmode-all | 5.20ms | 164.07ms | 33.89ms | 4.095s |
-| mistune | 7.46ms | 189.56ms | 42.65ms | 5.226s |
-| markdown-it-py | 10.53ms | 348.96ms | 71.92ms | 6.738s |
-| python-markdown | 23.68ms | 715.83ms | 143.70ms | 8.414s |
+The rule sets are intentionally close, not identical. `wenmode-core` uses
+CommonMark-style rules plus pipe tables with raw HTML passthrough and URL
+sanitization disabled for parity with the other HTML renderers. Mistune,
+Python-Markdown, markdown-it-py, and markdown2 enable their table support.
+Marko uses its GFM helper, which is broader than just tables. `commonmark.py`
+is included as a CommonMark-only baseline because it has no pipe table support.
+`wenmode-all` is deliberately broader than the other targets.
 
-In this run, `wenmode-all` still remains faster than the other parsers on every
-corpus even after loading many extra rules that the benchmark inputs mostly do
-not use. It runs about 7-10% slower than `wenmode-core`.
+Versions used in these snapshots:
+
+| Library | Version |
+| --- | ---: |
+| wenmode | 0.1.0 |
+| mistune | 3.2.1 |
+| python-markdown | 3.10.2 |
+| markdown-it-py | 4.2.0 |
+| markdown2 | 2.5.5 |
+| marko | 2.2.3 |
+| commonmark.py | 0.9.2 |
+
+Mean time from one local `--case all` run:
+
+| Case | Bytes | Library | Mean | MB/s | vs core |
+| --- | ---: | --- | ---: | ---: | ---: |
+| docs | 53,792 | wenmode-core | 4.84ms | 11.58 | 1.00x |
+| docs | 53,792 | wenmode-all | 5.89ms | 9.59 | 0.82x |
+| docs | 53,792 | mistune | 8.64ms | 6.89 | 0.56x |
+| docs | 53,792 | markdown-it-py | 13.27ms | 4.19 | 0.36x |
+| docs | 53,792 | commonmark.py | 20.72ms | 2.67 | 0.23x |
+| docs | 53,792 | python-markdown | 28.98ms | 1.88 | 0.17x |
+| docs | 53,792 | markdown2 | 43.34ms | 1.25 | 0.11x |
+| docs | 53,792 | marko | 49.65ms | 1.11 | 0.10x |
+| rust-book | 1,225,464 | wenmode-core | 138.87ms | 9.07 | 1.00x |
+| rust-book | 1,225,464 | wenmode-all | 156.48ms | 8.09 | 0.89x |
+| rust-book | 1,225,464 | mistune | 214.92ms | 6.53 | 0.65x |
+| rust-book | 1,225,464 | markdown-it-py | 360.20ms | 3.49 | 0.39x |
+| rust-book | 1,225,464 | python-markdown | 624.73ms | 2.00 | 0.22x |
+| rust-book | 1,225,464 | marko | 1.178s | 1.04 | 0.12x |
+| rust-book | 1,225,464 | markdown2 | 4.082s | 0.30 | 0.03x |
+| rust-book | 1,225,464 | commonmark.py | 9.619s | 0.14 | 0.01x |
+| progit | 502,090 | wenmode-core | 26.61ms | 19.24 | 1.00x |
+| progit | 502,090 | wenmode-all | 35.31ms | 16.36 | 0.75x |
+| progit | 502,090 | mistune | 44.01ms | 12.40 | 0.60x |
+| progit | 502,090 | markdown-it-py | 76.29ms | 7.15 | 0.35x |
+| progit | 502,090 | python-markdown | 149.01ms | 3.47 | 0.18x |
+| progit | 502,090 | commonmark.py | 347.45ms | 1.49 | 0.08x |
+| progit | 502,090 | marko | 357.08ms | 1.43 | 0.07x |
+| progit | 502,090 | markdown2 | 1.425s | 0.35 | 0.02x |
+
+In this run, `wenmode-all` remains faster than the other parsers even after
+loading many extra rules that the benchmark inputs mostly do not use.
 
 ## Streaming
 
@@ -153,7 +225,13 @@ from wenmode.presets import streaming
 
 wenmode = Wenmode(streaming)
 
-for chunk in wenmode.stream('# Hello\n\nA [link](/url).\n'):
+text = '''
+# Hello
+
+A [link](/url).
+'''
+
+for chunk in wenmode.stream(text):
     send(chunk)
 ```
 

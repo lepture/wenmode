@@ -26,7 +26,9 @@ turn nodes into output.
 ```python
 from wenmode import Wenmode
 
-root = Wenmode().parse('# Hello\n')
+text = '# Hello'
+
+root = Wenmode().parse(text)
 print(root.to_ast())
 ```
 

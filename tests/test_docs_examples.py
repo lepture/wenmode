@@ -8,10 +8,11 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 DOC_EXAMPLE_FILES = [
     ROOT / 'README.md',
-    ROOT / 'docs' / 'index.md',
-    ROOT / 'docs' / 'usage.md',
-    ROOT / 'docs' / 'security.md',
-    ROOT / 'docs' / 'recipes.md',
+    *[
+        path
+        for path in sorted((ROOT / 'docs').glob('*.md'))
+        if not path.name.startswith('reference')
+    ],
 ]
 
 PYTHON_BLOCK_RE = re.compile(r'^```python\n(?P<code>.*?)(?:\n)?^```', re.MULTILINE | re.DOTALL)
@@ -20,6 +21,10 @@ SKIP_SNIPPETS = (
     'from flask',
     'from django',
     'send(',
+    'class MyRule(InlineRule):',
+    'Wenmode([PlusMark, Emphasis])',
+    'parser.register_rule(Link',
+    'parser.register_rules([AtxHeading',
 )
 
 

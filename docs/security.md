@@ -11,6 +11,24 @@ controls.
 Wenmode parses Markdown into an AST and then renders that AST. Security behavior
 comes mostly from the renderer you choose and the rules you enable.
 
+## Threat model
+
+The default HTML path is designed for user-authored Markdown where raw HTML
+should not execute and unsafe link targets should not be emitted as active
+attributes. It is not a full HTML sanitizer for already-trusted raw HTML.
+
+Keep these boundaries in mind:
+
+- `HTMLRenderer()` escapes text and raw HTML nodes by default.
+- URL sanitization removes unsafe `href` and `src` attributes from rendered
+  links and images.
+- Parser rules decide whether raw HTML syntax becomes `html` AST nodes or plain
+  text.
+- `HTMLRenderer(escape=False)` and `HTMLRenderer(sanitize_urls=False)` are
+  trusted-input settings.
+- If your application allows raw HTML from untrusted users, sanitize that HTML
+  before or after Wenmode with an HTML sanitizer built for your threat model.
+
 ## Default HTML output
 
 `Wenmode()` uses `HTMLRenderer()` by default. That renderer escapes text and raw
@@ -20,9 +38,16 @@ HTML nodes before writing HTML output.
 from wenmode import Wenmode
 
 wenmode = Wenmode()
-html = wenmode.render('<script>alert(1)</script>\n')
+text = '''
+<script>alert(1)</script>
+'''
+expected = '''
+&lt;script&gt;alert(1)&lt;/script&gt;
+'''
 
-assert html == '&lt;script&gt;alert(1)&lt;/script&gt;\n'
+html = wenmode.render(text)
+
+assert html == expected.lstrip()
 ```
 
 Use this default when rendering user-authored Markdown into pages where raw HTML
@@ -37,9 +62,14 @@ trusted or sanitized elsewhere.
 from wenmode import HTMLRenderer, Wenmode
 
 wenmode = Wenmode(renderer=HTMLRenderer(escape=False))
-html = wenmode.render('<span>trusted</span>\n')
+text = '<span>trusted</span>'
+expected = '''
+<p><span>trusted</span></p>
+'''
 
-assert html == '<p><span>trusted</span></p>\n'
+html = wenmode.render(text)
+
+assert html == expected.lstrip()
 ```
 
 This allows raw HTML nodes to pass through the renderer. It does not sanitize
@@ -54,14 +84,29 @@ scheme are rendered without `href` or `src`.
 from wenmode import Wenmode
 
 wenmode = Wenmode()
-html = wenmode.render('[click](javascript:alert(1))\n')
+text = '[click](javascript:alert(1))'
+expected = '''
+<p><a>click</a></p>
+'''
 
-assert html == '<p><a>click</a></p>\n'
+html = wenmode.render(text)
+
+assert html == expected.lstrip()
 ```
 
 Allowed URL schemes are `http`, `https`, `irc`, `ircs`, `mailto`, and `tel`.
 Relative URLs are allowed. Use `HTMLRenderer(sanitize_urls=False)` only when URL
 validation is handled before rendering.
+
+## Recommended settings
+
+For untrusted Markdown, keep the default `HTMLRenderer()` settings. If you do
+not need raw HTML in the AST at all, also remove `HtmlBlock` and `RawHtml` from
+the rule list as shown below.
+
+For trusted Markdown, `HTMLRenderer(escape=False)` can preserve raw HTML output.
+Use it only when the source is controlled by your application or has already
+passed through an HTML sanitizer.
 
 ## Disallowed HTML tags
 
@@ -74,9 +119,16 @@ from wenmode import Wenmode
 from wenmode.presets import github
 
 wenmode = Wenmode(github)
-html = wenmode.render('<script>alert(1)</script>\n')
+text = '''
+<script>alert(1)</script>
+'''
+expected = '''
+&lt;script>alert(1)&lt;/script>
+'''
 
-assert html == '&lt;script>alert(1)&lt;/script>\n'
+html = wenmode.render(text)
+
+assert html == expected.lstrip()
 ```
 
 This is useful when you want GFM-compatible handling of raw HTML. Keep the
@@ -95,9 +147,13 @@ from wenmode.rules import HtmlBlock, RawHtml
 
 rules = [rule for rule in commonmark if rule not in {HtmlBlock, RawHtml}]
 wenmode = Wenmode(rules)
+text = '<span>text</span>'
+expected = '''
+<p>&lt;span&gt;text&lt;/span&gt;</p>
+'''
 
-html = wenmode.render('<span>text</span>\n')
-assert html == '<p>&lt;span&gt;text&lt;/span&gt;</p>\n'
+html = wenmode.render(text)
+assert html == expected.lstrip()
 ```
 
 The rendered HTML is the same in this simple example because the default

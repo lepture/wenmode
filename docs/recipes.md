@@ -3,7 +3,7 @@
 
 ```{rst-class} lead
 Copy common integration patterns for GFM, tables of contents, heading IDs,
-custom renderers, and AST JSON output.
+custom renderers, AST JSON output, and migration planning.
 ```
 
 ---
@@ -20,12 +20,15 @@ from wenmode import Wenmode
 from wenmode.presets import github
 
 wenmode = Wenmode(github)
-html = wenmode.render(
-    '- [x] done\n\n'
-    '| A | B |\n'
-    '| --- | --- |\n'
-    '| **x** | https://example.com |\n'
-)
+text = '''
+- [x] done
+
+| A | B |
+| --- | --- |
+| **x** | https://example.com |
+'''
+
+html = wenmode.render(text)
 
 assert '<input checked="" disabled="" type="checkbox">' in html
 assert '<table>' in html
@@ -46,8 +49,15 @@ wenmode = Wenmode(
     [AtxHeading(id_transform=True), LeafDirective],
     directives=[TableOfContents()],
 )
+text = '''
+::toc{min=2 max=3}
 
-html = wenmode.render('::toc{min=2 max=3}\n\n# Title\n\n## Usage\n')
+# Title
+
+## Usage
+'''
+
+html = wenmode.render(text)
 
 assert '<nav aria-label="Table of contents" class="toc">' in html
 assert '<a href="#usage">Usage</a>' in html
@@ -63,7 +73,13 @@ from wenmode.headings import Slugger, add_heading_ids
 from wenmode.toc import collect_toc, render_toc_html
 
 wenmode = Wenmode()
-root = wenmode.parse('# Title\n\n## Usage\n')
+text = '''
+# Title
+
+## Usage
+'''
+
+root = wenmode.parse(text)
 add_heading_ids(root, slugger=Slugger(), min_depth=2)
 
 toc = collect_toc(root, min_depth=2, max_depth=3)
@@ -85,15 +101,19 @@ from wenmode.rules import HtmlBlock, RawHtml
 
 rules = [rule for rule in commonmark if rule not in {HtmlBlock, RawHtml}]
 wenmode = Wenmode(rules)
+text = '<span>text</span>'
+expected = '''
+<p>&lt;span&gt;text&lt;/span&gt;</p>
+'''
 
-root = wenmode.parse('<span>text</span>\n')
+root = wenmode.parse(text)
 html = wenmode.render_node(root)
 
 assert root.to_ast()['children'][0]['children'][0] == {
     'type': 'text',
     'value': '<span>text</span>',
 }
-assert html == '<p>&lt;span&gt;text&lt;/span&gt;</p>\n'
+assert html == expected.lstrip()
 ```
 
 See {ref}`Security <security>` for renderer-level escaping and URL sanitization
@@ -109,9 +129,14 @@ from wenmode import Wenmode
 from wenmode.rules import AtxHeading
 
 wenmode = Wenmode([AtxHeading(id_transform=True)])
-html = wenmode.render('# Hello World\n')
+text = '# Hello World'
+expected = '''
+<h1 id="hello-world">Hello World</h1>
+'''
 
-assert html == '<h1 id="hello-world">Hello World</h1>\n'
+html = wenmode.render(text)
+
+assert html == expected.lstrip()
 ```
 
 For already-parsed trees, use `add_heading_ids()`.
@@ -120,7 +145,13 @@ For already-parsed trees, use `add_heading_ids()`.
 from wenmode import HTMLRenderer, Wenmode
 from wenmode.headings import Slugger, add_heading_ids
 
-root = Wenmode().parse('# Title\n\n## Usage\n')
+text = '''
+# Title
+
+## Usage
+'''
+
+root = Wenmode().parse(text)
 add_heading_ids(root, slugger=Slugger(), min_depth=2)
 
 html = HTMLRenderer().render(root)
@@ -138,7 +169,9 @@ import json
 
 from wenmode import Wenmode
 
-root = Wenmode().parse('A [link](https://example.com).\n')
+text = 'A [link](https://example.com).'
+
+root = Wenmode().parse(text)
 payload = json.dumps(root.to_ast(), ensure_ascii=False)
 
 assert '"type": "root"' in payload
@@ -166,30 +199,16 @@ def render_text(renderer: UpperRenderer, node: Text, context: RenderContext) -> 
 
 
 wenmode = Wenmode(renderer=UpperRenderer())
-text = wenmode.render('Hello *there*\n')
+source = 'Hello *there*'
+
+text = wenmode.render(source)
 
 assert text == 'HELLO THERE'
 ```
 
-## Migrate simple Mistune usage
+## Plan a parser migration
 
-For the common "Markdown string to HTML string" path, replace Mistune's HTML
-helper with `Wenmode().render()`.
-
-```python
-from wenmode import Wenmode
-
-markdown = '# Hello\n\nThis is **wenmode**.'
-
-# Mistune:
-# html = mistune.html(markdown)
-
-# Wenmode:
-html = Wenmode().render(markdown)
-
-assert html == '<h1>Hello</h1>\n<p>This is <strong>wenmode</strong>.</p>\n'
-```
-
-Mistune plugins do not map one-to-one to Wenmode APIs. In Wenmode, choose a
-preset for the baseline dialect, add or remove rules for syntax, and register
-directive renderers or custom renderers for output behavior.
+For migrations from Mistune, Python-Markdown, markdown-it-py, markdown2, Marko,
+or commonmark.py, start with the dedicated {ref}`migration` section. The guides
+cover direct render-call replacements, feature mapping, HTML safety defaults,
+AST migration, and custom extension migration.

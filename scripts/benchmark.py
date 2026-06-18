@@ -8,12 +8,16 @@ import tempfile
 import time
 import urllib.request
 from dataclasses import dataclass
+from importlib.metadata import version
 from pathlib import Path
 from typing import Callable
 
+import commonmark as commonmark_py
 import markdown
+import markdown2
 import mistune
 from markdown_it import MarkdownIt
+from marko.ext.gfm import gfm as marko_gfm
 
 from wenmode import HTMLRenderer, Wenmode
 from wenmode.presets import commonmark, github
@@ -60,12 +64,14 @@ class Case:
 @dataclass(frozen=True)
 class Target:
     name: str
+    version: str
     render: Callable[[str], str]
 
 
 @dataclass(frozen=True)
 class Result:
     target: str
+    version: str
     case: str
     bytes: int
     iterations: int
@@ -167,20 +173,11 @@ def load_progit_case() -> Case:
     )
 
 
-def load_github_docs_case() -> Case:
-    return load_archive_case(
-        'github-docs',
-        GITHUB_DOCS_TARBALL,
-        lambda path: path.startswith('content/') and path.endswith('.md'),
-    )
-
-
 def load_cases(selected: str) -> list[Case]:
     cases = {
         'docs': load_docs_case,
         'rust-book': load_rust_book_case,
         'progit': load_progit_case,
-        'github-docs': load_github_docs_case,
     }
     if selected == 'all':
         return [load_case() for load_case in cases.values()]
@@ -200,6 +197,8 @@ def load_cases(selected: str) -> list[Case]:
 def make_targets() -> list[Target]:
     # The non-Wenmode parsers are configured to match wenmode-core's feature set
     # as closely as their APIs allow: CommonMark-style parsing plus pipe tables.
+    # commonmark.py does not support pipe tables, so it is included as a
+    # CommonMark-only migration target.
     # wenmode-all intentionally enables many extra Wenmode rules that are mostly
     # unused by these corpora, so it measures dispatch overhead under a broad
     # rule set rather than a syntax-equivalent comparison.
@@ -212,12 +211,23 @@ def make_targets() -> list[Target]:
 
     markdown_it = MarkdownIt('commonmark', {'html': True}).enable('table')
 
+    markdown2_renderer = markdown2.Markdown(extras=['tables'])
+
+    commonmark_parser = commonmark_py.Parser()
+    commonmark_renderer = commonmark_py.HtmlRenderer()
+
+    def render_commonmark(text: str) -> str:
+        return commonmark_renderer.render(commonmark_parser.parse(text))
+
     return [
-        Target('wenmode-core', wenmode_core.render),
-        Target('wenmode-all', wenmode_all.render),
-        Target('mistune', mistune_renderer),
-        Target('python-markdown', lambda text: python_markdown.reset().convert(text)),
-        Target('markdown-it-py', markdown_it.render),
+        Target('wenmode-core', version('wenmode'), wenmode_core.render),
+        Target('wenmode-all', version('wenmode'), wenmode_all.render),
+        Target('mistune', version('mistune'), mistune_renderer),
+        Target('python-markdown', version('markdown'), lambda text: python_markdown.reset().convert(text)),
+        Target('markdown-it-py', version('markdown-it-py'), markdown_it.render),
+        Target('markdown2', version('markdown2'), markdown2_renderer.convert),
+        Target('marko', version('marko'), marko_gfm),
+        Target('commonmark.py', version('commonmark'), render_commonmark),
     ]
 
 
@@ -263,6 +273,7 @@ def benchmark(target: Target, case: Case, iterations: int, warmup: int) -> Resul
     throughput = case.bytes / best / 1_000_000
     return Result(
         target=target.name,
+        version=target.version,
         case=case.name,
         bytes=case.bytes,
         iterations=iterations,
@@ -280,6 +291,7 @@ def add_relative_speeds(results: list[Result], baseline_target: str = 'wenmode-c
         updated.append(
             Result(
                 target=result.target,
+                version=result.version,
                 case=result.case,
                 bytes=result.bytes,
                 iterations=result.iterations,
@@ -301,10 +313,11 @@ def format_duration(seconds: float) -> str:
 
 
 def print_table(results: list[Result]) -> None:
-    headers = ['library', 'case', 'bytes', 'iters', 'best', 'mean', 'MB/s', 'vs core']
+    headers = ['library', 'version', 'case', 'bytes', 'iters', 'best', 'mean', 'MB/s', 'vs core']
     rows = [
         [
             result.target,
+            result.version,
             result.case,
             str(result.bytes),
             str(result.iterations),
@@ -331,9 +344,9 @@ def parse_args() -> argparse.Namespace:
         '--case',
         metavar='CASE',
         default='docs',
-        help='input corpus: docs, rust-book, progit, github-docs, all, or a local file path',
+        help='input corpus: docs, rust-book, progit, all, or a local file path',
     )
-    parser.add_argument('--iterations', type=int, default=10, help='timed iterations per renderer and case')
+    parser.add_argument('--iterations', type=int, default=5, help='timed iterations per renderer and case')
     parser.add_argument('--warmup', type=int, default=2, help='untimed warmup iterations per renderer and case')
     return parser.parse_args()
 

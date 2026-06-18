@@ -70,7 +70,13 @@ from wenmode import Wenmode
 from wenmode.presets import streaming
 
 wenmode = Wenmode(streaming)
-html = ''.join(wenmode.stream('# Title\n\nA [link](/url).\n'))
+text = '''
+# Title
+
+A [link](/url).
+'''
+
+html = ''.join(wenmode.stream(text))
 ```
 
 It is close to the CommonMark-oriented rule set, but disables reference-style

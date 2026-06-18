@@ -17,9 +17,19 @@ uses the `commonmark` preset with `HTMLRenderer` when no options are provided.
 from wenmode import Wenmode
 
 wenmode = Wenmode()
-html = wenmode.render('# Hello\n\nThis is **wenmode**.')
+text = '''
+# Hello
 
-assert html == '<h1>Hello</h1>\n<p>This is <strong>wenmode</strong>.</p>\n'
+This is **wenmode**.
+'''
+expected = '''
+<h1>Hello</h1>
+<p>This is <strong>wenmode</strong>.</p>
+'''
+
+html = wenmode.render(text)
+
+assert html == expected.lstrip()
 ```
 
 `render()` parses the source and renders the resulting syntax tree. The source
@@ -42,7 +52,9 @@ Use `parse()` when you want the AST instead of rendered output.
 from wenmode import Wenmode
 
 wenmode = Wenmode()
-tree = wenmode.parse('A [link](https://example.com).\n')
+text = 'A [link](https://example.com).'
+
+tree = wenmode.parse(text)
 ast = tree.to_ast()
 
 assert ast == {
@@ -76,9 +88,15 @@ want another output format.
 from wenmode import RSTRenderer, Wenmode
 
 wenmode = Wenmode(renderer=RSTRenderer())
-rst = wenmode.render('# Hello\n')
+text = '# Hello'
+expected = '''
+Hello
+=====
+'''
 
-assert rst == 'Hello\n=====\n'
+rst = wenmode.render(text)
+
+assert rst == expected.lstrip()
 ```
 
 Wenmode currently provides:
@@ -98,7 +116,9 @@ If you already have a node, use `render_node()` to render it directly.
 from wenmode import Wenmode
 
 wenmode = Wenmode()
-root = wenmode.parse('# Hello\n')
+text = '# Hello'
+
+root = wenmode.parse(text)
 html = wenmode.render_node(root)
 ```
 
@@ -111,7 +131,9 @@ from wenmode import HTMLRenderer, Parser
 from wenmode.presets import commonmark
 
 parser = Parser(commonmark)
-tree = parser.parse('# Hello\n')
+text = '# Hello'
+
+tree = parser.parse(text)
 
 html = HTMLRenderer().render(tree)
 ```
@@ -131,15 +153,23 @@ from wenmode.presets import streaming
 
 wenmode = Wenmode(streaming)
 
+text = '''
+# Hello
+
+A [link](/url).
+'''
+
 sent_chunks: list[str] = []
 
-for chunk in wenmode.stream('# Hello\n\nA [link](/url).\n'):
+for chunk in wenmode.stream(text):
     sent_chunks.append(chunk)
 
-assert sent_chunks == [
-    '<h1>Hello</h1>\n',
-    '<p>A <a href="/url">link</a>.</p>\n',
-]
+expected = '''
+<h1>Hello</h1>
+<p>A <a href="/url">link</a>.</p>
+'''
+
+assert ''.join(sent_chunks) == expected.lstrip()
 ```
 
 The streaming API yields rendered block output as parsing progresses. It only

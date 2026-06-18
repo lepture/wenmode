@@ -28,7 +28,9 @@ Pass an empty list when you want no Markdown rules enabled.
 from wenmode import Wenmode
 
 wenmode = Wenmode([])
-html = wenmode.render('# not a heading\n')
+text = '# not a heading'
+
+html = wenmode.render(text)
 ```
 
 Pass classes or configured rule instances. Classes are instantiated

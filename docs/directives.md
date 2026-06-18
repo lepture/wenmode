@@ -133,8 +133,13 @@ from wenmode.rules import ContainerDirective
 
 wenmode = Wenmode([ContainerDirective])
 wenmode.register_directive_renderer(Admonition())
+text = '''
+:::note[Title]
+Body.
+:::
+'''
 
-html = wenmode.render(':::note[Title]\nBody.\n:::\n')
+html = wenmode.render(text)
 ```
 
 `register_directive_renderer()` requires an `HTMLRenderer`, because directive
@@ -199,7 +204,15 @@ from wenmode.directives import TableOfContents
 from wenmode.rules import AtxHeading, LeafDirective
 
 parser = Parser([AtxHeading(id_transform=True), LeafDirective])
-root = parser.parse('::toc{min=2 max=3}\n\n# Title\n\n## Usage\n')
+text = '''
+::toc{min=2 max=3}
+
+# Title
+
+## Usage
+'''
+
+root = parser.parse(text)
 html = HTMLRenderer(directives=[TableOfContents()]).render(root)
 ```
 

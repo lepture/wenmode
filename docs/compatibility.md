@@ -1,0 +1,63 @@
+(compatibility)=
+# Compatibility
+
+```{rst-class} lead
+Understand Wenmode's current project status, Python support, Markdown coverage,
+and stability expectations.
+```
+
+---
+
+Wenmode is currently beta software. The parser, renderer, rule composition, and
+documented extension APIs are ready for real integration work, but the project
+may still refine edge-case behavior and smaller public APIs before a stable
+1.0 release.
+
+## Python support
+
+Wenmode supports Python 3.10 and newer. The test matrix and package metadata
+cover Python 3.10, 3.11, 3.12, and 3.13.
+
+Documentation tooling currently requires Python 3.11 or newer because the docs
+dependency group follows the supported versions of Sphinx and the selected
+theme.
+
+## Markdown coverage
+
+The default `commonmark` preset targets CommonMark-style Markdown and includes
+reference-style links and images. It does not include GitHub-flavored Markdown
+extensions such as tables, task lists, strikethrough, extended autolinks, or
+footnotes.
+
+Use the `github` preset for GitHub-flavored Markdown features. Wenmode runs the
+CommonMark and GFM spec fixture suites in its tests, but some extension behavior
+is intentionally exposed as explicit rules rather than hidden global plugins.
+
+Use the `streaming` preset when you need incremental HTML output. Streaming
+disables syntax that requires document-wide deferred inline resolution, such as
+reference-style links, reference-style images, and footnotes.
+
+## Stability expectations
+
+The high-level APIs documented in {ref}`usage`, {ref}`presets`, and
+{ref}`custom-rules` are intended to be stable through the beta period:
+
+- `Wenmode`, `Parser`, and renderer construction.
+- Rule classes and configured rule instances.
+- `Node.to_ast()` output for documented node types.
+- Custom `BlockRule`, `ContinueRule`, `InlineRule`, and root transform shapes.
+- `StateKey` and `BlockState.store` for per-parse extension state.
+
+The project may still adjust undocumented helper functions, renderer formatting
+details for non-HTML output, and edge-case parsing behavior where the current
+implementation conflicts with CommonMark, GFM, or documented Wenmode semantics.
+
+## Migration notes
+
+Wenmode is not a drop-in replacement for Mistune plugins. The common
+Markdown-to-HTML path maps directly to `Wenmode().render()`, but extension
+behavior should be migrated by choosing a preset, adding or removing parser
+rules, and registering directive renderers or custom renderers as needed.
+
+See {ref}`recipes` for common integration patterns and {ref}`custom-rules` for
+custom syntax.
