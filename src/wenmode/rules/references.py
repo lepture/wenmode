@@ -9,9 +9,9 @@ from wenmode.state import StateKey
 from wenmode.utils import normalize_label, normalize_label_text, normalize_uri_text
 
 from .base import BlockRule, Rule
+from .transforms import RootTransform
 
 if TYPE_CHECKING:
-    from wenmode.nodes import Root
     from wenmode.parser import Parser
     from wenmode.state import BlockState
 
@@ -66,16 +66,10 @@ class ReferenceDefinition(BlockRule):
         return None
 
 
-class ReferenceTransform:
+class ReferenceTransform(RootTransform):
     name = 'reference'
     defer_inlines = True
     required_rules: Sequence[type[Rule] | Rule] = [ReferenceDefinition]
-
-    def prepare(self, parser: Parser, root: Root, state: BlockState) -> None:
-        pass
-
-    def transform(self, parser: Parser, root: Root, state: BlockState) -> None:
-        pass
 
 
 def parse_reference(state: BlockState, index: int) -> tuple[int, str, str, str | None] | None:

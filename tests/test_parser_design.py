@@ -18,6 +18,7 @@ from wenmode.rules import (
     Image,
     Link,
     List,
+    RootTransform,
     Rule,
     SetextHeading,
     Table,
@@ -49,13 +50,9 @@ class TermDefinition(BlockRule):
         return None
 
 
-class GlossaryTransform:
+class GlossaryTransform(RootTransform):
     name = 'glossary'
-    defer_inlines = False
     required_rules = [TermDefinition]
-
-    def prepare(self, parser: Parser, root: Root, state: BlockState) -> None:
-        pass
 
     def transform(self, parser: Parser, root: Root, state: BlockState) -> None:
         root.data = {'terms': dict(state.store.get(TERMS))}

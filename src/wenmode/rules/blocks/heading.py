@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from wenmode.headings import Slugger, add_heading_ids
 from wenmode.nodes import Heading, Node
 from wenmode.state import BlockState
 
-from ..base import BlockRule, ContinueRule, Rule
+from ..base import BlockRule, ContinueRule
 from ..transforms import RootTransform
 
 if TYPE_CHECKING:
@@ -19,21 +18,15 @@ if TYPE_CHECKING:
 SETEXT_HEADING_RE = re.compile(r'[ \t]{0,3}(=+|-+)[ \t]*$')
 
 
-class HeadingIdTransform:
+class HeadingIdTransform(RootTransform):
     """Root transform that adds generated IDs to heading nodes.
 
     :param slugger_factory: Slugger class used to generate heading IDs.
     """
 
-    defer_inlines = False
-    required_rules: Sequence[type[Rule] | Rule] = ()
-
     def __init__(self, slugger_factory: type[Slugger] = Slugger) -> None:
         self.slugger_factory = slugger_factory
         self.name = f'heading_id:{slugger_factory.name}'
-
-    def prepare(self, parser: Parser, root: Root, state: BlockState) -> None:
-        pass
 
     def transform(self, parser: Parser, root: Root, state: BlockState) -> None:
         add_heading_ids(root, slugger=self.slugger_factory())

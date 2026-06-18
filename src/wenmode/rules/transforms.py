@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from wenmode.nodes import Root
@@ -11,16 +11,16 @@ if TYPE_CHECKING:
     from .base import Rule
 
 
-class RootTransform(Protocol):
-    """Protocol for document-wide transforms attached by rules.
+class RootTransform:
+    """Base class for document-wide transforms attached by rules.
 
     Root transforms can collect definitions, request helper rules, defer inline
     parsing, and update the parsed root after block parsing completes.
     """
 
     name: str
-    defer_inlines: bool
-    required_rules: Sequence[type[Rule] | Rule]
+    defer_inlines = False
+    required_rules: Sequence[type[Rule] | Rule] = ()
 
     def prepare(self, parser: Parser, root: Root, state: BlockState) -> None:
         """Prepare document-wide state before deferred inlines resolve."""

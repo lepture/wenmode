@@ -10,6 +10,7 @@ from wenmode.nodes import Node, Parent, Text
 from wenmode.state import BlockState, StateKey
 
 from ..base import BlockRule, Rule
+from ..transforms import RootTransform
 
 if TYPE_CHECKING:
     from wenmode.nodes import Root
@@ -67,13 +68,10 @@ class AbbreviationDefinition(BlockRule):
         return None
 
 
-class AbbreviationTransform:
+class AbbreviationTransform(RootTransform):
     name = 'abbreviation'
     defer_inlines = True
     required_rules: Sequence[type[Rule] | Rule] = [AbbreviationDefinition]
-
-    def prepare(self, parser: Parser, root: Root, state: BlockState) -> None:
-        pass
 
     def transform(self, parser: Parser, root: Root, state: BlockState) -> None:
         abbreviations = state.store.get(ABBREVIATIONS_KEY)

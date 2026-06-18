@@ -11,6 +11,7 @@ from wenmode.state import StateKey
 from wenmode.utils import count_indent, normalize_label, normalize_label_text
 
 from .base import BlockRule, InlineRule, Rule
+from .transforms import RootTransform
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
@@ -104,7 +105,7 @@ class FootnoteDefinition(BlockRule):
         return FootnoteDefinitionNode(identifier=identifier, label=label, children=children)
 
 
-class FootnoteTransform:
+class FootnoteTransform(RootTransform):
     name = 'footnote'
     defer_inlines = True
     required_rules: Sequence[type[Rule] | Rule] = [FootnoteDefinition]
