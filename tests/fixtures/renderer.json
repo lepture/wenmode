@@ -7,6 +7,19 @@
     "rst": "Title\n-----\n\nHello *em* **strong** ``code`` :math:`x + y` `link </url>`__ |image-1|\n\n.. |image-1| image:: /img.png\n   :alt: alt\n"
   },
   {
+    "name": "heading ids from inline content",
+    "input": "# ![Alt Text](/img.png)\n\n# ![Alt Text](/other.png)\n\n# [^note]\n\n[^note]: body\n",
+    "rules": [
+      "atx_heading_id",
+      "image",
+      "link",
+      "footnote"
+    ],
+    "html": "<h1 id=\"alt-text\"><img src=\"/img.png\" alt=\"Alt Text\" /></h1>\n<h1 id=\"alt-text-1\"><img src=\"/other.png\" alt=\"Alt Text\" /></h1>\n<h1 id=\"note\"><sup><a href=\"#user-content-fn-note\" id=\"user-content-fnref-note\" data-footnote-ref aria-describedby=\"footnote-label\">1</a></sup></h1>\n<section data-footnotes class=\"footnotes\">\n<h2 class=\"sr-only\" id=\"footnote-label\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-note\">\n<p>body <a href=\"#user-content-fnref-note\" data-footnote-backref class=\"data-footnote-backref\" aria-label=\"Back to content\">&#8617;</a></p>\n</li>\n</ol>\n</section>\n",
+    "markdown": "# ![Alt Text](/img.png)\n\n# ![Alt Text](/other.png)\n\n# [^note]\n\n[^note]: body\n",
+    "rst": "|image-1|\n=========\n\n|image-2|\n=========\n\n[#note]_\n========\n\n.. [#note] body\n\n.. |image-1| image:: /img.png\n   :alt: Alt Text\n\n.. |image-2| image:: /other.png\n   :alt: Alt Text\n"
+  },
+  {
     "name": "block nodes",
     "input": "> quote\n\n- one\n- two\n\n3. three\n4. four\n\n- loose\n  \n  item\n\n- next\n\n```py\nprint(1)\n```\n\n---\n\na  \nb\n",
     "html": "<blockquote>\n<p>quote</p>\n</blockquote>\n<ul>\n<li>\n<p>one</p>\n</li>\n<li>\n<p>two</p>\n</li>\n</ul>\n<ol start=\"3\">\n<li>\n<p>three</p>\n</li>\n<li>\n<p>four</p>\n</li>\n</ol>\n<ul>\n<li>\n<p>loose</p>\n<p>item</p>\n</li>\n<li>\n<p>next</p>\n</li>\n</ul>\n<pre><code class=\"language-py\">print(1)\n</code></pre>\n<hr />\n<p>a<br />\nb</p>\n",
@@ -101,6 +114,13 @@
     "rst": "Apple\n  Fruit\n\n====  =====\nName  Value\n====  =====\nA     1\n====  =====\n"
   },
   {
+    "name": "empty definition description",
+    "input": "Term\n: \n",
+    "html": "<dl>\n<dt>Term</dt>\n<dd>\n</dd>\n</dl>\n",
+    "markdown": "Term\n:\n",
+    "rst": "Term\n"
+  },
+  {
     "name": "directives",
     "input": ":::note[Important]{.warning}\nBody.\n:::\n",
     "html": "<aside class=\"warning admonition admonition-note\">\n<p class=\"admonition-title\">Important</p>\n<p>Body.</p>\n</aside>\n",
@@ -161,6 +181,44 @@
     "rst": ".. raw:: html\n\n   <div>div</div>\n\n`bad <javascript:alert(1)>`__\n"
   },
   {
+    "name": "empty containers and directive options",
+    "input": ">!\n\n:::note{#intro empty}\n:::\n\n::note[Title]{#leaf empty}\n\n:::details\nHidden\n:::\n",
+    "html": "<div class=\"spoiler\">\n</div>\n<aside id=\"intro\" empty=\"\" class=\"admonition admonition-note\">\n</aside>\nTitle<details>\n<p>Hidden</p>\n</details>\n",
+    "markdown": ">!\n\n:::note{#intro empty}\n:::\n\n::note[Title]{#leaf empty}\n\n:::details\nHidden\n:::\n",
+    "rst": ".. admonition:: Spoiler\n\n.. note::\n   :name: intro\n   :empty:\n\n.. note:: Title\n   :name: leaf\n   :empty:\n\n.. details::\n\n   Hidden\n"
+  },
+  {
+    "name": "aligned table",
+    "input": "| Left | Center | Right |\n| :--- | :---: | ---: |\n| a<br>b | c | d |\n",
+    "html": "<table>\n<thead>\n<tr>\n<th align=\"left\">Left</th>\n<th align=\"center\">Center</th>\n<th align=\"right\">Right</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td align=\"left\">a&lt;br&gt;b</td>\n<td align=\"center\">c</td>\n<td align=\"right\">d</td>\n</tr>\n</tbody>\n</table>\n",
+    "markdown": "| Left | Center | Right |\n| :--- | :---: | ---: |\n| a<br>b | c | d |\n",
+    "rst": "======  ======  =====\nLeft    Center  Right\n======  ======  =====\na<br>b  c       d\n======  ======  =====\n"
+  },
+  {
+    "name": "empty footnote definition output",
+    "input": "[^empty]:\n",
+    "rules": [
+      "footnote"
+    ],
+    "html": "",
+    "markdown": "[^empty]:\n",
+    "rst": ".. [#empty]\n"
+  },
+  {
+    "name": "empty list item",
+    "input": "-\n- two\n",
+    "html": "<ul>\n<li></li>\n<li>two</li>\n</ul>\n",
+    "markdown": "-\n- two\n",
+    "rst": "-\n- two\n"
+  },
+  {
+    "name": "reference labels from inline content",
+    "input": "[![alt](/img.png)][image-ref]\n\n[a  \nb][break-ref]\n\n[image-ref]: /image-link\n[break-ref]: /break-link\n",
+    "html": "<p><a href=\"/image-link\"><img src=\"/img.png\" alt=\"alt\" /></a></p>\n<p><a href=\"/break-link\">a<br />\nb</a></p>\n",
+    "markdown": "[![alt](/img.png)](/image-link)\n\n[a  \nb](/break-link)\n",
+    "rst": "`|image-1| </image-link>`__\n\n`a\nb </break-link>`__\n\n.. |image-1| image:: /img.png\n   :alt: alt\n"
+  },
+  {
     "name": "task list",
     "input": "- [x] done\n- [ ] todo\n",
     "html": "<ul>\n<li><input checked=\"\" disabled=\"\" type=\"checkbox\"> done</li>\n<li><input disabled=\"\" type=\"checkbox\"> todo</li>\n</ul>\n",
@@ -173,6 +231,13 @@
     "html": "<pre><code class=\"language-meta\">contains ``` fence\n</code></pre>\n",
     "markdown": "````meta\ncontains ``` fence\n````\n",
     "rst": ".. code-block:: meta\n\n   contains ``` fence\n"
+  },
+  {
+    "name": "tab indented code",
+    "input": "\tprint(1)\n\t  indented\n",
+    "html": "<pre><code>print(1)\n  indented\n</code></pre>\n",
+    "markdown": "```\nprint(1)\n  indented\n```\n",
+    "rst": "::\n\n   print(1)\n     indented\n"
   },
   {
     "name": "inline code with backticks",

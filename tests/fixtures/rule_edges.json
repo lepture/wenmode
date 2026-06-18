@@ -129,6 +129,14 @@
     "html": "<ul>\n<li>\n<p>a</p>\n<p>b</p>\n</li>\n<li>\n<p>c</p>\n</li>\n</ul>\n"
   },
   {
+    "name": "list keeps trailing blanks inside final loose item",
+    "rules": [
+      "list"
+    ],
+    "markdown": "- a\n\n\n",
+    "html": "<ul>\n<li>\n<p>a</p>\n</li>\n</ul>\n"
+  },
+  {
     "name": "abbreviation multiline title consumes continuations",
     "rules": [
       "abbreviation"
@@ -265,6 +273,15 @@
     "html": ""
   },
   {
+    "name": "container directive parses escaped label and attributes",
+    "rules": [
+      "container_directive",
+      "backslash_escape"
+    ],
+    "markdown": ":::note[a\\]b]{#id .a .b title=\"a\\\"b\" empty}\nbody\n:::\n",
+    "html": "<p>a]b</p>\n<p>body</p>\n"
+  },
+  {
     "name": "invalid html declaration is escaped html block",
     "rules": [
       "html_block"
@@ -376,6 +393,25 @@
     "html": "<ul>\n<li><input checked=\"\" disabled=\"\" type=\"checkbox\"> done</li>\n</ul>\n"
   },
   {
+    "name": "task marker before emphasis leaves emphasis first",
+    "rules": [
+      "task_list",
+      "emphasis"
+    ],
+    "markdown": "- [x] *done*\n",
+    "html": "<ul>\n<li><input checked=\"\" disabled=\"\" type=\"checkbox\"> <em>done</em></li>\n</ul>\n"
+  },
+  {
+    "name": "task list image syntax is not a checkbox",
+    "rules": [
+      "task_list",
+      "image",
+      "link"
+    ],
+    "markdown": "- ![x](/img.png)\n",
+    "html": "<ul>\n<li><img src=\"/img.png\" alt=\"x\" /></li>\n</ul>\n"
+  },
+  {
     "name": "unclosed image opener stays text",
     "rules": [
       "link",
@@ -392,6 +428,16 @@
     ],
     "markdown": "![[link](/url)](/image)\n",
     "html": "<p><img src=\"/image\" alt=\"link\" /></p>\n"
+  },
+  {
+    "name": "image alt preserves hard break as newline",
+    "rules": [
+      "image",
+      "link",
+      "hard_break"
+    ],
+    "markdown": "![a  \nb](/img.png)\n",
+    "html": "<p><img src=\"/img.png\" alt=\"a\nb\" /></p>\n"
   },
   {
     "name": "shortcut reference ignored when references disabled",
@@ -416,6 +462,14 @@
     ],
     "markdown": "~~~~\n",
     "html": "<p>~~~~</p>\n"
+  },
+  {
+    "name": "strikethrough skips escaped closer",
+    "rules": [
+      "strikethrough"
+    ],
+    "markdown": "~~a\\~~b~~\n",
+    "html": "<p><del>a\\~~b</del></p>\n"
   },
   {
     "name": "link opener without destination stays text",
@@ -480,6 +534,24 @@
     ],
     "markdown": "[x](/url plain)\n",
     "html": "<p>[x](/url plain)</p>\n"
+  },
+  {
+    "name": "link label ignores brackets inside code span",
+    "rules": [
+      "link",
+      "inline_code"
+    ],
+    "markdown": "[a `[b]` c](/url)\n",
+    "html": "<p><a href=\"/url\">a <code>[b]</code> c</a></p>\n"
+  },
+  {
+    "name": "link label with unclosed code span still balances brackets",
+    "rules": [
+      "link",
+      "inline_code"
+    ],
+    "markdown": "[a `code [b]](/url)\n",
+    "html": "<p><a href=\"/url\">a `code [b]</a></p>\n"
   },
   {
     "name": "link unterminated title is not accepted",

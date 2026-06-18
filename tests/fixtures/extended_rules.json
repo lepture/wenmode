@@ -226,6 +226,18 @@
     "html": "<p><a href=\"/url\">link</a> and a<sup><a href=\"#user-content-fn-one\" id=\"user-content-fnref-one\" data-footnote-ref aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes class=\"footnotes\">\n<h2 class=\"sr-only\" id=\"footnote-label\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-one\">\n<p>note <a href=\"#user-content-fnref-one\" data-footnote-backref class=\"data-footnote-backref\" aria-label=\"Back to content\">&#8617;</a></p>\n</li>\n</ol>\n</section>\n"
   },
   {
+    "name": "footnote definition with tab continuation",
+    "rules": [
+      "footnote",
+      "emphasis",
+      "blockquote",
+      "link"
+    ],
+    "markdown": "[^tab]: first\n\tsecond\n\n[^tab]\n",
+    "html": "<p><sup><a href=\"#user-content-fn-tab\" id=\"user-content-fnref-tab\" data-footnote-ref aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes class=\"footnotes\">\n<h2 class=\"sr-only\" id=\"footnote-label\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-tab\">\n<p>first\nsecond <a href=\"#user-content-fnref-tab\" data-footnote-backref class=\"data-footnote-backref\" aria-label=\"Back to content\">&#8617;</a></p>\n</li>\n</ol>\n</section>\n",
+    "markdown_output": "[^tab]: first\n  second\n\n[^tab]\n"
+  },
+  {
     "name": "inline math",
     "rules": [
       "math_block",

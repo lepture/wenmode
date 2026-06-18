@@ -52,6 +52,7 @@ FIXTURES_DIR = Path(__file__).parent / 'fixtures'
 RENDERER_RULES = {
     'abbreviation': Abbreviation,
     'atx_heading': AtxHeading,
+    'atx_heading_id': AtxHeading(id_transform=True),
     'autolink': Autolink,
     'backslash_escape': BackslashEscape,
     'blockquote': Blockquote,
