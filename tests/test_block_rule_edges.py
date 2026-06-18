@@ -173,7 +173,7 @@ def test_block_rule_edge_branches() -> None:
         )
         is None
     )
-    assert render_html(Parser([TableRule]), 'a | b\n| --- |\n') == '<p>a | b</p>\n<p>| --- |</p>\n'
+    assert render_html(Parser([TableRule]), 'a | b\n| --- |\n') == '<p>a | b\n| --- |</p>\n'
     assert parse_delimiter_row('--- ---') is None
     assert parse_delimiter_row('| --- | bad |') is None
     assert parse_delimiter_row('| :--- | ---: | :---: |') == ['left', 'right', 'center']

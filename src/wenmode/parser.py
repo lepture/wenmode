@@ -361,6 +361,8 @@ class Parser:
             return False
         if match.lastgroup == 'reference_definition':
             return False
+        if match.lastgroup == 'table':
+            return False
         if match.lastgroup == 'list':
             marker = LIST_MARKER_RE.match(line.rstrip('\r\n'))
             if marker is not None and marker.group('rest').strip() == '':

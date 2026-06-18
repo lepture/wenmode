@@ -14,8 +14,7 @@ if TYPE_CHECKING:
     from wenmode.parser import Parser
 
 
-DELIMITER_CELL_RE = re.compile(r'^:?-{3,}:?$')
-CELL_SPACE_RE = re.compile(r'[ \t]+')
+DELIMITER_CELL_RE = re.compile(r'^:?-+:?$')
 
 
 class Table(BlockRule):
@@ -52,7 +51,7 @@ class Table(BlockRule):
 
         while not state.done:
             line = state.line.rstrip('\r\n')
-            if line.strip() == '' or not has_unescaped_pipe(line):
+            if line.strip() == '' or parser.is_paragraph_interrupt(line, state):
                 break
             cells = normalize_row(split_table_row(line), len(align))
             rows.append(TableRow(children=parse_cells(parser, cells, state)))
@@ -62,16 +61,13 @@ class Table(BlockRule):
 
 
 def parse_cells(parser: Parser, cells: list[str], state: BlockState) -> list[Node]:
-    return [TableCell(children=parser.parse_inlines(cell.strip(), state)) for cell in cells]
+    return [TableCell(children=parser.parse_inlines(unescape_table_pipes(cell.strip()), state)) for cell in cells]
 
 
 def parse_delimiter_row(line: str) -> list[str | None] | None:
-    if not has_unescaped_pipe(line):
-        return None
-
     align: list[str | None] = []
     for cell in split_table_row(line):
-        value = CELL_SPACE_RE.sub('', cell)
+        value = cell.strip(' \t')
         if DELIMITER_CELL_RE.fullmatch(value) is None:
             return None
         left = value.startswith(':')
@@ -131,3 +127,16 @@ def split_table_row(line: str) -> list[str]:
 
 def has_unescaped_pipe(line: str) -> bool:
     return any(char == '|' and not is_escaped(line, index) for index, char in enumerate(line))
+
+
+def unescape_table_pipes(value: str) -> str:
+    parts: list[str] = []
+    index = 0
+    while index < len(value):
+        if value[index] == '|' and is_escaped(value, index):
+            parts.pop()
+            parts.append('|')
+        else:
+            parts.append(value[index])
+        index += 1
+    return ''.join(parts)
