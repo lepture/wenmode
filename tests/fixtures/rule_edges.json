@@ -1106,5 +1106,45 @@
     ],
     "markdown": "[\\^x]: /url\n",
     "html": "<p>[\\^x]: /url</p>\n"
+  },
+  {
+    "name": "indented leaf directive renders no children",
+    "rules": [
+      "leaf_directive"
+    ],
+    "markdown": "  ::note\n",
+    "html": ""
+  },
+  {
+    "name": "leaf directive parses nested label brackets",
+    "rules": [
+      "leaf_directive"
+    ],
+    "markdown": "::note[a[b]]\n",
+    "html": "a[b]"
+  },
+  {
+    "name": "text directive parses nested label and sparse attributes",
+    "rules": [
+      "text_directive"
+    ],
+    "markdown": ":name[a[b]]{=skip #.a  empty title=\"a b\"  }\n",
+    "html": "<p>a[b]</p>\n"
+  },
+  {
+    "name": "footnote entity label normalizes empty",
+    "rules": [
+      "footnote"
+    ],
+    "markdown": "[^&nbsp;]: bad\n",
+    "html": "<p>[^&amp;nbsp;]: bad</p>\n"
+  },
+  {
+    "name": "table code span skips nested backtick run",
+    "rules": [
+      "table"
+    ],
+    "markdown": "a | b\n--- | ---\n`a `` b` | c\n",
+    "html": "<table>\n<thead>\n<tr>\n<th>a</th>\n<th>b</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>`a `` b`</td>\n<td>c</td>\n</tr>\n</tbody>\n</table>\n"
   }
 ]
