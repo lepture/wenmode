@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import pytest
 
-from wenmode import HTMLRenderer, Parser
+from wenmode import HTMLRenderer, Wenmode
 from wenmode.directives import Admonition, Figure, TableOfContents
 from wenmode.nodes import (
     ContainerDirective,
@@ -19,7 +19,6 @@ from wenmode.nodes import (
 )
 from wenmode.renderers import RenderContext
 from wenmode.rules import Footnote
-from wenmode.toc import render_toc_html
 
 from ._renderer_fixtures import RendererExample, load_renderer_examples, node_from_renderer_example
 
@@ -31,9 +30,7 @@ class CustomElement(Parent):
 
 def root_with_footnote_definitions(children: list[Node]) -> Root:
     root = Root(children=children)
-    root.footnote_definitions = {
-        child.identifier: child for child in children if isinstance(child, FootnoteDefinition)
-    }
+    root.footnote_definitions = {child.identifier: child for child in children if isinstance(child, FootnoteDefinition)}
     return root
 
 
@@ -105,9 +102,9 @@ def test_html_renderer_reuses_number_for_repeated_footnote_references() -> None:
 
 
 def test_html_renderer_reuses_instance_without_leaking_footnote_state() -> None:
-    parser = Parser([Footnote])
+    app = Wenmode([Footnote])
     renderer = HTMLRenderer()
-    root = parser.parse('a[^one]\n\n[^one]: note\n')
+    root = app.parse('a[^one]\n\n[^one]: note\n')
 
     first = renderer.render(root)
     second = renderer.render(root)
@@ -167,4 +164,3 @@ def test_html_directive_renderers_without_labels_and_toc_fallbacks() -> None:
         '<aside class="admonition admonition-note">\n<p>body</p>\n</aside>\n<figure>\n<p>image</p>\n</figure>\n'
     )
     assert TableOfContents().render(HTMLRenderer(), LeafDirective(name='toc'), renderer.create_context()) == ''
-    assert render_toc_html([], label='Empty') == ''

@@ -1,0 +1,119 @@
+[
+  {
+    "name": "commonmark leaves math disabled",
+    "preset": "commonmark",
+    "markdown": "$x$\n\n$$\nx\n$$\n",
+    "html": "<p>$x$</p>\n<p>$$\nx\n$$</p>\n"
+  },
+  {
+    "name": "github leaves math disabled",
+    "preset": "github",
+    "markdown": "$x$\n\n$$\nx\n$$\n",
+    "html": "<p>$x$</p>\n<p>$$\nx\n$$</p>\n"
+  },
+  {
+    "name": "mark parses emphasis and escaped delimiter",
+    "rules": ["mark", "backslash_escape", "emphasis"],
+    "markdown": "==marked *text*== and ==mark \\== equal==\n",
+    "html": "<p><mark>marked <em>text</em></mark> and <mark>mark == equal</mark></p>\n",
+    "markdown_output": "==marked *text*== and ==mark == equal==\n"
+  },
+  {
+    "name": "mark requires tight delimiters before content",
+    "rules": ["mark"],
+    "markdown": "== no mark==\n==no mark ==\n===no mark===\n",
+    "html": "<p>== no mark==\n==no mark ==\n===no mark===</p>\n"
+  },
+  {
+    "name": "insert parses emphasis and escaped delimiter",
+    "rules": ["insert", "backslash_escape", "emphasis"],
+    "markdown": "^^insert *text*^^ and ^^insert \\^^ caret^^\n",
+    "html": "<p><ins>insert <em>text</em></ins> and <ins>insert ^^ caret</ins></p>\n",
+    "markdown_output": "^^insert *text*^^ and ^^insert ^^ caret^^\n"
+  },
+  {
+    "name": "insert requires tight delimiters before content",
+    "rules": ["insert"],
+    "markdown": "^^ no insert^^\n^^no insert ^^\n^^^no insert^^^\n",
+    "html": "<p>^^ no insert^^\n^^no insert ^^\n^^^no insert^^^</p>\n"
+  },
+  {
+    "name": "superscript parses escaped spaces and carets",
+    "rules": ["superscript", "backslash_escape", "emphasis"],
+    "markdown": "2^10^ and ^with\\ space^ and ^escaped\\^caret^\n",
+    "html": "<p>2<sup>10</sup> and <sup>with space</sup> and <sup>escaped^caret</sup></p>\n",
+    "markdown_output": "2^10^ and ^with\\ space^ and ^escaped\\^caret^\n"
+  },
+  {
+    "name": "superscript does not allow plain spaces",
+    "rules": ["superscript"],
+    "markdown": "^no script^\n",
+    "html": "<p>^no script^</p>\n"
+  },
+  {
+    "name": "subscript parses escaped spaces and strikethrough separately",
+    "rules": ["subscript", "strikethrough", "backslash_escape", "emphasis"],
+    "markdown": "H~2~O and ~with\\ space~ and ~escaped\\~tilde~ and ~~delete~~\n",
+    "html": "<p>H<sub>2</sub>O and <sub>with space</sub> and <sub>escaped~tilde</sub> and <del>delete</del></p>\n",
+    "markdown_output": "H~2~O and ~with\\ space~ and ~escaped\\~tilde~ and ~~delete~~\n"
+  },
+  {
+    "name": "subscript does not allow plain spaces",
+    "rules": ["subscript"],
+    "markdown": "~no script~\n",
+    "html": "<p>~no script~</p>\n"
+  },
+  {
+    "name": "ruby parses compact annotations",
+    "rules": ["ruby"],
+    "markdown": "[汉字(hàn zì)] and [汉(hàn)字(zì)]\n",
+    "html": "<p><ruby>汉字<rt>hàn zì</rt></ruby> and <ruby>汉<rt>hàn</rt>字<rt>zì</rt></ruby></p>\n",
+    "markdown_output": "[汉字(hàn zì)] and [汉(hàn)字(zì)]\n"
+  },
+  {
+    "name": "ruby can be wrapped by direct and reference links",
+    "rules": ["ruby", "link"],
+    "markdown": "[漢字(kanji)](/ruby \"Ruby\") and [漢字(kanji)][term]\n\n[term]: /term\n",
+    "html": "<p><a href=\"/ruby\" title=\"Ruby\"><ruby>漢字<rt>kanji</rt></ruby></a> and <a href=\"/term\"><ruby>漢字<rt>kanji</rt></ruby></a></p>\n"
+  },
+  {
+    "name": "inline spoiler parses emphasis inside",
+    "rules": ["inline_spoiler", "emphasis"],
+    "markdown": "A >! hidden *thing* !< appears.\n",
+    "html": "<p>A <span class=\"spoiler\">hidden <em>thing</em></span> appears.</p>\n",
+    "markdown_output": "A >! hidden *thing* !< appears\\.\n"
+  },
+  {
+    "name": "block spoiler parses block content",
+    "rules": ["block_spoiler", "emphasis"],
+    "markdown": ">! hidden *thing*\n>!\n>! second paragraph\n",
+    "html": "<div class=\"spoiler\">\n<p>hidden <em>thing</em></p>\n<p>second paragraph</p>\n</div>\n",
+    "markdown_output": ">! hidden *thing*\n>!\n>! second paragraph\n"
+  },
+  {
+    "name": "abbreviation rewrites matching text",
+    "rules": ["abbreviation"],
+    "markdown": "The HTML spec is maintained by W3C.\n\n*[HTML]: Hyper Text Markup Language\n*[W3C]: Consortium\n",
+    "html": "<p>The <abbr title=\"Hyper Text Markup Language\">HTML</abbr> spec is maintained by <abbr title=\"Consortium\">W3C</abbr>.</p>\n",
+    "markdown_output": "The HTML spec is maintained by W3C\\.\n"
+  },
+  {
+    "name": "definition list parses emphasis in descriptions",
+    "rules": ["definition_list", "emphasis"],
+    "markdown": "Apple\n: Pomaceous *fruit*\n\nOrange\n: Citrus fruit\n",
+    "html": "<dl>\n<dt>Apple</dt>\n<dd>Pomaceous <em>fruit</em></dd>\n<dt>Orange</dt>\n<dd>Citrus fruit</dd>\n</dl>\n",
+    "markdown_output": "Apple\n: Pomaceous *fruit*\nOrange\n: Citrus fruit\n"
+  },
+  {
+    "name": "footnote identifiers disallow spaces",
+    "rules": ["footnote"],
+    "markdown": "a[^foot note]\n\n[^foot note]: bad\n",
+    "html": "<p>a[^foot note]</p>\n<p>[^foot note]: bad</p>\n"
+  },
+  {
+    "name": "github disallowed html is escaped once",
+    "preset": "github",
+    "markdown": "a <script>alert(1)</script>\n",
+    "html": "<p>a &lt;script>alert(1)&lt;/script></p>\n"
+  }
+]

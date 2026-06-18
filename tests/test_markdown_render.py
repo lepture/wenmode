@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from wenmode import HTMLRenderer, MarkdownRenderer, Parser
+from wenmode import MarkdownRenderer, Wenmode
 from wenmode.nodes import Node, TableCell, TableRow, Text
 from wenmode.presets import commonmark
 from wenmode.renderers import RenderContext, delimiter_for_align, normalize_table_row, quote_directive_attribute
@@ -22,48 +22,37 @@ def test_markdown_renderer_examples(example: RendererExample) -> None:
 
 
 def test_markdown_renderer_round_trips_to_equivalent_html() -> None:
-    parser = Parser(commonmark)
-    html_renderer = HTMLRenderer()
-    markdown_renderer = MarkdownRenderer()
-    markdown = (
-        '# A\n\n'
-        '> hi *there*\n\n'
-        '- one\n'
-        '- two\n\n'
-        '```py\n'
-        'print(1)\n'
-        '```\n\n'
-        '[link](/url "t") and ![alt](/img.png)\n'
-    )
+    html_app = Wenmode(commonmark)
+    markdown_app = Wenmode(commonmark, renderer=MarkdownRenderer())
+    markdown = '# A\n\n> hi *there*\n\n- one\n- two\n\n```py\nprint(1)\n```\n\n[link](/url "t") and ![alt](/img.png)\n'
 
-    html = html_renderer.render(parser.parse(markdown))
-    rendered_markdown = markdown_renderer.render(parser.parse(markdown))
+    html = html_app.render(markdown)
+    rendered_markdown = markdown_app.render(markdown)
 
-    assert html_renderer.render(parser.parse(rendered_markdown)) == html
+    assert html_app.render(rendered_markdown) == html
 
 
 def test_markdown_renderer_round_trips_footnotes_to_equivalent_html() -> None:
-    parser = Parser([Footnote])
-    html_renderer = HTMLRenderer()
-    markdown_renderer = MarkdownRenderer()
+    html_app = Wenmode([Footnote])
+    markdown_app = Wenmode([Footnote], renderer=MarkdownRenderer())
     markdown = 'a[^one]\n\n[^one]: first\n  \n  second\n'
 
-    html = html_renderer.render(parser.parse(markdown))
-    rendered_markdown = markdown_renderer.render(parser.parse(markdown))
+    html = html_app.render(markdown)
+    rendered_markdown = markdown_app.render(markdown)
 
-    assert html_renderer.render(parser.parse(rendered_markdown)) == html
+    assert html_app.render(rendered_markdown) == html
 
 
 def test_markdown_renderer_round_trips_math_to_equivalent_html() -> None:
-    parser = Parser([MathBlock, InlineMathRule])
-    html_renderer = HTMLRenderer()
-    markdown_renderer = MarkdownRenderer()
+    rules = [MathBlock, InlineMathRule]
+    html_app = Wenmode(rules)
+    markdown_app = Wenmode(rules, renderer=MarkdownRenderer())
     markdown = 'inline $x < y$\n\n$$\na & b\n$$\n'
 
-    html = html_renderer.render(parser.parse(markdown))
-    rendered_markdown = markdown_renderer.render(parser.parse(markdown))
+    html = html_app.render(markdown)
+    rendered_markdown = markdown_app.render(markdown)
 
-    assert html_renderer.render(parser.parse(rendered_markdown)) == html
+    assert html_app.render(rendered_markdown) == html
 
 
 def test_markdown_renderer_helper_edges() -> None:

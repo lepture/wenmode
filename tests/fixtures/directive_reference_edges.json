@@ -10,5 +10,149 @@
     "rules": ["footnote"],
     "markdown": "[^]: bad\n",
     "html": "<p>[^]: bad</p>\n"
+  },
+  {
+    "name": "unterminated text directive stays text",
+    "rules": ["text_directive"],
+    "markdown": ":name[unterminated\n",
+    "html": "<p>:name[unterminated</p>\n"
+  },
+  {
+    "name": "text directive supports escaped label and attributes",
+    "rules": ["text_directive"],
+    "markdown": ":name[a\\[b]{#id}\n",
+    "html": "<p>a\\[b</p>\n"
+  },
+  {
+    "name": "role invalid name stays text",
+    "rules": ["role"],
+    "markdown": "{1}\n",
+    "html": "<p>{1}</p>\n"
+  },
+  {
+    "name": "role missing close brace stays text",
+    "rules": ["role"],
+    "markdown": "{bad\n",
+    "html": "<p>{bad</p>\n"
+  },
+  {
+    "name": "role with invalid name characters stays text",
+    "rules": ["role"],
+    "markdown": "{bad name}`x`\n",
+    "html": "<p>{bad name}`x`</p>\n"
+  },
+  {
+    "name": "role without backtick opener stays text",
+    "rules": ["role"],
+    "markdown": "{role}x\n",
+    "html": "<p>{role}x</p>\n"
+  },
+  {
+    "name": "role without closing backtick stays text",
+    "rules": ["role"],
+    "markdown": "{role}`x\n",
+    "html": "<p>{role}`x</p>\n"
+  },
+  {
+    "name": "undefined footnote reference stays text",
+    "rules": ["footnote"],
+    "markdown": "[^x]\n",
+    "html": "<p>[^x]</p>\n"
+  },
+  {
+    "name": "footnote-like reference definition stays paragraph",
+    "rules": ["link"],
+    "markdown": "[^x]: /url\n",
+    "html": "<p>[^x]: /url</p>\n"
+  },
+  {
+    "name": "reference definition without destination stays paragraph",
+    "rules": ["link"],
+    "markdown": "[x]:\n\n",
+    "html": "<p>[x]:</p>\n"
+  },
+  {
+    "name": "reference definition with unterminated angle destination stays paragraph",
+    "rules": ["link"],
+    "markdown": "[x]: <unterminated\n",
+    "html": "<p>[x]: &lt;unterminated</p>\n"
+  },
+  {
+    "name": "reference definition rejects newline in angle destination",
+    "rules": ["link"],
+    "markdown": "[x]: <line\nbreak>\n",
+    "html": "<p>[x]: &lt;line\nbreak&gt;</p>\n"
+  },
+  {
+    "name": "reference definition requires whitespace before title",
+    "rules": ["link"],
+    "markdown": "[x]: <url>title\n",
+    "html": "<p>[x]: &lt;url&gt;title</p>\n"
+  },
+  {
+    "name": "reference definition with unterminated title stays paragraph",
+    "rules": ["link"],
+    "markdown": "[x]: /url \"unterminated\n",
+    "html": "<p>[x]: /url &quot;unterminated</p>\n"
+  },
+  {
+    "name": "reference definition with trailing title text stays paragraph",
+    "rules": ["link"],
+    "markdown": "[x]: /url \"title\" extra\n",
+    "html": "<p>[x]: /url &quot;title&quot; extra</p>\n"
+  },
+  {
+    "name": "reference definition accepts next line title",
+    "rules": ["link"],
+    "markdown": "[x]: /url\n\"title\"\n\n[x]\n",
+    "html": "<p><a href=\"/url\" title=\"title\">x</a></p>\n"
+  },
+  {
+    "name": "reference definition rejects title split by blank line",
+    "rules": ["link"],
+    "markdown": "[x]: /url \"title\n\ncontinued\"\n\n[x]\n",
+    "html": "<p>[x]: /url &quot;title</p>\n<p>continued&quot;</p>\n<p>[x]</p>\n"
+  },
+  {
+    "name": "reference definition accepts multiline title without blank",
+    "rules": ["link"],
+    "markdown": "[x]: /url \"title\ncontinued\"\n\n[x]\n",
+    "html": "<p><a href=\"/url\" title=\"title\ncontinued\">x</a></p>\n"
+  },
+  {
+    "name": "multiline footnote-like reference stays paragraph",
+    "rules": ["link"],
+    "markdown": "[^x\n]: /url\n",
+    "html": "<p>[^x\n]: /url</p>\n"
+  },
+  {
+    "name": "multiline reference without destination stays paragraph",
+    "rules": ["link"],
+    "markdown": "[\nx]: \n",
+    "html": "<p>[\nx]:</p>\n"
+  },
+  {
+    "name": "multiline reference with unterminated title stays paragraph",
+    "rules": ["link"],
+    "markdown": "[\nx]: /url \"unterminated\n",
+    "html": "<p>[\nx]: /url &quot;unterminated</p>\n"
+  },
+  {
+    "name": "multiline reference with trailing text stays paragraph",
+    "rules": ["link"],
+    "markdown": "[\nx]: /url \"title\" extra\n",
+    "html": "<p>[\nx]: /url &quot;title&quot; extra</p>\n"
+  },
+  {
+    "name": "unterminated multiline reference label stays paragraph",
+    "rules": ["link"],
+    "markdown": "[\n\n",
+    "html": "<p>[</p>\n"
+  },
+  {
+    "name": "multiline reference definition resolves multiline shortcut",
+    "rules": ["link"],
+    "markdown": "[x\n]: /url \"title\"\n\n[x\n]\n",
+    "html": "<p><a href=\"/url\" title=\"title\">x\n</a></p>\n"
   }
 ]

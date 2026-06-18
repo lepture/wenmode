@@ -6,7 +6,7 @@ from typing import TypedDict
 
 import pytest
 
-from wenmode import HTMLRenderer, Parser
+from wenmode import HTMLRenderer, Wenmode
 from wenmode.presets import github
 from wenmode.rules import ExtendedAutolink, Rule
 
@@ -32,10 +32,10 @@ def load_examples() -> list[GFMExample]:
     ids=lambda example: f'{example["example"]}: {example["section"]}',
 )
 def test_gfm_spec(example: GFMExample) -> None:
-    parser = Parser(rules_for_example(example))
     renderer = HTMLRenderer(escape=False, sanitize_urls=False)
+    parser = Wenmode(rules_for_example(example), renderer)
 
-    assert renderer.render(parser.parse(example['markdown'])) == example['html']
+    assert parser.render(example['markdown']) == example['html']
 
 
 def rules_for_example(example: GFMExample) -> list[type[Rule] | Rule]:

@@ -70,12 +70,12 @@ def lines(markdown: str):
 
 
 def test_parser_reuses_reference_state_per_parse() -> None:
-    parser = Parser([Link])
+    app = Wenmode([Link])
 
-    assert render(parser, '[x]: /url\n\n[x]\n') == '<p><a href="/url">x</a></p>\n'
-    assert render(parser, '[x]\n') == '<p>[x]</p>\n'
-    assert not hasattr(parser, 'references')
-    assert not hasattr(parser, '_state_stack')
+    assert app.render('[x]: /url\n\n[x]\n') == '<p><a href="/url">x</a></p>\n'
+    assert app.render('[x]\n') == '<p>[x]</p>\n'
+    assert not hasattr(app.parser, 'references')
+    assert not hasattr(app.parser, '_state_stack')
 
 
 def test_parser_registers_rules_dynamically() -> None:
@@ -97,17 +97,17 @@ def test_parser_dynamic_rule_registration_updates_rule_dependencies() -> None:
 
 
 def test_custom_extension_state_uses_state_store() -> None:
-    parser = Parser([Glossary, Blockquote])
+    app = Wenmode([Glossary, Blockquote])
 
-    assert 'term_definition' in parser.rules
+    assert 'term_definition' in app.parser.rules
 
-    root = parser.parse('> @term[nested]: Nested\n\n@term[root]: Root\n\ntext\n')
+    root = app.parse('> @term[nested]: Nested\n\n@term[root]: Root\n\ntext\n')
     assert root.data == {'terms': {'nested': 'Nested', 'root': 'Root'}}
     assert not hasattr(BlockState([]), 'references')
     assert not hasattr(BlockState([]), 'footnotes')
     assert not hasattr(BlockState([]), 'abbreviations')
 
-    assert parser.parse('text\n').data == {'terms': {}}
+    assert app.parse('text\n').data == {'terms': {}}
 
 
 def test_parser_replaces_dynamic_rules_by_name() -> None:
@@ -119,39 +119,39 @@ def test_parser_replaces_dynamic_rules_by_name() -> None:
 
 
 def test_parser_accepts_synchronous_text_streams() -> None:
-    parser = Parser(github)
+    app = Wenmode(github)
     markdown = '# Title\n\nA [link][x] and a note[^one].\n\n[x]: /url\n[^one]: note\n'
-    expected = HTMLRenderer().render(parser.parse(markdown))
+    expected = app.render(markdown)
 
-    assert HTMLRenderer().render(parser.parse(StringIO(markdown))) == expected
-    assert HTMLRenderer().render(parser.parse(markdown.splitlines(keepends=True))) == expected
-    assert HTMLRenderer().render(parser.parse(lines(markdown))) == expected
+    assert app.render(StringIO(markdown)) == expected
+    assert app.render(markdown.splitlines(keepends=True)) == expected
+    assert app.render(lines(markdown)) == expected
 
 
 def test_stream_reference_definition_can_affect_earlier_blocks() -> None:
-    parser = Parser([Link])
+    app = Wenmode([Link])
     markdown = '[x]\n\n[x]: /url "ti\ntle"\n'
 
-    assert HTMLRenderer().render(parser.parse(lines(markdown))) == '<p><a href="/url" title="ti\ntle">x</a></p>\n'
+    assert app.render(lines(markdown)) == '<p><a href="/url" title="ti\ntle">x</a></p>\n'
 
 
 def test_stream_table_lookahead() -> None:
-    parser = Parser([Table])
+    app = Wenmode([Table])
     markdown = '| a | b |\n| --- | --- |\n| c | d |\n'
 
-    assert HTMLRenderer().render(parser.parse(lines(markdown))) == HTMLRenderer().render(parser.parse(markdown))
+    assert app.render(lines(markdown)) == app.render(markdown)
 
 
 def test_stream_footnote_continuation_lookahead() -> None:
-    parser = Parser([Footnote])
+    app = Wenmode([Footnote])
     markdown = '[^one]: first\n\n  second\n\nA note[^one]\n'
 
-    assert HTMLRenderer().render(parser.parse(lines(markdown))) == HTMLRenderer().render(parser.parse(markdown))
+    assert app.render(lines(markdown)) == app.render(markdown)
 
 
 def test_parser_binds_footnote_definitions_to_root() -> None:
-    parser = Parser([Footnote])
-    root = parser.parse('a[^one]\n\n[^one]: note\n')
+    app = Wenmode([Footnote])
+    root = app.parse('a[^one]\n\n[^one]: note\n')
 
     assert root.footnote_definitions is not None
     assert list(root.footnote_definitions) == ['one']
@@ -159,115 +159,113 @@ def test_parser_binds_footnote_definitions_to_root() -> None:
 
 
 def test_parser_skips_root_footnote_definitions_without_footnote_rule() -> None:
-    parser = Parser([AtxHeading])
-    root = parser.parse('# Title\n\n[^one]: note\n')
+    app = Wenmode([AtxHeading])
+    root = app.parse('# Title\n\n[^one]: note\n')
 
     assert root.footnote_definitions is None
 
 
 def test_stream_list_blank_line_lookahead() -> None:
-    parser = Parser([List])
+    app = Wenmode([List])
     markdown = '- a\n\n  b\n- c\n'
 
-    assert HTMLRenderer().render(parser.parse(lines(markdown))) == HTMLRenderer().render(parser.parse(markdown))
+    assert app.render(lines(markdown)) == app.render(markdown)
 
 
 def test_reference_definitions_are_plain_text_without_reference_consumers() -> None:
-    parser = Parser([AtxHeading])
+    app = Wenmode([AtxHeading])
 
-    assert render(parser, '[x]: /url\n\n[x]\n') == '<p>[x]: /url</p>\n<p>[x]</p>\n'
-    assert isinstance(parser.rules, dict)
+    assert app.render('[x]: /url\n\n[x]\n') == '<p>[x]: /url</p>\n<p>[x]</p>\n'
+    assert isinstance(app.parser.rules, dict)
 
 
 def test_fence_like_text_is_not_protected_without_fenced_code_rule() -> None:
-    parser = Parser([Link])
+    app = Wenmode([Link])
 
-    assert render(parser, '```\n\n[x]: /url\n\n[x]\n') == '<p>```</p>\n<p><a href="/url">x</a></p>\n'
+    assert app.render('```\n\n[x]: /url\n\n[x]\n') == '<p>```</p>\n<p><a href="/url">x</a></p>\n'
 
 
 def test_blockquote_depth_is_limited() -> None:
-    parser = Parser([Blockquote])
-    parser.max_container_depth = 8
+    app = Wenmode([Blockquote])
+    app.parser.max_container_depth = 8
 
-    assert 'a' in render(parser, '> ' * 1000 + 'a\n')
+    assert 'a' in app.render('> ' * 1000 + 'a\n')
 
 
 def test_list_depth_is_limited() -> None:
-    parser = Parser([List])
-    parser.max_container_depth = 8
+    app = Wenmode([List])
+    app.parser.max_container_depth = 8
 
     markdown = ''.join('  ' * index + '- a\n' for index in range(64))
-    assert 'a' in render(parser, markdown)
+    assert 'a' in app.render(markdown)
 
 
 def test_deep_list_fast_path_at_depth_limit() -> None:
-    parser = Parser([List])
-    parser.max_container_depth = 1
+    app = Wenmode([List])
+    app.parser.max_container_depth = 1
 
     markdown = ''.join('  ' * index + '- a\n' for index in range(1000))
-    assert 'a' in render(parser, markdown)
+    assert 'a' in app.render(markdown)
 
 
 def test_emphasis_rule_enables_strong_and_emphasis() -> None:
-    parser = Parser([Emphasis])
+    app = Wenmode([Emphasis])
 
-    assert render(parser, '*a* **b**\n') == '<p><em>a</em> <strong>b</strong></p>\n'
+    assert app.render('*a* **b**\n') == '<p><em>a</em> <strong>b</strong></p>\n'
 
 
 def test_setext_heading_rule_owns_paragraph_continuation() -> None:
-    assert render(Parser([SetextHeading]), 'a\n-\n') == '<h2>a</h2>\n'
-    assert render(Parser([]), 'a\n-\n') == '<p>a\n-</p>\n'
+    assert Wenmode([SetextHeading]).render('a\n-\n') == '<h2>a</h2>\n'
+    assert Wenmode([]).render('a\n-\n') == '<p>a\n-</p>\n'
 
 
 def test_thematic_break_rule_does_not_depend_on_list_order() -> None:
-    parser = Parser([List, ThematicBreak])
+    app = Wenmode([List, ThematicBreak])
 
-    assert render(parser, '- - -\n') == '<hr />\n'
+    assert app.render('- - -\n') == '<hr />\n'
 
 
 def test_image_keeps_reference_definitions_enabled() -> None:
-    parser = Parser([Image])
+    app = Wenmode([Image])
 
-    assert render(parser, '[x]: /img.png\n\n![x]\n') == '<p><img src="/img.png" alt="x" /></p>\n'
+    assert app.render('[x]: /img.png\n\n![x]\n') == '<p><img src="/img.png" alt="x" /></p>\n'
 
 
 def test_link_and_image_share_one_reference_transform() -> None:
-    parser = Parser([Link, Image])
+    app = Wenmode([Link, Image])
 
-    assert [transform.name for transform in parser.root_transforms] == ['reference']
-    assert render(parser, '[x]: /url\n\n[x] and ![x]\n') == (
-        '<p><a href="/url">x</a> and <img src="/url" alt="x" /></p>\n'
-    )
+    assert [transform.name for transform in app.parser.root_transforms] == ['reference']
+    assert app.render('[x]: /url\n\n[x] and ![x]\n') == ('<p><a href="/url">x</a> and <img src="/url" alt="x" /></p>\n')
 
 
 def test_link_and_image_can_disable_references() -> None:
-    parser = Parser([Image(references=False), Link(references=False)])
+    app = Wenmode([Image(references=False), Link(references=False)])
 
-    assert parser.root_transforms == []
-    assert render(parser, '[x](/url) and ![alt](/img.png)\n') == (
+    assert app.parser.root_transforms == []
+    assert app.render('[x](/url) and ![alt](/img.png)\n') == (
         '<p><a href="/url">x</a> and <img src="/img.png" alt="alt" /></p>\n'
     )
-    assert render(parser, '[x]: /url\n\n[x]\n\n![x]\n') == '<p>[x]: /url</p>\n<p>[x]</p>\n<p>![x]</p>\n'
-    assert 'reference_definition' not in parser.rules
+    assert app.render('[x]: /url\n\n[x]\n\n![x]\n') == '<p>[x]: /url</p>\n<p>[x]</p>\n<p>![x]</p>\n'
+    assert 'reference_definition' not in app.parser.rules
 
 
 def test_streaming_preset_disables_references() -> None:
-    parser = Parser(streaming)
+    app = Wenmode(streaming)
 
-    assert 'reference_definition' not in parser.rules
-    assert render(parser, '[x](/url) and ![alt](/img.png)\n') == (
+    assert 'reference_definition' not in app.parser.rules
+    assert app.render('[x](/url) and ![alt](/img.png)\n') == (
         '<p><a href="/url">x</a> and <img src="/img.png" alt="alt" /></p>\n'
     )
-    assert render(parser, '[x]: /url\n\n[x]\n\n![x]\n') == '<p>[x]: /url</p>\n<p>[x]</p>\n<p>![x]</p>\n'
+    assert app.render('[x]: /url\n\n[x]\n\n![x]\n') == '<p>[x]: /url</p>\n<p>[x]</p>\n<p>![x]</p>\n'
 
 
 def test_wenmode_stream_matches_full_render_for_streaming_preset() -> None:
     wenmode = Wenmode(streaming)
     markdown = '# Title\n\nA [link](/url).\n\n- one\n- two\n'
 
-    assert ''.join(wenmode.stream(markdown)) == render(wenmode.parser, markdown)
-    assert ''.join(wenmode.stream(StringIO(markdown))) == render(wenmode.parser, markdown)
-    assert ''.join(wenmode.stream(lines(markdown))) == render(wenmode.parser, markdown)
+    assert ''.join(wenmode.stream(markdown)) == wenmode.render(markdown)
+    assert ''.join(wenmode.stream(StringIO(markdown))) == wenmode.render(markdown)
+    assert ''.join(wenmode.stream(lines(markdown))) == wenmode.render(markdown)
 
 
 def test_wenmode_stream_does_not_read_entire_input_before_first_chunk() -> None:
@@ -297,28 +295,28 @@ def test_wenmode_stream_rejects_unsupported_rules() -> None:
 
 
 def test_parser_reuses_footnote_state_per_parse() -> None:
-    parser = Parser([Footnote])
+    app = Wenmode([Footnote])
 
-    assert 'data-footnote-ref' in render(parser, '[^one]: note\n\na[^one]\n')
-    assert render(parser, 'a[^one]\n') == '<p>a[^one]</p>\n'
+    assert 'data-footnote-ref' in app.render('[^one]: note\n\na[^one]\n')
+    assert app.render('a[^one]\n') == '<p>a[^one]</p>\n'
 
 
 def test_footnote_definitions_are_plain_text_without_footnote_rule() -> None:
-    parser = Parser([Link])
+    app = Wenmode([Link])
 
-    assert render(parser, '[^one]: note\n\n[^one]\n') == '<p>[^one]: note</p>\n<p>[^one]</p>\n'
+    assert app.render('[^one]: note\n\n[^one]\n') == '<p>[^one]: note</p>\n<p>[^one]</p>\n'
 
 
 def test_github_preset_enables_footnotes_with_links() -> None:
-    parser = Parser(github)
+    app = Wenmode(github)
 
-    html = render(parser, '[link](/url) and a[^one]\n\n[^one]: note\n')
+    html = app.render('[link](/url) and a[^one]\n\n[^one]: note\n')
 
     assert '<a href="/url">link</a>' in html
     assert 'data-footnote-ref' in html
 
 
 def test_footnote_rule_does_not_depend_on_link_order() -> None:
-    parser = Parser([Link, Footnote])
+    app = Wenmode([Link, Footnote])
 
-    assert 'data-footnote-ref' in render(parser, 'a[^one]\n\n[^one]: note\n')
+    assert 'data-footnote-ref' in app.render('a[^one]\n\n[^one]: note\n')

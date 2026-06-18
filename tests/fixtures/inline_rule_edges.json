@@ -28,5 +28,191 @@
     "rules": ["strikethrough"],
     "markdown": "~~~~\n",
     "html": "<p>~~~~</p>\n"
+  },
+  {
+    "name": "link opener without destination stays text",
+    "rules": ["link"],
+    "markdown": "[x]\n",
+    "html": "<p>[x]</p>\n"
+  },
+  {
+    "name": "link bad angle destination stays text",
+    "rules": ["link"],
+    "markdown": "[x](<bad\\url>)\n",
+    "html": "<p>[x](&lt;bad\\url&gt;)</p>\n"
+  },
+  {
+    "name": "link missing closing paren stays text",
+    "rules": ["link"],
+    "markdown": "[x](/url \"title\"\n",
+    "html": "<p>[x](/url &quot;title&quot;</p>\n"
+  },
+  {
+    "name": "link destination allows escaped closing paren",
+    "rules": ["link"],
+    "markdown": "[x](/a\\)b)\n",
+    "html": "<p><a href=\"/a)b\">x</a></p>\n"
+  },
+  {
+    "name": "link double quoted title allows escaped quote",
+    "rules": ["link"],
+    "markdown": "[x](/url \"a\\\"b\")\n",
+    "html": "<p><a href=\"/url\" title=\"a&quot;b\">x</a></p>\n"
+  },
+  {
+    "name": "link single quoted title",
+    "rules": ["link"],
+    "markdown": "[x](/url 'title')\n",
+    "html": "<p><a href=\"/url\" title=\"title\">x</a></p>\n"
+  },
+  {
+    "name": "link paren title",
+    "rules": ["link"],
+    "markdown": "[x](/url (title))\n",
+    "html": "<p><a href=\"/url\" title=\"title\">x</a></p>\n"
+  },
+  {
+    "name": "link plain title text is not accepted",
+    "rules": ["link"],
+    "markdown": "[x](/url plain)\n",
+    "html": "<p>[x](/url plain)</p>\n"
+  },
+  {
+    "name": "link unterminated title is not accepted",
+    "rules": ["link"],
+    "markdown": "[x](/url \"unterminated)\n",
+    "html": "<p>[x](/url &quot;unterminated)</p>\n"
+  },
+  {
+    "name": "inline math cannot close across line break",
+    "rules": ["inline_math"],
+    "markdown": "$a\n$\n",
+    "html": "<p>$a\n$</p>\n"
+  },
+  {
+    "name": "inline math allows dollar before digit inside span",
+    "rules": ["inline_math"],
+    "markdown": "$a $2 b$\n",
+    "html": "<p><span class=\"math math-inline\">a $2 b</span></p>\n"
+  },
+  {
+    "name": "ruby renders base and annotation",
+    "rules": ["ruby"],
+    "markdown": "[漢(kan)]\n",
+    "html": "<p><ruby>漢<rt>kan</rt></ruby></p>\n"
+  },
+  {
+    "name": "ruby invalid direct link fallback keeps paren",
+    "rules": ["ruby", "link"],
+    "markdown": "[漢(kan)](\n",
+    "html": "<p><ruby>漢<rt>kan</rt></ruby>(</p>\n"
+  },
+  {
+    "name": "ruby followed by plain text stays ruby plus text",
+    "rules": ["ruby", "link"],
+    "markdown": "[漢(kan)]x\n",
+    "html": "<p><ruby>漢<rt>kan</rt></ruby>x</p>\n"
+  },
+  {
+    "name": "ruby unclosed reference opener stays text",
+    "rules": ["ruby", "link"],
+    "markdown": "[漢(kan)][\n",
+    "html": "<p><ruby>漢<rt>kan</rt></ruby>[</p>\n"
+  },
+  {
+    "name": "ruby empty reference label stays text",
+    "rules": ["ruby", "link"],
+    "markdown": "[漢(kan)][]\n",
+    "html": "<p><ruby>漢<rt>kan</rt></ruby>[]</p>\n"
+  },
+  {
+    "name": "ruby missing reference label stays text",
+    "rules": ["ruby", "link"],
+    "markdown": "[漢(kan)][missing]\n",
+    "html": "<p><ruby>漢<rt>kan</rt></ruby>[missing]</p>\n"
+  },
+  {
+    "name": "ruby direct link wraps ruby node",
+    "rules": ["ruby", "link"],
+    "markdown": "[漢(kan)](/ruby \"Ruby\")\n",
+    "html": "<p><a href=\"/ruby\" title=\"Ruby\"><ruby>漢<rt>kan</rt></ruby></a></p>\n"
+  },
+  {
+    "name": "ruby reference link wraps ruby node",
+    "rules": ["ruby", "link"],
+    "markdown": "[漢(kan)][term]\n\n[term]: /term\n",
+    "html": "<p><a href=\"/term\"><ruby>漢<rt>kan</rt></ruby></a></p>\n"
+  },
+  {
+    "name": "extended autolink trims trailing punctuation and paren",
+    "rules": ["extended_autolink"],
+    "markdown": "https://example.com/a).\n",
+    "html": "<p><a href=\"https://example.com/a\">https://example.com/a</a>).</p>\n"
+  },
+  {
+    "name": "extended autolink balances trailing paren",
+    "rules": ["extended_autolink"],
+    "markdown": "https://example.com/(a))\n",
+    "html": "<p><a href=\"https://example.com/(a)\">https://example.com/(a)</a>)</p>\n"
+  },
+  {
+    "name": "extended autolink trims bare email suffix punctuation",
+    "rules": ["extended_autolink"],
+    "markdown": "x@example.com/?!.,:*~\n",
+    "html": "<p><a href=\"mailto:x@example.com\">x@example.com</a>/?!.,:*~</p>\n"
+  },
+  {
+    "name": "mailto autolink rejects trailing hyphen address",
+    "rules": ["extended_autolink"],
+    "markdown": "mailto:x@example.com-\n",
+    "html": "<p>mailto:x@example.com-</p>\n"
+  },
+  {
+    "name": "xmpp autolink rejects trailing hyphen address",
+    "rules": ["extended_autolink"],
+    "markdown": "xmpp:x@example.com-\n",
+    "html": "<p>xmpp:x@example.com-</p>\n"
+  },
+  {
+    "name": "xmpp autolink rejects non email address",
+    "rules": ["extended_autolink"],
+    "markdown": "xmpp:not-email/path\n",
+    "html": "<p>xmpp:not-email/path</p>\n"
+  },
+  {
+    "name": "inline spoiler trims surrounding spaces",
+    "rules": ["inline_spoiler"],
+    "markdown": ">! hidden !<\n",
+    "html": "<p><span class=\"spoiler\">hidden</span></p>\n"
+  },
+  {
+    "name": "inline spoiler empty content stays text",
+    "rules": ["inline_spoiler"],
+    "markdown": ">!!<\n",
+    "html": "<p>&gt;!!&lt;</p>\n"
+  },
+  {
+    "name": "inline spoiler all spaces keeps one inner space",
+    "rules": ["inline_spoiler"],
+    "markdown": ">!   !<\n",
+    "html": "<p><span class=\"spoiler\"> </span></p>\n"
+  },
+  {
+    "name": "inline spoiler can contain escaped closer prefix",
+    "rules": ["inline_spoiler"],
+    "markdown": ">!!<a!<\n",
+    "html": "<p><span class=\"spoiler\">!&lt;a</span></p>\n"
+  },
+  {
+    "name": "inline spoiler allows indented newline before closer",
+    "rules": ["inline_spoiler"],
+    "markdown": ">!a\n !<\n",
+    "html": "<p><span class=\"spoiler\">a</span></p>\n"
+  },
+  {
+    "name": "inline spoiler rejects plain multiline content",
+    "rules": ["inline_spoiler"],
+    "markdown": ">!a\nb!<\n",
+    "html": "<p>&gt;!a\nb!&lt;</p>\n"
   }
 ]
