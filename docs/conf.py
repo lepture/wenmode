@@ -4,7 +4,7 @@ project = 'Wenmode'
 author = 'Hsiaoming Yang'
 copyright = '2026, Hsiaoming Yang'
 
-extensions = ['myst_parser', 'sphinx.ext.autodoc', 'sphinx_design']
+extensions = ['myst_parser', 'sphinx.ext.autodoc', 'sphinx_design', 'sphinx_iconify']
 myst_enable_extensions = ['colon_fence']
 autodoc_member_order = 'bysource'
 autodoc_typehints = 'description'

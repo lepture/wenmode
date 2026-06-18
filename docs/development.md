@@ -56,6 +56,7 @@ the user-facing surface:
 - `security.md` for renderer escaping, URL handling, and raw HTML behavior.
 - `rule-matrix.md` for rule options, preset membership, and streaming support.
 - `compliance.md` for CommonMark/GFM fixture coverage and known differences.
+- `changelog.md` for user-facing changes, upgrade notes, and compatibility updates.
 - `benchmarks.md` for benchmark methodology, versions, and results.
 - `troubleshooting.md` for common integration failures and fixes.
 - `recipes.md` for copyable integration patterns.

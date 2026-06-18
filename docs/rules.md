@@ -37,10 +37,10 @@ Pass classes or configured rule instances. Classes are instantiated
 automatically, while instances let you choose rule options.
 
 ```python
-from wenmode import Parser
+from wenmode import Wenmode
 from wenmode.rules import Image, Link
 
-parser = Parser([
+wenmode = Wenmode([
     Image(references=False),
     Link(references=False),
 ])
@@ -54,11 +54,11 @@ reference-style images, and reference definitions are not.
 Rules can be registered after construction.
 
 ```python
-from wenmode import Parser
+from wenmode import Wenmode
 from wenmode.rules import AtxHeading
 
-parser = Parser([])
-parser.register_rule(AtxHeading)
+wenmode = Wenmode([])
+wenmode.register_rule(AtxHeading)
 ```
 
 `register_rules()` accepts multiple rules:
@@ -66,7 +66,7 @@ parser.register_rule(AtxHeading)
 ```python
 from wenmode.rules import AtxHeading, Emphasis, InlineCode
 
-parser.register_rules([AtxHeading, InlineCode, Emphasis])
+wenmode.register_rules([AtxHeading, InlineCode, Emphasis])
 ```
 
 Rules are stored by name. Registering another rule with the same `name` replaces

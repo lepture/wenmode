@@ -87,3 +87,43 @@ and shortcut/reference links stay as text.
 This tradeoff lets Wenmode emit blocks before the end of the document. Rules
 that need document-wide deferred inline transforms, such as reference links or
 footnotes, are not compatible with streaming output.
+
+## Custom preset
+
+A preset is just a reusable rule list. Keep custom dialects in one module so
+the editor preview, API renderer, background jobs, and tests all use the same
+Markdown behavior.
+
+```python
+from wenmode import Wenmode
+from wenmode.presets import commonmark
+from wenmode.rules import HtmlBlock, Image, Link, RawHtml
+
+product_preset = [
+    rule
+    for rule in commonmark
+    if rule not in {HtmlBlock, Image, Link, RawHtml}
+]
+product_preset.extend([
+    Image(references=False),
+    Link(references=False),
+])
+
+product_markdown = Wenmode(product_preset)
+text = '''
+<span>plain</span>
+
+A [direct](/url) and [reference][id].
+'''
+
+html = product_markdown.render(text)
+
+assert '&lt;span&gt;plain&lt;/span&gt;' in html
+assert '<a href="/url">direct</a>' in html
+assert '[reference][id]' in html
+```
+
+This example starts from `commonmark`, removes raw HTML parsing, and replaces
+reference-style image and link rules with direct-only variants. Export
+`product_preset` from your own package when multiple services need the same
+syntax rules.

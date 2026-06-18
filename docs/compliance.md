@@ -18,27 +18,25 @@ safer default HTML policy.
 | Suite | Fixture | Examples | Test command | Current status |
 | --- | --- | ---: | --- | --- |
 | CommonMark | `commonmark-0.31.2.json` | 652 | `uv run --group test pytest -q tests/test_commonmark_spec.py` | no skipped examples |
-| GFM | `gfm-0.29.json` | 677 | `uv run --group test pytest -q tests/test_gfm_spec.py` | 15 documented skips |
+| GFM | `gfm-0.29.json` | 677 | `uv run --group test pytest -q tests/test_gfm_spec.py` | no skipped examples |
 
 The default `commonmark` preset targets CommonMark-style behavior plus
 reference-style links and images. The `github` preset adds tables, task list
 items, strikethrough, extended autolinks, footnotes, and GFM disallowed HTML tag
 handling.
 
-## Known GFM differences
+## GFM fixture alignment
 
-The skipped GFM examples are intentionally recorded in `tests/test_gfm_spec.py`
-with reasons. They currently fall into these groups:
+The `github` preset includes Wenmode's `ExtendedAutolink` rule so application
+users get bare URL and email autolinks by default. The GFM 0.29 fixture suite
+has a separate core Autolinks section, so `tests/test_gfm_spec.py` disables
+`ExtendedAutolink` for that section only. This keeps the fixture comparison
+focused on the grammar under test while leaving the public `github` preset
+feature-complete.
 
-| Area | Examples | Reason |
-| --- | --- | --- |
-| Tagfilter timing | 140, 141, 142, 145, 147 | configured tagfilter applies to earlier HTML block examples |
-| Extended autolinks | 611, 617, 620, 621, 627, 632, 633, 635 | boundary handling differs for invalid angle links, entities, and some email/XMPP cases |
-| HTML comments | 649, 650 | invalid HTML comment detection is incomplete |
-
-Treat those differences as compatibility work items rather than stable
-extensions. If your application depends on one of those edge cases, keep a
-parser regression test in your own integration before upgrading Wenmode.
+Treat future fixture failures as compatibility work items rather than stable
+extensions. If your application depends on a spec edge case, keep a parser
+regression test in your own integration before upgrading Wenmode.
 
 ## Compatibility boundaries
 

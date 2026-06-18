@@ -84,9 +84,23 @@ Markdown features you need.
 
 Install Wenmode from PyPI:
 
+::::{tab-set}
+:class: outline
+
+:::{tab-item} {iconify}`devicon:pypi` pip
+
 ```bash
 pip install wenmode
 ```
+:::
+
+:::{tab-item} {iconify}`material-icon-theme:uv` uv
+
+```bash
+uv add wenmode
+```
+:::
+::::
 
 ```python
 from wenmode import Wenmode
@@ -120,7 +134,7 @@ assert html == expected.lstrip()
 | Migrate from another Markdown parser | {doc}`Migration guides <migration/index>` |
 | Review benchmark methodology and results | {doc}`Benchmarks <benchmarks>` |
 | Build new syntax rules | {doc}`Custom rules <custom-rules>` |
-| Check compatibility, compliance, and project status | {doc}`Compatibility <compatibility>` and {doc}`Compliance <compliance>` |
+| Check compatibility, compliance, changelog, and project status | {doc}`Compatibility <compatibility>`, {doc}`Compliance <compliance>`, and {doc}`Changelog <changelog>` |
 
 ```{toctree}
 :caption: User Guide
@@ -130,9 +144,6 @@ assert html == expected.lstrip()
 usage
 presets
 security
-compatibility
-compliance
-benchmarks
 recipes
 integrations
 migration/index
@@ -141,22 +152,33 @@ troubleshooting
 ```
 
 ```{toctree}
+:caption: Reference
+:hidden:
+:maxdepth: 2
+
+references/index
+rule-matrix
+api
+```
+
+```{toctree}
 :caption: Developer Guide
 :hidden:
 :maxdepth: 2
 
 rules
-rule-matrix
 custom-rules
 internals
-references/index
-api
+development
 ```
 
 ```{toctree}
-:caption: Contributor Guide
+:caption: Project
 :hidden:
 :maxdepth: 2
 
-development
+compatibility
+compliance
+benchmarks
+changelog
 ```

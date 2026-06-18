@@ -45,6 +45,11 @@ list markers become `listItem.checked` values. `streaming` configures
 `Image(references=False)` and `Link(references=False)` to avoid document-wide
 reference resolution.
 
+`ReferenceDefinition` is enabled automatically by `Link(references=True)` and
+`Image(references=True)`. `FootnoteDefinition` is enabled automatically by
+`Footnote`. You normally configure the user-facing inline rules rather than
+adding those definition rules directly.
+
 ## Extension-only rules
 
 These rules are not part of the built-in `commonmark`, `github`, or `streaming`
@@ -52,8 +57,6 @@ presets. Enable them explicitly when your dialect needs the syntax.
 
 | Rule | Kind | Generated node or behavior | Streaming note |
 | --- | --- | --- | --- |
-| `ReferenceDefinition` | block | stores reference definitions for `Link` and `Image` | required by reference transforms |
-| `FootnoteDefinition` | block | `footnoteDefinition` | required by `Footnote` |
 | `Abbreviation` | transform | rewrites matching text to `abbreviation` | not streaming-compatible |
 | `DefinitionList` | continuation | `definitionList`, `definitionTerm`, `definitionDescription` | compatible |
 | `MathBlock` | block | `math` | compatible |
@@ -103,10 +106,10 @@ Disable reference-style links for streaming-like behavior without using the full
 streaming preset:
 
 ```python
-from wenmode import Parser
+from wenmode import Wenmode
 from wenmode.rules import Image, Link
 
-parser = Parser([
+wenmode = Wenmode([
     Link(references=False),
     Image(references=False),
 ])

@@ -57,6 +57,7 @@ docs = [
     "sphinx; python_version >= '3.11'",
     "shibuya; python_version >= '3.11'",
     "sphinx-design; python_version >= '3.11'",
+    "sphinx-iconify; python_version >= '3.11'",
     "myst-parser; python_version >= '3.11'",
 ]
 lint = [

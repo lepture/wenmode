@@ -8,6 +8,28 @@ chunks.
 
 ---
 
+## Install
+
+Install Wenmode from PyPI with your preferred Python package manager.
+
+::::{tab-set}
+:class: outline
+
+:::{tab-item} {iconify}`devicon:pypi` pip
+
+```bash
+pip install wenmode
+```
+:::
+
+:::{tab-item} {iconify}`material-icon-theme:uv` uv
+
+```bash
+uv add wenmode
+```
+:::
+::::
+
 ## Quick start
 
 `Wenmode` is the main convenience API. It owns a `Parser` and a renderer, and

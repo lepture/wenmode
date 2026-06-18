@@ -11,7 +11,7 @@ and stability expectations.
 Wenmode is currently beta software. The parser, renderer, rule composition, and
 documented extension APIs are ready for real integration work, but the project
 may still refine edge-case behavior and smaller public APIs before a stable
-1.0 release.
+1.0 release. See {ref}`changelog` for release history and upgrade notes.
 
 ## Python support
 
