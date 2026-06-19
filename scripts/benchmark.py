@@ -19,7 +19,7 @@ import mistune
 from markdown_it import MarkdownIt
 from marko.ext.gfm import gfm as marko_gfm
 
-from wenmode import HTMLRenderer, Wenmode
+from wenmode import HTMLRenderer, Wenmode, __version__
 from wenmode.plugins import (
     abbr,
     definition_list,
@@ -214,8 +214,8 @@ def make_targets() -> list[Target]:
         return commonmark_renderer.render(commonmark_parser.parse(text))
 
     return [
-        Target('wenmode-core', version('wenmode'), wenmode_core.render),
-        Target('wenmode-all', version('wenmode'), wenmode_all.render),
+        Target('wenmode-core', __version__, wenmode_core.render),
+        Target('wenmode-all', __version__, wenmode_all.render),
         Target('mistune', version('mistune'), mistune_renderer),
         Target('python-markdown', version('markdown'), lambda text: python_markdown.reset().convert(text)),
         Target('markdown-it-py', version('markdown-it-py'), markdown_it.render),

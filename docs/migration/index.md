@@ -60,14 +60,14 @@ The current snapshot uses all built-in benchmark cases:
 uv run --group benchmark python scripts/benchmark.py --case all
 ```
 
-Lower mean time is better. These summary rows show the `wenmode-core` result
-beside the fastest non-Wenmode target from the migration guides:
+Lower mean time is better. These summary rows show Wenmode beside the fastest
+non-Wenmode target from the migration guides:
 
-| Case | Bytes | `wenmode-core` mean | Fastest migration target | Target mean |
+| Case | Bytes | Wenmode mean | Fastest migration target | Target mean |
 | --- | ---: | ---: | --- | ---: |
-| docs | 53,792 | 4.84ms | mistune | 8.64ms |
-| rust-book | 1,225,464 | 138.87ms | mistune | 214.92ms |
-| progit | 502,090 | 26.61ms | mistune | 44.01ms |
+| docs | 82,426 | 10.79ms | mistune | 15.15ms |
+| rust-book | 1,225,464 | 150.33ms | mistune | 196.07ms |
+| progit | 502,090 | 26.36ms | mistune | 44.12ms |
 
 Benchmark numbers are hardware- and corpus-dependent, so treat them as a local
 comparison rather than a universal ranking. For the full result table, parser
