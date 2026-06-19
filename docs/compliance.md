@@ -20,10 +20,9 @@ safer default HTML policy.
 | CommonMark | `commonmark-0.31.2.json` | 652 | `uv run --group test pytest -q tests/test_commonmark_spec.py` | no skipped examples |
 | GFM | `gfm-0.29.json` | 677 | `uv run --group test pytest -q tests/test_gfm_spec.py` | no skipped examples |
 
-The default `commonmark` preset targets CommonMark-style behavior plus
-reference-style links and images. The `github` preset adds tables, task list
-items, strikethrough, extended autolinks, footnotes, and GFM disallowed HTML tag
-handling.
+The fixture suites exercise the `commonmark` and `github` presets. See
+{ref}`presets` for feature membership; this page focuses on how those presets
+are compared against upstream examples.
 
 ## GFM fixture alignment
 
@@ -46,7 +45,7 @@ choose `commonmark`, `github`, `streaming`, or a custom rule list.
 
 Security defaults are also intentionally different from spec fixture rendering:
 
-- `HTMLRenderer()` escapes raw HTML nodes by default.
+- The default HTML renderer escapes raw HTML nodes.
 - `HTMLRenderer()` sanitizes unsafe link and image URLs by default.
 - Fixture tests disable those options to compare against CommonMark and GFM HTML
   examples.

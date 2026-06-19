@@ -26,8 +26,7 @@ theme.
 
 The default `commonmark` preset targets CommonMark-style Markdown and includes
 reference-style links and images. It does not include GitHub-flavored Markdown
-extensions such as tables, task lists, strikethrough, extended autolinks, or
-footnotes.
+extensions.
 
 Use the `github` preset for GitHub-flavored Markdown features. Wenmode runs the
 CommonMark and GFM spec fixture suites in its tests. Non-standard syntax is

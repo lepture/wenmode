@@ -31,8 +31,8 @@ Remote archives are cached under the system temporary directory in
 
 ## Parser configuration
 
-All benchmark targets are created once before warmup and timed iterations, then
-reused for every render call.
+Each benchmark target is initialized before warmup and timed iterations, then
+reused across render calls.
 
 | Target | Configuration |
 | --- | --- |

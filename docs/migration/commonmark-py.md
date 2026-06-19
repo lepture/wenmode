@@ -110,9 +110,8 @@ from wenmode.presets import github
 html = Wenmode(github).render(text)
 ```
 
-Use `github` for tables, task list items, strikethrough, extended autolinks,
-footnotes, and GFM disallowed HTML tag handling. Use custom rule lists for
-smaller dialects.
+Use `github` when the migrated code is ready for the full GFM preset. Use custom
+rule lists for smaller dialects.
 
 ## Raw HTML behavior
 
@@ -137,7 +136,7 @@ from wenmode import HTMLRenderer, Wenmode
 html = Wenmode(renderer=HTMLRenderer(escape=False)).render(text)
 ```
 
-Keep the default renderer for untrusted user-authored Markdown.
+For untrusted user-authored Markdown, leave Wenmode's default escaping enabled.
 
 ## Checklist
 

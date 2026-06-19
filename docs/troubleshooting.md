@@ -60,8 +60,8 @@ children.
 
 ## A custom renderer handler is not called
 
-Renderer handlers are selected by `node.type`, not by the Python class name.
-Check the AST with `root.to_ast()` and register the exact type string:
+Renderer dispatch uses the node's `type` string. Check the AST with
+`root.to_ast()` and register that exact value:
 
 ```python
 from wenmode import Wenmode
@@ -75,9 +75,8 @@ plugin setup function. See {ref}`custom-plugins`.
 
 ## Streaming raises StreamingUnsupportedError
 
-Streaming cannot use rules that need document-wide deferred inline resolution,
-such as reference-style links, footnotes, or abbreviations. Use the
-`streaming` preset:
+Streaming cannot use rules that resolve inline content after the whole document
+has been parsed. Use the `streaming` preset:
 
 ```python
 from wenmode import Wenmode
@@ -92,9 +91,8 @@ See {ref}`rule-matrix`.
 
 ## GFM syntax is not recognized
 
-`Wenmode()` uses the `commonmark` preset. Tables, task list items,
-strikethrough, footnotes, and extended autolinks require the `github` preset or
-the individual standard rules.
+`Wenmode()` uses the `commonmark` preset. Switch to `github` for the full GFM
+set, or enable the individual standard rules listed in {ref}`rule-matrix`.
 
 ```python
 from wenmode import Wenmode

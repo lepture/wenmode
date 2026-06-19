@@ -121,10 +121,9 @@ from wenmode.presets import github
 html = Wenmode(github).render(text)
 ```
 
-The `github` preset also enables task list items, strikethrough, extended
-autolinks, footnotes, and GFM disallowed HTML tag handling. If you only want
-tables without the rest of GFM, build a custom rule list with `Table` and the
-rules from `commonmark`.
+The `github` preset brings in the broader GFM feature set, not just tables. If
+you only want tables, build a custom rule list with `Table` and the rules from
+`commonmark`.
 
 ## Table of contents migration
 
