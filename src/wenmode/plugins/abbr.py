@@ -5,7 +5,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar
 
-from wenmode.nodes import Node, Parent, Text, position_from_offsets
+from wenmode.nodes import Node, Parent, Position, Text, position_from_offsets
 from wenmode.renderers import MarkdownRenderer, RenderContext
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer
@@ -129,7 +129,7 @@ def replace_abbreviations(
                 Text(
                     value=node.value[pos : match.start()],
                     _parse_emphasis=node._parse_emphasis,
-                    position=position_from_offsets(node.position, node.value, pos, match.start()),
+                    position=text_position(node, pos, match.start()),
                 )
             )
         label = match.group(0)
@@ -139,11 +139,11 @@ def replace_abbreviations(
                 Text(
                     value=label,
                     _parse_emphasis=node._parse_emphasis,
-                    position=position_from_offsets(node.position, node.value, match.start(), match.end()),
+                    position=text_position(node, match.start(), match.end()),
                 )
             )
         else:
-            position = position_from_offsets(node.position, node.value, match.start(), match.end())
+            position = text_position(node, match.start(), match.end())
             nodes.append(
                 AbbreviationNode(
                     title=definition.title,
@@ -159,14 +159,23 @@ def replace_abbreviations(
             Text(
                 value=node.value[pos:],
                 _parse_emphasis=node._parse_emphasis,
-                position=position_from_offsets(node.position, node.value, pos, len(node.value)),
+                position=text_position(node, pos, len(node.value)),
             )
         )
     return nodes
 
 
+def text_position(node: Text, start: int, end: int) -> Position | None:
+    if node.position is None:
+        return None
+    return position_from_offsets(node.position, node.value, start, end)
+
+
 def render_html(renderer: HTMLRenderer, node: AbbreviationNode, context: HTMLRenderContext) -> str:
-    attrs = {'title': node.title} if node.title else {}
+    if node.title:
+        attrs = {'title': node.title}
+    else:
+        attrs = {}
     return f'<abbr{renderer.render_attrs(attrs)}>{renderer.render_children(node.children, context)}</abbr>'
 
 

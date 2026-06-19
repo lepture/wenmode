@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING
 
 from wenmode.nodes import ContainerDirective as ContainerDirectiveNode
 from wenmode.nodes import LeafDirective as LeafDirectiveNode
-from wenmode.nodes import Node, Paragraph, Point
-from wenmode.state import BlockState
+from wenmode.nodes import Node, Paragraph
+from wenmode.state import BlockState, SourceCollector
 
 from ..base import BlockRule
 from ..directives import parse_directive_head
@@ -46,7 +46,10 @@ class LeafDirective(BlockRule):
             return None
 
         state.advance()
-        children = parser.parse_inlines(label, state) if label is not None else []
+        if label is not None:
+            children = parser.parse_inlines(label, state)
+        else:
+            children = []
         return LeafDirectiveNode(name=name, attributes=attributes, children=children)
 
 
@@ -80,16 +83,15 @@ class ContainerDirective(BlockRule):
 
         state.advance()
         closer = re.compile(rf'[ \t]{{0,3}}:{{{len(fence)},}}[ \t]*$')
-        lines, source_parts = collect_until_with_source(
-            state, lambda line: closer.match(line.rstrip('\r\n')) is not None
-        )
+        source = state.source.collect()
+        lines = collect_until_with_source(state, source, lambda line: closer.match(line.rstrip('\r\n')) is not None)
 
         children = directive_label_children(parser, label, state)
         children.extend(
             parser.parse_blocks(
                 ''.join(lines),
                 parent_state=state,
-                source=parser.source_map_from_parts(source_parts),
+                source=source.map(),
             )
         )
         return ContainerDirectiveNode(name=name, attributes=attributes, children=children)
@@ -115,18 +117,15 @@ def parse_leaf_directive_head(line: str) -> str | None:
 
 
 def collect_until_with_source(
-    state: BlockState, is_closer: Callable[[str], bool]
-) -> tuple[list[str], list[tuple[str, Point]]]:
+    state: BlockState, source: SourceCollector, is_closer: Callable[[str], bool]
+) -> list[str]:
     lines: list[str] = []
-    source_parts: list[tuple[str, Point]] = []
     while not state.done:
         line = state.line
         if is_closer(line):
             state.advance()
             break
         lines.append(line)
-        point = state.point_at_line_offset(state.index, 0)
-        if point is not None:
-            source_parts.append((line, point))
+        source.add(state.index, 0, line)
         state.advance()
-    return lines, source_parts
+    return lines

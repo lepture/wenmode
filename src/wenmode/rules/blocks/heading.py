@@ -71,11 +71,8 @@ class AtxHeading(BlockRule):
             content = ''
         state.advance()
         text = content.strip()
-        source = None
-        if text:
-            leading = len(content) - len(content.lstrip())
-            point = state.point_at_line_offset(state.index - 1, content_start + leading)
-            source = parser.source_map_for_text(text, point)
+        leading = len(content) - len(content.lstrip())
+        source = state.source.line_text(state.index - 1, content_start + leading, text)
         return Heading(depth=len(marker), children=parser.parse_inlines(text, state, source=source))
 
 
@@ -107,11 +104,14 @@ class SetextHeading(ContinueRule):
 
         start_index = state.index - len(lines)
         state.advance()
-        depth = 1 if marker.group(1).startswith('=') else 2
+        if marker.group(1).startswith('='):
+            depth = 1
+        else:
+            depth = 2
         text = ''.join(lines).strip()
         return Heading(
             depth=depth,
-            children=parser.parse_inlines(text, state, source=parser.paragraph_source(lines, state, start_index)),
+            children=parser.parse_inlines(text, state, source=state.source.paragraph(lines, start_index)),
         )
 
 

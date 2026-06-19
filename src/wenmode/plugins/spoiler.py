@@ -4,7 +4,7 @@ import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar
 
-from wenmode.nodes import Node, Parent, Point
+from wenmode.nodes import Node, Parent
 from wenmode.renderers import MarkdownRenderer, RenderContext
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.markdown import render_prefixed_block
@@ -50,23 +50,22 @@ class BlockSpoilerRule(BlockRule):
             return BlockSpoilerNode(children=parse_shallow_block(parser, BLOCK_SPOILER_RE, state))
 
         lines: list[str] = []
-        source_parts: list[tuple[str, Point]] = []
+        source = state.source.collect()
         while not state.done:
             spoiler = BLOCK_SPOILER_RE.match(state.line)
             if spoiler is None:
                 break
-            line_end = '\n' if state.line.endswith('\n') else ''
+            if state.line.endswith('\n'):
+                line_end = '\n'
+            else:
+                line_end = ''
             text = expand_leading_tabs(spoiler.group(1), 2) + line_end
             lines.append(text)
-            point = state.point_at_line_offset(state.index, spoiler.start(1))
-            if point is not None:
-                source_parts.append((text, point))
+            source.add(state.index, spoiler.start(1), text)
             state.advance()
 
         text = ''.join(lines)
-        return BlockSpoilerNode(
-            children=parser.parse_blocks(text, parent_state=state, source=parser.source_map_from_parts(source_parts))
-        )
+        return BlockSpoilerNode(children=parser.parse_blocks(text, parent_state=state, source=source.map()))
 
 
 class InlineSpoilerRule(InlineRule):
@@ -118,7 +117,9 @@ def trim_spoiler_text(text: str) -> tuple[str, int, int] | None:
 
     if end > start:
         value = text[start:end]
-        return None if '\n' in value else (value, start, end)
+        if '\n' in value:
+            return None
+        return value, start, end
 
     for index, char in reversed(list(enumerate(text))):
         if char != '\n':

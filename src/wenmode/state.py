@@ -94,6 +94,146 @@ class SourceMap:
         return points
 
 
+class SourceCollector:
+    """Collect source spans for generated nested parser text."""
+
+    def add(self, index: int, offset: int, text: str) -> None:
+        """Add text that originated at ``index`` and ``offset``."""
+        return None
+
+    def map(self) -> SourceMap | None:
+        """Return the collected source map, if source tracking is enabled."""
+        return None
+
+
+class NullSourceCollector(SourceCollector):
+    """No-op source collector used when positions are disabled."""
+
+
+NULL_SOURCE_COLLECTOR = NullSourceCollector()
+
+
+class PositionSourceCollector(SourceCollector):
+    """Source collector backed by a position-aware tracker."""
+
+    def __init__(self, tracker: PositionSourceTracker) -> None:
+        self.tracker = tracker
+        self.parts: list[tuple[str, Point]] = []
+
+    def add(self, index: int, offset: int, text: str) -> None:
+        point = self.tracker.point_at_line_offset(index, offset)
+        if point is not None:
+            self.parts.append((text, point))
+
+    def map(self) -> SourceMap | None:
+        if not self.parts:
+            return None
+        return SourceMap.from_parts(self.parts)
+
+
+class NullSourceTracker:
+    """Source tracker used when positions are disabled."""
+
+    def bind(self, state: BlockState) -> None:
+        """Bind this tracker to a block state."""
+        return None
+
+    def point_at_index(self, index: int) -> Point | None:
+        return None
+
+    def point_at_line_offset(self, index: int, offset: int) -> Point | None:
+        return None
+
+    def position_between(self, start_index: int, end_index: int) -> Position | None:
+        return None
+
+    def line_position(self, index: int, start: int, end: int) -> Position | None:
+        return None
+
+    def line_text(self, index: int, offset: int, text: str) -> SourceMap | None:
+        return None
+
+    def paragraph(self, lines: list[str], start_index: int) -> SourceMap | None:
+        return None
+
+    def collect(self) -> SourceCollector:
+        return NULL_SOURCE_COLLECTOR
+
+
+class PositionSourceTracker(NullSourceTracker):
+    """Source tracker that maps generated parser text to source positions."""
+
+    def __init__(self, line_points: list[Point]) -> None:
+        self.line_points = line_points
+        self._state: BlockState | None = None
+
+    def bind(self, state: BlockState) -> None:
+        self._state = state
+
+    def _require_state(self) -> BlockState:
+        if self._state is None:  # pragma: no cover
+            raise RuntimeError('source tracker is not bound to a state')
+        return self._state
+
+    def point_at_index(self, index: int) -> Point | None:
+        state = self._require_state()
+        if 0 <= index < len(self.line_points):
+            return self.line_points[index]
+        if index <= 0:
+            return Point(line=1, column=1, offset=0)
+        if not state.lines or not self.line_points:
+            return Point(line=1, column=1, offset=0)
+        last_index = len(state.lines) - 1
+        return advance_point(self.line_points[last_index], state.lines[last_index])
+
+    def point_at_line_offset(self, index: int, offset: int) -> Point | None:
+        point = self.point_at_index(index)
+        if point is None:
+            return None
+        return advance_point(point, self._require_state().line_at(index)[:offset])
+
+    def position_between(self, start_index: int, end_index: int) -> Position | None:
+        start = self.point_at_index(start_index)
+        end = self.point_at_index(end_index)
+        if start is None or end is None:
+            return None
+        return Position(start=start, end=end)
+
+    def line_position(self, index: int, start: int, end: int) -> Position | None:
+        start_point = self.point_at_line_offset(index, start)
+        end_point = self.point_at_line_offset(index, end)
+        if start_point is None or end_point is None:
+            return None
+        return Position(start=start_point, end=end_point)
+
+    def line_text(self, index: int, offset: int, text: str) -> SourceMap | None:
+        point = self.point_at_line_offset(index, offset)
+        if point is None:
+            return None
+        return SourceMap.contiguous(text, point)
+
+    def paragraph(self, lines: list[str], start_index: int) -> SourceMap | None:
+        state = self._require_state()
+        collector = self.collect()
+        for offset, text in enumerate(lines):
+            index = start_index + offset
+            if index < 0 or index >= len(state.lines):
+                return None
+            raw_line = state.line_at(index)
+            collector.add(index, len(raw_line) - len(text), text)
+
+        source = collector.map()
+        if source is None:
+            return None
+        raw_text = ''.join(lines)
+        start = len(raw_text) - len(raw_text.lstrip())
+        end = len(raw_text.rstrip())
+        return source.slice(start, end)
+
+    def collect(self) -> SourceCollector:
+        return PositionSourceCollector(self)
+
+
 @dataclass(frozen=True)
 class StateKey(Generic[T]):
     """Typed key for per-parse extension state.
@@ -132,7 +272,10 @@ class StreamLineBuffer:
 
     def __init__(self, source: Iterable[str], track_positions: bool = False) -> None:
         self.lines: list[str] = []
-        self.line_points: list[Point] | None = [] if track_positions else None
+        if track_positions:
+            self.line_points: list[Point] | None = []
+        else:
+            self.line_points = None
         self._iterator: Iterator[str] = iter(source)
         self._exhausted = False
         self._next_point = Point(line=1, column=1, offset=0)
@@ -179,13 +322,15 @@ class BlockState:
 
     lines: list[str]
     index: int = 0
-    line_points: list[Point] | None = None
-    track_positions: bool = False
+    source: NullSourceTracker = field(default_factory=NullSourceTracker)
     store: StateStore = field(default_factory=StateStore)
     depth: int = 0
     pending_inlines: list[tuple[list[Node], str, SourceMap | None]] = field(default_factory=list)
     pending_inline_callbacks: list[Callable[[], None]] = field(default_factory=list)
     defer_inlines: bool = False
+
+    def __post_init__(self) -> None:
+        self.source.bind(self)
 
     @property
     def done(self) -> bool:
@@ -230,36 +375,6 @@ class BlockState:
             index += 1
         return None
 
-    def tracks_positions(self) -> bool:
-        return self.track_positions and self.line_points is not None
-
-    def point_at_index(self, index: int) -> Point | None:
-        if not self.tracks_positions():
-            return None
-        if self.line_points is None:  # pragma: no cover
-            return None
-        if 0 <= index < len(self.line_points):
-            return self.line_points[index]
-        if index <= 0:
-            return Point(line=1, column=1, offset=0)
-        if not self.lines:
-            return Point(line=1, column=1, offset=0)
-        last_index = len(self.lines) - 1
-        return advance_point(self.line_points[last_index], self.lines[last_index])
-
-    def point_at_line_offset(self, index: int, offset: int) -> Point | None:
-        point = self.point_at_index(index)
-        if point is None:
-            return None
-        return advance_point(point, self.line_at(index)[:offset])
-
-    def position_between(self, start_index: int, end_index: int) -> Position | None:
-        start = self.point_at_index(start_index)
-        end = self.point_at_index(end_index)
-        if start is None or end is None:
-            return None
-        return Position(start=start, end=end)
-
 
 class StreamBlockState(BlockState):
     """Block state backed by a lazy :class:`StreamLineBuffer`."""
@@ -268,23 +383,30 @@ class StreamBlockState(BlockState):
         self,
         line_buffer: StreamLineBuffer,
         index: int = 0,
+        source: NullSourceTracker | None = None,
         store: StateStore | None = None,
         depth: int = 0,
         pending_inlines: list[tuple[list[Node], str, SourceMap | None]] | None = None,
         pending_inline_callbacks: list[Callable[[], None]] | None = None,
         defer_inlines: bool = False,
-        track_positions: bool = False,
     ) -> None:
         self.line_buffer = line_buffer
+        if source is None:
+            source = NullSourceTracker()
+        if store is None:
+            store = StateStore()
+        if pending_inlines is None:
+            pending_inlines = []
+        if pending_inline_callbacks is None:
+            pending_inline_callbacks = []
         super().__init__(
             line_buffer.lines,
             index=index,
-            line_points=line_buffer.line_points,
-            track_positions=track_positions,
-            store=store if store is not None else StateStore(),
+            source=source,
+            store=store,
             depth=depth,
-            pending_inlines=pending_inlines if pending_inlines is not None else [],
-            pending_inline_callbacks=pending_inline_callbacks if pending_inline_callbacks is not None else [],
+            pending_inlines=pending_inlines,
+            pending_inline_callbacks=pending_inline_callbacks,
             defer_inlines=defer_inlines,
         )
 

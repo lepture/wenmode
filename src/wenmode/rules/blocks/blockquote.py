@@ -4,7 +4,6 @@ import re
 from typing import TYPE_CHECKING
 
 from wenmode.nodes import Blockquote as BlockquoteNode
-from wenmode.nodes import Point
 from wenmode.state import BlockState
 from wenmode.utils import expand_leading_tabs
 
@@ -38,7 +37,7 @@ class Blockquote(BlockRule):
             return BlockquoteNode(children=parse_shallow_block(parser, BLOCKQUOTE_RE, state))
 
         lines: list[str] = []
-        source_parts: list[tuple[str, Point]] = []
+        source = state.source.collect()
         paragraph_open = False
         lazy_used = False
         while not state.done:
@@ -46,22 +45,25 @@ class Blockquote(BlockRule):
             quote = BLOCKQUOTE_RE.match(line)
             if quote is None:
                 if paragraph_open and line.strip() != '' and not parser.is_paragraph_interrupt(line, state):
-                    text = ('    ' if lazy_used and is_setext_marker(line) else '') + line
+                    if lazy_used and is_setext_marker(line):
+                        prefix = '    '
+                    else:
+                        prefix = ''
+                    text = prefix + line
                     lines.append(text)
-                    point = state.point_at_line_offset(state.index, 0)
-                    if point is not None:
-                        source_parts.append((text, point))
+                    source.add(state.index, 0, text)
                     lazy_used = True
                     state.advance()
                     continue
                 break
-            line_end = '\n' if line.endswith('\n') else ''
+            if line.endswith('\n'):
+                line_end = '\n'
+            else:
+                line_end = ''
             content = expand_leading_tabs(quote.group(1), 2)
             text = content + line_end
             lines.append(text)
-            point = state.point_at_line_offset(state.index, quote.start(1))
-            if point is not None:
-                source_parts.append((text, point))
+            source.add(state.index, quote.start(1), text)
             paragraph_open = content.strip() != '' and (
                 not starts_nonparagraph_block(parser, content) or has_nested_blockquote(content)
             )
@@ -69,9 +71,7 @@ class Blockquote(BlockRule):
             state.advance()
 
         text = ''.join(lines)
-        return BlockquoteNode(
-            children=parser.parse_blocks(text, parent_state=state, source=parser.source_map_from_parts(source_parts))
-        )
+        return BlockquoteNode(children=parser.parse_blocks(text, parent_state=state, source=source.map()))
 
 
 def has_nested_blockquote(line: str) -> bool:

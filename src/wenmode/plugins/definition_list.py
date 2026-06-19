@@ -4,12 +4,12 @@ import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-from wenmode.nodes import Node, Paragraph, Parent, Point
+from wenmode.nodes import Node, Paragraph, Parent
 from wenmode.renderers import MarkdownRenderer, RenderContext
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer, indent_block
 from wenmode.rules.base import ContinueRule, Rule
-from wenmode.state import BlockState
+from wenmode.state import BlockState, SourceCollector
 
 from .types import RendererHandlers
 
@@ -72,12 +72,12 @@ def create_terms(parser: Parser, lines: list[str], state: BlockState, start_inde
             continue
         text = line.strip()
         leading = len(line) - len(line.lstrip())
-        point = state.point_at_line_offset(start_index + offset, leading)
         term = DefinitionTermNode(
-            children=parser.parse_inlines(text, state, source=parser.source_map_for_text(text, point))
+            children=parser.parse_inlines(
+                text, state, source=state.source.line_text(start_index + offset, leading, text)
+            )
         )
-        if parser.positions:
-            term.position = state.position_between(start_index + offset, start_index + offset + 1)
+        term.position = state.source.position_between(start_index + offset, start_index + offset + 1)
         terms.append(term)
     return terms
 
@@ -91,27 +91,22 @@ def parse_descriptions(parser: Parser, state: BlockState) -> list[DefinitionDesc
         start_index = state.index
         text = match.group('text') + line_ending(state.line)
         lines = [text]
-        source_parts: list[tuple[str, Point]] = []
-        point = state.point_at_line_offset(state.index, match.start('text'))
-        if point is not None:
-            source_parts.append((text, point))
+        source = state.source.collect()
+        source.add(state.index, match.start('text'), text)
         state.advance()
-        spread = collect_description_continuation(state, lines, source_parts)
+        spread = collect_description_continuation(state, lines, source)
         children = parser.parse_blocks(
             ''.join(lines),
             parent_state=state,
-            source=parser.source_map_from_parts(source_parts),
+            source=source.map(),
         )
         description = DefinitionDescriptionNode(children=children, spread=spread)
-        if parser.positions:
-            description.position = state.position_between(start_index, state.index)
+        description.position = state.source.position_between(start_index, state.index)
         descriptions.append(description)
     return descriptions
 
 
-def collect_description_continuation(
-    state: BlockState, lines: list[str], source_parts: list[tuple[str, Point]]
-) -> bool:
+def collect_description_continuation(state: BlockState, lines: list[str], source: SourceCollector) -> bool:
     spread = False
     while not state.done:
         if state.line.strip() == '':
@@ -119,9 +114,7 @@ def collect_description_continuation(
                 break
             spread = True
             lines.append(state.line)
-            point = state.point_at_line_offset(state.index, 0)
-            if point is not None:
-                source_parts.append((state.line, point))
+            source.add(state.index, 0, state.line)
             state.advance()
             continue
         indented = INDENTED_RE.match(state.line)
@@ -129,9 +122,7 @@ def collect_description_continuation(
             break
         text = indented.group('text') + line_ending(state.line)
         lines.append(text)
-        point = state.point_at_line_offset(state.index, indented.start('text'))
-        if point is not None:
-            source_parts.append((text, point))
+        source.add(state.index, indented.start('text'), text)
         state.advance()
     return spread
 
@@ -158,7 +149,9 @@ def parse_following_terms(state: BlockState) -> tuple[list[str], int, int] | Non
         if line.strip() == '':
             return None
         if DESCRIPTION_RE.match(line) is not None:
-            return (terms, start_index, index) if terms else None
+            if terms:
+                return terms, start_index, index
+            return None
         if line.startswith((' ', '\t')):
             return None
         terms.append(line)
@@ -167,7 +160,9 @@ def parse_following_terms(state: BlockState) -> tuple[list[str], int, int] | Non
 
 
 def line_ending(line: str) -> str:
-    return '\n' if line.endswith('\n') else ''
+    if line.endswith('\n'):
+        return '\n'
+    return ''
 
 
 def render_html_list(renderer: HTMLRenderer, node: DefinitionListNode, context: HTMLRenderContext) -> str:

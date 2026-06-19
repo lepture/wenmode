@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING
 
-from wenmode.nodes import Node, Position, TableCell, TableRow
+from wenmode.nodes import Node, TableCell, TableRow
 from wenmode.nodes import Table as TableNode
 from wenmode.state import BlockState
 from wenmode.utils import is_escaped
@@ -48,8 +48,7 @@ class Table(BlockRule):
             return None
 
         header = TableRow(children=parse_cells(parser, header_cells, state, state.index))
-        if parser.positions:
-            header.position = state.position_between(state.index, state.index + 1)
+        header.position = state.source.position_between(state.index, state.index + 1)
         rows: list[Node] = [header]
         state.advance(2)
 
@@ -60,8 +59,7 @@ class Table(BlockRule):
             row_index = state.index
             cells = normalize_row(split_table_row_spans(line), len(align), len(line))
             row = TableRow(children=parse_cells(parser, cells, state, row_index))
-            if parser.positions:
-                row.position = state.position_between(row_index, row_index + 1)
+            row.position = state.source.position_between(row_index, row_index + 1)
             rows.append(row)
             state.advance()
 
@@ -74,12 +72,10 @@ def parse_cells(parser: Parser, cells: list[CellSpan], state: BlockState, line_i
         stripped = raw.strip()
         leading = len(raw) - len(raw.lstrip())
         text = unescape_table_pipes(stripped)
-        point = state.point_at_line_offset(line_index, start + leading)
-        cell = TableCell(children=parser.parse_inlines(text, state, source=parser.source_map_for_text(text, point)))
-        start_point = state.point_at_line_offset(line_index, start)
-        end_point = state.point_at_line_offset(line_index, end)
-        if start_point is not None and end_point is not None:
-            cell.position = Position(start=start_point, end=end_point)
+        cell = TableCell(
+            children=parser.parse_inlines(text, state, source=state.source.line_text(line_index, start + leading, text))
+        )
+        cell.position = state.source.line_position(line_index, start, end)
         parsed.append(cell)
     return parsed
 

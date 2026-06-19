@@ -51,16 +51,15 @@ class FencedDirectiveRule(BlockRule):
             state.advance()
 
         closer = re.compile(rf'[ \t]{{0,3}}{re.escape(fence_char)}{{{len(fence)},}}[ \t]*$')
-        lines, source_parts = collect_until_with_source(
-            state, lambda line: closer.match(line.rstrip('\r\n')) is not None
-        )
+        source = state.source.collect()
+        lines = collect_until_with_source(state, source, lambda line: closer.match(line.rstrip('\r\n')) is not None)
 
         children = directive_label_children(parser, title, state)
         children.extend(
             parser.parse_blocks(
                 ''.join(lines),
                 parent_state=state,
-                source=parser.source_map_from_parts(source_parts),
+                source=source.map(),
             )
         )
         return ContainerDirectiveNode(name=name, attributes=attributes or None, children=children)

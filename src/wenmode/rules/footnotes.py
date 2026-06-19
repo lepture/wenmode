@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, ClassVar
 
 from wenmode.nodes import FootnoteDefinition as FootnoteDefinitionNode
-from wenmode.nodes import FootnoteReference, Node, Point, Root
-from wenmode.state import StateKey
+from wenmode.nodes import FootnoteReference, Node, Root
+from wenmode.state import SourceCollector, StateKey
 from wenmode.utils import count_indent, normalize_label, normalize_label_text
 
 from .base import BlockRule, InlineRule, Rule
@@ -90,12 +90,13 @@ class FootnoteDefinition(BlockRule):
         if identifier == '':
             return None
 
-        content_lines, source_parts = collect_definition_lines(state, parsed.start('rest'), parsed.group('rest'))
+        source = state.source.collect()
+        content_lines = collect_definition_lines(state, parsed.start('rest'), parsed.group('rest'), source)
         children = (
             parser.parse_blocks(
                 ''.join(content_lines),
                 parent_state=state,
-                source=parser.source_map_from_parts(source_parts),
+                source=source.map(),
             )
             if content_lines
             else []
@@ -138,17 +139,12 @@ def collect_footnote_definitions_into(node: Node, definitions: dict[str, Footnot
             collect_footnote_definitions_into(child, definitions)
 
 
-def collect_definition_lines(
-    state: BlockState, rest_start: int, rest: str
-) -> tuple[list[str], list[tuple[str, Point]]]:
+def collect_definition_lines(state: BlockState, rest_start: int, rest: str, source: SourceCollector) -> list[str]:
     lines: list[str] = []
-    source_parts: list[tuple[str, Point]] = []
     if rest:
         text = rest + '\n'
         lines.append(text)
-        point = state.point_at_line_offset(state.index, rest_start)
-        if point is not None:
-            source_parts.append((text, point))
+        source.add(state.index, rest_start, text)
     state.advance()
 
     while not state.done:
@@ -156,9 +152,7 @@ def collect_definition_lines(
         if line.strip() == '':
             if has_later_continuation(state):
                 lines.append('\n')
-                point = state.point_at_line_offset(state.index, 0)
-                if point is not None:
-                    source_parts.append(('\n', point))
+                source.add(state.index, 0, '\n')
                 state.advance()
                 continue
             break
@@ -167,12 +161,10 @@ def collect_definition_lines(
         offset = indent_offset(line, 2)
         text = line[offset:]
         lines.append(text)
-        point = state.point_at_line_offset(state.index, offset)
-        if point is not None:
-            source_parts.append((text, point))
+        source.add(state.index, offset, text)
         state.advance()
 
-    return lines, source_parts
+    return lines
 
 
 def has_later_continuation(state: BlockState) -> bool:
