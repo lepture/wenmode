@@ -13,7 +13,6 @@ from wenmode.rules import (
     Blockquote,
     BlockRule,
     Emphasis,
-    FencedCode,
     Footnote,
     Image,
     InlineCode,

@@ -1,44 +1,28 @@
 from __future__ import annotations
 
-import json
-from pathlib import Path
-from typing import TypedDict
-
 import pytest
 
+from tests.helpers import SpecExample, load_fixture
 from wenmode import HTMLRenderer, Wenmode
 from wenmode.presets import github
 from wenmode.rules import ExtendedAutolink, Rule
 
-
-class GFMExample(TypedDict):
-    markdown: str
-    html: str
-    example: int
-    section: str
-
-
-SPEC_PATH = Path(__file__).parent / 'fixtures' / 'gfm-0.29.json'
 GFM_CORE = [rule for rule in github if rule is not ExtendedAutolink and not isinstance(rule, ExtendedAutolink)]
-
-
-def load_examples() -> list[GFMExample]:
-    return json.loads(SPEC_PATH.read_text())
 
 
 @pytest.mark.parametrize(
     'example',
-    load_examples(),
+    load_fixture('gfm-0.29.json'),
     ids=lambda example: f'{example["example"]}: {example["section"]}',
 )
-def test_gfm_spec(example: GFMExample) -> None:
+def test_gfm_spec(example: SpecExample) -> None:
     renderer = HTMLRenderer(escape=False, sanitize_urls=False)
     parser = Wenmode(rules_for_example(example), renderer)
 
     assert parser.render(example['markdown']) == example['html']
 
 
-def rules_for_example(example: GFMExample) -> list[type[Rule] | Rule]:
+def rules_for_example(example: SpecExample) -> list[type[Rule] | Rule]:
     if example['section'] == '6.8 Autolinks':
         return GFM_CORE
     return github

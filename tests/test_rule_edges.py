@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import json
 import re
-from pathlib import Path
 from typing import TypedDict
 
 import pytest
 
+from tests.helpers import load_fixture
 from wenmode import HTMLRenderer, MarkdownRenderer, Parser, Wenmode
 from wenmode.directives import Figure
 from wenmode.nodes import Node, Text
@@ -43,7 +42,6 @@ from wenmode.rules import Table as TableRule
 from wenmode.rules import TextDirective as TextDirectiveInlineRule
 from wenmode.state import BlockState
 
-FIXTURES_DIR = Path(__file__).parent / 'fixtures'
 RULE_EDGE_RULES = {
     'abbreviation': Abbreviation,
     'atx_heading': AtxHeading,
@@ -121,10 +119,6 @@ class TriggerInline(InlineRule):
         return Text(value='trigger'), match.end()
 
 
-def load_rule_edge_examples() -> list[RuleEdgeExample]:
-    return json.loads((FIXTURES_DIR / 'rule_edges.json').read_text())
-
-
 def app_for_rule_edge(example: RuleEdgeExample) -> Wenmode:
     app = Wenmode([RULE_EDGE_RULES[name] for name in example['rules']])
     if 'max_container_depth' in example:
@@ -134,7 +128,7 @@ def app_for_rule_edge(example: RuleEdgeExample) -> Wenmode:
 
 @pytest.mark.parametrize(
     'example',
-    load_rule_edge_examples(),
+    load_fixture('rule_edges.json'),
     ids=lambda example: example['name'],
 )
 def test_rule_edge_examples(example: RuleEdgeExample) -> None:

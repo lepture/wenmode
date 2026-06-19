@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import json
-from pathlib import Path
 from typing import Any, TypedDict
 
 import pytest
 
+from tests.helpers import load_fixture
 from wenmode import HTMLRenderer, MarkdownRenderer, Wenmode
 from wenmode.directives import Abbreviation, Admonition, Details, Figure, TableOfContents
 from wenmode.rules import (
@@ -19,8 +18,6 @@ from wenmode.rules import (
     TextDirective,
 )
 from wenmode.rules import Image as ImageRule
-
-FIXTURES_DIR = Path(__file__).parent / 'fixtures'
 
 
 class DirectiveExample(TypedDict):
@@ -39,17 +36,9 @@ class DirectiveHtmlExample(DirectiveHtmlExampleBase, total=False):
     admonition_names: list[str]
 
 
-def load_directive_examples() -> list[DirectiveExample]:
-    return json.loads((FIXTURES_DIR / 'directives_ast.json').read_text())
-
-
-def load_directive_html_examples() -> list[DirectiveHtmlExample]:
-    return json.loads((FIXTURES_DIR / 'directives_html.json').read_text())
-
-
 @pytest.mark.parametrize(
     'example',
-    load_directive_examples(),
+    load_fixture('directives_ast.json'),
     ids=lambda example: example['name'],
 )
 def test_directive_ast_examples(example: DirectiveExample) -> None:
@@ -60,7 +49,7 @@ def test_directive_ast_examples(example: DirectiveExample) -> None:
 
 @pytest.mark.parametrize(
     'example',
-    load_directive_html_examples(),
+    load_fixture('directives_html.json'),
     ids=lambda example: example['name'],
 )
 def test_directive_html_examples(example: DirectiveHtmlExample) -> None:

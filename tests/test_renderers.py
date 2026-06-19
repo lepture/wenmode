@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
-from pathlib import Path
 from typing import TypedDict
 
 import pytest
 
+from tests.helpers import load_fixture
 from wenmode import HTMLRenderer, MarkdownRenderer, RSTRenderer, Wenmode
 from wenmode.directives import Admonition, Details, Figure, TableOfContents
 from wenmode.nodes import Literal, Paragraph, Parent, Text
@@ -51,7 +50,6 @@ from wenmode.rules import (
     ThematicBreak,
 )
 
-FIXTURES_DIR = Path(__file__).parent / 'fixtures'
 RENDERER_RULES = {
     'abbreviation': Abbreviation,
     'atx_heading': AtxHeading,
@@ -173,7 +171,7 @@ class RendererExample(TypedDict, total=False):
 
 
 def load_renderer_examples() -> list[RendererExample]:
-    return json.loads((FIXTURES_DIR / 'renderer.json').read_text())
+    return load_fixture('renderer.json')
 
 
 def rules_for_example(example: RendererExample):

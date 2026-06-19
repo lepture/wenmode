@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import json
-from pathlib import Path
 from typing import TypedDict
 
 import pytest
 
+from tests.helpers import load_fixture
 from wenmode import MarkdownRenderer, Wenmode
 from wenmode.presets import commonmark, github
 from wenmode.rules import (
@@ -29,7 +28,6 @@ from wenmode.rules import (
     Superscript,
 )
 
-FIXTURES_DIR = Path(__file__).parent / 'fixtures'
 EXTENDED_RULES = {
     'abbreviation': Abbreviation,
     'backslash_escape': BackslashEscape,
@@ -65,10 +63,6 @@ class ExtendedRuleExample(TypedDict, total=False):
     markdown_output: str
 
 
-def load_examples(name: str) -> list[ExtendedRuleExample]:
-    return json.loads((FIXTURES_DIR / name).read_text())
-
-
 def app_for_example(example: ExtendedRuleExample, renderer: MarkdownRenderer | None = None) -> Wenmode:
     rules = (
         EXTENDED_PRESETS[example['preset']]
@@ -80,7 +74,7 @@ def app_for_example(example: ExtendedRuleExample, renderer: MarkdownRenderer | N
 
 @pytest.mark.parametrize(
     'example',
-    load_examples('extended_rules.json'),
+    load_fixture('extended_rules.json'),
     ids=lambda example: example['name'],
 )
 def test_extended_rule_examples(example: ExtendedRuleExample) -> None:
