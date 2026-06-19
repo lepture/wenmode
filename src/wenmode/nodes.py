@@ -24,7 +24,12 @@ class Point:
 
 @dataclass(frozen=True, slots=True)
 class Position:
-    """Source range for a node."""
+    """0-based source offset range for a node.
+
+    ``Root.to_ast()`` converts these offsets to ``line`` and ``column`` fields
+    when the root was produced by a position-aware parser. Calling
+    ``Node.to_ast()`` on a standalone node emits offset-only positions.
+    """
 
     start: int
     end: int
@@ -47,7 +52,7 @@ class Node:
 
     :param type: mdast-compatible node type name.
     :param data: Optional extension data used by transforms or renderers.
-    :param position: Optional unist-style source range.
+    :param position: Optional 0-based source offset range.
     """
 
     type: str
@@ -56,6 +61,11 @@ class Node:
 
     def to_ast(self) -> dict[str, Any]:
         """Convert this node and its children to plain Python data.
+
+        Standalone nodes do not have root-level line-start context, so source
+        positions are serialized with offsets only. Use ``Root.to_ast()`` on a
+        parsed document root when you need unist-style ``line`` and ``column``
+        fields.
 
         :returns: A dictionary made from strings, numbers, lists, and nested
             dictionaries.
@@ -102,6 +112,11 @@ class Root(Parent):
     type: str = 'root'
 
     def to_ast(self) -> dict[str, Any]:
+        """Convert this root and its children to plain Python data.
+
+        When the root was parsed with ``positions=True``, position offsets are
+        converted to unist-style ``line`` and ``column`` fields.
+        """
         return self._to_ast(self._line_starts)
 
     @property

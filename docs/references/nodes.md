@@ -29,7 +29,7 @@ modules and follow the same `Node.to_ast()` conventions.
 
 Nodes omit source positions by default. Construct `Wenmode(..., positions=True)`
 or `Parser(..., positions=True)` when you need unist-style ranges in
-`Node.to_ast()` output.
+`Root.to_ast()` output.
 
 ```json
 {
@@ -45,6 +45,22 @@ or `Parser(..., positions=True)` when you need unist-style ranges in
 `line` and `column` are 1-based. `offset` is 0-based and counts Python string
 characters from the beginning of the parsed source. For iterable line sources,
 offsets are accumulated from the yielded lines.
+
+Internally, `Position.start` and `Position.end` store only 0-based offsets.
+`Root.to_ast()` converts those offsets to `line` and `column` values. Calling
+`Node.to_ast()` on a standalone node, including nodes yielded by
+`Parser.parse_iter()`, serializes positions with offsets only:
+
+```json
+{
+  "type": "text",
+  "position": {
+    "start": {"offset": 4},
+    "end": {"offset": 8}
+  },
+  "value": "text"
+}
+```
 
 | Node group | Node types |
 | --- | --- |

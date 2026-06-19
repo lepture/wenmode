@@ -61,6 +61,36 @@ Nodes are pure data objects. They do not carry HTML tag names, HTML attributes,
 or other renderer hints. `HTMLRenderer`, `MarkdownRenderer`, and custom
 renderers own output behavior.
 
+### Positions
+
+When positions are enabled, `node.position` is a `Position` whose `start` and
+`end` fields are 0-based offsets into the original source. The parser keeps
+line starts on the `Root`; `Root.to_ast()` uses that context to serialize
+positions as unist-style `{line, column, offset}` dictionaries.
+
+Standalone `Node.to_ast()` calls do not have access to root line starts, so they
+emit offset-only positions. This includes nodes yielded by `Parser.parse_iter()`.
+
+Rule and plugin code should usually work with offsets directly. Regex match
+indices and string slice boundaries can be turned into child positions with
+simple offset arithmetic:
+
+```python
+from wenmode.nodes import Position, Text
+
+node = Text(value='abc', position=Position(start=10, end=13))
+child = Text(value='b')
+start = 1
+end = 2
+
+child.position = Position(
+    start=node.position.start + start,
+    end=node.position.start + end,
+)
+
+assert child.position == Position(start=11, end=12)
+```
+
 ## Parser flow
 
 `Parser.parse()` creates a fresh `BlockState`, parses block nodes into a
@@ -77,6 +107,8 @@ At a high level:
 
 `Parser.parse_iter()` follows the block parser incrementally and yields nodes as
 they are parsed. It rejects rule sets that require deferred inline transforms.
+Because it does not build a root node, position-aware `parse_iter()` output
+keeps offset-only position data unless a caller supplies its own line mapping.
 
 ## Rules
 
@@ -120,6 +152,12 @@ footnotes remain visible to document-level transforms.
 
 `StreamBlockState` wraps a line buffer for iterable sources. It supports
 lookahead without forcing the entire input to be read immediately.
+
+`state.source` is a source tracker. When positions are disabled it is a no-op;
+when positions are enabled it maps line indexes and generated nested text back
+to original source offsets. Use `state.source.line_position()`,
+`state.source.line_text()`, or a collector from `state.source.collect()` when a
+rule produces nodes or nested Markdown from a slice of the current source.
 
 ## Renderers
 

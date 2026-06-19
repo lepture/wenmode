@@ -226,12 +226,35 @@ children = parser.parse_inlines(
 Block rules should call `parser.parse_blocks()`:
 
 ```{code-block} python
+source = state.source.collect()
+for line in lines:
+    source.add(state.index, 0, line)
+    state.advance()
+
 children = parser.parse_blocks(
     ''.join(lines),
     parent_state=state,
-    source=parser.source_map_from_parts(source_parts),
+    source=source.map(),
 )
 ```
+
+When positions are enabled, `Position.start` and `Position.end` are 0-based
+source offsets. This makes rule-local position updates the same shape as regex
+match indices and string slices:
+
+```{code-block} python
+from wenmode.nodes import Position
+
+if node.position is not None:
+    child.position = Position(
+        start=node.position.start + start,
+        end=node.position.start + end,
+    )
+```
+
+`Root.to_ast()` later converts those offsets to unist-style `line` and `column`
+fields. Standalone nodes, including nodes yielded by `Parser.parse_iter()`, do
+not have root line-start context and serialize positions with offsets only.
 
 If a rule decides not to handle a match, return `None` without consuming input.
 For inline rules, return `(None, match.start())`. The parser will continue with

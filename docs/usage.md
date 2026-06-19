@@ -135,6 +135,12 @@ assert ast['children'][0]['children'][1] == {
 The same option is available on `Parser(commonmark, positions=True)` when you
 use parser and renderer objects separately.
 
+Parsed nodes store source ranges as 0-based offsets. `Root.to_ast()` converts
+those offsets to the `line` and `column` fields shown above. If you call
+`to_ast()` on a standalone node, such as a node yielded by `Parser.parse_iter()`,
+the position object contains offsets only because there is no document root to
+provide line-start context.
+
 ## Rendering
 
 `Wenmode()` uses `HTMLRenderer` by default. Pass a different renderer when you

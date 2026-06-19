@@ -121,7 +121,9 @@ class Parser:
         """Yield top-level block nodes as they are parsed.
 
         This API is intended for streaming renderers and rejects rule sets that
-        need deferred inline resolution.
+        need deferred inline resolution. With ``positions=True``, yielded nodes
+        store source offsets, but they do not have root-level line-start context;
+        calling ``to_ast()`` on them emits offset-only positions.
 
         :param source: Markdown source as a string or an iterable of lines.
         :returns: Iterator of parsed block nodes.

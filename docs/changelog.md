@@ -14,8 +14,10 @@ here while preparing a release, then move them under the final version heading.
 ## Unreleased
 
 - Add opt-in source positions with `Wenmode(..., positions=True)` and
-  `Parser(..., positions=True)`. `Node.to_ast()` now includes unist-style
-  `position.start` and `position.end` objects when positions are enabled.
+  `Parser(..., positions=True)`. `Root.to_ast()` includes unist-style
+  `position.start` and `position.end` objects when positions are enabled, while
+  internal `Position` objects store offsets for cheaper parsing and simpler
+  custom rule code.
 - Add source mapping helpers for custom rules that recursively parse nested
   inline or block content.
 
