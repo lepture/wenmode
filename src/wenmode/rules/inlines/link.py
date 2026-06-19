@@ -7,10 +7,10 @@ from wenmode.nodes import Break, InlineCode, Node, Parent, Text
 from wenmode.nodes import Image as ImageNode
 from wenmode.nodes import Link as LinkNode
 from wenmode.state import BlockState, StateKey
-from wenmode.utils import is_escaped, normalize_label, normalize_label_text, normalize_uri_text
+from wenmode.utils import is_escaped, normalize_label_text, normalize_uri_text
 
 from ..base import InlineRule
-from ..references import REFERENCES_KEY, ReferenceTransform
+from ..references import ReferenceTransform, resolve_state_reference
 from .html import EMAIL_RE, HTML_RE, URI_RE
 
 if TYPE_CHECKING:
@@ -19,13 +19,7 @@ if TYPE_CHECKING:
 
 ANGLE_SPAN_RE = re.compile(rf'{URI_RE}|{EMAIL_RE}|{HTML_RE}')
 ClosingBracketCache = dict[int, tuple[str, dict[int, int]]]
-
-
-def create_closing_bracket_cache() -> ClosingBracketCache:
-    return {}
-
-
-CLOSING_BRACKET_CACHE = StateKey('wenmode.inline.closing_brackets', create_closing_bracket_cache)
+CLOSING_BRACKET_CACHE = StateKey[ClosingBracketCache]('wenmode.inline.closing_brackets', lambda: {})
 
 
 class Image(InlineRule):
@@ -123,7 +117,7 @@ def parse_link_or_image(
         return None
 
     if state:
-        reference = state.store.get(REFERENCES_KEY).get(normalize_label(reference_label))
+        reference = resolve_state_reference(state, reference_label)
         if reference is not None:
             return label, reference.url, reference.title, end
     return None

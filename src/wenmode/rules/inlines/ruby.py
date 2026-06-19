@@ -7,10 +7,9 @@ from wenmode.nodes import Link as LinkNode
 from wenmode.nodes import Node
 from wenmode.nodes import Ruby as RubyNode
 from wenmode.state import BlockState
-from wenmode.utils import normalize_label
 
 from ..base import InlineRule
-from ..references import REFERENCES_KEY
+from ..references import resolve_state_reference
 from .link import closing_bracket_cache, find_closing_bracket, invalid_reference_label, parse_direct_destination
 
 if TYPE_CHECKING:
@@ -75,8 +74,8 @@ def parse_ruby_link(
     if not label or invalid_reference_label(label):
         return None
 
-    reference = state.store.get(REFERENCES_KEY).get(normalize_label(label)) if state is not None else None
-    if reference is None:
-        return None
-
-    return LinkNode(url=reference.url, title=reference.title, children=[ruby]), ref_end + 1
+    if state is not None:
+        reference = resolve_state_reference(state, label)
+        if reference:
+            return LinkNode(url=reference.url, title=reference.title, children=[ruby]), ref_end + 1
+    return None

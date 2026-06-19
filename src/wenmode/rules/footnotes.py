@@ -29,18 +29,10 @@ class FootnoteState:
     children: list[Node]
 
 
-def create_footnotes() -> dict[str, FootnoteState]:
-    return {}
-
-
-FOOTNOTES_KEY = StateKey('wenmode.footnotes', create_footnotes)
-
-
-def create_footnote_definitions() -> dict[str, FootnoteDefinitionNode]:
-    return {}
-
-
-FOOTNOTE_DEFINITIONS_KEY = StateKey('wenmode.footnote_definitions', create_footnote_definitions)
+FootnoteCache = dict[str, FootnoteState]
+FootnoteDefinitionCache = dict[str, FootnoteDefinitionNode]
+FOOTNOTES_KEY = StateKey[FootnoteCache]('wenmode.footnotes', lambda: {})
+FOOTNOTE_DEFINITIONS_KEY = StateKey[FootnoteDefinitionCache]('wenmode.footnote_definitions', lambda: {})
 
 
 class Footnote(InlineRule):

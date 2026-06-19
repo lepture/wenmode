@@ -8,21 +8,15 @@ from wenmode.nodes import TextDirective as TextDirectiveNode
 from wenmode.state import BlockState, StateKey
 
 from ..base import InlineRule
-from ..directives import NAME_RE, parse_attributes, parse_directive_head
+from ..directives import parse_attributes, parse_directive_head
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
 
 
-ROLE_NAME_RE = re.compile(r'[A-Za-z][A-Za-z0-9_-]*')
+NAME_RE = re.compile(r'[A-Za-z][A-Za-z0-9_-]*')
 DirectiveBracketCache = dict[int, tuple[str, dict[int, int], dict[int, int]]]
-
-
-def create_directive_bracket_cache() -> DirectiveBracketCache:
-    return {}
-
-
-DIRECTIVE_BRACKET_CACHE = StateKey('wenmode.inline.directive_brackets', create_directive_bracket_cache)
+DIRECTIVE_BRACKET_CACHE = StateKey[DirectiveBracketCache]('wenmode.inline.directive_brackets', lambda: {})
 
 
 class TextDirective(InlineRule):
@@ -82,7 +76,7 @@ def parse_role(text: str, start: int = 0) -> tuple[str, str, int] | None:
     if name_end == -1:
         return None
     name = text[start + 1 : name_end]
-    if ROLE_NAME_RE.fullmatch(name) is None:
+    if NAME_RE.fullmatch(name) is None:
         return None
 
     tick_start = name_end + 1

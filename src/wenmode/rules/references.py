@@ -28,11 +28,8 @@ class ReferenceState:
     title: str | None = None
 
 
-def create_references() -> dict[str, ReferenceState]:
-    return {}
-
-
-REFERENCES_KEY = StateKey('wenmode.references', create_references)
+ReferenceCache = dict[str, ReferenceState]
+REFERENCES_KEY = StateKey[ReferenceCache]('wenmode.references', lambda: {})
 
 
 class ReferenceDefinition(BlockRule):
@@ -70,6 +67,10 @@ class ReferenceTransform(RootTransform):
     name = 'reference'
     defer_inlines = True
     required_rules: Sequence[type[Rule] | Rule] = [ReferenceDefinition]
+
+
+def resolve_state_reference(state: BlockState, label: str) -> ReferenceState | None:
+    return state.store.get(REFERENCES_KEY).get(normalize_label(label))
 
 
 def parse_reference(state: BlockState, index: int) -> tuple[int, str, str, str | None] | None:

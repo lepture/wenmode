@@ -54,7 +54,7 @@ class ContinueRule(Rule):
 
     def matches(self, line: str) -> bool:
         """Return whether a line should be checked by this continuation rule."""
-        return True
+        raise NotImplementedError
 
     def parse_paragraph_continuation(self, parser: Parser, state: BlockState, lines: list[str]) -> Node | None:
         """Parse a paragraph continuation.
