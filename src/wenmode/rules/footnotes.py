@@ -145,10 +145,7 @@ def collect_definition_lines(state: BlockState, rest_start: int, rest: str, sour
     while not state.done:
         line = state.line
         if line.strip() == '':
-            if has_later_continuation(state):
-                lines.append('\n')
-                source.add(state.index, 0, '\n')
-                state.advance()
+            if collect_blank_continuations(state, lines, source):
                 continue
             break
         if count_indent(line) < 2:
@@ -162,14 +159,20 @@ def collect_definition_lines(state: BlockState, rest_start: int, rest: str, sour
     return lines
 
 
-def has_later_continuation(state: BlockState) -> bool:
-    offset = 1
-    while state.has(offset):
-        line = state.peek(offset)
+def collect_blank_continuations(state: BlockState, lines: list[str], source: SourceCollector) -> bool:
+    cursor = state.index
+    while state.has_index(cursor):
+        line = state.line_at(cursor)
         if line.strip() == '':
-            offset += 1
+            cursor += 1
             continue
-        return count_indent(line) >= 2
+        if count_indent(line) < 2:
+            return False
+        while state.index < cursor:
+            lines.append('\n')
+            source.add(state.index, 0, '\n')
+            state.advance()
+        return True
     return False
 
 

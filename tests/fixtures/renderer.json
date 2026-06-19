@@ -188,6 +188,18 @@
     "rst": ".. admonition:: Spoiler\n\n.. note::\n   :name: intro\n   :empty:\n\n.. note:: Title\n   :name: leaf\n   :empty:\n\n.. details::\n\n   Hidden\n"
   },
   {
+    "name": "bare directive renderers",
+    "input": "::note\n\n:::note\n:::\n",
+    "rules": [
+      "leaf_directive",
+      "container_directive"
+    ],
+    "html_directives": [],
+    "html": "",
+    "markdown": "::note\n\n:::note\n:::\n",
+    "rst": ".. note::\n\n.. note::\n"
+  },
+  {
     "name": "aligned table",
     "input": "| Left | Center | Right |\n| :--- | :---: | ---: |\n| a<br>b | c | d |\n",
     "html": "<table>\n<thead>\n<tr>\n<th align=\"left\">Left</th>\n<th align=\"center\">Center</th>\n<th align=\"right\">Right</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td align=\"left\">a&lt;br&gt;b</td>\n<td align=\"center\">c</td>\n<td align=\"right\">d</td>\n</tr>\n</tbody>\n</table>\n",
@@ -247,6 +259,16 @@
     "rst": "Term\n  one\n\n  two\n"
   },
   {
+    "name": "definition list without trailing newline",
+    "input": "Term\n: desc",
+    "rules": [
+      "definition_list"
+    ],
+    "html": "<dl>\n<dt>Term</dt>\n<dd>desc</dd>\n</dl>\n",
+    "markdown": "Term\n: desc\n",
+    "rst": "Term\n  desc\n"
+  },
+  {
     "name": "abbreviation without title",
     "input": "*[HTML]:\n\nHTML\n",
     "html": "<p><abbr>HTML</abbr></p>\n",
@@ -266,6 +288,16 @@
     "html": "<pre><code>print(1)\n  indented\n</code></pre>\n",
     "markdown": "```\nprint(1)\n  indented\n```\n",
     "rst": "::\n\n   print(1)\n     indented\n"
+  },
+  {
+    "name": "partially tab indented code",
+    "input": " \tcode\n",
+    "rules": [
+      "indented_code"
+    ],
+    "html": "<pre><code>code\n</code></pre>\n",
+    "markdown": "```\ncode\n```\n",
+    "rst": "::\n\n   code\n"
   },
   {
     "name": "inline code with backticks",

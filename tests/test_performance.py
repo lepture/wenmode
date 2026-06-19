@@ -7,7 +7,7 @@ from typing import Any
 from wenmode import Wenmode
 from wenmode.plugins import spoiler
 from wenmode.presets import commonmark, github
-from wenmode.rules import AtxHeading, ExtendedAutolink, LeafDirective, Rule, TextDirective
+from wenmode.rules import AtxHeading, ExtendedAutolink, Footnote, LeafDirective, Link, List, Rule, TextDirective
 
 
 def parse_time(markdown: str, rules: list[type[Rule] | Rule], plugins: Iterable[Any] = ()) -> float:
@@ -72,3 +72,20 @@ def test_extended_autolink_trailing_parentheses_scale_nearly_linearly() -> None:
         8000,
         16000,
     )
+
+
+def test_unclosed_multiline_reference_title_scales_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(lambda size: '[x]: /url "\n' + 'a\n' * size + '\n[x]\n', [Link], 1000, 2000)
+
+
+def test_footnote_blank_continuations_scale_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(
+        lambda size: '[^x]: first\n' + '\n' * size + '  second\n\n[^x]\n',
+        [Footnote],
+        1000,
+        2000,
+    )
+
+
+def test_list_blank_continuations_scale_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(lambda size: '- a\n' + '\n' * size + '  b\n', [List], 1000, 2000)

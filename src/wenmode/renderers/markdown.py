@@ -209,17 +209,6 @@ def render_table(renderer: MarkdownRenderer, node: Table, context: RenderContext
     return '\n'.join(lines) + '\n\n'
 
 
-@MarkdownRenderer.register('tableRow')
-def render_table_row(renderer: MarkdownRenderer, node: TableRow, context: RenderContext) -> str:
-    cells = [cell for cell in node.children if isinstance(cell, TableCell)]
-    return '| ' + ' | '.join(renderer.render_table_cell_content(cell, context) for cell in cells) + ' |\n'
-
-
-@MarkdownRenderer.register('tableCell')
-def render_table_cell(renderer: MarkdownRenderer, node: TableCell, context: RenderContext) -> str:
-    return renderer.render_table_cell_content(node, context)
-
-
 def normalize_table_row(row: Node, size: int) -> list[TableCell]:
     """Return exactly ``size`` table cells for Markdown serialization."""
     cells = [cell for cell in row.children if isinstance(cell, TableCell)] if isinstance(row, TableRow) else []

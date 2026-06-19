@@ -24,6 +24,14 @@
     "html": "<p>:::bad trailing text\n:::</p>\n"
   },
   {
+    "name": "blockquote without trailing newline",
+    "rules": [
+      "blockquote"
+    ],
+    "markdown": "> quote",
+    "html": "<blockquote>\n<p>quote</p>\n</blockquote>\n"
+  },
+  {
     "name": "fenced directive invalid option body falls back to children",
     "rules": [
       "fenced_directive"
@@ -86,6 +94,14 @@
     ],
     "markdown": ">! one\nplain\n",
     "html": "<div class=\"spoiler\">\n<p>one</p>\n</div>\n<p>plain</p>\n"
+  },
+  {
+    "name": "block spoiler without trailing newline",
+    "rules": [
+      "block_spoiler"
+    ],
+    "markdown": ">! hidden",
+    "html": "<div class=\"spoiler\">\n<p>hidden</p>\n</div>\n"
   },
   {
     "name": "shallow block spoiler respects container depth",
@@ -496,6 +512,14 @@
     ],
     "markdown": "$ $\n",
     "html": "<p>$ $</p>\n"
+  },
+  {
+    "name": "inline spoiler cannot span newlines",
+    "rules": [
+      "inline_spoiler"
+    ],
+    "markdown": ">!\n!<\n",
+    "html": "<p>&gt;!\n!&lt;</p>\n"
   },
   {
     "name": "empty strikethrough stays text",
@@ -1130,6 +1154,14 @@
     ],
     "markdown": ":name[a[b]]{=skip #.a  empty title=\"a b\"  }\n",
     "html": "<p>a[b]</p>\n"
+  },
+  {
+    "name": "multiple text directives share bracket cache",
+    "rules": [
+      "text_directive"
+    ],
+    "markdown": ":a[x] :b[y]\n",
+    "html": "<p>x y</p>\n"
   },
   {
     "name": "footnote entity label normalizes empty",

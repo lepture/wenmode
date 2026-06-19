@@ -52,6 +52,7 @@ class List(BlockRule):
         spread = False
 
         thematic_break = parser.rules.get('thematic_break')
+        first_nonblank_cache: dict[int, str | None] = {}
 
         while not state.done:
             item_start_index = state.index
@@ -91,6 +92,8 @@ class List(BlockRule):
             source.add(state.index, marker.start('rest'), first_item_line)
             state.advance()
             item_spread = False
+            item_has_nested_marker = line_has_list_marker(first_item_line)
+            fence_char, fence_size = update_open_fence(first_item_line, '', 0)
 
             while not state.done:
                 next_line = state.line
@@ -108,8 +111,12 @@ class List(BlockRule):
                         item_spread = True
                         spread = True
                     if item_has_content(item_lines) and should_keep_blank_in_item(state, content_indent, marker_indent):
-                        if not has_open_fence(item_lines) and blank_belongs_to_item(
-                            item_lines, state, content_indent, marker_indent
+                        if not fence_char and blank_belongs_to_item(
+                            state,
+                            content_indent,
+                            marker_indent,
+                            item_has_nested_marker,
+                            first_nonblank_cache,
                         ):
                             item_spread = True
                             spread = True
@@ -121,11 +128,15 @@ class List(BlockRule):
                     text = strip_continuation_indent(next_line, content_indent)
                     item_lines.append(text)
                     source.add(state.index, continuation_source_offset(next_line, content_indent), text)
+                    item_has_nested_marker = item_has_nested_marker or line_has_list_marker(text)
+                    fence_char, fence_size = update_open_fence(text, fence_char, fence_size)
                     state.advance()
                     continue
                 if item_lines and item_lines[-1].strip() != '' and not parser.is_paragraph_interrupt(next_line, state):
                     item_lines.append(next_line)
                     source.add(state.index, 0, next_line)
+                    item_has_nested_marker = item_has_nested_marker or line_has_list_marker(next_line)
+                    fence_char, fence_size = update_open_fence(next_line, fence_char, fence_size)
                     state.advance()
                     continue
                 break
@@ -236,53 +247,67 @@ def should_keep_blank_in_item(state: BlockState, content_indent: int, marker_ind
     return has_continuation_indent(state.line, content_indent)
 
 
-def blank_belongs_to_item(item_lines: list[str], state: BlockState, content_indent: int, marker_indent: int) -> bool:
+def blank_belongs_to_item(
+    state: BlockState,
+    content_indent: int,
+    marker_indent: int,
+    item_has_nested_marker: bool,
+    first_nonblank_cache: dict[int, str | None],
+) -> bool:
     if state.done:
         return True
-    line = first_nonblank_from_current(state)
+    line = first_nonblank_from_current(state, first_nonblank_cache)
     if line is None:
         return True
     marker = MARKER_RE.match(line.rstrip('\r\n'))
     if marker is not None:
         return count_indent(marker.group('indent')) <= marker_indent
-    return count_indent(line) <= content_indent or not has_nested_list(item_lines)
+    return count_indent(line) <= content_indent or not item_has_nested_marker
 
 
-def first_nonblank_from_current(state: BlockState) -> str | None:
+def first_nonblank_from_current(state: BlockState, cache: dict[int, str | None]) -> str | None:
+    if state.index in cache:
+        return cache[state.index]
+
     offset = 0
+    blank_indexes: list[int] = []
     while state.has(offset):
+        index = state.index + offset
+        if index in cache:
+            line = cache[index]
+            for blank_index in blank_indexes:
+                cache[blank_index] = line
+            return line
         line = state.peek(offset)
         if line.strip() != '':
+            for blank_index in blank_indexes:
+                cache[blank_index] = line
+            cache[index] = line
             return line
+        blank_indexes.append(index)
         offset += 1
+    for blank_index in blank_indexes:
+        cache[blank_index] = None
     return None
 
 
-def has_nested_list(lines: list[str]) -> bool:
-    for line in lines:
-        if MARKER_RE.match(line.rstrip('\r\n')) is not None:
-            return True
-    return False
+def line_has_list_marker(line: str) -> bool:
+    return MARKER_RE.match(line.rstrip('\r\n')) is not None
 
 
 def item_has_content(lines: list[str]) -> bool:
     return any(line.strip() for line in lines)
 
 
-def has_open_fence(lines: list[str]) -> bool:
-    fence_char = ''
-    fence_size = 0
-    for line in lines:
-        if not fence_char:
-            match = re.match(r'[ \t]{0,3}(`{3,}|~{3,})', line)
-            if match is not None:
-                fence_char = match.group(1)[0]
-                fence_size = len(match.group(1))
-            continue
-        if re.match(rf'[ \t]{{0,3}}{re.escape(fence_char)}{{{fence_size},}}[ \t]*$', line.rstrip('\r\n')):
-            fence_char = ''
-            fence_size = 0
-    return bool(fence_char)
+def update_open_fence(line: str, fence_char: str, fence_size: int) -> tuple[str, int]:
+    if not fence_char:
+        match = re.match(r'[ \t]{0,3}(`{3,}|~{3,})', line)
+        if match is None:
+            return '', 0
+        return match.group(1)[0], len(match.group(1))
+    if re.match(rf'[ \t]{{0,3}}{re.escape(fence_char)}{{{fence_size},}}[ \t]*$', line.rstrip('\r\n')):
+        return '', 0
+    return fence_char, fence_size
 
 
 def has_continuation_indent(line: str, columns: int) -> bool:

@@ -221,7 +221,7 @@ class Parser:
             else:
                 match = None
             if match is not None and not self._container_depth_exceeded(match, state):
-                rule = self._match_block_rule(match)
+                rule = cast(BlockRule, self.rules.get(cast(str, match.lastgroup)))
                 previous_index = state.index
                 parsed_block = rule.parse(self, state, match)
                 if parsed_block is not None:
@@ -467,15 +467,6 @@ class Parser:
         for callback in callbacks:
             callback()
 
-    def _match_block_rule(self, match: re.Match[str]) -> BlockRule:
-        group = match.lastgroup
-        if group is None:
-            raise RuntimeError('block opener matched without a named group')
-        rule = self.rules.get(group)
-        if isinstance(rule, BlockRule):
-            return rule
-        raise RuntimeError(f'unknown block rule: {group}')
-
     def is_paragraph_interrupt(self, line: str, state: BlockState | None = None) -> bool:
         """Return whether a line would interrupt a paragraph.
 
@@ -538,18 +529,33 @@ class Parser:
 
 def merge_text(nodes: list[Node]) -> list[Node]:
     merged: list[Node] = []
+    text_node: Text | None = None
+    text_parts: list[str] = []
+
+    def flush_text() -> None:
+        nonlocal text_node, text_parts
+        if text_node is None:
+            return
+        text_node.value = ''.join(text_parts)
+        merged.append(text_node)
+        text_node = None
+        text_parts = []
+
     for node in nodes:
-        if (
-            isinstance(node, Text)
-            and merged
-            and isinstance(merged[-1], Text)
-            and node._parse_emphasis == merged[-1]._parse_emphasis
-        ):
-            if merged[-1].position is not None and node.position is not None:
-                merged[-1].position = type(merged[-1].position)(start=merged[-1].position.start, end=node.position.end)
-            merged[-1].value += node.value
-        else:
-            merged.append(node)
+        if isinstance(node, Text):
+            if text_node is not None and node._parse_emphasis == text_node._parse_emphasis:
+                if text_node.position is not None and node.position is not None:
+                    text_node.position = type(text_node.position)(start=text_node.position.start, end=node.position.end)
+                text_parts.append(node.value)
+                continue
+            flush_text()
+            text_node = node
+            text_parts = [node.value]
+            continue
+
+        flush_text()
+        merged.append(node)
+    flush_text()
     return merged
 
 

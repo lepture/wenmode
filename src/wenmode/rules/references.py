@@ -159,16 +159,40 @@ def parse_reference_title(text: str) -> tuple[str, str] | None:
 def parse_multiline_reference_title(
     first_line: str, state: BlockState, index: int
 ) -> tuple[tuple[str, str] | None, int]:
-    title_lines = [first_line]
-    while state.has_index(index):
-        if state.line_at(index).strip() == '':
+    opener = first_line[0]
+    closer = {'"': '"', "'": "'", '(': ')'}.get(opener)
+    if closer is None:
+        return None, index
+
+    title_parts: list[str] = []
+    escaped = False
+    line = first_line
+    start = 1
+
+    while True:
+        for position in range(start, len(line)):
+            char = line[position]
+            title_parts.append(char)
+            if escaped:
+                escaped = False
+            elif char == '\\':
+                escaped = True
+            elif char == closer:
+                title = ''.join(title_parts[:-1])
+                return (normalize_label_text(title), line[position + 1 :]), index
+
+        if not state.has_index(index):
             return None, index
-        title_lines.append(state.line_at(index).rstrip('\r\n'))
+
+        line = state.line_at(index).rstrip('\r\n')
+        if line.strip() == '':
+            return None, index
+
+        title_parts.append('\n')
+        if escaped:
+            escaped = False
+        start = 0
         index += 1
-        parsed = parse_reference_title('\n'.join(title_lines))
-        if parsed is not None:
-            return parsed, index
-    return None, index
 
 
 def parse_multiline_label_reference(state: BlockState, index: int) -> tuple[int, str, str, str | None] | None:

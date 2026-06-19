@@ -242,20 +242,6 @@ def render_table(renderer: RSTRenderer, node: Table, context: RSTRenderContext) 
     return '\n'.join(lines) + '\n\n'
 
 
-@RSTRenderer.register('tableRow')
-def render_table_row(renderer: RSTRenderer, node: TableRow, context: RSTRenderContext) -> str:
-    cells = [cell for cell in node.children if isinstance(cell, TableCell)]
-    if not cells:
-        return ''
-    widths = [max(3, len(renderer.render_table_cell_content(cell, context))) for cell in cells]
-    return render_table_line([renderer.render_table_cell_content(cell, context) for cell in cells], widths) + '\n'
-
-
-@RSTRenderer.register('tableCell')
-def render_table_cell(renderer: RSTRenderer, node: TableCell, context: RSTRenderContext) -> str:
-    return renderer.render_table_cell_content(node, context)
-
-
 @RSTRenderer.register('code')
 def render_code(renderer: RSTRenderer, node: Code, context: RSTRenderContext) -> str:
     value = node.value if node.value.endswith('\n') else node.value + '\n'
