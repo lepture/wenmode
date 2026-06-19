@@ -42,8 +42,9 @@ outside Wenmode.
 ## A directive parses but does not render custom HTML
 
 Directive syntax rules and directive renderers are separate. Enabling
-`ContainerDirective`, `LeafDirective`, `TextDirective`, `FencedDirective`, or
-`Role` only creates directive nodes. Register a directive renderer when you want
+`ContainerDirective`, `LeafDirective`, `TextDirective`, or the
+`wenmode.plugins.fenced_directive` and `wenmode.plugins.inline_role` plugins
+only creates directive nodes. Register a directive renderer when you want
 special HTML output.
 
 ```python
@@ -85,14 +86,15 @@ from wenmode.presets import streaming
 wenmode = Wenmode(streaming)
 ```
 
-If you build a custom streaming rule list, avoid `Footnote`, `Abbreviation`,
-`Link(references=True)`, and `Image(references=True)`. See {ref}`rule-matrix`.
+If you build a custom streaming rule list, avoid `Footnote`,
+`wenmode.plugins.abbr`, `Link(references=True)`, and `Image(references=True)`.
+See {ref}`rule-matrix`.
 
 ## GFM syntax is not recognized
 
 `Wenmode()` uses the `commonmark` preset. Tables, task list items,
 strikethrough, footnotes, and extended autolinks require the `github` preset or
-the individual extension rules.
+the individual standard rules.
 
 ```python
 from wenmode import Wenmode

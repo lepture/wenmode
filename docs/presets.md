@@ -18,6 +18,9 @@ from wenmode.presets import github
 wenmode = Wenmode(github)
 ```
 
+Use {ref}`plugins` for non-standard syntax that needs its own nodes and renderer
+handlers.
+
 ## Choosing a preset
 
 | Preset | Use it when | Includes | Main tradeoff |

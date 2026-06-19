@@ -73,10 +73,12 @@ explicitly rather than silently ignoring a whole page.
 
 ## Rule change checklist
 
-When adding or changing a public rule:
+When adding or changing a public rule or built-in plugin:
 
 - Add parser and renderer tests for recognized syntax and fallback behavior.
 - Update the relevant preset documentation if the rule is enabled there.
+- Keep non-standard syntax in `wenmode.plugins`, with node classes and renderer
+  handlers owned by the plugin module.
 - Update the reference page with syntax, AST shape, and HTML output.
 - Add or update a recipe when the rule supports a common integration task.
 - Run the strict docs build and docs example tests before release.

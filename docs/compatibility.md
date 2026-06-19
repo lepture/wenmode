@@ -30,8 +30,8 @@ extensions such as tables, task lists, strikethrough, extended autolinks, or
 footnotes.
 
 Use the `github` preset for GitHub-flavored Markdown features. Wenmode runs the
-CommonMark and GFM spec fixture suites in its tests, but some extension behavior
-is intentionally exposed as explicit rules rather than hidden global plugins.
+CommonMark and GFM spec fixture suites in its tests. Non-standard syntax is
+intentionally exposed through explicit `wenmode.plugins` modules.
 
 Use the `streaming` preset when you need incremental HTML output. Streaming
 disables syntax that requires document-wide deferred inline resolution, such as
@@ -43,7 +43,7 @@ The high-level APIs documented in {ref}`usage`, {ref}`presets`, and
 {ref}`custom-rules` are intended to be stable through the beta period:
 
 - `Wenmode`, `Parser`, and renderer construction.
-- Rule classes and configured rule instances.
+- Rule classes, configured rule instances, and `Wenmode.use(plugin)`.
 - `Node.to_ast()` output for documented node types.
 - Custom `BlockRule`, `ContinueRule`, `InlineRule`, and root transform shapes.
 - `StateKey` and `BlockState.store` for per-parse extension state.
@@ -56,8 +56,8 @@ implementation conflicts with CommonMark, GFM, or documented Wenmode semantics.
 
 Wenmode is not a drop-in replacement for Mistune plugins. The common
 Markdown-to-HTML path maps directly to `Wenmode().render()`, but extension
-behavior should be migrated by choosing a preset, adding or removing parser
-rules, and registering directive renderers or custom renderers as needed.
+behavior should be migrated by choosing a preset, using built-in plugins, and
+registering directive renderers or custom renderers as needed.
 
 See {ref}`recipes` for common integration patterns and {ref}`custom-rules` for
 custom syntax.

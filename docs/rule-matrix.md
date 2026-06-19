@@ -38,6 +38,9 @@ rules to enable. For syntax examples and default HTML output, use the
 | `Footnote` | inline + transform | no | yes | no | `footnoteReference`, `footnoteDefinition` | none |
 | `Strikethrough` | inline | no | yes | no | `delete` | none |
 | `ExtendedAutolink` | inline | no | yes | no | `link` | none |
+| `LeafDirective` | block | no | no | no | `leafDirective` | none |
+| `ContainerDirective` | block | no | no | no | `containerDirective` | none |
+| `TextDirective` | inline | no | no | no | `textDirective` | none |
 
 `github` configures `HtmlBlock` and `RawHtml` with the GFM disallowed tag list,
 uses `RawHtml(comment_style="gfm")`, and configures `List(task=True)` so task
@@ -50,29 +53,26 @@ reference resolution.
 `Footnote`. You normally configure the user-facing inline rules rather than
 adding those definition rules directly.
 
-## Extension-only rules
+## Plugin rules
 
-These rules are not part of the built-in `commonmark`, `github`, or `streaming`
-presets. Enable them explicitly when your dialect needs the syntax.
+These rules are not part of `wenmode.rules`. Enable them with `Wenmode.use()`
+from `wenmode.plugins` when your dialect needs the syntax.
 
-| Rule | Kind | Generated node or behavior | Streaming note |
-| --- | --- | --- | --- |
-| `Abbreviation` | transform | rewrites matching text to `abbreviation` | not streaming-compatible |
-| `DefinitionList` | continuation | `definitionList`, `definitionTerm`, `definitionDescription` | compatible |
-| `MathBlock` | block | `math` | compatible |
-| `BlockSpoiler` | block | `blockSpoiler` | compatible |
-| `LeafDirective` | block | `leafDirective` | compatible |
-| `ContainerDirective` | block | `containerDirective` | compatible |
-| `FencedDirective` | block | `containerDirective` | compatible |
-| `TextDirective` | inline | `textDirective` | compatible |
-| `Role` | inline | `textDirective` | compatible |
-| `Mark` | inline | `mark` | compatible |
-| `Insert` | inline | `insert` | compatible |
-| `Superscript` | inline | `superscript` | compatible |
-| `Subscript` | inline | `subscript` | compatible |
-| `Ruby` | inline | `ruby` | compatible |
-| `InlineSpoiler` | inline | `inlineSpoiler` | compatible |
-| `InlineMath` | inline | `inlineMath` | compatible |
+| Plugin | Rule class | Kind | Generated node or behavior | Streaming note |
+| --- | --- | --- | --- | --- |
+| `abbr` | `AbbreviationRule` | transform | rewrites matching text to `abbreviation` | not streaming-compatible |
+| `definition_list` | `DefinitionListRule` | continuation | `definitionList`, `definitionTerm`, `definitionDescription` | compatible |
+| `math` | `MathBlockRule` | block | `math` | compatible |
+| `math` | `InlineMathRule` | inline | `inlineMath` | compatible |
+| `spoiler` | `BlockSpoilerRule` | block | `blockSpoiler` | compatible |
+| `spoiler` | `InlineSpoilerRule` | inline | `inlineSpoiler` | compatible |
+| `fenced_directive` | `FencedDirectiveRule` | block | `containerDirective` | compatible |
+| `inline_role` | `RoleRule` | inline | `textDirective` | compatible |
+| `mark` | `MarkRule` | inline | `mark` | compatible |
+| `insert` | `InsertRule` | inline | `insert` | compatible |
+| `superscript` | `SuperscriptRule` | inline | `superscript` | compatible |
+| `subscript` | `SubscriptRule` | inline | `subscript` | compatible |
+| `ruby` | `RubyRule` | inline | `ruby` | compatible |
 
 ## Streaming compatibility
 
@@ -82,7 +82,7 @@ resolution. Avoid these when using `Wenmode(streaming).stream(...)`:
 - `Link(references=True)` and `Image(references=True)`, because they attach
   `ReferenceTransform`.
 - `Footnote`, because footnote references need collected definitions.
-- `Abbreviation`, because matching text nodes are rewritten after abbreviation
+- `wenmode.plugins.abbr`, because matching text nodes are rewritten after abbreviation
   definitions are collected.
 
 Use the `streaming` preset when latency matters. It keeps direct links and

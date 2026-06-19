@@ -3,14 +3,14 @@
 
 ```{rst-class} lead
 Move CommonMark-only rendering and AST workflows from commonmark.py to
-Wenmode's CommonMark-style preset and optional extension rules.
+Wenmode's CommonMark-style preset, optional GFM rules, and plugins.
 ```
 
 ---
 
 commonmark.py targets the CommonMark specification. Wenmode's default
 `Wenmode()` path is also CommonMark-oriented, while making it possible to add
-GFM and Wenmode-specific extension rules later.
+GFM and Wenmode plugins later.
 
 ## Simple rendering
 
@@ -144,4 +144,4 @@ Keep the default renderer for untrusted user-authored Markdown.
 - Replace `commonmark.commonmark(text)` with `Wenmode().render(text)`.
 - Replace commonmark.py AST traversal with Wenmode node traversal or `to_ast()`.
 - Review raw HTML passthrough assumptions.
-- Add `github` or custom rules only after the CommonMark migration is stable.
+- Add `github`, custom rules, or plugins only after the CommonMark migration is stable.

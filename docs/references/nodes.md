@@ -21,9 +21,9 @@ Directive HTML can be replaced by registering directive renderers. Raw HTML is
 escaped by the default `HTMLRenderer` unless you construct it with
 `HTMLRenderer(escape=False)`.
 
-Wenmode nodes are mdast-compatible data objects. Core Markdown nodes use
-mdast-style names and fields, and extensions follow the same conventions with
-explicit node types.
+Wenmode nodes are mdast-compatible data objects. Core Markdown, GFM, and mdast
+directive nodes live in `wenmode.nodes`. Plugin nodes live in their plugin
+modules and follow the same `Node.to_ast()` conventions.
 
 ## Source positions
 
@@ -49,9 +49,9 @@ offsets are accumulated from the yielded lines.
 | Node group | Node types |
 | --- | --- |
 | Document and containers | `root`, `paragraph`, `heading`, `blockquote`, `list`, `listItem` |
-| Literals | `text`, `inlineCode`, `code`, `html`, `math`, `inlineMath` |
-| Formatting | `emphasis`, `strong`, `delete`, `mark`, `insert`, `superscript`, `subscript` |
+| Literals | `text`, `inlineCode`, `code`, `html` |
+| Formatting | `emphasis`, `strong`, `delete` |
 | Links and media | `link`, `image`, `break` |
-| GFM and extensions | `table`, `tableRow`, `tableCell`, `footnoteReference`, `footnoteDefinition`, `abbreviation`, `definitionList`, `definitionTerm`, `definitionDescription` |
-| Wenmode extensions | `ruby`, `inlineSpoiler`, `blockSpoiler` |
+| GFM | `table`, `tableRow`, `tableCell`, `footnoteReference`, `footnoteDefinition` |
 | Directives | `textDirective`, `leafDirective`, `containerDirective` |
+| Plugin nodes | `abbreviation`, `definitionList`, `definitionTerm`, `definitionDescription`, `math`, `inlineMath`, `mark`, `insert`, `superscript`, `subscript`, `ruby`, `inlineSpoiler`, `blockSpoiler` |

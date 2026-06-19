@@ -93,8 +93,8 @@ html = wenmode.render(text)
 | `tables` | `github` preset or `Table` rule |
 | `fenced_code` | default `commonmark` preset includes `FencedCode` |
 | `footnotes` | `github` preset or `Footnote` rule |
-| `abbr` | `Abbreviation` rule, or directive renderer for `:abbr[...]` |
-| `def_list` | `DefinitionList` rule |
+| `abbr` | `wenmode.plugins.abbr`, or directive renderer for `:abbr[...]` |
+| `def_list` | `wenmode.plugins.definition_list` |
 | `toc` | heading IDs plus `collect_toc()` / `render_toc_html()` or `TableOfContents` directive renderer |
 | `attr_list` | no global equivalent; use directives, custom rules, or renderer logic for the specific attributes you support |
 | `md_in_html` | raw HTML rules plus renderer policy; sanitize externally for untrusted input |

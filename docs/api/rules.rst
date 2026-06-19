@@ -49,19 +49,9 @@ Block Rules
 
 .. autoclass:: wenmode.rules.FootnoteDefinition
 
-.. autoclass:: wenmode.rules.Abbreviation
-
-.. autoclass:: wenmode.rules.DefinitionList
-
-.. autoclass:: wenmode.rules.MathBlock
-
-.. autoclass:: wenmode.rules.BlockSpoiler
-
 .. autoclass:: wenmode.rules.LeafDirective
 
 .. autoclass:: wenmode.rules.ContainerDirective
-
-.. autoclass:: wenmode.rules.FencedDirective
 
 .. autoclass:: wenmode.rules.ReferenceDefinition
 
@@ -90,22 +80,13 @@ Inline Rules
 
 .. autoclass:: wenmode.rules.ExtendedAutolink
 
-.. autoclass:: wenmode.rules.Mark
-
-.. autoclass:: wenmode.rules.Insert
-
-.. autoclass:: wenmode.rules.Superscript
-
-.. autoclass:: wenmode.rules.Subscript
-
-.. autoclass:: wenmode.rules.Ruby
-
-.. autoclass:: wenmode.rules.InlineSpoiler
-
-.. autoclass:: wenmode.rules.InlineMath
-
 .. autoclass:: wenmode.rules.TextDirective
 
-.. autoclass:: wenmode.rules.Role
-
 .. autoclass:: wenmode.rules.Footnote
+
+Plugin Rules
+------------
+
+Non-standard syntax lives in :mod:`wenmode.plugins`. Each plugin module owns its
+node classes, parser rule classes, renderer handlers, and ``setup`` function.
+For usage, see :ref:`plugins`.

@@ -2,7 +2,7 @@
 # Extension inline rules
 
 ```{rst-class} lead
-Inline extension rules for GFM, formatting, math, spoilers, ruby, and directives.
+Inline extension rules for GFM, mdast directives, and built-in plugins.
 ```
 
 ---
@@ -72,15 +72,15 @@ Output node is `Link`, and its AST is:
 }
 ```
 
-## Mark
+## Mark Plugin
 
-`Mark` parses highlighted text delimited by `==`.
+`wenmode.plugins.mark` parses highlighted text delimited by `==`.
 
 ```markdown
 ==marked==
 ```
 
-Output node is `Mark`, and its AST is:
+Output node is `MarkNode`, and its AST is:
 
 ```json
 {
@@ -104,15 +104,15 @@ Output node is `Mark`, and its AST is:
 }
 ```
 
-## Insert
+## Insert Plugin
 
-`Insert` parses inserted text delimited by `^^`.
+`wenmode.plugins.insert` parses inserted text delimited by `^^`.
 
 ```markdown
 ^^inserted^^
 ```
 
-Output node is `Insert`, and its AST is:
+Output node is `InsertNode`, and its AST is:
 
 ```json
 {
@@ -136,15 +136,15 @@ Output node is `Insert`, and its AST is:
 }
 ```
 
-## Superscript
+## Superscript Plugin
 
-`Superscript` parses caret-delimited superscript spans.
+`wenmode.plugins.superscript` parses caret-delimited superscript spans.
 
 ```markdown
 2^10^
 ```
 
-Output node is `Superscript`, and its AST is:
+Output node is `SuperscriptNode`, and its AST is:
 
 ```json
 {
@@ -172,15 +172,15 @@ Output node is `Superscript`, and its AST is:
 }
 ```
 
-## Subscript
+## Subscript Plugin
 
-`Subscript` parses tilde-delimited subscript spans.
+`wenmode.plugins.subscript` parses tilde-delimited subscript spans.
 
 ```markdown
 H~2~O
 ```
 
-Output node is `Subscript`, and its AST is:
+Output node is `SubscriptNode`, and its AST is:
 
 ```json
 {
@@ -212,15 +212,15 @@ Output node is `Subscript`, and its AST is:
 }
 ```
 
-## Ruby
+## Ruby Plugin
 
-`Ruby` parses ruby annotation syntax.
+`wenmode.plugins.ruby` parses ruby annotation syntax.
 
 ```markdown
 [漢字(kanji)]
 ```
 
-Output node is `Ruby`, and its AST is:
+Output node is `RubyNode`, and its AST is:
 
 ```json
 {
@@ -244,15 +244,15 @@ Output node is `Ruby`, and its AST is:
 }
 ```
 
-## InlineSpoiler
+## Spoiler Plugin
 
-`InlineSpoiler` parses spoiler spans delimited by `>!` and `!<`.
+`wenmode.plugins.spoiler` parses spoiler spans delimited by `>!` and `!<`.
 
 ```markdown
 >! secret !<
 ```
 
-Output node is `InlineSpoiler`, and its AST is:
+Output node is `InlineSpoilerNode`, and its AST is:
 
 ```json
 {
@@ -276,15 +276,15 @@ Output node is `InlineSpoiler`, and its AST is:
 }
 ```
 
-## InlineMath
+## Math Plugin
 
-`InlineMath` parses inline math delimited by `$`.
+`wenmode.plugins.math` parses inline math delimited by `$`.
 
 ```markdown
 $x + y$
 ```
 
-Output node is `InlineMath`, and its AST is:
+Output node is `InlineMathNode`, and its AST is:
 
 ```json
 {
@@ -344,9 +344,9 @@ Output node is `TextDirective`, and its AST is:
 }
 ```
 
-## Role
+## Inline Role Plugin
 
-`Role` parses MyST-style inline roles.
+`wenmode.plugins.inline_role` parses MyST-style inline roles.
 
 ```markdown
 {abbr}`HTML`
@@ -376,4 +376,3 @@ Output node is `TextDirective`, and its AST is:
   ]
 }
 ```
-

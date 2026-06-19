@@ -36,7 +36,7 @@ options.
 An inline rule inherits from `InlineRule`, defines a regex pattern, and returns
 a node plus the index where parsing should resume.
 
-This example parses `++marked++` as a `Mark` node.
+This example parses `++marked++` as a custom `PlusMark` node.
 
 The target Markdown syntax is:
 
@@ -50,13 +50,18 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING
 
-from wenmode.nodes import Mark as MarkNode
 from wenmode.nodes import Node
+from wenmode.nodes import Parent
 from wenmode.rules import InlineRule
 from wenmode.state import BlockState
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
+
+
+class PlusMarkNode(Parent):
+    def __init__(self, children: list[Node]) -> None:
+        super().__init__(type='plusMark', children=children)
 
 
 class PlusMark(InlineRule):
@@ -80,16 +85,24 @@ class PlusMark(InlineRule):
             state,
             source=parser.inline_source(text, value_start, end),
         )
-        return MarkNode(children=children), end + 2
+        return PlusMarkNode(children=children), end + 2
 ```
 
 Register it like any other rule.
 
 ```python
-from wenmode import Wenmode
+from wenmode import HTMLRenderer, Wenmode
+from wenmode.renderers import RenderContext
 from wenmode.rules import Emphasis
 
-wenmode = Wenmode([PlusMark, Emphasis])
+
+def render_plus_mark(renderer: HTMLRenderer, node: PlusMarkNode, context: RenderContext) -> str:
+    return f'<mark>{renderer.render_children(node.children, context)}</mark>'
+
+
+renderer = HTMLRenderer()
+renderer.register_handler('plusMark', render_plus_mark)
+wenmode = Wenmode([PlusMark, Emphasis], renderer=renderer)
 text = '++very *important*++'
 expected = '''
 <p><mark>very <em>important</em></mark></p>
@@ -156,7 +169,6 @@ class KeyboardInputRole(InlineRule):
         return KeyboardInput(value=text[match.end() : end]), end + 1
 
 
-@HTMLRenderer.register('keyboardInput')
 def render_keyboard_input_html(
     renderer: HTMLRenderer,
     node: KeyboardInput,
@@ -165,7 +177,6 @@ def render_keyboard_input_html(
     return f'<kbd>{renderer.escape_html(node.value)}</kbd>'
 
 
-@MarkdownRenderer.register('keyboardInput')
 def render_keyboard_input_markdown(
     renderer: MarkdownRenderer,
     node: KeyboardInput,
@@ -174,7 +185,6 @@ def render_keyboard_input_markdown(
     return f'<kbd>{renderer.escape_text(node.value)}</kbd>'
 
 
-@RSTRenderer.register('keyboardInput')
 def render_keyboard_input_rst(
     renderer: RSTRenderer,
     node: KeyboardInput,
@@ -185,6 +195,12 @@ def render_keyboard_input_rst(
 
 parser = Parser([KeyboardInputRole])
 root = parser.parse('Press :kbd:`Ctrl+C`.')
+html_renderer = HTMLRenderer()
+html_renderer.register_handler('keyboardInput', render_keyboard_input_html)
+markdown_renderer = MarkdownRenderer()
+markdown_renderer.register_handler('keyboardInput', render_keyboard_input_markdown)
+rst_renderer = RSTRenderer()
+rst_renderer.register_handler('keyboardInput', render_keyboard_input_rst)
 expected_html = '''
 <p>Press <kbd>Ctrl+C</kbd>.</p>
 '''
@@ -208,16 +224,15 @@ assert root.to_ast() == {
         }
     ],
 }
-assert HTMLRenderer().render(root) == expected_html.lstrip()
-assert MarkdownRenderer().render(root) == expected_markdown.lstrip()
-assert RSTRenderer().render(root) == expected_rst.lstrip()
+assert html_renderer.render(root) == expected_html.lstrip()
+assert markdown_renderer.render(root) == expected_markdown.lstrip()
+assert rst_renderer.render(root) == expected_rst.lstrip()
 ```
 
-Registering a handler mutates the renderer class, so do it during application
-startup or in the module that defines the extension. Without a registered
-handler, `BaseRenderer` falls back to rendering `children` or `value`; that may
-be useful for plain-text fallbacks, but it will not preserve your custom output
-format semantics.
+Register handlers on the renderer instance used by your application. Without a
+registered handler, `BaseRenderer` falls back to rendering `children` or
+`value`; that may be useful for plain-text fallbacks, but it will not preserve
+your custom output format semantics.
 
 ## Custom block rule
 

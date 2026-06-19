@@ -30,7 +30,7 @@ Use this process for any parser migration:
 
 1. Start with the closest preset: `commonmark`, `github`, or `streaming`.
 2. Match HTML safety behavior explicitly with `HTMLRenderer` options.
-3. Move plugin or extension syntax to Wenmode rules.
+3. Move plugin or extension syntax to Wenmode plugins or custom rules.
 4. Move renderer customization to renderer handlers or directive renderers.
 5. Compare rendered HTML for representative documents.
 6. If your application used parser tokens or an AST, migrate that logic to
@@ -49,7 +49,7 @@ you can compare the shape of the old integration with the replacement code.
 | markdown-it-py | {doc}`markdown-it-py` | markdown-it-py exposes token streams and rule chains; Wenmode exposes node objects and renderer handlers. |
 | markdown2 | {doc}`markdown2` | markdown2 extras map to Wenmode presets, configured rules, or custom rules. |
 | Marko | {doc}`marko` | Marko and Wenmode both have ASTs, but node classes and extension APIs differ. |
-| commonmark.py | {doc}`commonmark-py` | Wenmode can replace CommonMark HTML rendering while adding optional GFM and extension rules. |
+| commonmark.py | {doc}`commonmark-py` | Wenmode can replace CommonMark HTML rendering while adding optional GFM rules and plugins. |
 
 ## Benchmark snapshot
 

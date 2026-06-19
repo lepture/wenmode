@@ -29,12 +29,13 @@ directives, and three or more colons for container block directives. They create
 mdast-compatible `textDirective`, `leafDirective`, and `containerDirective`
 nodes.
 
-The second family is `FencedDirective` and `Role`. These follow the
+The second family is provided by the `fenced_directive` and `inline_role`
+plugins. These follow the
 [MyST Parser roles and directives syntax](https://myst-parser.readthedocs.io/en/latest/syntax/roles-and-directives.html):
 fenced directives use code-fence syntax with `{name}`, and roles use
 `` {name}`content` ``. Wenmode maps them onto the same AST node types:
-`FencedDirective` creates `containerDirective`, and `Role` creates
-`textDirective`.
+the fenced directive plugin creates `containerDirective`, and the inline role
+plugin creates `textDirective`.
 
 ## mdast-style directives
 
@@ -96,10 +97,10 @@ Fenced directives use code-fence-style syntax and serialize back to container
 directives with `MarkdownRenderer`.
 
 ```python
-from wenmode import Parser
-from wenmode.rules import FencedDirective, Role
+from wenmode import Wenmode
+from wenmode.plugins import fenced_directive, inline_role
 
-parser = Parser([FencedDirective, Role])
+wenmode = Wenmode([]).use(fenced_directive).use(inline_role)
 ```
 
 ````markdown
@@ -116,11 +117,12 @@ Roles are inline:
 {iconify}`devicon:pypi`
 ```
 
-`FencedDirective` creates a `containerDirective` node. Its first-line argument
-becomes the directive label, and `:key: value` option lines become attributes.
+The `fenced_directive` plugin creates a `containerDirective` node. Its
+first-line argument becomes the directive label, and `:key: value` option lines
+become attributes.
 
-`Role` creates a `textDirective` node. The role name becomes the directive
-`name`, and the backtick content becomes children.
+The `inline_role` plugin creates a `textDirective` node. The role name becomes
+the directive `name`, and the backtick content becomes children.
 
 ## HTML directive renderers
 

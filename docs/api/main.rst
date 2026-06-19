@@ -8,6 +8,9 @@ Main API
 .. autoclass:: wenmode.Wenmode
    :members:
 
+.. autoclass:: wenmode.Plugin
+   :members:
+
 .. autoclass:: wenmode.Parser
    :members:
 

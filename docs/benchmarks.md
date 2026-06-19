@@ -49,7 +49,7 @@ The rule sets are intentionally close, not identical. Most non-Wenmode parsers
 enable table support to approximate `wenmode-core`. Marko's GFM helper is
 broader than tables, and `commonmark.py` is CommonMark-only because it does not
 support pipe tables. `wenmode-all` is deliberately broader than the other
-targets and measures the overhead of carrying many enabled rules.
+targets and measures the overhead of carrying many enabled rules and plugins.
 
 ## Versions
 

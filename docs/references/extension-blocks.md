@@ -2,7 +2,8 @@
 # Extension block rules
 
 ```{rst-class} lead
-Block-level and document-wide extension rules for GFM and Wenmode dialects.
+Block-level and document-wide rules for GFM, mdast directives, and built-in
+plugins.
 ```
 
 ---
@@ -151,10 +152,10 @@ Output nodes are `FootnoteReference` and `FootnoteDefinition`, and their AST is:
 }
 ```
 
-## Abbreviation
+## Abbreviation Plugin
 
-`Abbreviation` parses abbreviation definitions and rewrites matching text into
-abbreviation nodes.
+`wenmode.plugins.abbr` parses abbreviation definitions and rewrites matching
+text into abbreviation nodes.
 
 ```markdown
 The HTML spec.
@@ -162,7 +163,7 @@ The HTML spec.
 *[HTML]: HyperText Markup Language
 ```
 
-Output node is `Abbreviation`, and its AST is:
+Output node is `AbbreviationNode`, and its AST is:
 
 ```json
 {
@@ -195,18 +196,18 @@ Output node is `Abbreviation`, and its AST is:
 }
 ```
 
-## DefinitionList
+## DefinitionList Plugin
 
-`DefinitionList` parses a paragraph followed by colon-prefixed definition
-continuations.
+`wenmode.plugins.definition_list` parses a paragraph followed by colon-prefixed
+definition continuations.
 
 ```markdown
 Apple
 : *fruit*
 ```
 
-Output nodes are `DefinitionList`, `DefinitionTerm`, and
-`DefinitionDescription`, and their AST is:
+Output nodes are `DefinitionListNode`, `DefinitionTermNode`, and
+`DefinitionDescriptionNode`, and their AST is:
 
 ```json
 {
@@ -250,9 +251,9 @@ Output nodes are `DefinitionList`, `DefinitionTerm`, and
 }
 ```
 
-## MathBlock
+## Math Plugin
 
-`MathBlock` parses display math fenced by `$$` markers.
+`wenmode.plugins.math` parses display math fenced by `$$` markers.
 
 ```markdown
 $$
@@ -260,7 +261,7 @@ x + y
 $$
 ```
 
-Output node is `Math`, and its AST is:
+Output node is `MathNode`, and its AST is:
 
 ```json
 {
@@ -274,15 +275,15 @@ Output node is `Math`, and its AST is:
 }
 ```
 
-## BlockSpoiler
+## Spoiler Plugin
 
-`BlockSpoiler` parses `>!`-prefixed spoiler blocks.
+`wenmode.plugins.spoiler` parses `>!`-prefixed spoiler blocks.
 
 ```markdown
 >! hidden *thing*
 ```
 
-Output node is `BlockSpoiler`, and its AST is:
+Output node is `BlockSpoilerNode`, and its AST is:
 
 ```json
 {
@@ -411,9 +412,9 @@ Output node is `ContainerDirective`, and its AST is:
 }
 ```
 
-## FencedDirective
+## Fenced Directive Plugin
 
-`FencedDirective` parses MyST-style fenced directives.
+`wenmode.plugins.fenced_directive` parses MyST-style fenced directives.
 
 ````markdown
 ```{note} Title
@@ -471,4 +472,3 @@ Output node is `ContainerDirective`, and its AST is:
   ]
 }
 ```
-

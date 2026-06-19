@@ -150,10 +150,10 @@ renderers. Mistune, Python-Markdown, markdown-it-py, and markdown2 enable table
 support; Marko uses its broader GFM helper; `commonmark.py` is included as a
 CommonMark-only baseline because it has no pipe table support.
 
-`wenmode-all` uses the `github` preset plus Wenmode's remaining built-in rules,
-including directives, math, definition lists, abbreviations, spoilers, ruby
-text, and additional inline formatting. These extra rules are mostly unused by
-the benchmark corpora, so this target measures dispatch overhead rather than a
+`wenmode-all` uses the `github` preset plus Wenmode's built-in plugins,
+including math, definition lists, abbreviations, spoilers, ruby text, and
+additional inline formatting. These extra rules are mostly unused by the
+benchmark corpora, so this target measures dispatch overhead rather than a
 syntax-equivalent comparison.
 
 All benchmark targets are created once before warmup and timed iterations, then

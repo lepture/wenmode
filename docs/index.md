@@ -127,6 +127,7 @@ assert html == expected.lstrip()
 | --- | --- |
 | Parse Markdown and render HTML | {doc}`Usage <usage>` |
 | Choose CommonMark, GFM, streaming, or a custom dialect | {doc}`Presets <presets>` |
+| Enable non-standard syntax | {doc}`Plugins <plugins>` |
 | Render user-authored Markdown safely | {doc}`Security <security>` |
 | Add a table of contents, heading IDs, or a custom renderer | {doc}`Recipes <recipes>` |
 | Build application pipelines around Wenmode | {doc}`Integrations <integrations>` |
@@ -143,6 +144,7 @@ assert html == expected.lstrip()
 
 usage
 presets
+plugins
 security
 recipes
 integrations
