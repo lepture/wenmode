@@ -5,7 +5,6 @@ import string
 from collections.abc import Callable, Iterable, Iterator
 from typing import TypeVar, cast
 
-from ._positions import advance_point
 from .nodes import Node, Paragraph, Point, Root, Text
 from .rules.base import BlockRule, ContinueRule, InlineRule, Rule
 from .rules.blocks.html import is_html_block_tag
@@ -324,7 +323,8 @@ class Parser:
                     nodes.append(self._text_node(text, start, start + 1, source))
                     pos = start + 1
                 else:
-                    self._set_inline_position(node, source, start, end)
+                    if source is not None and node.position is None:
+                        node.position = source.position(start, end)
                     nodes.append(node)
                     pos = end
             return self._finalize_inline_nodes(nodes)
@@ -414,13 +414,16 @@ class Parser:
         lines, parsed = self._read_paragraph_lines(state, source)
         if parsed is not None:
             return parsed
-        raw_text = ''.join(lines)
+        inline_source = source.map()
+        if inline_source is None:
+            text = ''.join(lines).strip()
+            return Paragraph(children=self.parse_inlines(text, state))
+
+        raw_text = inline_source.text
         start = len(raw_text) - len(raw_text.lstrip())
         end = len(raw_text.rstrip())
-        text = raw_text[start:end]
-        inline_source = source.map()
-        if inline_source is not None:
-            inline_source = inline_source.slice(start, end)
+        inline_source = inline_source.slice(start, end)
+        text = inline_source.text
         return Paragraph(children=self.parse_inlines(text, state, source=inline_source))
 
     def _read_paragraph_lines(
@@ -525,12 +528,9 @@ class Parser:
 
     def _text_node(self, text: str, start: int, end: int, source: SourceMap | None) -> Text:
         node = Text(value=text[start:end])
-        self._set_inline_position(node, source, start, end)
-        return node
-
-    def _set_inline_position(self, node: Node, source: SourceMap | None, start: int, end: int) -> None:
-        if self.positions and node.position is None and source is not None:
+        if source is not None:
             node.position = source.position(start, end)
+        return node
 
 
 def merge_text(nodes: list[Node]) -> list[Node]:
@@ -572,7 +572,12 @@ def create_line_points(lines: list[str]) -> list[Point]:
     point = Point(line=1, column=1, offset=0)
     for line in lines:
         points.append(point)
-        point = advance_point(point, line)
+        length = len(line)
+        offset = point.offset + length
+        if length > 0 and line[length - 1] == '\n':
+            point = Point(line=point.line + 1, column=1, offset=offset)
+        else:
+            point = Point(line=point.line, column=point.column + length, offset=offset)
     return points
 
 

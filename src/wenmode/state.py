@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import bisect
 from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass, field
 from typing import Any, Generic, TypeVar, cast
@@ -11,7 +12,7 @@ LineSource = str | Iterable[str]
 T = TypeVar('T')
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class SourceSegment:
     """Map a contiguous slice of generated parser text to source coordinates."""
 
@@ -23,9 +24,15 @@ class SourceSegment:
 class SourceMap:
     """Map parser text offsets back to source points."""
 
+    __slots__ = ('_cached_offset', '_cached_point', '_segment_starts', '_text_length', 'segments', 'text')
+
     def __init__(self, text: str, segments: list[SourceSegment]) -> None:
         self.text = text
+        self._text_length = len(text)
         self.segments = segments
+        self._segment_starts = [segment.start for segment in segments]
+        self._cached_offset: int | None = None
+        self._cached_point: Point | None = None
 
     @classmethod
     def contiguous(cls, text: str, point: Point) -> SourceMap:
@@ -46,26 +53,54 @@ class SourceMap:
         if not self.segments:
             return Point(line=1, column=1, offset=0)
 
-        offset = max(0, min(offset, len(self.text)))
-        for segment in self.segments:
-            if offset == segment.start:
-                return segment.point
-        for segment in self.segments:
-            if segment.start < offset <= segment.end:
-                return advance_point(segment.point, self.text[segment.start : offset])
+        if offset < 0:
+            offset = 0
+        elif offset > self._text_length:
+            offset = self._text_length
+        if offset == self._cached_offset and self._cached_point is not None:
+            return self._cached_point
 
-        if offset <= self.segments[0].start:
-            return self.segments[0].point
+        if len(self.segments) == 1:
+            segment = self.segments[0]
+        else:
+            segment = self._segment_at(offset)
+        if offset == segment.start:
+            point = segment.point
+        elif segment.start < offset <= segment.end:
+            point = advance_point(segment.point, self.text[segment.start : offset])
+        elif offset <= self.segments[0].start:
+            point = self.segments[0].point
+        else:
+            segment = self.segments[-1]
+            point = advance_point(segment.point, self.text[segment.start : segment.end])
 
-        segment = self.segments[-1]
-        return advance_point(segment.point, self.text[segment.start : segment.end])
+        self._cached_offset = offset
+        self._cached_point = point
+        return point
+
+    def _segment_at(self, offset: int) -> SourceSegment:
+        index = bisect.bisect_left(self._segment_starts, offset)
+        if index < len(self.segments) and self._segment_starts[index] == offset:
+            return self.segments[index]
+        if index == 0:
+            return self.segments[0]
+        return self.segments[index - 1]
 
     def position(self, start: int, end: int) -> Position:
         return Position(start=self.point(start), end=self.point(end))
 
     def slice(self, start: int, end: int) -> SourceMap:
-        start = max(0, min(start, len(self.text)))
-        end = max(start, min(end, len(self.text)))
+        if start < 0:
+            start = 0
+        elif start > self._text_length:
+            start = self._text_length
+        if end < start:
+            end = start
+        elif end > self._text_length:
+            end = self._text_length
+        if start == 0 and end == self._text_length:
+            return self
+
         text = self.text[start:end]
         segments: list[SourceSegment] = []
         for segment in self.segments:
@@ -75,11 +110,15 @@ class SourceMap:
             segment_end = min(segment.end, end)
             if segment_start > segment_end:
                 continue
+            if segment_start == segment.start:
+                point = segment.point
+            else:
+                point = self.point(segment_start)
             segments.append(
                 SourceSegment(
                     start=segment_start - start,
                     end=segment_end - start,
-                    point=self.point(segment_start),
+                    point=point,
                 )
             )
         if not segments:
@@ -97,6 +136,8 @@ class SourceMap:
 
 class SourceCollector:
     """Collect source spans for generated nested parser text."""
+
+    __slots__ = ()
 
     def add(self, index: int, offset: int, text: str) -> None:
         """Add text that originated at ``index`` and ``offset``."""
@@ -117,6 +158,8 @@ NULL_SOURCE_COLLECTOR = NullSourceCollector()
 class PositionSourceCollector(SourceCollector):
     """Source collector backed by a position-aware tracker."""
 
+    __slots__ = ('parts', 'tracker')
+
     def __init__(self, tracker: PositionSourceTracker) -> None:
         self.tracker = tracker
         self.parts: list[tuple[str, Point]] = []
@@ -134,6 +177,8 @@ class PositionSourceCollector(SourceCollector):
 
 class NullSourceTracker:
     """Source tracker used when positions are disabled."""
+
+    __slots__ = ()
 
     def bind(self, state: BlockState) -> None:
         """Bind this tracker to a block state."""
@@ -164,6 +209,8 @@ class NullSourceTracker:
 class PositionSourceTracker(NullSourceTracker):
     """Source tracker that maps generated parser text to source positions."""
 
+    __slots__ = ('_state', 'line_points')
+
     def __init__(self, line_points: list[Point]) -> None:
         self.line_points = line_points
         self._state: BlockState | None = None
@@ -191,6 +238,8 @@ class PositionSourceTracker(NullSourceTracker):
         point = self.point_at_index(index)
         if point is None:
             return None
+        if offset <= 0:
+            return point
         return advance_point(point, self._require_state().line_at(index)[:offset])
 
     def position_between(self, start_index: int, end_index: int) -> Position | None:

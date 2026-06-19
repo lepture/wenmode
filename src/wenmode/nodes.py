@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class Point:
     """A 1-based source point in the parsed Markdown document."""
 
@@ -20,7 +20,7 @@ class Point:
         }
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class Position:
     """Source range for a node."""
 
