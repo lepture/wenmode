@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 from wenmode.nodes import Link as LinkNode
 from wenmode.nodes import Node
-from wenmode.plugins import RendererHandlers
 from wenmode.renderers import MarkdownRenderer, RenderContext
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer
@@ -19,6 +18,8 @@ from wenmode.rules.inlines.link import (
 )
 from wenmode.rules.references import resolve_state_reference
 from wenmode.state import BlockState
+
+from .types import RendererHandlers
 
 if TYPE_CHECKING:
     from wenmode import Wenmode

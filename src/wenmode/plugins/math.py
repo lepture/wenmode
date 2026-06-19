@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from wenmode.nodes import Literal, Node
-from wenmode.plugins import RendererHandlers
 from wenmode.renderers import MarkdownRenderer, RenderContext
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer, indent_block
@@ -13,6 +12,8 @@ from wenmode.rules.base import BlockRule, InlineRule, Rule
 from wenmode.rules.blocks.util import collect_until
 from wenmode.state import BlockState
 from wenmode.utils import is_escaped
+
+from .types import RendererHandlers
 
 if TYPE_CHECKING:
     from wenmode import Wenmode

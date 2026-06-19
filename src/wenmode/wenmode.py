@@ -6,7 +6,8 @@ from typing import Any, cast
 
 from .nodes import Node, Root
 from .parser import Parser
-from .plugins import Plugin, PluginSetup, RendererHandlers
+from .plugins import Plugin, RendererHandlers
+from .plugins.types import _PluginSetup
 from .presets import commonmark
 from .renderers import BaseRenderer, DirectiveHtmlRenderer, HTMLRenderer
 from .rules.base import Rule
@@ -123,5 +124,5 @@ class Wenmode:
         setup = getattr(plugin, 'setup', None)
         if not callable(setup):
             raise TypeError('plugins must define setup(wenmode, **options)')
-        cast(PluginSetup, setup)(self, **options)
+        cast(_PluginSetup, setup)(self, **options)
         return self

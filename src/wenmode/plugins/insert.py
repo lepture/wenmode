@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from wenmode.nodes import Node, Parent
-from wenmode.plugins import RendererHandlers
 from wenmode.renderers import MarkdownRenderer, RenderContext
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer
@@ -13,6 +12,7 @@ from wenmode.rules.base import InlineRule, Rule
 from wenmode.state import BlockState
 
 from ._formatting import find_closing_marker, is_part_of_longer_run
+from .types import RendererHandlers
 
 if TYPE_CHECKING:
     from wenmode import Wenmode

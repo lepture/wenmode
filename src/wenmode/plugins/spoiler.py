@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from wenmode.nodes import Node, Parent, Point
-from wenmode.plugins import RendererHandlers
 from wenmode.renderers import MarkdownRenderer, RenderContext
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.markdown import render_prefixed_block
@@ -14,6 +13,8 @@ from wenmode.rules.base import BlockRule, InlineRule, Rule
 from wenmode.rules.blocks.util import parse_shallow_block
 from wenmode.state import BlockState
 from wenmode.utils import expand_leading_tabs
+
+from .types import RendererHandlers
 
 if TYPE_CHECKING:
     from wenmode import Wenmode
