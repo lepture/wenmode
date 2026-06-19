@@ -4,11 +4,19 @@ project = 'Wenmode'
 author = 'Hsiaoming Yang'
 copyright = '2026, Hsiaoming Yang'
 
-extensions = ['myst_parser', 'sphinx.ext.autodoc', 'sphinx_design', 'sphinx_iconify']
+extensions = [
+    'myst_parser',
+    'sphinx.ext.autodoc',
+    'sphinx_design',
+    'sphinx_iconify',
+    'shibuya.sponsors',
+]
 myst_enable_extensions = ['colon_fence']
 autodoc_member_order = 'bysource'
 autodoc_typehints = 'description'
 autodoc_typehints_description_target = 'documented'
+iconify_script_url = ''
+sponsors_json_url = 'https://cdn.jsdelivr.net/gh/lepture/lepture/sponsors.json'
 
 root_doc = 'index'
 source_suffix = {
@@ -36,6 +44,19 @@ html_theme_options = {
     'dark_logo': '_static/dark-logo.svg',
     'discussion_url': 'https://github.com/lepture/wenmode/discussions',
     'github_url': 'https://github.com/lepture/wenmode',
+    'twitter_url': 'https://twitter.com/lepture',
+    'twitter_creator': 'lepture',
+    'twitter_site': 'lepture',
+    'nav_links': [
+        {
+            'title': 'Docs',
+            'url': 'usage',
+        },
+        {
+            'title': 'Support me',
+            'url': 'sponsors',
+        },
+    ],
 }
 
 html_context = {

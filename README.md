@@ -144,31 +144,21 @@ libraries covered by the migration guides:
 uv run --group benchmark python scripts/benchmark.py --case all
 ```
 
-`wenmode-core` uses CommonMark-style rules plus pipe tables. The other parsers
-are configured to match that feature set as closely as their APIs allow:
-CommonMark-style parsing plus pipe table support. `commonmark.py` is included
-as a CommonMark-only parser because it does not support pipe tables.
+`wenmode-core` uses CommonMark-style rules plus pipe tables, with raw HTML
+passthrough and URL sanitization disabled for parity with the other HTML
+renderers. Mistune, Python-Markdown, markdown-it-py, and markdown2 enable table
+support; Marko uses its broader GFM helper; `commonmark.py` is included as a
+CommonMark-only baseline because it has no pipe table support.
 
 `wenmode-all` uses the `github` preset plus Wenmode's remaining built-in rules,
 including directives, math, definition lists, abbreviations, spoilers, ruby
 text, and additional inline formatting. These extra rules are mostly unused by
-the benchmark corpora, so `wenmode-all` measures the overhead of carrying many
-additional rules rather than a syntax-equivalent comparison with the other
-parsers.
+the benchmark corpora, so this target measures dispatch overhead rather than a
+syntax-equivalent comparison.
 
 All benchmark targets are created once before warmup and timed iterations, then
-reused for every render call. Python-Markdown is the exception only in that the
-same `Markdown` instance is reset before each conversion, matching its reusable
-API shape. Marko uses `marko.ext.gfm.gfm`, which is a reusable `Markdown`
-instance rather than a newly created converter per iteration.
-
-The rule sets are intentionally close, not identical. `wenmode-core` uses
-CommonMark-style rules plus pipe tables with raw HTML passthrough and URL
-sanitization disabled for parity with the other HTML renderers. Mistune,
-Python-Markdown, markdown-it-py, and markdown2 enable their table support.
-Marko uses its GFM helper, which is broader than just tables. `commonmark.py`
-is included as a CommonMark-only baseline because it has no pipe table support.
-`wenmode-all` is deliberately broader than the other targets.
+reused for every render call. Python-Markdown resets the same reusable
+`Markdown` instance before each conversion.
 
 Versions used in these snapshots:
 

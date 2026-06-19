@@ -31,13 +31,13 @@ Build the documentation:
 Documentation tooling currently requires Python 3.11+.
 
 ```bash
-uv run --group docs sphinx-build -b html docs docs/_build/html
+uv run --group docs sphinx-build -b htmldir docs docs/_build/html
 ```
 
 Build with warnings treated as errors when preparing documentation changes:
 
 ```bash
-uv run --group docs sphinx-build -b html docs /tmp/wenmode-docs-html -W --keep-going
+uv run --group docs sphinx-build -b htmldir docs /tmp/wenmode-docs-html -W --keep-going
 ```
 
 Check external documentation links:
