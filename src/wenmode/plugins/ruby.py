@@ -1,36 +1,45 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from wenmode.nodes import Link as LinkNode
 from wenmode.nodes import Node
-from wenmode.nodes import Ruby as RubyNode
+from wenmode.plugins import RendererHandlers
+from wenmode.renderers import MarkdownRenderer, RenderContext
+from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
+from wenmode.renderers.rst import RSTRenderContext, RSTRenderer
+from wenmode.rules.base import InlineRule, Rule
+from wenmode.rules.inlines.link import (
+    closing_bracket_cache,
+    find_closing_bracket,
+    invalid_reference_label,
+    parse_direct_destination,
+)
+from wenmode.rules.references import resolve_state_reference
 from wenmode.state import BlockState
 
-from ..base import InlineRule
-from ..references import resolve_state_reference
-from .link import closing_bracket_cache, find_closing_bracket, invalid_reference_label, parse_direct_destination
-
 if TYPE_CHECKING:
+    from wenmode import Wenmode
     from wenmode.parser import Parser
-
 
 RUBY_PATTERN = r'\[(?:\w+\([\w ]+\))+\]'
 RUBY_SEGMENT_RE = re.compile(r'(\w+)\(([\w ]+)\)')
 
 
-class Ruby(InlineRule):
-    """Parse ruby annotation syntax.
+@dataclass
+class RubyNode(Node):
+    """Ruby annotation node."""
 
-    Markdown syntax:
+    segments: list[dict[str, str]] = field(default_factory=list)
+    type: str = 'ruby'
 
-    .. code-block:: markdown
 
-       [漢字(kanji)]
-    """
+class RubyRule(InlineRule):
+    """Parse ruby annotation syntax."""
 
-    order = 90
+    order: ClassVar[int] = 90
 
     def __init__(self) -> None:
         super().__init__('ruby', RUBY_PATTERN, '[')
@@ -82,3 +91,36 @@ def parse_ruby_link(
         if reference:
             return LinkNode(url=reference.url, title=reference.title, children=[ruby]), ref_end + 1
     return None
+
+
+def render_html(renderer: HTMLRenderer, node: RubyNode, context: HTMLRenderContext) -> str:
+    content = ''.join(
+        f'{renderer.escape_html(segment["base"])}<rt>{renderer.escape_html(segment["text"])}</rt>'
+        for segment in node.segments
+    )
+    return f'<ruby>{content}</ruby>'
+
+
+def render_markdown(renderer: MarkdownRenderer, node: RubyNode, context: RenderContext) -> str:
+    segments = ''.join(f'{segment["base"]}({segment["text"]})' for segment in node.segments)
+    return f'[{segments}]'
+
+
+def render_rst(renderer: RSTRenderer, node: RubyNode, context: RSTRenderContext) -> str:
+    return ''.join(
+        f'{renderer.escape_text(segment["base"])} ({renderer.escape_text(segment["text"])})'
+        for segment in node.segments
+    )
+
+
+rules: list[type[Rule] | Rule] = [RubyRule]
+handlers: RendererHandlers = {
+    'html': {'ruby': render_html},
+    'markdown': {'ruby': render_markdown},
+    'rst': {'ruby': render_rst},
+}
+
+
+def setup(wenmode: Wenmode, **options: Any) -> None:
+    wenmode.register_rules(rules)
+    wenmode.register_renderer_handlers(handlers)

@@ -6,91 +6,15 @@ from typing import TypedDict
 import pytest
 
 from tests.helpers import load_fixture
+from tests.plugin_helpers import configured_app
 from wenmode import HTMLRenderer, MarkdownRenderer, RSTRenderer, Wenmode
 from wenmode.directives import Admonition, Details, Figure, TableOfContents
 from wenmode.nodes import Literal, Paragraph, Parent, Text
 from wenmode.renderers import BaseRenderer, RenderContext
 from wenmode.rules import (
-    Abbreviation,
-    AtxHeading,
-    Autolink,
-    BackslashEscape,
-    Blockquote,
-    BlockSpoiler,
-    CharacterReference,
-    ContainerDirective,
-    DefinitionList,
-    Emphasis,
-    ExtendedAutolink,
-    FencedCode,
-    FencedDirective,
     Footnote,
-    HardBreak,
-    HtmlBlock,
-    Image,
-    IndentedCode,
-    InlineCode,
-    InlineMath,
-    InlineSpoiler,
-    Insert,
-    LeafDirective,
-    Link,
-    List,
-    Mark,
-    MathBlock,
-    RawHtml,
-    Role,
-    Ruby,
-    SetextHeading,
-    Strikethrough,
-    Subscript,
-    Superscript,
-    Table,
-    TextDirective,
-    ThematicBreak,
 )
 
-RENDERER_RULES = {
-    'abbreviation': Abbreviation,
-    'atx_heading': AtxHeading,
-    'atx_heading_id': AtxHeading(id_transform=True),
-    'autolink': Autolink,
-    'backslash_escape': BackslashEscape,
-    'blockquote': Blockquote,
-    'block_spoiler': BlockSpoiler,
-    'character_reference': CharacterReference,
-    'container_directive': ContainerDirective,
-    'definition_list': DefinitionList,
-    'emphasis': Emphasis,
-    'extended_autolink': ExtendedAutolink,
-    'fenced_code': FencedCode,
-    'fenced_directive': FencedDirective,
-    'footnote': Footnote,
-    'hard_break': HardBreak,
-    'html_block': HtmlBlock,
-    'image': Image,
-    'indented_code': IndentedCode,
-    'inline_code': InlineCode,
-    'inline_math': InlineMath,
-    'inline_spoiler': InlineSpoiler,
-    'insert': Insert,
-    'leaf_directive': LeafDirective,
-    'link': Link,
-    'list': List,
-    'mark': Mark,
-    'math_block': MathBlock,
-    'raw_html': RawHtml,
-    'role': Role,
-    'ruby': Ruby,
-    'setext_heading': SetextHeading,
-    'strikethrough': Strikethrough,
-    'subscript': Subscript,
-    'superscript': Superscript,
-    'table': Table,
-    'task_list': List(task=True),
-    'text_directive': TextDirective,
-    'thematic_break': ThematicBreak,
-}
 DEFAULT_RENDERER_RULES = [
     'abbreviation',
     'table',
@@ -174,14 +98,13 @@ def load_renderer_examples() -> list[RendererExample]:
     return load_fixture('renderer.json')
 
 
-def rules_for_example(example: RendererExample):
-    rule_names = example.get('rules', DEFAULT_RENDERER_RULES)
-    return [RENDERER_RULES[name] for name in rule_names]
-
-
 def html_directives_for_example(example: RendererExample):
     directive_names = example.get('html_directives', DEFAULT_HTML_DIRECTIVES)
     return [HTML_DIRECTIVES[name]() for name in directive_names]
+
+
+def rule_names_for_example(example: RendererExample) -> list[str]:
+    return example.get('rules', DEFAULT_RENDERER_RULES)
 
 
 @pytest.mark.parametrize(
@@ -194,14 +117,15 @@ def test_renderer_examples(example: RendererExample) -> None:
         directives=html_directives_for_example(example),
         **example.get('html_options', {}),
     )
-    rules = rules_for_example(example)
-    root = Wenmode(rules).parse(example['input'])
-    html = html_renderer.render(root)
-    markdown = MarkdownRenderer().render(root)
-    rst = RSTRenderer().render(root)
+    rule_names = rule_names_for_example(example)
+    html_app = configured_app(rule_names, renderer=html_renderer)
+    root = html_app.parse(example['input'])
+    html = html_app.render_node(root)
+    markdown = configured_app(rule_names, renderer=MarkdownRenderer()).render_node(root)
+    rst = configured_app(rule_names, renderer=RSTRenderer()).render_node(root)
 
     if example.get('roundtrip_html'):
-        assert Wenmode(rules_for_example(example), renderer=html_renderer).render(markdown) == html
+        assert configured_app(rule_names, renderer=html_renderer).render(markdown) == html
 
     assert html == example['html']
     assert markdown == example['markdown']
@@ -225,15 +149,17 @@ def test_base_renderer_unknown_nodes_fall_back_to_children_or_value() -> None:
 
 def test_html_renderer_custom_elements_require_registered_handler() -> None:
     node = Paragraph(children=[CustomElement(children=[Text(value='marked')])])
+    renderer = HTMLRenderer()
 
-    assert HTMLRenderer().render(node) == '<p>marked</p>\n'
+    assert renderer.render(node) == '<p>marked</p>\n'
 
-    @HTMLRenderer.register('customElement')
     def render_custom_element(renderer: HTMLRenderer, node: CustomElement, context: RenderContext) -> str:
         attrs = renderer.render_attrs({'data-custom': 'yes', 'hidden': False})
         return f'<mark{attrs}>{renderer.render_children(node.children, context)}</mark>'
 
-    assert HTMLRenderer().render(node) == '<p><mark data-custom="yes">marked</mark></p>\n'
+    renderer.register_handler('customElement', render_custom_element)
+
+    assert renderer.render(node) == '<p><mark data-custom="yes">marked</mark></p>\n'
 
 
 def test_html_renderer_reuses_instance_without_leaking_footnote_state() -> None:

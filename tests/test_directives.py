@@ -5,16 +5,14 @@ from typing import Any, TypedDict
 import pytest
 
 from tests.helpers import load_fixture
+from tests.plugin_helpers import configured_app
 from wenmode import HTMLRenderer, MarkdownRenderer, Wenmode
 from wenmode.directives import Abbreviation, Admonition, Details, Figure, TableOfContents
 from wenmode.rules import (
     AtxHeading,
     ContainerDirective,
     Emphasis,
-    FencedCode,
-    FencedDirective,
     LeafDirective,
-    Role,
     TextDirective,
 )
 from wenmode.rules import Image as ImageRule
@@ -42,7 +40,9 @@ class DirectiveHtmlExample(DirectiveHtmlExampleBase, total=False):
     ids=lambda example: example['name'],
 )
 def test_directive_ast_examples(example: DirectiveExample) -> None:
-    app = Wenmode([TextDirective, Role, LeafDirective, ContainerDirective, FencedDirective, Emphasis])
+    app = configured_app(
+        ['text_directive', 'role', 'leaf_directive', 'container_directive', 'fenced_directive', 'emphasis']
+    )
 
     assert app.parse(example['markdown']).to_ast() == example['ast']
 
@@ -90,13 +90,16 @@ def test_abbreviation_directive_renders_html() -> None:
 
 
 def test_abbreviation_directive_falls_back_without_title() -> None:
-    app = Wenmode([TextDirective, Role], directives=[Abbreviation()])
+    app = configured_app(['text_directive', 'role'], directives=[Abbreviation()])
 
     assert app.render(':abbr[HTML]\n') == '<p>HTML</p>\n'
 
 
 def test_markdown_renderer_outputs_directives() -> None:
-    app = Wenmode([TextDirective, Role, LeafDirective, ContainerDirective], renderer=MarkdownRenderer())
+    app = configured_app(
+        ['text_directive', 'role', 'leaf_directive', 'container_directive'],
+        renderer=MarkdownRenderer(),
+    )
     markdown = ':i[inline]{.x} and {role}`text`\n\n::hr[leaf]{flag}\n\n:::note[Title]{#n}\nBody.\n:::\n'
 
     assert app.render(markdown) == (
@@ -105,20 +108,20 @@ def test_markdown_renderer_outputs_directives() -> None:
 
 
 def test_fenced_directive_serializes_as_container_directive() -> None:
-    app = Wenmode([FencedDirective], renderer=MarkdownRenderer())
+    app = configured_app(['fenced_directive'], renderer=MarkdownRenderer())
     markdown = '```{note} Important\n:class: warning\n\nBody.\n```\n'
 
     assert app.render(markdown) == ':::note[Important]{.warning}\nBody\\.\n:::\n'
 
 
 def test_fenced_code_stays_code_when_not_directive() -> None:
-    assert Wenmode([FencedDirective, FencedCode]).render('```py\nprint(1)\n```\n') == (
+    assert configured_app(['fenced_directive', 'fenced_code']).render('```py\nprint(1)\n```\n') == (
         '<pre><code class="language-py">print(1)\n</code></pre>\n'
     )
 
 
 def test_fenced_directive_order_is_before_fenced_code() -> None:
-    app = Wenmode([FencedCode, FencedDirective], renderer=MarkdownRenderer())
+    app = configured_app(['fenced_code', 'fenced_directive'], renderer=MarkdownRenderer())
 
     assert app.render('```{note} Important\nBody.\n```\n') == (':::note[Important]\nBody\\.\n:::\n')
 

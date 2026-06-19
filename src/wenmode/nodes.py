@@ -150,13 +150,6 @@ class Blockquote(Parent):
 
 
 @dataclass
-class BlockSpoiler(Parent):
-    """Block spoiler container node."""
-
-    type: str = 'blockSpoiler'
-
-
-@dataclass
 class List(Parent):
     """Ordered or unordered list node."""
 
@@ -176,41 +169,12 @@ class ListItem(Parent):
 
 
 @dataclass
-class DefinitionList(Parent):
-    """Definition list node."""
-
-    type: str = 'definitionList'
-
-
-@dataclass
-class DefinitionTerm(Parent):
-    """Definition term node."""
-
-    type: str = 'definitionTerm'
-
-
-@dataclass
-class DefinitionDescription(Parent):
-    """Definition description node."""
-
-    spread: bool = False
-    type: str = 'definitionDescription'
-
-
-@dataclass
 class Code(Literal):
     """Fenced or indented code block node."""
 
     lang: str | None = None
     meta: str | None = None
     type: str = 'code'
-
-
-@dataclass
-class Math(Literal):
-    """Display math block node."""
-
-    type: str = 'math'
 
 
 @dataclass
@@ -243,13 +207,6 @@ class InlineCode(Literal):
 
 
 @dataclass
-class InlineMath(Literal):
-    """Inline math node."""
-
-    type: str = 'inlineMath'
-
-
-@dataclass
 class Strong(Parent):
     """Strong emphasis node."""
 
@@ -268,57 +225,6 @@ class Delete(Parent):
     """Deleted text node."""
 
     type: str = 'delete'
-
-
-@dataclass
-class Mark(Parent):
-    """Highlighted text node."""
-
-    type: str = 'mark'
-
-
-@dataclass
-class Insert(Parent):
-    """Inserted text node."""
-
-    type: str = 'insert'
-
-
-@dataclass
-class Superscript(Parent):
-    """Superscript node."""
-
-    type: str = 'superscript'
-
-
-@dataclass
-class Subscript(Parent):
-    """Subscript node."""
-
-    type: str = 'subscript'
-
-
-@dataclass
-class Ruby(Node):
-    """Ruby annotation node."""
-
-    segments: list[dict[str, str]] = field(default_factory=list)
-    type: str = 'ruby'
-
-
-@dataclass
-class InlineSpoiler(Parent):
-    """Inline spoiler node."""
-
-    type: str = 'inlineSpoiler'
-
-
-@dataclass
-class Abbreviation(Parent):
-    """Abbreviation node."""
-
-    title: str = ''
-    type: str = 'abbreviation'
 
 
 @dataclass

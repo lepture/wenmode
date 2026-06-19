@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Iterator
+from types import ModuleType
+from typing import Any, cast
 
 from .nodes import Node, Root
 from .parser import Parser
+from .plugins import Plugin, PluginSetup, RendererHandlers
 from .presets import commonmark
 from .renderers import BaseRenderer, DirectiveHtmlRenderer, HTMLRenderer
 from .rules.base import Rule
@@ -91,6 +94,18 @@ class Wenmode:
         """
         self.parser.register_rules(rules)
 
+    def register_renderer_handlers(self, handlers: RendererHandlers) -> None:
+        """Register renderer handlers for the configured renderer.
+
+        The mapping is keyed by renderer name, then node type. Handlers for other
+        renderer names are ignored.
+        """
+        renderer_handlers = handlers.get(self.renderer.name)
+        if renderer_handlers is None:
+            return
+        for node_type, handler in renderer_handlers.items():
+            self.renderer.register_handler(node_type, handler)
+
     def register_directive_renderer(self, directive: DirectiveHtmlRenderer) -> None:
         """Register an HTML directive renderer.
 
@@ -102,3 +117,11 @@ class Wenmode:
         if not isinstance(self.renderer, HTMLRenderer):
             raise TypeError('directive renderers require an HTMLRenderer')
         self.renderer.register_directive_renderer(directive)
+
+    def use(self, plugin: Plugin | ModuleType, **options: Any) -> Wenmode:
+        """Install a plugin module or plugin object on this parser and renderer."""
+        setup = getattr(plugin, 'setup', None)
+        if not callable(setup):
+            raise TypeError('plugins must define setup(wenmode, **options)')
+        cast(PluginSetup, setup)(self, **options)
+        return self

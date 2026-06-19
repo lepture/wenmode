@@ -25,7 +25,11 @@ class BaseRenderer:
     text.
     """
 
+    name: ClassVar[str] = 'base'
     handlers: ClassVar[dict[str, RenderHandler]] = {}
+
+    def __init__(self) -> None:
+        self._handlers: dict[str, RenderHandler] = dict(self.handlers)
 
     def __init_subclass__(cls) -> None:
         super().__init_subclass__()
@@ -63,7 +67,7 @@ class BaseRenderer:
 
     def render_node(self, node: Node, context: RenderContext) -> str:
         """Render one node with an existing context."""
-        handler = self.handlers.get(node.type)
+        handler = self._handlers.get(node.type)
         if handler is None:
             return self.render_unknown(node, context)
         return handler(self, node, context)
@@ -86,6 +90,10 @@ class BaseRenderer:
             return handler
 
         return decorator
+
+    def register_handler(self, node_type: str, handler: RenderHandler) -> None:
+        """Register a render handler on this renderer instance."""
+        self._handlers[node_type] = handler
 
     def render_unknown(self, node: Node, context: RenderContext) -> str:
         """Render a node without a registered handler.

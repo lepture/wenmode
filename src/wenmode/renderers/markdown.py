@@ -3,15 +3,10 @@ from __future__ import annotations
 import re
 
 from wenmode.nodes import (
-    Abbreviation,
     Blockquote,
-    BlockSpoiler,
     Break,
     Code,
     ContainerDirective,
-    DefinitionDescription,
-    DefinitionList,
-    DefinitionTerm,
     Delete,
     Emphasis,
     FootnoteDefinition,
@@ -20,23 +15,15 @@ from wenmode.nodes import (
     Html,
     Image,
     InlineCode,
-    InlineMath,
-    InlineSpoiler,
-    Insert,
     LeafDirective,
     Link,
     List,
     ListItem,
-    Mark,
-    Math,
     Node,
     Paragraph,
     Parent,
     Root,
-    Ruby,
     Strong,
-    Subscript,
-    Superscript,
     Table,
     TableCell,
     TableRow,
@@ -57,6 +44,8 @@ class MarkdownRenderer(BaseRenderer):
     The renderer serializes the AST and is not source preserving. Syntax details
     that are not represented in the node tree may be normalized.
     """
+
+    name = 'markdown'
 
     def render_list_item(self, item: ListItem, marker: str, context: RenderContext) -> str:
         if item.checked is not None:
@@ -133,11 +122,6 @@ def render_paragraph(renderer: MarkdownRenderer, node: Paragraph, context: Rende
     return renderer.render_children(node.children, context) + '\n\n'
 
 
-@MarkdownRenderer.register('abbreviation')
-def render_abbreviation(renderer: MarkdownRenderer, node: Abbreviation, context: RenderContext) -> str:
-    return renderer.render_children(node.children, context)
-
-
 @MarkdownRenderer.register('heading')
 def render_heading(renderer: MarkdownRenderer, node: Heading, context: RenderContext) -> str:
     marker = '#' * node.depth
@@ -147,11 +131,6 @@ def render_heading(renderer: MarkdownRenderer, node: Heading, context: RenderCon
 @MarkdownRenderer.register('blockquote')
 def render_blockquote(renderer: MarkdownRenderer, node: Blockquote, context: RenderContext) -> str:
     return render_prefixed_block(renderer, node, '>', context)
-
-
-@MarkdownRenderer.register('blockSpoiler')
-def render_block_spoiler(renderer: MarkdownRenderer, node: BlockSpoiler, context: RenderContext) -> str:
-    return render_prefixed_block(renderer, node, '>!', context)
 
 
 @MarkdownRenderer.register('list')
@@ -175,63 +154,9 @@ def render_list_item(renderer: MarkdownRenderer, node: ListItem, context: Render
     return renderer.render_children(node.children, context)
 
 
-@MarkdownRenderer.register('definitionList')
-def render_definition_list(renderer: MarkdownRenderer, node: DefinitionList, context: RenderContext) -> str:
-    return renderer.render_children(node.children, context) + '\n'
-
-
-@MarkdownRenderer.register('definitionTerm')
-def render_definition_term(renderer: MarkdownRenderer, node: DefinitionTerm, context: RenderContext) -> str:
-    return renderer.render_children(node.children, context) + '\n'
-
-
-@MarkdownRenderer.register('definitionDescription')
-def render_definition_description(
-    renderer: MarkdownRenderer, node: DefinitionDescription, context: RenderContext
-) -> str:
-    if not node.children:
-        return ': \n'
-    body = renderer.render_children(node.children, context).rstrip('\n')
-    if not node.spread and len(node.children) == 1 and isinstance(node.children[0], Paragraph):
-        return ': ' + renderer.render_children(node.children[0].children, context) + '\n'
-    lines = body.splitlines()
-    return ': ' + lines[0] + '\n' + ''.join('    ' + line + '\n' for line in lines[1:])
-
-
 @MarkdownRenderer.register('delete')
 def render_delete(renderer: MarkdownRenderer, node: Delete, context: RenderContext) -> str:
     return f'~~{renderer.render_children(node.children, context)}~~'
-
-
-@MarkdownRenderer.register('mark')
-def render_mark(renderer: MarkdownRenderer, node: Mark, context: RenderContext) -> str:
-    return f'=={renderer.render_children(node.children, context)}=='
-
-
-@MarkdownRenderer.register('insert')
-def render_insert(renderer: MarkdownRenderer, node: Insert, context: RenderContext) -> str:
-    return f'^^{renderer.render_children(node.children, context)}^^'
-
-
-@MarkdownRenderer.register('superscript')
-def render_superscript(renderer: MarkdownRenderer, node: Superscript, context: RenderContext) -> str:
-    return f'^{renderer.render_script_children(node, "^", context)}^'
-
-
-@MarkdownRenderer.register('subscript')
-def render_subscript(renderer: MarkdownRenderer, node: Subscript, context: RenderContext) -> str:
-    return f'~{renderer.render_script_children(node, "~", context)}~'
-
-
-@MarkdownRenderer.register('ruby')
-def render_ruby(renderer: MarkdownRenderer, node: Ruby, context: RenderContext) -> str:
-    segments = ''.join(f'{segment["base"]}({segment["text"]})' for segment in node.segments)
-    return f'[{segments}]'
-
-
-@MarkdownRenderer.register('inlineSpoiler')
-def render_inline_spoiler(renderer: MarkdownRenderer, node: InlineSpoiler, context: RenderContext) -> str:
-    return f'>! {renderer.render_children(node.children, context)} !<'
 
 
 @MarkdownRenderer.register('textDirective')
@@ -340,12 +265,6 @@ def render_code(renderer: MarkdownRenderer, node: Code, context: RenderContext) 
     return f'{fence}{info}\n{value}{fence}\n\n'
 
 
-@MarkdownRenderer.register('math')
-def render_math(renderer: MarkdownRenderer, node: Math, context: RenderContext) -> str:
-    value = node.value if node.value.endswith('\n') else node.value + '\n'
-    return f'$$\n{value}$$\n\n'
-
-
 @MarkdownRenderer.register('thematicBreak')
 def render_thematic_break(renderer: MarkdownRenderer, node: ThematicBreak, context: RenderContext) -> str:
     return '---\n\n'
@@ -371,11 +290,6 @@ def render_inline_code(renderer: MarkdownRenderer, node: InlineCode, context: Re
     if needs_padding:
         return f'{fence} {node.value} {fence}'
     return f'{fence}{node.value}{fence}'
-
-
-@MarkdownRenderer.register('inlineMath')
-def render_inline_math(renderer: MarkdownRenderer, node: InlineMath, context: RenderContext) -> str:
-    return f'${node.value}$'
 
 
 @MarkdownRenderer.register('strong')

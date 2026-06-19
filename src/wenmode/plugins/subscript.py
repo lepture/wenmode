@@ -1,0 +1,64 @@
+from __future__ import annotations
+
+import re
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, ClassVar
+
+from wenmode.nodes import Node, Parent
+from wenmode.plugins import RendererHandlers
+from wenmode.renderers import MarkdownRenderer, RenderContext
+from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
+from wenmode.renderers.rst import RSTRenderContext, RSTRenderer
+from wenmode.rules.base import InlineRule, Rule
+from wenmode.state import BlockState
+
+if TYPE_CHECKING:
+    from wenmode import Wenmode
+    from wenmode.parser import Parser
+
+
+@dataclass
+class SubscriptNode(Parent):
+    """Subscript node."""
+
+    type: str = 'subscript'
+
+
+class SubscriptRule(InlineRule):
+    """Parse tilde-delimited subscript spans."""
+
+    order: ClassVar[int] = 90
+
+    def __init__(self) -> None:
+        super().__init__('subscript', r'(?<!~)~(?!~)(?:(?<!\\)(?:\\\\)*\\~|[^\s~]|\\ )+?(?<!~)~(?!~)', '~')
+
+    def parse(
+        self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
+    ) -> tuple[Node | None, int]:
+        value = match.group(0)[1:-1].replace('\\ ', ' ')
+        return SubscriptNode(children=parser.parse_inlines(value, state)), match.end()
+
+
+def render_html(renderer: HTMLRenderer, node: SubscriptNode, context: HTMLRenderContext) -> str:
+    return f'<sub>{renderer.render_children(node.children, context)}</sub>'
+
+
+def render_markdown(renderer: MarkdownRenderer, node: SubscriptNode, context: RenderContext) -> str:
+    return f'~{renderer.render_script_children(node, "~", context)}~'
+
+
+def render_rst(renderer: RSTRenderer, node: SubscriptNode, context: RSTRenderContext) -> str:
+    return f':sub:`{renderer.render_children(node.children, context)}`'
+
+
+rules: list[type[Rule] | Rule] = [SubscriptRule]
+handlers: RendererHandlers = {
+    'html': {'subscript': render_html},
+    'markdown': {'subscript': render_markdown},
+    'rst': {'subscript': render_rst},
+}
+
+
+def setup(wenmode: Wenmode, **options: Any) -> None:
+    wenmode.register_rules(rules)
+    wenmode.register_renderer_handlers(handlers)

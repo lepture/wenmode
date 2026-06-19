@@ -5,49 +5,10 @@ from typing import TypedDict
 import pytest
 
 from tests.helpers import load_fixture
+from tests.plugin_helpers import configured_app
 from wenmode import MarkdownRenderer, Wenmode
 from wenmode.presets import commonmark, github
-from wenmode.rules import (
-    Abbreviation,
-    BackslashEscape,
-    Blockquote,
-    BlockSpoiler,
-    DefinitionList,
-    Emphasis,
-    Footnote,
-    InlineCode,
-    InlineMath,
-    InlineSpoiler,
-    Insert,
-    Link,
-    Mark,
-    MathBlock,
-    Ruby,
-    Strikethrough,
-    Subscript,
-    Superscript,
-)
 
-EXTENDED_RULES = {
-    'abbreviation': Abbreviation,
-    'backslash_escape': BackslashEscape,
-    'blockquote': Blockquote,
-    'block_spoiler': BlockSpoiler,
-    'definition_list': DefinitionList,
-    'emphasis': Emphasis,
-    'footnote': Footnote,
-    'inline_code': InlineCode,
-    'inline_math': InlineMath,
-    'inline_spoiler': InlineSpoiler,
-    'insert': Insert,
-    'link': Link,
-    'mark': Mark,
-    'math_block': MathBlock,
-    'ruby': Ruby,
-    'strikethrough': Strikethrough,
-    'subscript': Subscript,
-    'superscript': Superscript,
-}
 EXTENDED_PRESETS = {
     'commonmark': commonmark,
     'github': github,
@@ -64,12 +25,9 @@ class ExtendedRuleExample(TypedDict, total=False):
 
 
 def app_for_example(example: ExtendedRuleExample, renderer: MarkdownRenderer | None = None) -> Wenmode:
-    rules = (
-        EXTENDED_PRESETS[example['preset']]
-        if 'preset' in example
-        else [EXTENDED_RULES[name] for name in example['rules']]
-    )
-    return Wenmode(rules, renderer=renderer)
+    if 'preset' in example:
+        return Wenmode(EXTENDED_PRESETS[example['preset']], renderer=renderer)
+    return configured_app(example['rules'], renderer=renderer)
 
 
 @pytest.mark.parametrize(

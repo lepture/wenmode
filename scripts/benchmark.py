@@ -20,27 +20,21 @@ from markdown_it import MarkdownIt
 from marko.ext.gfm import gfm as marko_gfm
 
 from wenmode import HTMLRenderer, Wenmode
-from wenmode.presets import commonmark, github
-from wenmode.rules import (
-    Abbreviation,
-    BlockSpoiler,
-    ContainerDirective,
-    DefinitionList,
-    FencedDirective,
-    InlineMath,
-    InlineSpoiler,
-    Insert,
-    LeafDirective,
-    Mark,
-    MathBlock,
-    Role,
-    Ruby,
-    Subscript,
-    Superscript,
-    Table,
-    TextDirective,
+from wenmode.plugins import (
+    abbr,
+    definition_list,
+    fenced_directive,
+    inline_role,
+    insert,
+    mark,
+    math,
+    ruby,
+    spoiler,
+    subscript,
+    superscript,
 )
-from wenmode.rules.base import Rule
+from wenmode.presets import commonmark, github
+from wenmode.rules import ContainerDirective, LeafDirective, Table, TextDirective
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / 'docs'
@@ -199,11 +193,11 @@ def make_targets() -> list[Target]:
     # as closely as their APIs allow: CommonMark-style parsing plus pipe tables.
     # commonmark.py does not support pipe tables, so it is included as a
     # CommonMark-only migration target.
-    # wenmode-all intentionally enables many extra Wenmode rules that are mostly
+    # wenmode-all intentionally enables many extra Wenmode plugins that are mostly
     # unused by these corpora, so it measures dispatch overhead under a broad
     # rule set rather than a syntax-equivalent comparison.
     wenmode_core = Wenmode([Table, *commonmark], HTMLRenderer(escape=False, sanitize_urls=False))
-    wenmode_all = Wenmode(all_wenmode_rules(), HTMLRenderer(escape=False, sanitize_urls=False))
+    wenmode_all = make_wenmode_all()
 
     mistune_renderer = mistune.create_markdown(renderer='html', plugins=['table', 'speedup'])
 
@@ -231,26 +225,31 @@ def make_targets() -> list[Target]:
     ]
 
 
-def all_wenmode_rules() -> list[type[Rule] | Rule]:
-    return [
-        *github,
-        FencedDirective,
-        MathBlock,
-        BlockSpoiler,
-        LeafDirective,
-        ContainerDirective,
-        DefinitionList,
-        Abbreviation,
-        InlineMath,
-        TextDirective,
-        Role,
-        Ruby,
-        InlineSpoiler,
-        Mark,
-        Insert,
-        Superscript,
-        Subscript,
-    ]
+def make_wenmode_all() -> Wenmode:
+    wenmode = Wenmode(
+        [
+            *github,
+            LeafDirective,
+            ContainerDirective,
+            TextDirective,
+        ],
+        HTMLRenderer(escape=False, sanitize_urls=False),
+    )
+    for plugin in [
+        fenced_directive,
+        math,
+        spoiler,
+        definition_list,
+        abbr,
+        inline_role,
+        ruby,
+        mark,
+        insert,
+        superscript,
+        subscript,
+    ]:
+        wenmode.use(plugin)
+    return wenmode
 
 
 def benchmark(target: Target, case: Case, iterations: int, warmup: int) -> Result:

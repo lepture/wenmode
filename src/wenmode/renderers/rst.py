@@ -4,15 +4,10 @@ import re
 from dataclasses import dataclass, field
 
 from wenmode.nodes import (
-    Abbreviation,
     Blockquote,
-    BlockSpoiler,
     Break,
     Code,
     ContainerDirective,
-    DefinitionDescription,
-    DefinitionList,
-    DefinitionTerm,
     Delete,
     Emphasis,
     FootnoteDefinition,
@@ -21,23 +16,15 @@ from wenmode.nodes import (
     Html,
     Image,
     InlineCode,
-    InlineMath,
-    InlineSpoiler,
-    Insert,
     LeafDirective,
     Link,
     List,
     ListItem,
-    Mark,
-    Math,
     Node,
     Paragraph,
     Parent,
     Root,
-    Ruby,
     Strong,
-    Subscript,
-    Superscript,
     Table,
     TableCell,
     TableRow,
@@ -71,6 +58,7 @@ class RSTRenderContext(RenderContext):
 class RSTRenderer(BaseRenderer):
     """Render Wenmode nodes as reStructuredText."""
 
+    name = 'rst'
     heading_markers = ('=', '-', '~', '^', '"', '#')
 
     def create_context(self, node: Node | None = None) -> RSTRenderContext:
@@ -101,13 +89,6 @@ class RSTRenderer(BaseRenderer):
         parts = [marker + lines[0]]
         parts.extend((indent + line) if line else '' for line in lines[1:])
         return '\n'.join(parts)
-
-    def render_definition_body(self, children: list[Node], context: RSTRenderContext) -> str:
-        if not children:
-            return ''
-        if len(children) == 1 and isinstance(children[0], Paragraph):
-            return self.render_children(children[0].children, context)
-        return self.render_children(children, context).rstrip('\n')
 
     def render_table_cell_content(self, cell: TableCell, context: RSTRenderContext) -> str:
         return self.render_children(cell.children, context).replace('\n', ' ').strip()
@@ -163,14 +144,6 @@ def render_paragraph(renderer: RSTRenderer, node: Paragraph, context: RSTRenderC
     return renderer.render_children(node.children, context) + '\n\n'
 
 
-@RSTRenderer.register('abbreviation')
-def render_abbreviation(renderer: RSTRenderer, node: Abbreviation, context: RSTRenderContext) -> str:
-    content = renderer.render_children(node.children, context)
-    if not node.title:
-        return content
-    return f':abbr:`{content} ({renderer.escape_text(node.title)})`'
-
-
 @RSTRenderer.register('heading')
 def render_heading(renderer: RSTRenderer, node: Heading, context: RSTRenderContext) -> str:
     title = renderer.render_children(node.children, context).strip()
@@ -181,14 +154,6 @@ def render_heading(renderer: RSTRenderer, node: Heading, context: RSTRenderConte
 @RSTRenderer.register('blockquote')
 def render_blockquote(renderer: RSTRenderer, node: Blockquote, context: RSTRenderContext) -> str:
     return render_indented_block(renderer, node, context)
-
-
-@RSTRenderer.register('blockSpoiler')
-def render_block_spoiler(renderer: RSTRenderer, node: BlockSpoiler, context: RSTRenderContext) -> str:
-    body = renderer.render_children(node.children, context).rstrip('\n')
-    if not body:
-        return '.. admonition:: Spoiler\n\n'
-    return '.. admonition:: Spoiler\n\n' + indent_block(body, '   ') + '\n\n'
 
 
 @RSTRenderer.register('list')
@@ -214,59 +179,8 @@ def render_list_item(renderer: RSTRenderer, node: ListItem, context: RSTRenderCo
     return renderer.render_children(node.children, context)
 
 
-@RSTRenderer.register('definitionList')
-def render_definition_list(renderer: RSTRenderer, node: DefinitionList, context: RSTRenderContext) -> str:
-    return renderer.render_children(node.children, context) + '\n'
-
-
-@RSTRenderer.register('definitionTerm')
-def render_definition_term(renderer: RSTRenderer, node: DefinitionTerm, context: RSTRenderContext) -> str:
-    return renderer.render_children(node.children, context).strip() + '\n'
-
-
-@RSTRenderer.register('definitionDescription')
-def render_definition_description(renderer: RSTRenderer, node: DefinitionDescription, context: RSTRenderContext) -> str:
-    body = renderer.render_definition_body(node.children, context)
-    if not body:
-        return '  \n'
-    return indent_block(body, '  ') + '\n'
-
-
 @RSTRenderer.register('delete')
 def render_delete(renderer: RSTRenderer, node: Delete, context: RSTRenderContext) -> str:
-    return renderer.render_children(node.children, context)
-
-
-@RSTRenderer.register('mark')
-def render_mark(renderer: RSTRenderer, node: Mark, context: RSTRenderContext) -> str:
-    return renderer.render_children(node.children, context)
-
-
-@RSTRenderer.register('insert')
-def render_insert(renderer: RSTRenderer, node: Insert, context: RSTRenderContext) -> str:
-    return renderer.render_children(node.children, context)
-
-
-@RSTRenderer.register('superscript')
-def render_superscript(renderer: RSTRenderer, node: Superscript, context: RSTRenderContext) -> str:
-    return f':sup:`{renderer.render_children(node.children, context)}`'
-
-
-@RSTRenderer.register('subscript')
-def render_subscript(renderer: RSTRenderer, node: Subscript, context: RSTRenderContext) -> str:
-    return f':sub:`{renderer.render_children(node.children, context)}`'
-
-
-@RSTRenderer.register('ruby')
-def render_ruby(renderer: RSTRenderer, node: Ruby, context: RSTRenderContext) -> str:
-    return ''.join(
-        f'{renderer.escape_text(segment["base"])} ({renderer.escape_text(segment["text"])})'
-        for segment in node.segments
-    )
-
-
-@RSTRenderer.register('inlineSpoiler')
-def render_inline_spoiler(renderer: RSTRenderer, node: InlineSpoiler, context: RSTRenderContext) -> str:
     return renderer.render_children(node.children, context)
 
 
@@ -351,12 +265,6 @@ def render_code(renderer: RSTRenderer, node: Code, context: RSTRenderContext) ->
     return f'::\n\n{body}\n\n'
 
 
-@RSTRenderer.register('math')
-def render_math(renderer: RSTRenderer, node: Math, context: RSTRenderContext) -> str:
-    value = node.value if node.value.endswith('\n') else node.value + '\n'
-    return '.. math::\n\n' + indent_block(value.rstrip('\n'), '   ') + '\n\n'
-
-
 @RSTRenderer.register('thematicBreak')
 def render_thematic_break(renderer: RSTRenderer, node: ThematicBreak, context: RSTRenderContext) -> str:
     return '----\n\n'
@@ -378,11 +286,6 @@ def render_text(renderer: RSTRenderer, node: Text, context: RSTRenderContext) ->
 @RSTRenderer.register('inlineCode')
 def render_inline_code(renderer: RSTRenderer, node: InlineCode, context: RSTRenderContext) -> str:
     return f'``{renderer.escape_inline_literal(node.value)}``'
-
-
-@RSTRenderer.register('inlineMath')
-def render_inline_math(renderer: RSTRenderer, node: InlineMath, context: RSTRenderContext) -> str:
-    return f':math:`{renderer.escape_inline_literal(node.value)}`'
 
 
 @RSTRenderer.register('strong')

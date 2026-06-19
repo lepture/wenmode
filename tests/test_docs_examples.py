@@ -23,7 +23,7 @@ SKIP_SNIPPETS = (
     'from django',
     'send(',
     'class MyRule(InlineRule):',
-    'Wenmode([PlusMark, Emphasis])',
+    'Wenmode([PlusMark, Emphasis]',
     'parser.register_rule(Link',
     'parser.register_rules([AtxHeading',
 )

@@ -6,73 +6,16 @@ from typing import TypedDict
 import pytest
 
 from tests.helpers import load_fixture
+from tests.plugin_helpers import configured_app
 from wenmode import HTMLRenderer, MarkdownRenderer, Parser, Wenmode
 from wenmode.directives import Figure
 from wenmode.nodes import Node, Text
 from wenmode.rules import (
-    Abbreviation,
     AtxHeading,
-    BackslashEscape,
-    Emphasis,
-    ExtendedAutolink,
-    FencedCode,
-    FencedDirective,
-    HardBreak,
-    HtmlBlock,
-    Image,
-    InlineCode,
     InlineRule,
     RawHtml,
-    Role,
-    Ruby,
-    SetextHeading,
-    Strikethrough,
 )
-from wenmode.rules import BlockSpoiler as BlockSpoilerRule
-from wenmode.rules import ContainerDirective as ContainerDirectiveRule
-from wenmode.rules import DefinitionList as DefinitionListRule
-from wenmode.rules import Footnote as FootnoteRule
-from wenmode.rules import InlineMath as InlineMathRule
-from wenmode.rules import InlineSpoiler as InlineSpoilerRule
-from wenmode.rules import LeafDirective as LeafDirectiveBlockRule
-from wenmode.rules import Link as LinkRule
-from wenmode.rules import List as ListRule
-from wenmode.rules import MathBlock as MathBlockRule
-from wenmode.rules import Table as TableRule
-from wenmode.rules import TextDirective as TextDirectiveInlineRule
 from wenmode.state import BlockState
-
-RULE_EDGE_RULES = {
-    'abbreviation': Abbreviation,
-    'atx_heading': AtxHeading,
-    'backslash_escape': BackslashEscape,
-    'block_spoiler': BlockSpoilerRule,
-    'container_directive': ContainerDirectiveRule,
-    'definition_list': DefinitionListRule,
-    'emphasis': Emphasis,
-    'extended_autolink': ExtendedAutolink,
-    'fenced_code': FencedCode,
-    'fenced_directive': FencedDirective,
-    'footnote': FootnoteRule,
-    'hard_break': HardBreak,
-    'html_block': HtmlBlock,
-    'image': Image,
-    'inline_code': InlineCode,
-    'inline_math': InlineMathRule,
-    'inline_spoiler': InlineSpoilerRule,
-    'leaf_directive': LeafDirectiveBlockRule,
-    'link': LinkRule,
-    'link_no_references': LinkRule(references=False),
-    'list': ListRule,
-    'math_block': MathBlockRule,
-    'role': Role,
-    'ruby': Ruby,
-    'setext_heading': SetextHeading,
-    'strikethrough': Strikethrough,
-    'table': TableRule,
-    'task_list': ListRule(task=True),
-    'text_directive': TextDirectiveInlineRule,
-}
 
 
 class RuleEdgeExample(TypedDict, total=False):
@@ -120,7 +63,7 @@ class TriggerInline(InlineRule):
 
 
 def app_for_rule_edge(example: RuleEdgeExample) -> Wenmode:
-    app = Wenmode([RULE_EDGE_RULES[name] for name in example['rules']])
+    app = configured_app(example['rules'])
     if 'max_container_depth' in example:
         app.parser.max_container_depth = example['max_container_depth']
     return app

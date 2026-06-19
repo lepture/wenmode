@@ -7,15 +7,10 @@ from typing import Any, Protocol
 from urllib.parse import quote, urlsplit
 
 from wenmode.nodes import (
-    Abbreviation,
     Blockquote,
-    BlockSpoiler,
     Break,
     Code,
     ContainerDirective,
-    DefinitionDescription,
-    DefinitionList,
-    DefinitionTerm,
     Delete,
     Emphasis,
     FootnoteDefinition,
@@ -24,22 +19,14 @@ from wenmode.nodes import (
     Html,
     Image,
     InlineCode,
-    InlineMath,
-    InlineSpoiler,
-    Insert,
     LeafDirective,
     Link,
     List,
     ListItem,
-    Mark,
-    Math,
     Node,
     Paragraph,
     Root,
-    Ruby,
     Strong,
-    Subscript,
-    Superscript,
     Table,
     TableCell,
     TableRow,
@@ -96,6 +83,7 @@ class HTMLRenderer(BaseRenderer):
     :param directives: Directive renderers to register at construction time.
     """
 
+    name = 'html'
     allowed_url_schemes = frozenset({'http', 'https', 'irc', 'ircs', 'mailto', 'tel'})
 
     def __init__(
@@ -104,6 +92,7 @@ class HTMLRenderer(BaseRenderer):
         sanitize_urls: bool = True,
         directives: Iterable[DirectiveHtmlRenderer] = (),
     ) -> None:
+        super().__init__()
         self.escape_enabled = escape
         self.sanitize_urls = sanitize_urls
         self.directives: dict[tuple[str, str], DirectiveHtmlRenderer] = {}
@@ -268,12 +257,6 @@ def render_paragraph(renderer: HTMLRenderer, node: Paragraph, context: HTMLRende
     return f'<p>{renderer.render_children(node.children, context)}</p>\n'
 
 
-@HTMLRenderer.register('abbreviation')
-def render_abbreviation(renderer: HTMLRenderer, node: Abbreviation, context: HTMLRenderContext) -> str:
-    attrs = {'title': node.title} if node.title else {}
-    return f'<abbr{renderer.render_attrs(attrs)}>{renderer.render_children(node.children, context)}</abbr>'
-
-
 @HTMLRenderer.register('heading')
 def render_heading(renderer: HTMLRenderer, node: Heading, context: HTMLRenderContext) -> str:
     attrs: dict[str, HtmlAttrValue] = {}
@@ -286,11 +269,6 @@ def render_heading(renderer: HTMLRenderer, node: Heading, context: HTMLRenderCon
 @HTMLRenderer.register('blockquote')
 def render_blockquote(renderer: HTMLRenderer, node: Blockquote, context: HTMLRenderContext) -> str:
     return '<blockquote>\n' + renderer.render_children(node.children, context) + '</blockquote>\n'
-
-
-@HTMLRenderer.register('blockSpoiler')
-def render_block_spoiler(renderer: HTMLRenderer, node: BlockSpoiler, context: HTMLRenderContext) -> str:
-    return '<div class="spoiler">\n' + renderer.render_children(node.children, context) + '</div>\n'
 
 
 @HTMLRenderer.register('list')
@@ -309,62 +287,9 @@ def render_list_item(renderer: HTMLRenderer, node: ListItem, context: HTMLRender
     return renderer.render_list_item(node, node.spread, context)
 
 
-@HTMLRenderer.register('definitionList')
-def render_definition_list(renderer: HTMLRenderer, node: DefinitionList, context: HTMLRenderContext) -> str:
-    return '<dl>\n' + renderer.render_children(node.children, context) + '</dl>\n'
-
-
-@HTMLRenderer.register('definitionTerm')
-def render_definition_term(renderer: HTMLRenderer, node: DefinitionTerm, context: HTMLRenderContext) -> str:
-    return f'<dt>{renderer.render_children(node.children, context)}</dt>\n'
-
-
-@HTMLRenderer.register('definitionDescription')
-def render_definition_description(
-    renderer: HTMLRenderer, node: DefinitionDescription, context: HTMLRenderContext
-) -> str:
-    if not node.spread and len(node.children) == 1 and isinstance(node.children[0], Paragraph):
-        return f'<dd>{renderer.render_children(node.children[0].children, context)}</dd>\n'
-    return '<dd>\n' + renderer.render_children(node.children, context) + '</dd>\n'
-
-
 @HTMLRenderer.register('delete')
 def render_delete(renderer: HTMLRenderer, node: Delete, context: HTMLRenderContext) -> str:
     return f'<del>{renderer.render_children(node.children, context)}</del>'
-
-
-@HTMLRenderer.register('mark')
-def render_mark(renderer: HTMLRenderer, node: Mark, context: HTMLRenderContext) -> str:
-    return f'<mark>{renderer.render_children(node.children, context)}</mark>'
-
-
-@HTMLRenderer.register('insert')
-def render_insert(renderer: HTMLRenderer, node: Insert, context: HTMLRenderContext) -> str:
-    return f'<ins>{renderer.render_children(node.children, context)}</ins>'
-
-
-@HTMLRenderer.register('superscript')
-def render_superscript(renderer: HTMLRenderer, node: Superscript, context: HTMLRenderContext) -> str:
-    return f'<sup>{renderer.render_children(node.children, context)}</sup>'
-
-
-@HTMLRenderer.register('subscript')
-def render_subscript(renderer: HTMLRenderer, node: Subscript, context: HTMLRenderContext) -> str:
-    return f'<sub>{renderer.render_children(node.children, context)}</sub>'
-
-
-@HTMLRenderer.register('ruby')
-def render_ruby(renderer: HTMLRenderer, node: Ruby, context: HTMLRenderContext) -> str:
-    content = ''.join(
-        f'{renderer.escape_html(segment["base"])}<rt>{renderer.escape_html(segment["text"])}</rt>'
-        for segment in node.segments
-    )
-    return f'<ruby>{content}</ruby>'
-
-
-@HTMLRenderer.register('inlineSpoiler')
-def render_inline_spoiler(renderer: HTMLRenderer, node: InlineSpoiler, context: HTMLRenderContext) -> str:
-    return f'<span class="spoiler">{renderer.render_children(node.children, context)}</span>'
 
 
 @HTMLRenderer.register('containerDirective')
@@ -426,11 +351,6 @@ def render_code(renderer: HTMLRenderer, node: Code, context: HTMLRenderContext) 
     return f'<pre><code{lang}>{renderer.escape_html(node.value)}</code></pre>\n'
 
 
-@HTMLRenderer.register('math')
-def render_math(renderer: HTMLRenderer, node: Math, context: HTMLRenderContext) -> str:
-    return f'<div class="math math-display">{renderer.escape_html(node.value)}</div>\n'
-
-
 @HTMLRenderer.register('thematicBreak')
 def render_thematic_break(renderer: HTMLRenderer, node: ThematicBreak, context: HTMLRenderContext) -> str:
     return '<hr />\n'
@@ -451,11 +371,6 @@ def render_text(renderer: HTMLRenderer, node: Text, context: HTMLRenderContext) 
 @HTMLRenderer.register('inlineCode')
 def render_inline_code(renderer: HTMLRenderer, node: InlineCode, context: HTMLRenderContext) -> str:
     return f'<code>{renderer.escape_html(node.value)}</code>'
-
-
-@HTMLRenderer.register('inlineMath')
-def render_inline_math(renderer: HTMLRenderer, node: InlineMath, context: HTMLRenderContext) -> str:
-    return f'<span class="math math-inline">{renderer.escape_html(node.value)}</span>'
 
 
 @HTMLRenderer.register('strong')

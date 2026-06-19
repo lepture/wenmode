@@ -48,62 +48,6 @@ class TextDirective(InlineRule):
         return TextDirectiveNode(name=name, attributes=attributes, children=children), end
 
 
-class Role(InlineRule):
-    """Parse MyST-style inline roles.
-
-    Markdown syntax:
-
-    .. code-block:: markdown
-
-       {iconify}`devicon:pypi`
-    """
-
-    def __init__(self) -> None:
-        super().__init__('role', r'\{(?=[A-Za-z])', '{')
-
-    def parse(
-        self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
-    ) -> tuple[Node | None, int]:
-        parsed = parse_role(text, match.start())
-        if parsed is None:
-            return None, match.start()
-
-        name, label, end, label_start, label_end = parsed
-        return (
-            TextDirectiveNode(
-                name=name,
-                children=parser.parse_inlines(label, state, source=parser.inline_source(text, label_start, label_end)),
-            ),
-            end,
-        )
-
-
-def parse_role(text: str, start: int = 0) -> tuple[str, str, int, int, int] | None:
-    if start >= len(text) or text[start] != '{':
-        return None
-
-    name_end = text.find('}', start + 1)
-    if name_end == -1:
-        return None
-    name = text[start + 1 : name_end]
-    if NAME_RE.fullmatch(name) is None:
-        return None
-
-    tick_start = name_end + 1
-    if tick_start >= len(text) or text[tick_start] != '`':
-        return None
-
-    tick_end = tick_start
-    while tick_end < len(text) and text[tick_end] == '`':
-        tick_end += 1
-    fence = text[tick_start:tick_end]
-    closing = text.find(fence, tick_end)
-    if closing == -1:
-        return None
-
-    return name, text[tick_end:closing], closing + len(fence), tick_end, closing
-
-
 def parse_text_directive_head(
     text: str, start: int, state: BlockState | None
 ) -> tuple[str, str | None, dict[str, str] | None, int, int | None, int | None] | None:

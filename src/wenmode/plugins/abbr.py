@@ -3,19 +3,21 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, ClassVar
 
-from wenmode.nodes import Abbreviation as AbbreviationNode
 from wenmode.nodes import Node, Parent, Text, position_from_offsets
+from wenmode.plugins import RendererHandlers
+from wenmode.renderers import MarkdownRenderer, RenderContext
+from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
+from wenmode.renderers.rst import RSTRenderContext, RSTRenderer
+from wenmode.rules.base import BlockRule, Rule
+from wenmode.rules.transforms import RootTransform
 from wenmode.state import BlockState, StateKey
 
-from ..base import BlockRule, Rule
-from ..transforms import RootTransform
-
 if TYPE_CHECKING:
+    from wenmode import Wenmode
     from wenmode.nodes import Root
     from wenmode.parser import Parser
-
 
 ABBREVIATION_START_RE = re.compile(r'^[ \t]{0,3}\*\[(?P<label>[^\]\n]+)\]:[ \t]*(?P<title>.*)$')
 ABBREVIATION_CONTINUATION_RE = re.compile(r'^(?: {3,}|\t)(?P<title>.*)$')
@@ -27,6 +29,14 @@ class AbbreviationState:
     title: str
 
 
+@dataclass
+class AbbreviationNode(Parent):
+    """Abbreviation node."""
+
+    title: str = ''
+    type: str = 'abbreviation'
+
+
 def create_abbreviations() -> dict[str, AbbreviationState]:
     return {}
 
@@ -34,25 +44,16 @@ def create_abbreviations() -> dict[str, AbbreviationState]:
 ABBREVIATIONS_KEY = StateKey('wenmode.abbreviations', create_abbreviations)
 
 
-class Abbreviation(Rule):
-    """Parse abbreviation definitions and rewrite matching text nodes.
-
-    Markdown syntax:
-
-    .. code-block:: markdown
-
-       HTML
-
-       *[HTML]: HyperText Markup Language
-    """
+class AbbreviationRule(Rule):
+    """Parse abbreviation definitions and rewrite matching text nodes."""
 
     def __init__(self) -> None:
         super().__init__('abbreviation')
         self.root_transforms = [AbbreviationTransform()]
 
 
-class AbbreviationDefinition(BlockRule):
-    order = 80
+class AbbreviationDefinitionRule(BlockRule):
+    order: ClassVar[int] = 80
 
     def __init__(self) -> None:
         super().__init__('abbreviation_definition', r'[ \t]{0,3}\*\[')
@@ -71,7 +72,7 @@ class AbbreviationDefinition(BlockRule):
 class AbbreviationTransform(RootTransform):
     name = 'abbreviation'
     defer_inlines = True
-    required_rules: Sequence[type[Rule] | Rule] = [AbbreviationDefinition]
+    required_rules: Sequence[type[Rule] | Rule] = [AbbreviationDefinitionRule]
 
     def transform(self, parser: Parser, root: Root, state: BlockState) -> None:
         abbreviations = state.store.get(ABBREVIATIONS_KEY)
@@ -161,3 +162,32 @@ def replace_abbreviations(
             )
         )
     return nodes
+
+
+def render_html(renderer: HTMLRenderer, node: AbbreviationNode, context: HTMLRenderContext) -> str:
+    attrs = {'title': node.title} if node.title else {}
+    return f'<abbr{renderer.render_attrs(attrs)}>{renderer.render_children(node.children, context)}</abbr>'
+
+
+def render_markdown(renderer: MarkdownRenderer, node: AbbreviationNode, context: RenderContext) -> str:
+    return renderer.render_children(node.children, context)
+
+
+def render_rst(renderer: RSTRenderer, node: AbbreviationNode, context: RSTRenderContext) -> str:
+    content = renderer.render_children(node.children, context)
+    if not node.title:
+        return content
+    return f':abbr:`{content} ({renderer.escape_text(node.title)})`'
+
+
+rules: list[type[Rule] | Rule] = [AbbreviationRule]
+handlers: RendererHandlers = {
+    'html': {'abbreviation': render_html},
+    'markdown': {'abbreviation': render_markdown},
+    'rst': {'abbreviation': render_rst},
+}
+
+
+def setup(wenmode: Wenmode, **options: Any) -> None:
+    wenmode.register_rules(rules)
+    wenmode.register_renderer_handlers(handlers)
