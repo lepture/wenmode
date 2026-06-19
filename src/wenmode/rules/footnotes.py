@@ -18,9 +18,7 @@ if TYPE_CHECKING:
     from wenmode.state import BlockState
 
 
-FOOTNOTE_DEFINITION_RE = re.compile(
-    r'^[ \t]{0,3}\[\^(?P<label>(?:\\\S|[^\s\[\]\\]){1,999})\]:[ \t]*(?P<rest>.*)$'
-)
+FOOTNOTE_DEFINITION_RE = re.compile(r'^[ \t]{0,3}\[\^(?P<label>(?:\\\S|[^\s\[\]\\]){1,999})\]:[ \t]*(?P<rest>.*)$')
 FOOTNOTE_REFERENCE_RE = r'\[\^(?P<label>(?:\\[^\s]|[^\s\[\]\\]){1,999})]'
 
 

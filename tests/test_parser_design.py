@@ -285,9 +285,7 @@ def test_parse_inlines_without_document_state_handles_link_brackets() -> None:
 
 
 def test_parse_inlines_without_document_state_leaves_footnote_reference_text() -> None:
-    assert [node.to_ast() for node in Parser([Footnote]).parse_inlines('[^x]')] == [
-        {'type': 'text', 'value': '[^x]'}
-    ]
+    assert [node.to_ast() for node in Parser([Footnote]).parse_inlines('[^x]')] == [{'type': 'text', 'value': '[^x]'}]
 
 
 def test_streaming_preset_disables_references() -> None:

@@ -80,6 +80,7 @@ class BaseRenderer:
             function.
         :returns: Decorator that stores the handler on the renderer class.
         """
+
         def decorator(handler: RenderHandler) -> RenderHandler:
             cls.handlers[node_type] = handler
             return handler

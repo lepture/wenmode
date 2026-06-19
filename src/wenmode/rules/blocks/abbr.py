@@ -100,9 +100,7 @@ def parse_abbreviation_definition(state: BlockState, index: int) -> tuple[int, s
     return index, label, '\n'.join(title_lines).strip()
 
 
-def transform_abbreviations(
-    node: Parent, definitions: dict[str, AbbreviationState], pattern: re.Pattern[str]
-) -> None:
+def transform_abbreviations(node: Parent, definitions: dict[str, AbbreviationState], pattern: re.Pattern[str]) -> None:
     children: list[Node] = []
     changed = False
     for child in node.children:

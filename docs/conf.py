@@ -17,7 +17,7 @@ source_suffix = {
 }
 
 intersphinx_mapping = {
-    "python": ("https://docs.python.org/3", None),
+    'python': ('https://docs.python.org/3', None),
 }
 
 html_theme = 'shibuya'

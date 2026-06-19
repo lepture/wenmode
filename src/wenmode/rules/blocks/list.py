@@ -153,7 +153,8 @@ def parse_shallow_list(parser: Parser, state: BlockState, first: re.Match[str], 
         while not state.done:
             line = state.line
             next_marker = MARKER_RE.match(line.rstrip('\r\n'))
-            if next_marker is not None and count_indent(next_marker.group('indent')) == count_indent(marker.group('indent')):
+            marker_indent = marker.group('indent')
+            if next_marker is not None and count_indent(next_marker.group('indent')) == count_indent(marker_indent):
                 break
             if line.strip():
                 text_lines.append(line.strip())
@@ -208,9 +209,7 @@ def should_keep_blank_in_item(state: BlockState, content_indent: int, marker_ind
     return has_continuation_indent(state.line, content_indent)
 
 
-def blank_belongs_to_item(
-    item_lines: list[str], state: BlockState, content_indent: int, marker_indent: int
-) -> bool:
+def blank_belongs_to_item(item_lines: list[str], state: BlockState, content_indent: int, marker_indent: int) -> bool:
     if state.done:
         return True
     line = state.first_nonblank_from_current()

@@ -8,11 +8,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 DOC_EXAMPLE_FILES = [
     ROOT / 'README.md',
-    *[
-        path
-        for path in sorted((ROOT / 'docs').glob('*.md'))
-        if not path.name.startswith('reference')
-    ],
+    *[path for path in sorted((ROOT / 'docs').glob('*.md')) if not path.name.startswith('reference')],
 ]
 MIGRATION_EXAMPLE_FILES = sorted((ROOT / 'docs' / 'migration').glob('*.md'))
 

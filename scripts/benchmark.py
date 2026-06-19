@@ -361,9 +361,7 @@ def main() -> None:
     cases = load_cases(args.case)
     targets = make_targets()
     results = [
-        benchmark(target, case, iterations=args.iterations, warmup=args.warmup)
-        for case in cases
-        for target in targets
+        benchmark(target, case, iterations=args.iterations, warmup=args.warmup) for case in cases for target in targets
     ]
     print_table(add_relative_speeds(results))
 
