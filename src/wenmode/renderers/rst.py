@@ -63,7 +63,11 @@ class RSTRenderer(BaseRenderer):
 
     def create_context(self, node: Node | None = None) -> RSTRenderContext:
         """Create a reStructuredText render context."""
-        return RSTRenderContext(root=node if isinstance(node, Root) else None)
+        if isinstance(node, Root):
+            root = node
+        else:
+            root = None
+        return RSTRenderContext(root=root)
 
     def escape_text(self, value: str) -> str:
         """Escape reStructuredText punctuation in plain text."""
@@ -79,7 +83,10 @@ class RSTRenderer(BaseRenderer):
 
     def render_list_item(self, item: ListItem, marker: str, context: RSTRenderContext) -> str:
         if item.checked is not None:
-            marker += '[x] ' if item.checked else '[ ] '
+            if item.checked:
+                marker += '[x] '
+            else:
+                marker += '[ ] '
         if not item.children:
             return marker.rstrip()
 
@@ -87,7 +94,11 @@ class RSTRenderer(BaseRenderer):
         lines = body.splitlines() or ['']
         indent = ' ' * len(marker)
         parts = [marker + lines[0]]
-        parts.extend((indent + line) if line else '' for line in lines[1:])
+        for line in lines[1:]:
+            if line:
+                parts.append(indent + line)
+            else:
+                parts.append('')
         return '\n'.join(parts)
 
     def render_table_cell_content(self, cell: TableCell, context: RSTRenderContext) -> str:
@@ -106,7 +117,10 @@ class RSTRenderer(BaseRenderer):
 
         options: list[str] = []
         for key, value in attributes.items():
-            option_name = 'name' if key == 'id' else key
+            if key == 'id':
+                option_name = 'name'
+            else:
+                option_name = key
             if key == 'class':
                 option_name = 'class'
             if value == '':
@@ -160,15 +174,21 @@ def render_blockquote(renderer: RSTRenderer, node: Blockquote, context: RSTRende
 def render_list(renderer: RSTRenderer, node: List, context: RSTRenderContext) -> str:
     parts: list[str] = []
     start = node.start or 1
-    separator = '\n\n' if node.spread else '\n'
+    if node.spread:
+        separator = '\n\n'
+    else:
+        separator = '\n'
 
     for index, child in enumerate(node.children):
         if not isinstance(child, ListItem):
             parts.append(renderer.render_node(child, context).rstrip('\n'))
             continue
-        marker = (
-            f'{start + index}. ' if node.ordered and node.start not in (None, 1) else '#. ' if node.ordered else '- '
-        )
+        if node.ordered and node.start not in (None, 1):
+            marker = f'{start + index}. '
+        elif node.ordered:
+            marker = '#. '
+        else:
+            marker = '- '
         parts.append(renderer.render_list_item(child, marker, context))
 
     return separator.join(parts) + '\n\n'
@@ -193,7 +213,9 @@ def render_text_directive(renderer: RSTRenderer, node: TextDirective, context: R
 @RSTRenderer.register('leafDirective')
 def render_leaf_directive(renderer: RSTRenderer, node: LeafDirective, context: RSTRenderContext) -> str:
     argument = renderer.render_directive_argument(node, context)
-    head = f'.. {node.name}::' + (f' {argument}' if argument else '')
+    head = f'.. {node.name}::'
+    if argument:
+        head += f' {argument}'
     options = renderer.render_directive_options(node.attributes)
     if options:
         return '\n'.join([head, *options]) + '\n\n'
@@ -208,7 +230,9 @@ def render_container_directive(renderer: RSTRenderer, node: ContainerDirective, 
         label = children.pop(0)
         argument = renderer.render_directive_argument(label, context)
 
-    head = f'.. {node.name}::' + (f' {argument}' if argument else '')
+    head = f'.. {node.name}::'
+    if argument:
+        head += f' {argument}'
     options = renderer.render_directive_options(node.attributes)
     body = renderer.render_children(children, context).rstrip('\n')
 
@@ -244,7 +268,10 @@ def render_table(renderer: RSTRenderer, node: Table, context: RSTRenderContext) 
 
 @RSTRenderer.register('code')
 def render_code(renderer: RSTRenderer, node: Code, context: RSTRenderContext) -> str:
-    value = node.value if node.value.endswith('\n') else node.value + '\n'
+    if node.value.endswith('\n'):
+        value = node.value
+    else:
+        value = node.value + '\n'
     body = indent_block(value.rstrip('\n'), '   ')
     if node.lang:
         return f'.. code-block:: {node.lang}\n\n{body}\n\n'
@@ -323,11 +350,23 @@ def render_footnote_definition(renderer: RSTRenderer, node: FootnoteDefinition, 
         return f'.. [#{label}]\n\n'
 
     lines = body.splitlines()
-    return f'.. [#{label}] {lines[0]}\n' + ''.join(f'   {line}\n' if line else '\n' for line in lines[1:]) + '\n'
+    continuation_lines: list[str] = []
+    for line in lines[1:]:
+        if line:
+            continuation_lines.append(f'   {line}\n')
+        else:
+            continuation_lines.append('\n')
+    return f'.. [#{label}] {lines[0]}\n' + ''.join(continuation_lines) + '\n'
 
 
 def indent_block(value: str, prefix: str) -> str:
-    return '\n'.join(prefix + line if line else '' for line in value.splitlines())
+    lines: list[str] = []
+    for line in value.splitlines():
+        if line:
+            lines.append(prefix + line)
+        else:
+            lines.append('')
+    return '\n'.join(lines)
 
 
 def render_indented_block(renderer: RSTRenderer, node: Parent, context: RSTRenderContext) -> str:

@@ -57,7 +57,10 @@ class ExtendedAutolink(InlineRule):
         lower_text = text.lower()
         start = find_url_prefix(lower_text, pos)
         while start is not None:
-            match = self.compiled.match(text, start) if is_url_boundary(text, start) else None
+            if is_url_boundary(text, start):
+                match = self.compiled.match(text, start)
+            else:
+                match = None
             if match is not None:
                 return match
             start = find_url_prefix(lower_text, start + 1)
@@ -143,7 +146,10 @@ def trim_xmpp(value: str) -> str:
     if '/' in body:
         address, path = body.split('/', 1)
         segment = path.split('/', 1)[0]
-        body = address + ('/' + segment if segment else '')
+        if segment:
+            body = address + '/' + segment
+        else:
+            body = address
     body = trim_scheme_email_suffix(body)
     if body.endswith(('-', '_')):
         return ''
@@ -196,4 +202,6 @@ def find_url_prefix(lower_text: str, pos: int) -> int | None:
         index = lower_text.find(prefix, pos)
         if index != -1 and (found == -1 or index < found):
             found = index
-    return None if found == -1 else found
+    if found == -1:
+        return None
+    return found

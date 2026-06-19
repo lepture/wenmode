@@ -37,7 +37,10 @@ class Image(InlineRule):
     def __init__(self, references: bool = True) -> None:
         super().__init__('image', r'!\[', '!')
         self.references = references
-        self.root_transforms = [ReferenceTransform()] if references else []
+        if references:
+            self.root_transforms = [ReferenceTransform()]
+        else:
+            self.root_transforms = []
 
     def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
         parsed = parse_link_or_image(parser, text, match.start(), image=True, state=state, references=self.references)
@@ -66,7 +69,10 @@ class Link(InlineRule):
     def __init__(self, references: bool = True) -> None:
         super().__init__('link', r'\[', '[')
         self.references = references
-        self.root_transforms = [ReferenceTransform()] if references else []
+        if references:
+            self.root_transforms = [ReferenceTransform()]
+        else:
+            self.root_transforms = []
 
     def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
         if match.start() > 0 and text[match.start() - 1] == '!' and not is_escaped(text, match.start() - 1):
@@ -84,7 +90,10 @@ def parse_link_or_image(
     parser: Parser, text: str, start: int, image: bool, state: BlockState, references: bool = True
 ) -> tuple[str, str, str | None, int, int, int] | None:
     bracket_cache = closing_bracket_cache(state)
-    label_start = start + 2 if image else start + 1
+    if image:
+        label_start = start + 2
+    else:
+        label_start = start + 1
     label_end = find_closing_bracket(text, label_start, bracket_cache)
     if label_end is None:
         return None

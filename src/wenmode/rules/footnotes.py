@@ -87,15 +87,14 @@ class FootnoteDefinition(BlockRule):
 
         source = state.source.collect()
         content_lines = collect_definition_lines(state, parsed.start('rest'), parsed.group('rest'), source)
-        children = (
-            parser.parse_blocks(
+        if content_lines:
+            children = parser.parse_blocks(
                 ''.join(content_lines),
                 parent_state=state,
                 source=source.map(),
             )
-            if content_lines
-            else []
-        )
+        else:
+            children = []
         return FootnoteDefinitionNode(identifier=identifier, label=label, children=children)
 
 

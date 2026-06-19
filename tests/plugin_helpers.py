@@ -108,7 +108,11 @@ def configured_app(
     directives: Iterable[DirectiveHtmlRenderer] = (),
     positions: bool = False,
 ) -> Wenmode:
-    app = Wenmode([] if rule_names is not None else None, renderer=renderer, directives=directives, positions=positions)
+    if rule_names is not None:
+        rules = []
+    else:
+        rules = None
+    app = Wenmode(rules, renderer=renderer, directives=directives, positions=positions)
     if rule_names is None:
         return app
 

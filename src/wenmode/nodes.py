@@ -81,7 +81,13 @@ class Node:
                 data[key] = value.to_ast(line_starts)
                 continue
             if isinstance(value, list):
-                data[key] = [item._to_ast(line_starts) if isinstance(item, Node) else item for item in value]
+                items: list[Any] = []
+                for item in value:
+                    if isinstance(item, Node):
+                        items.append(item._to_ast(line_starts))
+                    else:
+                        items.append(item)
+                data[key] = items
             elif isinstance(value, Node):
                 data[key] = value._to_ast(line_starts)
             else:

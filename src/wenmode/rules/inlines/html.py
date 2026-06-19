@@ -91,7 +91,10 @@ class RawHtml(InlineRule):
     def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
         value = match.group(0)
         filtered = filter_disallowed_html(value, self.disallowed_html_filter)
-        data = {'escaped': True} if filtered != value else None
+        if filtered != value:
+            data = {'escaped': True}
+        else:
+            data = None
         return Html(value=filtered, data=data), match.end()
 
 

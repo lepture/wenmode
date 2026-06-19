@@ -31,7 +31,10 @@ def collect_toc(node: Node, *, min_depth: int = 1, max_depth: int = 6) -> list[T
     for heading in iter_headings(node):
         if not (min_depth <= heading.depth <= max_depth):
             continue
-        identifier = heading.data.get('id') if heading.data else None
+        if heading.data:
+            identifier = heading.data.get('id')
+        else:
+            identifier = None
         if not isinstance(identifier, str):
             continue
 
@@ -63,9 +66,13 @@ def render_toc_list(items: list[TocItem]) -> str:
     """Render table-of-contents items as a nested ordered list."""
     parts = ['<ol>\n']
     for item in items:
+        if item.children:
+            child_list = f'\n{render_toc_list(item.children)}'
+        else:
+            child_list = ''
         parts.append(
             f'<li><a href="#{escape(item.id, quote=True)}">{escape(item.title)}</a>'
-            + (f'\n{render_toc_list(item.children)}' if item.children else '')
+            + child_list
             + '</li>\n'
         )
     parts.append('</ol>\n')

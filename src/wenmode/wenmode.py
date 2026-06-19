@@ -38,8 +38,16 @@ class Wenmode:
         directives: Iterable[DirectiveHtmlRenderer] = (),
         positions: bool = False,
     ) -> None:
-        self.parser = Parser(commonmark if rules is None else rules, positions=positions)
-        self.renderer = renderer if renderer is not None else HTMLRenderer(directives=directives)
+        parser_rules: Iterable[type[Rule] | Rule]
+        if rules is None:
+            parser_rules = commonmark
+        else:
+            parser_rules = rules
+        self.parser = Parser(parser_rules, positions=positions)
+        if renderer is not None:
+            self.renderer = renderer
+        else:
+            self.renderer = HTMLRenderer(directives=directives)
         if renderer is not None:
             for directive in directives:
                 self.register_directive_renderer(directive)

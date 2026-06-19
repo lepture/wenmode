@@ -53,7 +53,10 @@ def add_heading_ids(
     for heading in iter_headings(node):
         if not (min_depth <= heading.depth <= max_depth):
             continue
-        current_id = heading.data.get('id') if heading.data else None
+        if heading.data:
+            current_id = heading.data.get('id')
+        else:
+            current_id = None
         if isinstance(current_id, str) and not overwrite:
             slugger.use(current_id)
             continue

@@ -51,7 +51,10 @@ class CharacterReference(InlineRule):
         value = match.group(0)
         numeric = NUMERIC_CHARACTER_REFERENCE_RE.match(value)
         if numeric is not None:
-            base = 16 if numeric.group('base') else 10
+            if numeric.group('base'):
+                base = 16
+            else:
+                base = 10
             codepoint = int(numeric.group('digits'), base)
             if codepoint == 0:
                 return Text(value='\ufffd', _parse_emphasis=False), match.end()
@@ -76,7 +79,9 @@ class HardBreak(InlineRule):
 
     def search(self, text: str, pos: int = 0) -> re.Match[str] | None:
         start = find_hard_break(text, pos)
-        return self.compiled.match(text, start) if start is not None else None
+        if start is not None:
+            return self.compiled.match(text, start)
+        return None
 
     def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
         return Break(), match.end()
@@ -85,7 +90,10 @@ class HardBreak(InlineRule):
 def find_hard_break(text: str, pos: int) -> int | None:
     newline = text.find('\n', pos)
     while newline != -1:
-        line_end = newline - 1 if newline > 0 and text[newline - 1] == '\r' else newline
+        if newline > 0 and text[newline - 1] == '\r':
+            line_end = newline - 1
+        else:
+            line_end = newline
         if line_end > 0 and text[line_end - 1] == '\\' and line_end - 1 >= pos:
             return line_end - 1
 

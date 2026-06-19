@@ -101,10 +101,15 @@ class HTMLRenderer(BaseRenderer):
 
     def create_context(self, node: Node | None = None) -> HTMLRenderContext:
         """Create an HTML render context."""
-        definitions = node.footnote_definitions if isinstance(node, Root) else None
+        if isinstance(node, Root):
+            definitions = node.footnote_definitions
+            root = node
+        else:
+            definitions = None
+            root = None
         context = HTMLRenderContext(
             footnotes=FootnoteRenderState(definitions=definitions or {}),
-            root=node if isinstance(node, Root) else None,
+            root=root,
         )
         return context
 
@@ -122,11 +127,17 @@ class HTMLRenderer(BaseRenderer):
         if not item.children:
             return '<li></li>\n'
         if not loose:
-            prefix = '<li>' if isinstance(item.children[0], Paragraph) else '<li>\n'
+            if isinstance(item.children[0], Paragraph):
+                prefix = '<li>'
+            else:
+                prefix = '<li>\n'
             parts: list[str] = []
             for index, child in enumerate(item.children):
                 if isinstance(child, Paragraph):
-                    marker = self.render_task_marker(item) if index == 0 else ''
+                    if index == 0:
+                        marker = self.render_task_marker(item)
+                    else:
+                        marker = ''
                     parts.append(marker)
                     parts.append(self.render_children(child.children, context))
                     if index < len(item.children) - 1:
@@ -182,7 +193,9 @@ class HTMLRenderer(BaseRenderer):
                 rendered.append(name)
             else:
                 rendered.append(f'{name}="{self.escape_html(str(value))}"')
-        return (' ' + ' '.join(rendered)) if rendered else ''
+        if rendered:
+            return ' ' + ' '.join(rendered)
+        return ''
 
     def sanitize_url(self, value: str) -> str | None:
         """Return a URL if its scheme is allowed, otherwise ``None``."""
@@ -260,7 +273,10 @@ def render_paragraph(renderer: HTMLRenderer, node: Paragraph, context: HTMLRende
 @HTMLRenderer.register('heading')
 def render_heading(renderer: HTMLRenderer, node: Heading, context: HTMLRenderContext) -> str:
     attrs: dict[str, HtmlAttrValue] = {}
-    identifier = node.data.get('id') if node.data else None
+    if node.data:
+        identifier = node.data.get('id')
+    else:
+        identifier = None
     if isinstance(identifier, str):
         attrs['id'] = identifier
     return f'<h{node.depth}{renderer.render_attrs(attrs)}>{renderer.render_children(node.children, context)}</h{node.depth}>\n'
@@ -273,8 +289,14 @@ def render_blockquote(renderer: HTMLRenderer, node: Blockquote, context: HTMLRen
 
 @HTMLRenderer.register('list')
 def render_list(renderer: HTMLRenderer, node: List, context: HTMLRenderContext) -> str:
-    tag = 'ol' if node.ordered else 'ul'
-    start = f' start="{node.start}"' if node.ordered and node.start not in (None, 1) else ''
+    if node.ordered:
+        tag = 'ol'
+    else:
+        tag = 'ul'
+    if node.ordered and node.start not in (None, 1):
+        start = f' start="{node.start}"'
+    else:
+        start = ''
     return (
         f'<{tag}{start}>\n'
         + ''.join(renderer.render_list_item(child, node.spread, context) for child in node.children)
@@ -337,7 +359,10 @@ def render_table_row(
         if not isinstance(cell, TableCell):
             output.append(renderer.render_node(cell, context))
             continue
-        attrs = {'align': align[index]} if index < len(align) and align[index] is not None else {}
+        if index < len(align) and align[index] is not None:
+            attrs = {'align': align[index]}
+        else:
+            attrs = {}
         output.append(
             f'<{tag}{renderer.render_attrs(attrs)}>{renderer.render_children(cell.children, context)}</{tag}>\n'
         )
@@ -347,7 +372,10 @@ def render_table_row(
 
 @HTMLRenderer.register('code')
 def render_code(renderer: HTMLRenderer, node: Code, context: HTMLRenderContext) -> str:
-    lang = f' class="language-{renderer.escape_html(node.lang)}"' if node.lang else ''
+    if node.lang:
+        lang = f' class="language-{renderer.escape_html(node.lang)}"'
+    else:
+        lang = ''
     return f'<pre><code{lang}>{renderer.escape_html(node.value)}</code></pre>\n'
 
 
@@ -425,7 +453,10 @@ def render_footnote_reference(renderer: HTMLRenderer, node: FootnoteReference, c
     number = footnotes.numbers[node.identifier]
     references = footnotes.reference_ids.setdefault(node.identifier, [])
     base_reference_id = footnote_reference_id(node.identifier)
-    reference_id = base_reference_id if not references else f'{base_reference_id}-{len(references) + 1}'
+    if not references:
+        reference_id = base_reference_id
+    else:
+        reference_id = f'{base_reference_id}-{len(references) + 1}'
     references.append(reference_id)
     href = footnote_id(node.identifier)
     return (

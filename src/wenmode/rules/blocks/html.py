@@ -136,7 +136,10 @@ class HtmlBlock(BlockRule):
 
     def html_node(self, value: str) -> Html:
         filtered = filter_disallowed_html(value, self.disallowed_html_filter)
-        data = {'escaped': True} if filtered != value else None
+        if filtered != value:
+            data = {'escaped': True}
+        else:
+            data = None
         return Html(value=filtered, data=data)
 
 

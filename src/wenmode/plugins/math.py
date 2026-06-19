@@ -123,7 +123,10 @@ def render_html_inline_math(renderer: HTMLRenderer, node: InlineMathNode, contex
 
 
 def render_markdown_math(renderer: MarkdownRenderer, node: MathNode, context: RenderContext) -> str:
-    value = node.value if node.value.endswith('\n') else node.value + '\n'
+    if node.value.endswith('\n'):
+        value = node.value
+    else:
+        value = node.value + '\n'
     return f'$$\n{value}$$\n\n'
 
 
@@ -132,7 +135,10 @@ def render_markdown_inline_math(renderer: MarkdownRenderer, node: InlineMathNode
 
 
 def render_rst_math(renderer: RSTRenderer, node: MathNode, context: RSTRenderContext) -> str:
-    value = node.value if node.value.endswith('\n') else node.value + '\n'
+    if node.value.endswith('\n'):
+        value = node.value
+    else:
+        value = node.value + '\n'
     return '.. math::\n\n' + indent_block(value.rstrip('\n'), '   ') + '\n\n'
 
 

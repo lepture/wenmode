@@ -31,7 +31,10 @@ class TableOfContents:
         attributes = dict(node.attributes or {})
         min_depth = parse_depth(attributes, ('min', 'min-depth', 'min_depth'), 1)
         max_depth = parse_depth(attributes, ('max', 'max-depth', 'max_depth'), 6)
-        label_attribute = attributes.pop('label') if 'label' in attributes else None
+        if 'label' in attributes:
+            label_attribute = attributes.pop('label')
+        else:
+            label_attribute = None
         label = plain_text(node.children) or label_attribute or 'Table of contents'
         items = collect_toc(context.root, min_depth=min_depth, max_depth=max_depth)
         if not items:

@@ -12,4 +12,6 @@ def split_directive_label(node: ContainerDirective) -> tuple[Paragraph | None, l
 
 def append_class(current: str | None, value: str) -> str:
     """Append one CSS class value to an existing class attribute."""
-    return f'{current} {value}' if current else value
+    if current:
+        return f'{current} {value}'
+    return value

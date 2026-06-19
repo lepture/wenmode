@@ -20,7 +20,10 @@ def collect_until(
         if is_closer(line):
             state.advance()
             break
-        lines.append(transform(line) if transform is not None else line)
+        if transform is not None:
+            lines.append(transform(line))
+        else:
+            lines.append(line)
         state.advance()
     return lines
 
@@ -34,5 +37,8 @@ def parse_shallow_block(parser: Parser, regex: re.Pattern[str], state: BlockStat
         lines.append(quote.group(1).strip())
         state.advance()
     text = '\n'.join(line for line in lines if line).strip()
-    children: list[Node] = [Paragraph(children=parser.parse_inlines(text, state))] if text else []
+    if text:
+        children: list[Node] = [Paragraph(children=parser.parse_inlines(text, state))]
+    else:
+        children = []
     return children

@@ -46,8 +46,14 @@ class FencedCode(BlockRule):
             return Paragraph(children=parser.parse_inlines(''.join(paragraph_lines).strip(), state))
         info = normalize_label_text(info)
         info_parts = info.split(None, 1)
-        lang = info_parts[0] if info_parts else None
-        meta = info_parts[1] if len(info_parts) > 1 else None
+        if info_parts:
+            lang = info_parts[0]
+        else:
+            lang = None
+        if len(info_parts) > 1:
+            meta = info_parts[1]
+        else:
+            meta = None
         state.advance()
 
         closer = re.compile(rf'[ \t]{{0,3}}{re.escape(fence_char)}{{{len(fence)},}}[ \t]*$')

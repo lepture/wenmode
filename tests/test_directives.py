@@ -54,7 +54,10 @@ def test_directive_ast_examples(example: DirectiveExample) -> None:
 )
 def test_directive_html_examples(example: DirectiveHtmlExample) -> None:
     admonition_names = example.get('admonition_names')
-    admonition = Admonition(names=admonition_names) if admonition_names is not None else Admonition()
+    if admonition_names is not None:
+        admonition = Admonition(names=admonition_names)
+    else:
+        admonition = Admonition()
     app = Wenmode(
         [ContainerDirective, TextDirective, ImageRule],
         renderer=HTMLRenderer(directives=[admonition, Details(), Figure()]),

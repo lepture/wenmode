@@ -49,7 +49,10 @@ class MarkdownRenderer(BaseRenderer):
 
     def render_list_item(self, item: ListItem, marker: str, context: RenderContext) -> str:
         if item.checked is not None:
-            marker += '[x] ' if item.checked else '[ ] '
+            if item.checked:
+                marker += '[x] '
+            else:
+                marker += '[ ] '
         if not item.children:
             return marker.rstrip()
 
@@ -80,7 +83,9 @@ class MarkdownRenderer(BaseRenderer):
     def render_directive_label(self, node: Node, context: RenderContext) -> str:
         if not isinstance(node, Parent):
             return ''
-        return '[' + self.render_children(node.children, context).strip() + ']' if node.children else ''
+        if node.children:
+            return '[' + self.render_children(node.children, context).strip() + ']'
+        return ''
 
     def render_directive_attributes(self, attributes: dict[str, str] | None) -> str:
         """Render directive attributes in Markdown directive syntax."""
@@ -104,7 +109,9 @@ class MarkdownRenderer(BaseRenderer):
             else:
                 parts.append(f'{key}={quote_directive_attribute(value)}')
 
-        return '{' + ' '.join(parts) + '}' if parts else ''
+        if parts:
+            return '{' + ' '.join(parts) + '}'
+        return ''
 
     def render_script_children(self, node: Parent, marker: str, context: RenderContext) -> str:
         content = self.render_children(node.children, context)
@@ -114,7 +121,9 @@ class MarkdownRenderer(BaseRenderer):
 @MarkdownRenderer.register('root')
 def render_root(renderer: MarkdownRenderer, node: Root, context: RenderContext) -> str:
     output = renderer.render_children(node.children, context).rstrip()
-    return output + '\n' if output else ''
+    if output:
+        return output + '\n'
+    return ''
 
 
 @MarkdownRenderer.register('paragraph')
@@ -137,13 +146,19 @@ def render_blockquote(renderer: MarkdownRenderer, node: Blockquote, context: Ren
 def render_list(renderer: MarkdownRenderer, node: List, context: RenderContext) -> str:
     parts: list[str] = []
     start = node.start or 1
-    separator = '\n\n' if node.spread else '\n'
+    if node.spread:
+        separator = '\n\n'
+    else:
+        separator = '\n'
 
     for index, child in enumerate(node.children):
         if not isinstance(child, ListItem):
             parts.append(renderer.render_node(child, context).rstrip('\n'))
             continue
-        marker = f'{start + index}. ' if node.ordered else '- '
+        if node.ordered:
+            marker = f'{start + index}. '
+        else:
+            marker = '- '
         parts.append(renderer.render_list_item(child, marker, context))
 
     return separator.join(parts) + '\n\n'
@@ -211,7 +226,10 @@ def render_table(renderer: MarkdownRenderer, node: Table, context: RenderContext
 
 def normalize_table_row(row: Node, size: int) -> list[TableCell]:
     """Return exactly ``size`` table cells for Markdown serialization."""
-    cells = [cell for cell in row.children if isinstance(cell, TableCell)] if isinstance(row, TableRow) else []
+    if isinstance(row, TableRow):
+        cells = [cell for cell in row.children if isinstance(cell, TableCell)]
+    else:
+        cells = []
     if len(cells) < size:
         cells.extend(TableCell() for _ in range(size - len(cells)))
     return cells[:size]
@@ -240,7 +258,13 @@ def render_prefixed_block(renderer: MarkdownRenderer, node: Parent, marker: str,
     if not body:
         return f'{marker}\n\n'
     lines = body.splitlines()
-    return '\n'.join(f'{marker} {line}' if line else marker for line in lines) + '\n\n'
+    prefixed: list[str] = []
+    for line in lines:
+        if line:
+            prefixed.append(f'{marker} {line}')
+        else:
+            prefixed.append(marker)
+    return '\n'.join(prefixed) + '\n\n'
 
 
 @MarkdownRenderer.register('code')
@@ -250,7 +274,10 @@ def render_code(renderer: MarkdownRenderer, node: Code, context: RenderContext) 
     info = node.lang or ''
     if node.meta:
         info = (info + ' ' + node.meta).strip()
-    value = node.value if node.value.endswith('\n') else node.value + '\n'
+    if node.value.endswith('\n'):
+        value = node.value
+    else:
+        value = node.value + '\n'
     return f'{fence}{info}\n{value}{fence}\n\n'
 
 
@@ -293,13 +320,19 @@ def render_emphasis(renderer: MarkdownRenderer, node: Emphasis, context: RenderC
 
 @MarkdownRenderer.register('link')
 def render_link(renderer: MarkdownRenderer, node: Link, context: RenderContext) -> str:
-    title = f' "{renderer.escape_title(node.title)}"' if node.title else ''
+    if node.title:
+        title = f' "{renderer.escape_title(node.title)}"'
+    else:
+        title = ''
     return f'[{renderer.render_children(node.children, context)}]({renderer.escape_destination(node.url)}{title})'
 
 
 @MarkdownRenderer.register('image')
 def render_image(renderer: MarkdownRenderer, node: Image, context: RenderContext) -> str:
-    title = f' "{renderer.escape_title(node.title)}"' if node.title else ''
+    if node.title:
+        title = f' "{renderer.escape_title(node.title)}"'
+    else:
+        title = ''
     return f'![{renderer.escape_text(node.alt)}]({renderer.escape_destination(node.url)}{title})'
 
 

@@ -38,11 +38,10 @@ class TextDirective(InlineRule):
             return None, match.start()
 
         name, label, attributes, end, label_start, label_end = parsed
-        children = (
-            parser.parse_inlines(label, state, source=parser.inline_source(text, label_start, label_end))
-            if label is not None and label_start is not None and label_end is not None
-            else []
-        )
+        if label is not None and label_start is not None and label_end is not None:
+            children = parser.parse_inlines(label, state, source=parser.inline_source(text, label_start, label_end))
+        else:
+            children = []
         return TextDirectiveNode(name=name, attributes=attributes, children=children), end
 
 
