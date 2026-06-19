@@ -2,7 +2,7 @@
 # Core inline rules
 
 ```{rst-class} lead
-Inline rules for links, media, code spans, HTML, escapes, and emphasis.
+Inline rules for CommonMark, GFM, and mdast directive syntax.
 ```
 
 ---
@@ -410,6 +410,112 @@ Output node is `Break`, and its AST is:
         {
           "type": "text",
           "value": "break"
+        }
+      ]
+    }
+  ]
+}
+```
+
+## Strikethrough
+
+`Strikethrough` parses single- or double-tilde deletion spans.
+
+```markdown
+~~delete~~
+```
+
+Output node is `Delete`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "delete",
+          "children": [
+            {
+              "type": "text",
+              "value": "delete"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+## ExtendedAutolink
+
+`ExtendedAutolink` parses bare URL and email autolinks.
+
+```markdown
+https://example.com
+```
+
+Output node is `Link`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "link",
+          "children": [
+            {
+              "type": "text",
+              "value": "https://example.com"
+            }
+          ],
+          "url": "https://example.com"
+        }
+      ]
+    }
+  ]
+}
+```
+
+## TextDirective
+
+`TextDirective` parses inline directives such as `:name[label]{attrs}`.
+
+```markdown
+:abbr[*HTML*]{title="HyperText Markup Language"}
+```
+
+Output node is `TextDirective`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "textDirective",
+          "children": [
+            {
+              "type": "emphasis",
+              "children": [
+                {
+                  "type": "text",
+                  "value": "HTML"
+                }
+              ]
+            }
+          ],
+          "name": "abbr",
+          "attributes": {
+            "title": "HyperText Markup Language"
+          }
         }
       ]
     }

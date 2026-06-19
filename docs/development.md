@@ -62,7 +62,7 @@ the user-facing surface:
 - `recipes.md` for copyable integration patterns.
 - `integrations.md` for end-to-end application pipelines.
 - `migration/*.md` for parser-to-Wenmode migration guides.
-- `rules.md` and `custom-rules.md` for parser extension behavior.
+- `plugins.md` and `custom-plugins.md` for plugin extension behavior.
 - `references/*.md` for rule syntax, AST shape, and default HTML output.
 - `api/*.rst` for generated Python API organization.
 

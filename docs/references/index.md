@@ -27,9 +27,9 @@ extension-inlines
 | --- | --- |
 | {doc}`Rule matrix <../rule-matrix>` | Preset membership, generated nodes, options, and streaming compatibility. |
 | {doc}`Node model <nodes>` | Node groups, mdast-compatible fields, and AST conventions. |
-| {doc}`Core block rules <core-blocks>` | `AtxHeading`, `SetextHeading`, `ThematicBreak`, `FencedCode`, `IndentedCode`, `HtmlBlock`, `Blockquote`, `List`. |
-| {doc}`Extension block rules <extension-blocks>` | GFM tables and footnotes, mdast block directives, and block-level plugin syntax. |
-| {doc}`Core inline rules <core-inlines>` | `InlineCode`, `Emphasis`, `Link`, `Image`, `Autolink`, `RawHtml`, `BackslashEscape`, `CharacterReference`, `HardBreak`. |
-| {doc}`Extension inline rules <extension-inlines>` | GFM inline syntax, mdast text directives, and inline plugin syntax. |
+| {doc}`Core block rules <core-blocks>` | CommonMark blocks, GFM tables and footnotes, task lists, and mdast block directives. |
+| {doc}`Plugin block rules <extension-blocks>` | Block-level and document-wide syntax provided by built-in plugins. |
+| {doc}`Core inline rules <core-inlines>` | CommonMark inlines, GFM strikethrough and autolinks, and mdast text directives. |
+| {doc}`Plugin inline rules <extension-inlines>` | Inline syntax provided by built-in plugins. |
 
 For generated Python API documentation, see {ref}`api`.

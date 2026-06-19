@@ -1,76 +1,11 @@
 (reference-extension-inlines)=
-# Extension inline rules
+# Plugin inline rules
 
 ```{rst-class} lead
-Inline extension rules for GFM, mdast directives, and built-in plugins.
+Inline syntax provided by built-in plugins.
 ```
 
 ---
-
-## Strikethrough
-
-`Strikethrough` parses single- or double-tilde deletion spans.
-
-```markdown
-~~delete~~
-```
-
-Output node is `Delete`, and its AST is:
-
-```json
-{
-  "type": "root",
-  "children": [
-    {
-      "type": "paragraph",
-      "children": [
-        {
-          "type": "delete",
-          "children": [
-            {
-              "type": "text",
-              "value": "delete"
-            }
-          ]
-        }
-      ]
-    }
-  ]
-}
-```
-
-## ExtendedAutolink
-
-`ExtendedAutolink` parses bare URL and email autolinks.
-
-```markdown
-https://example.com
-```
-
-Output node is `Link`, and its AST is:
-
-```json
-{
-  "type": "root",
-  "children": [
-    {
-      "type": "paragraph",
-      "children": [
-        {
-          "type": "link",
-          "children": [
-            {
-              "type": "text",
-              "value": "https://example.com"
-            }
-          ],
-          "url": "https://example.com"
-        }
-      ]
-    }
-  ]
-}
-```
 
 ## Mark Plugin
 
@@ -296,47 +231,6 @@ Output node is `InlineMathNode`, and its AST is:
         {
           "type": "inlineMath",
           "value": "x + y"
-        }
-      ]
-    }
-  ]
-}
-```
-
-## TextDirective
-
-`TextDirective` parses inline directives such as `:name[label]{attrs}`.
-
-```markdown
-:abbr[*HTML*]{title="HyperText Markup Language"}
-```
-
-Output node is `TextDirective`, and its AST is:
-
-```json
-{
-  "type": "root",
-  "children": [
-    {
-      "type": "paragraph",
-      "children": [
-        {
-          "type": "textDirective",
-          "children": [
-            {
-              "type": "emphasis",
-              "children": [
-                {
-                  "type": "text",
-                  "value": "HTML"
-                }
-              ]
-            }
-          ],
-          "name": "abbr",
-          "attributes": {
-            "title": "HyperText Markup Language"
-          }
         }
       ]
     }

@@ -2,7 +2,7 @@
 # Core block rules
 
 ```{rst-class} lead
-Block-level rules for CommonMark-style document structure.
+Block-level rules for CommonMark, GFM, and mdast directive syntax.
 ```
 
 ---
@@ -370,3 +370,242 @@ Option example: use `List(task=True)` to parse GFM task list markers.
 }
 ```
 
+## Table
+
+`Table` parses GFM pipe tables.
+
+```markdown
+| A    | B    |
+| :--- | ---: |
+| *x*  | y    |
+```
+
+Output nodes are `Table`, `TableRow`, and `TableCell`, and their AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "table",
+      "children": [
+        {
+          "type": "tableRow",
+          "children": [
+            {
+              "type": "tableCell",
+              "children": [
+                {
+                  "type": "text",
+                  "value": "A"
+                }
+              ]
+            },
+            {
+              "type": "tableCell",
+              "children": [
+                {
+                  "type": "text",
+                  "value": "B"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "tableRow",
+          "children": [
+            {
+              "type": "tableCell",
+              "children": [
+                {
+                  "type": "emphasis",
+                  "children": [
+                    {
+                      "type": "text",
+                      "value": "x"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "tableCell",
+              "children": [
+                {
+                  "type": "text",
+                  "value": "y"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "align": [
+        "left",
+        "right"
+      ]
+    }
+  ]
+}
+```
+
+## Footnote
+
+`Footnote` parses inline footnote references and collects matching footnote
+definitions with a document-wide transform.
+
+```markdown
+A note[^a].
+
+[^a]: *Footnote*.
+```
+
+Output nodes are `FootnoteReference` and `FootnoteDefinition`, and their AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "A note"
+        },
+        {
+          "type": "footnoteReference",
+          "identifier": "a",
+          "label": "a"
+        },
+        {
+          "type": "text",
+          "value": "."
+        }
+      ]
+    },
+    {
+      "type": "footnoteDefinition",
+      "children": [
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "type": "emphasis",
+              "children": [
+                {
+                  "type": "text",
+                  "value": "Footnote"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "value": "."
+            }
+          ]
+        }
+      ],
+      "identifier": "a",
+      "label": "a"
+    }
+  ]
+}
+```
+
+## LeafDirective
+
+`LeafDirective` parses leaf directives such as `::name[label]{attrs}`.
+
+```markdown
+::youtube[*Video*]{#abc}
+```
+
+Output node is `LeafDirective`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "leafDirective",
+      "children": [
+        {
+          "type": "emphasis",
+          "children": [
+            {
+              "type": "text",
+              "value": "Video"
+            }
+          ]
+        }
+      ],
+      "name": "youtube",
+      "attributes": {
+        "id": "abc"
+      }
+    }
+  ]
+}
+```
+
+## ContainerDirective
+
+`ContainerDirective` parses colon-fenced block directives with optional labels
+and attributes.
+
+```markdown
+:::note[Title]{.wide}
+*Body*.
+:::
+```
+
+Output node is `ContainerDirective`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "containerDirective",
+      "children": [
+        {
+          "type": "paragraph",
+          "data": {
+            "directiveLabel": true
+          },
+          "children": [
+            {
+              "type": "text",
+              "value": "Title"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "type": "emphasis",
+              "children": [
+                {
+                  "type": "text",
+                  "value": "Body"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "value": "."
+            }
+          ]
+        }
+      ],
+      "name": "note",
+      "attributes": {
+        "class": "wide"
+      }
+    }
+  ]
+}
+```

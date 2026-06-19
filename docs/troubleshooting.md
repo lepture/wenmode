@@ -70,8 +70,8 @@ root = Wenmode().parse('**strong**')
 assert root.to_ast()['children'][0]['children'][0]['type'] == 'strong'
 ```
 
-For custom nodes, set a stable `type` value and register handlers during
-application startup. See {ref}`custom-rules`.
+For custom nodes, set a stable `type` value and register handlers from your
+plugin setup function. See {ref}`custom-plugins`.
 
 ## Streaming raises StreamingUnsupportedError
 

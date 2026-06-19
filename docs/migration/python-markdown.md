@@ -75,8 +75,8 @@ html = markdown.markdown(
 )
 ```
 
-Start with the closest Wenmode preset, then add custom rules only for features
-not covered by that preset:
+Start with the closest Wenmode preset, then add built-in or custom plugins only
+for features not covered by that preset:
 
 ```{code-block} python
 :caption: wenmode
@@ -96,9 +96,9 @@ html = wenmode.render(text)
 | `abbr` | `wenmode.plugins.abbr`, or directive renderer for `:abbr[...]` |
 | `def_list` | `wenmode.plugins.definition_list` |
 | `toc` | heading IDs plus `collect_toc()` / `render_toc_html()` or `TableOfContents` directive renderer |
-| `attr_list` | no global equivalent; use directives, custom rules, or renderer logic for the specific attributes you support |
+| `attr_list` | no global equivalent; use directives, custom plugins, or renderer logic for the specific attributes you support |
 | `md_in_html` | raw HTML rules plus renderer policy; sanitize externally for untrusted input |
-| custom extension | custom parser rules, root transforms, directive renderers, or renderer handlers |
+| custom extension | custom plugin with parser rules, root transforms, directive renderers, or renderer handlers |
 
 ## Tables and GFM features
 
@@ -219,9 +219,9 @@ root = Wenmode().parse(text)
 payload = root.to_ast()
 ```
 
-Use renderer handlers when the old extension only changed HTML output. Use
-rules and transforms when the old extension introduced new Markdown syntax or
-document-wide state.
+Use renderer handlers when the old extension only changed HTML output. Put
+rules and transforms in a custom plugin when the old extension introduced new
+Markdown syntax or document-wide state.
 
 ## Checklist
 
@@ -230,4 +230,4 @@ document-wide state.
 - Rebuild TOC behavior explicitly with heading helpers or the TOC directive.
 - Review raw HTML behavior and URL sanitization before accepting user content.
 - Port extension output customization to renderer handlers.
-- Port extension parser behavior to rules and transforms.
+- Port extension parser behavior to custom plugins with rules and transforms.

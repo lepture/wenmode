@@ -58,7 +58,7 @@ html = wenmode.render(text)
 ## Extras mapping
 
 markdown2 extras vary in scope. Some map directly to Wenmode rules; others need
-custom rules or preprocessing.
+custom plugins or preprocessing.
 
 | markdown2 extra | Wenmode replacement |
 | --- | --- |
@@ -181,7 +181,7 @@ metadata, or generated attributes.
 
 ## Checklist
 
-- Replace `extras` with `github`, configured rules, or custom rules.
-- Handle front matter or metadata outside Wenmode unless you add a custom rule.
+- Replace `extras` with `github`, configured rules, or custom plugins.
+- Handle front matter or metadata outside Wenmode unless you add a custom plugin.
 - Rebuild heading IDs and TOC behavior with Wenmode helpers.
 - Compare HTML output for raw HTML, code blocks, tables, and footnotes.

@@ -39,13 +39,14 @@ reference-style links, reference-style images, and footnotes.
 
 ## Stability expectations
 
-The high-level APIs documented in {ref}`usage`, {ref}`presets`, and
-{ref}`custom-rules` are intended to be stable through the beta period:
+The high-level APIs documented in {ref}`usage`, {ref}`presets`, {ref}`plugins`,
+and {ref}`custom-plugins` are intended to be stable through the beta period:
 
 - `Wenmode`, `Parser`, and renderer construction.
 - Rule classes, configured rule instances, and `Wenmode.use(plugin)`.
 - `Node.to_ast()` output for documented node types.
-- Custom `BlockRule`, `ContinueRule`, `InlineRule`, and root transform shapes.
+- Custom plugin `setup()` functions, rules, renderer handlers, and root
+  transform shapes.
 - `StateKey` and `BlockState.store` for per-parse extension state.
 
 The project may still adjust undocumented helper functions, renderer formatting
@@ -59,5 +60,5 @@ Markdown-to-HTML path maps directly to `Wenmode().render()`, but extension
 behavior should be migrated by choosing a preset, using built-in plugins, and
 registering directive renderers or custom renderers as needed.
 
-See {ref}`recipes` for common integration patterns and {ref}`custom-rules` for
-custom syntax.
+See {ref}`recipes` for common integration patterns and {ref}`custom-plugins` for
+custom plugins.

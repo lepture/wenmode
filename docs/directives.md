@@ -2,14 +2,18 @@
 # Directives
 
 ```{rst-class} lead
-Use directive syntax and directive renderers to add structured Markdown
-extensions.
+Use mdast-style directive syntax and directive renderers to add structured
+Markdown extensions.
 ```
 
 ---
 
-Directives are parsed by rules and rendered by optional renderer plugins. These
-are separate steps:
+Wenmode's core directive rules follow the mdast directive model used by
+[`mdast-util-directive`](https://github.com/syntax-tree/mdast-util-directive)
+and remark directives. They create mdast-compatible `textDirective`,
+`leafDirective`, and `containerDirective` nodes.
+
+Directive parsing and directive rendering are separate steps:
 
 1. Enable directive syntax rules so the parser creates directive nodes.
 2. Register directive renderers when you want special HTML output.
@@ -17,33 +21,34 @@ are separate steps:
 Without a matching HTML directive renderer, Wenmode falls back to rendering the
 directive children.
 
-## Two directive families
+MyST-style fenced directives and inline roles are plugins. See {ref}`plugins`
+when you want code-fence-style `` ```{name}`` directives or
+`` {name}`content` `` roles.
 
-Wenmode supports two related directive syntax families.
-
-The first family is `TextDirective`, `LeafDirective`, and `ContainerDirective`.
-These follow the mdast directive model used by
-[`mdast-util-directive`](https://github.com/syntax-tree/mdast-util-directive)
-and remark directives: one colon for text directives, two colons for leaf block
-directives, and three or more colons for container block directives. They create
-mdast-compatible `textDirective`, `leafDirective`, and `containerDirective`
-nodes.
-
-The second family is provided by the `fenced_directive` and `inline_role`
-plugins. These follow the
-[MyST Parser roles and directives syntax](https://myst-parser.readthedocs.io/en/latest/syntax/roles-and-directives.html):
-fenced directives use code-fence syntax with `{name}`, and roles use
-`` {name}`content` ``. Wenmode maps them onto the same AST node types:
-the fenced directive plugin creates `containerDirective`, and the inline role
-plugin creates `textDirective`.
-
-## mdast-style directives
+## Enable Directives
 
 ```python
-from wenmode import Parser
+from wenmode import Wenmode
+from wenmode.presets import commonmark
 from wenmode.rules import ContainerDirective, LeafDirective, TextDirective
 
-parser = Parser([
+wenmode = Wenmode([
+    *commonmark,
+    TextDirective,
+    LeafDirective,
+    ContainerDirective,
+])
+```
+
+If you already have a configured `Wenmode` instance, register directive rules
+incrementally:
+
+```python
+from wenmode import Wenmode
+from wenmode.rules import ContainerDirective, LeafDirective, TextDirective
+
+wenmode = Wenmode()
+wenmode.register_rules([
     TextDirective,
     LeafDirective,
     ContainerDirective,
@@ -91,39 +96,6 @@ Parsed directive nodes store the directive name, optional attributes, and child
 nodes. Container directive labels are stored as the first paragraph child with
 `data={"directiveLabel": True}`.
 
-## MyST-style directives and roles
-
-Fenced directives use code-fence-style syntax and serialize back to container
-directives with `MarkdownRenderer`.
-
-```python
-from wenmode import Wenmode
-from wenmode.plugins import fenced_directive, inline_role
-
-wenmode = Wenmode([]).use(fenced_directive).use(inline_role)
-```
-
-````markdown
-```{note} Important
-:class: warning
-
-Read this first.
-```
-````
-
-Roles are inline:
-
-```markdown
-{iconify}`devicon:pypi`
-```
-
-The `fenced_directive` plugin creates a `containerDirective` node. Its
-first-line argument becomes the directive label, and `:key: value` option lines
-become attributes.
-
-The `inline_role` plugin creates a `textDirective` node. The role name becomes
-the directive `name`, and the backtick content becomes children.
-
 ## HTML directive renderers
 
 Register HTML directive renderers on `Wenmode` or pass them to `HTMLRenderer`.
@@ -131,9 +103,10 @@ Register HTML directive renderers on `Wenmode` or pass them to `HTMLRenderer`.
 ```python
 from wenmode import Wenmode
 from wenmode.directives import Admonition
+from wenmode.presets import commonmark
 from wenmode.rules import ContainerDirective
 
-wenmode = Wenmode([ContainerDirective])
+wenmode = Wenmode([*commonmark, ContainerDirective])
 wenmode.register_directive_renderer(Admonition())
 text = '''
 :::note[Title]
@@ -152,10 +125,11 @@ You can also pass directive renderers at construction time:
 ```python
 from wenmode import Wenmode
 from wenmode.directives import Abbreviation, Admonition, Details, Figure, TableOfContents
+from wenmode.presets import commonmark
 from wenmode.rules import AtxHeading, ContainerDirective, LeafDirective
 
 wenmode = Wenmode(
-    [AtxHeading(id_transform=True), LeafDirective, ContainerDirective],
+    [*commonmark, AtxHeading(id_transform=True), LeafDirective, ContainerDirective],
     directives=[Abbreviation(), Admonition(), Details(), Figure(), TableOfContents()],
 )
 ```
@@ -210,6 +184,18 @@ Hidden content.
 
 `Figure` renders `figure` container directives as `<figure>` with an optional
 `<figcaption>` from the directive label.
+
+```python
+from wenmode.directives import Figure
+
+Figure()
+```
+
+```markdown
+:::figure[Architecture diagram]{src="/architecture.png" alt="System architecture"}
+The parser builds an AST before rendering.
+:::
+```
 
 ### TableOfContents
 

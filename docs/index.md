@@ -127,6 +127,7 @@ assert html == expected.lstrip()
 | --- | --- |
 | Parse Markdown and render HTML | {doc}`Usage <usage>` |
 | Choose CommonMark, GFM, streaming, or a custom dialect | {doc}`Presets <presets>` |
+| Use mdast-style directives | {doc}`Directives <directives>` |
 | Enable non-standard syntax | {doc}`Plugins <plugins>` |
 | Render user-authored Markdown safely | {doc}`Security <security>` |
 | Add a table of contents, heading IDs, or a custom renderer | {doc}`Recipes <recipes>` |
@@ -134,7 +135,7 @@ assert html == expected.lstrip()
 | Troubleshoot escaping, directives, streaming, or custom renderers | {doc}`Troubleshooting <troubleshooting>` |
 | Migrate from another Markdown parser | {doc}`Migration guides <migration/index>` |
 | Review benchmark methodology and results | {doc}`Benchmarks <benchmarks>` |
-| Build new syntax rules | {doc}`Custom rules <custom-rules>` |
+| Create custom plugins | {doc}`Custom plugins <custom-plugins>` |
 | Check compatibility, compliance, changelog, and project status | {doc}`Compatibility <compatibility>`, {doc}`Compliance <compliance>`, and {doc}`Changelog <changelog>` |
 
 ```{toctree}
@@ -144,12 +145,12 @@ assert html == expected.lstrip()
 
 usage
 presets
+directives
 plugins
 security
 recipes
 integrations
 migration/index
-directives
 troubleshooting
 ```
 
@@ -169,7 +170,7 @@ api
 :maxdepth: 2
 
 rules
-custom-rules
+custom-plugins
 internals
 development
 ```

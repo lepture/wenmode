@@ -207,16 +207,16 @@ def render_text(renderer: HTMLRenderer, node: Text, context: RenderContext) -> s
     return renderer.escape_html(node.value)
 ```
 
-For custom node types, define the node in your extension and register handlers
-for every output format you support. See {ref}`custom-rules` for a complete
-custom node example.
+For custom node types, define the node in a Wenmode plugin and register handlers
+for every output format you support. See {ref}`custom-plugins` for a complete
+custom plugin example.
 
 ## Checklist
 
 - Pick `commonmark` or `github` before porting individual plugins.
 - Decide whether raw HTML should be escaped or passed through.
-- Replace Mistune plugins with rules, transforms, directive renderers, or
-  renderer handlers.
+- Replace Mistune plugins with built-in Wenmode plugins, custom plugins,
+  directive renderers, or renderer handlers.
 - Compare generated HTML for real documents, especially tables, footnotes,
   raw HTML, and autolinks.
 - Update tests that asserted Mistune token shapes to assert Wenmode nodes or

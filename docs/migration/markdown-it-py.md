@@ -118,19 +118,19 @@ md = MarkdownIt('commonmark').use(my_plugin)
 html = md.render(text)
 ```
 
-In Wenmode, make parser rules and renderer handlers explicit:
+In Wenmode, package parser rules and renderer handlers in a plugin:
 
 ```{code-block} python
 :caption: wenmode
 
 from wenmode import Wenmode
-from my_package.wenmode_rules import MyInlineRule
+from my_package.wenmode_plugins import my_plugin
 
-wenmode = Wenmode([MyInlineRule])
+wenmode = Wenmode().use(my_plugin)
 html = wenmode.render(text)
 ```
 
-See {ref}`custom-rules` for custom rules and renderer registration.
+See {ref}`custom-plugins` for custom plugin creation.
 
 ## Renderer migration
 

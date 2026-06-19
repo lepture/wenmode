@@ -92,7 +92,7 @@ Wenmode's documented node types are listed in {ref}`reference`.
 ## Extension mapping
 
 Marko extensions typically define parser elements and renderer behavior.
-In Wenmode, split extensions into:
+In Wenmode, split extension behavior into a plugin that can register:
 
 - `InlineRule` for inline syntax,
 - `BlockRule` for block syntax,
@@ -100,8 +100,8 @@ In Wenmode, split extensions into:
 - root transforms for document-wide state,
 - renderer handlers for HTML, Markdown, RST, or custom output.
 
-If a Marko extension introduced a new AST element, create a custom Wenmode node
-and register renderers for it. See {ref}`custom-rules`.
+If a Marko extension introduced a new AST element, create a custom Wenmode
+plugin with the node and renderer handlers. See {ref}`custom-plugins`.
 
 ## Renderer migration
 
@@ -176,7 +176,8 @@ you need.
 
 - Replace `marko.convert(text)` with `Wenmode().render(text)`.
 - Replace Marko AST traversal with Wenmode node traversal or `to_ast()`.
-- Split Marko extensions into rules, transforms, and renderer handlers.
+- Split Marko extensions into custom plugins with rules, transforms, and
+  renderer handlers.
 - Review renderer behavior for custom nodes.
 - Decide whether you need `commonmark`, `github`, `streaming`, or a custom rule
   list.

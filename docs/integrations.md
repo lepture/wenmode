@@ -187,6 +187,7 @@ html = product_markdown.render(text)
 assert html == expected.lstrip()
 ```
 
-For new syntax, add a parser rule and renderer handlers together. See
-{ref}`custom-rules` for an RST-inspired example that creates a new node type and
-registers HTML, Markdown, and RST rendering behavior.
+For new syntax, create a plugin that registers parser rules and renderer
+handlers together. See {ref}`custom-plugins` for an RST-inspired example that
+creates a new node type and registers HTML, Markdown, and RST rendering
+behavior.
