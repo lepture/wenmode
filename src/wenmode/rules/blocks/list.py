@@ -246,13 +246,23 @@ def should_keep_blank_in_item(state: BlockState, content_indent: int, marker_ind
 def blank_belongs_to_item(item_lines: list[str], state: BlockState, content_indent: int, marker_indent: int) -> bool:
     if state.done:
         return True
-    line = state.first_nonblank_from_current()
+    line = first_nonblank_from_current(state)
     if line is None:
         return True
     marker = MARKER_RE.match(line.rstrip('\r\n'))
     if marker is not None:
         return count_indent(marker.group('indent')) <= marker_indent
     return count_indent(line) <= content_indent or not has_nested_list(item_lines)
+
+
+def first_nonblank_from_current(state: BlockState) -> str | None:
+    offset = 0
+    while state.has(offset):
+        line = state.peek(offset)
+        if line.strip() != '':
+            return line
+        offset += 1
+    return None
 
 
 def has_nested_list(lines: list[str]) -> bool:

@@ -12,7 +12,7 @@ T = TypeVar('T')
 
 @dataclass(frozen=True, slots=True)
 class SourceSegment:
-    """Map a contiguous slice of generated parser text to source coordinates."""
+    """Map a contiguous slice of generated parser text to source offsets."""
 
     start: int
     end: int
@@ -396,16 +396,6 @@ class BlockState:
         """Return a line by absolute index."""
         return self.lines[index]
 
-    def first_nonblank_from_current(self) -> str | None:
-        """Return the next nonblank line at or after the current index."""
-        index = self.index
-        while index < len(self.lines):
-            line = self.lines[index]
-            if line.strip() != '':
-                return line
-            index += 1
-        return None
-
 
 class StreamBlockState(BlockState):
     """Block state backed by a lazy :class:`StreamLineBuffer`."""
@@ -460,12 +450,3 @@ class StreamBlockState(BlockState):
 
     def line_at(self, index: int) -> str:
         return self.line_buffer.get(index)
-
-    def first_nonblank_from_current(self) -> str | None:
-        offset = 0
-        while self.has(offset):
-            line = self.peek(offset)
-            if line.strip() != '':
-                return line
-            offset += 1
-        return None
