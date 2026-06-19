@@ -5,7 +5,8 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar
 
-from wenmode.nodes import Node, Parent, Position, Text, position_from_offsets
+from wenmode._positions import position_from_offsets
+from wenmode.nodes import Node, Parent, Position, Text
 from wenmode.renderers import MarkdownRenderer, RenderContext
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer
@@ -166,8 +167,6 @@ def replace_abbreviations(
 
 
 def text_position(node: Text, start: int, end: int) -> Position | None:
-    if node.position is None:
-        return None
     return position_from_offsets(node.position, node.value, start, end)
 
 

@@ -3,8 +3,9 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING
 
+from wenmode._positions import position_from_offsets
 from wenmode.nodes import List as ListNode
-from wenmode.nodes import ListItem, Node, Paragraph, Text, position_from_offsets
+from wenmode.nodes import ListItem, Node, Paragraph, Text
 from wenmode.state import BlockState
 from wenmode.utils import count_indent, count_indent_from, expand_leading_tabs
 
@@ -223,8 +224,7 @@ def apply_task_list_marker(item: ListItem) -> None:
         return
 
     item.checked = match.group(1).lower() == 'x'
-    if text.position is not None:
-        text.position = position_from_offsets(text.position, text.value, match.end(), len(text.value))
+    text.position = position_from_offsets(text.position, text.value, match.end(), len(text.value))
     text.value = text.value[match.end() :]
     if text.value == '':
         paragraph.children.pop(0)

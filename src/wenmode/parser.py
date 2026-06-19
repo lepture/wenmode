@@ -5,7 +5,8 @@ import string
 from collections.abc import Callable, Iterable, Iterator
 from typing import TypeVar, cast
 
-from .nodes import Node, Paragraph, Point, Root, Text, advance_point
+from ._positions import advance_point
+from .nodes import Node, Paragraph, Point, Root, Text
 from .rules.base import BlockRule, ContinueRule, InlineRule, Rule
 from .rules.blocks.html import is_html_block_tag
 from .rules.inlines.emphasis import parse_emphasis_sequence
@@ -94,9 +95,9 @@ class Parser:
         self._emphasis_enabled = 'emphasis' in self.rules
         self._defer_inlines = any(transform.defer_inlines for transform in root_transforms)
         self._inline_rule_order = {rule.name: index for index, rule in enumerate(self.inline_rules)}
-        self._triggered_inline_rules, self._search_inline_rules = self._prepare_inline_dispatch(self.inline_rules)
-        self._inline_trigger_re = self._compile_inline_trigger_re(self._triggered_inline_rules)
-        self._block_openers = self._compile_block_openers(self.block_rules)
+        self._triggered_inline_rules, self._search_inline_rules = prepare_inline_dispatch(self.inline_rules)
+        self._inline_trigger_re = compile_inline_trigger_re(self._triggered_inline_rules)
+        self._block_openers = compile_block_openers(self.block_rules)
 
     def parse(self, source: LineSource) -> Root:
         """Parse Markdown into a root node.
@@ -341,7 +342,7 @@ class Parser:
     def _find_inline_match(
         self, text: str, pos: int, search_cache: InlineSearchCache
     ) -> tuple[int, InlineRule, re.Match[str]] | None:
-        found = self._find_search_inline_match(text, pos, search_cache)
+        found = self._search_inline_match(text, pos, search_cache)
         if found is not None:
             limit = found[0]
         else:
@@ -362,7 +363,7 @@ class Parser:
             trigger_match = self._inline_trigger_re.search(text, start + 1)
         return found
 
-    def _find_search_inline_match(
+    def _search_inline_match(
         self, text: str, pos: int, search_cache: InlineSearchCache
     ) -> tuple[int, InlineRule, re.Match[str]] | None:
         cached_text = search_cache.get('text')
@@ -492,35 +493,6 @@ class Parser:
         char = line[0]
         return not char.isspace() and not char.isdigit() and char not in PUNCTUATION
 
-    @staticmethod
-    def _compile_block_openers(rules: list[BlockRule]) -> re.Pattern[str] | None:
-        patterns = [f'(?P<{rule.name}>{rule.pattern})' for rule in rules]
-        if patterns:
-            return re.compile('|'.join(patterns))
-        return None
-
-    @staticmethod
-    def _prepare_inline_dispatch(
-        rules: list[InlineRule],
-    ) -> tuple[dict[str, list[InlineRule]], list[InlineRule]]:
-        triggered: dict[str, list[InlineRule]] = {}
-        search: list[InlineRule] = []
-        for rule in rules:
-            if rule.name == 'emphasis':
-                continue
-            if not rule.trigger_chars:
-                search.append(rule)
-                continue
-            for char in rule.trigger_chars:
-                triggered.setdefault(char, []).append(rule)
-        return triggered, search
-
-    @staticmethod
-    def _compile_inline_trigger_re(rules: dict[str, list[InlineRule]]) -> re.Pattern[str] | None:
-        if not rules:
-            return None
-        return re.compile(f'[{re.escape("".join(rules))}]')
-
     def inline_source(self, text: str, start: int, end: int) -> SourceMap | None:
         """Return a source map for a slice of the active inline source."""
         if not self.positions:
@@ -593,3 +565,30 @@ def collect_root_transforms(rules: list[Rule]) -> list[RootTransform]:
             seen.add(transform.name)
             transforms.append(transform)
     return transforms
+
+
+def compile_block_openers(rules: list[BlockRule]) -> re.Pattern[str] | None:
+    patterns = [f'(?P<{rule.name}>{rule.pattern})' for rule in rules]
+    if patterns:
+        return re.compile('|'.join(patterns))
+    return None
+
+
+def prepare_inline_dispatch(rules: list[InlineRule]) -> tuple[dict[str, list[InlineRule]], list[InlineRule]]:
+    triggered: dict[str, list[InlineRule]] = {}
+    search: list[InlineRule] = []
+    for rule in rules:
+        if rule.name == 'emphasis':
+            continue
+        if not rule.trigger_chars:
+            search.append(rule)
+            continue
+        for char in rule.trigger_chars:
+            triggered.setdefault(char, []).append(rule)
+    return triggered, search
+
+
+def compile_inline_trigger_re(rules: dict[str, list[InlineRule]]) -> re.Pattern[str] | None:
+    if not rules:
+        return None
+    return re.compile(f'[{re.escape("".join(rules))}]')

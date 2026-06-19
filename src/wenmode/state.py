@@ -4,7 +4,8 @@ from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass, field
 from typing import Any, Generic, TypeVar, cast
 
-from wenmode.nodes import Node, Point, Position, advance_point
+from wenmode._positions import advance_point
+from wenmode.nodes import Node, Point, Position
 
 LineSource = str | Iterable[str]
 T = TypeVar('T')
