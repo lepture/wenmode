@@ -11,7 +11,7 @@ from wenmode.renderers.rst import RSTRenderContext, RSTRenderer, indent_block
 from wenmode.rules.base import BlockRule, InlineRule, Rule
 from wenmode.rules.blocks.util import collect_until
 from wenmode.state import BlockState
-from wenmode.utils import is_escaped
+from wenmode.utils import is_escaped, match_pattern
 
 from .types import RendererHandlers
 
@@ -54,9 +54,7 @@ class MathBlockRule(BlockRule):
         if rest:
             lines.append(rest + '\n')
         state.advance()
-
-        lines.extend(collect_until(state, lambda line: MATH_CLOSER_RE.match(line) is not None))
-
+        lines.extend(collect_until(state, lambda line: match_pattern(MATH_CLOSER_RE, line)))
         return MathNode(value=''.join(lines))
 
 

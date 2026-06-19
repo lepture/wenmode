@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from wenmode.nodes import Blockquote as BlockquoteNode
 from wenmode.state import BlockState
-from wenmode.utils import expand_leading_tabs
+from wenmode.utils import expand_leading_tabs, match_pattern
 
 from ..base import BlockRule
 from .util import parse_shallow_block
@@ -45,7 +45,7 @@ class Blockquote(BlockRule):
             quote = BLOCKQUOTE_RE.match(line)
             if quote is None:
                 if paragraph_open and line.strip() != '' and not parser.is_paragraph_interrupt(line, state):
-                    if lazy_used and is_setext_marker(line):
+                    if lazy_used and match_pattern(SETEXT_MARKER_RE, line):
                         prefix = '    '
                     else:
                         prefix = ''
@@ -65,17 +65,13 @@ class Blockquote(BlockRule):
             lines.append(text)
             source.add(state.index, quote.start(1), text)
             paragraph_open = content.strip() != '' and (
-                not starts_nonparagraph_block(parser, content) or has_nested_blockquote(content)
+                not starts_nonparagraph_block(parser, content) or match_pattern(NESTED_BLOCKQUOTE_RE, content)
             )
             lazy_used = False
             state.advance()
 
         text = ''.join(lines)
         return BlockquoteNode(children=parser.parse_blocks(text, parent_state=state, source=source.map()))
-
-
-def has_nested_blockquote(line: str) -> bool:
-    return NESTED_BLOCKQUOTE_RE.match(line) is not None
 
 
 def starts_nonparagraph_block(parser: Parser, line: str) -> bool:
@@ -94,7 +90,3 @@ def starts_nonparagraph_block(parser: Parser, line: str) -> bool:
         if isinstance(rule, BlockRule) and re.match(rule.pattern, line):
             return True
     return False
-
-
-def is_setext_marker(line: str) -> bool:
-    return SETEXT_MARKER_RE.match(line) is not None

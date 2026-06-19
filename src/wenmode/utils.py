@@ -78,3 +78,7 @@ def filter_disallowed_html(value: str, pattern: re.Pattern[str] | None) -> str:
     if pattern is None:
         return value
     return pattern.sub('&lt;', value)
+
+
+def match_pattern(pattern: re.Pattern[str], line: str) -> bool:
+    return pattern.match(line) is not None

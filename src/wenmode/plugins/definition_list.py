@@ -11,6 +11,7 @@ from wenmode.renderers.rst import RSTRenderContext, RSTRenderer, indent_block
 from wenmode.rules.base import ContinueRule, Rule
 from wenmode.state import BlockState, SourceCollector
 
+from ..utils import match_pattern
 from .types import RendererHandlers
 
 if TYPE_CHECKING:
@@ -148,7 +149,7 @@ def parse_following_terms(state: BlockState) -> tuple[list[str], int, int] | Non
         line = state.line_at(index)
         if line.strip() == '':
             return None
-        if DESCRIPTION_RE.match(line) is not None:
+        if match_pattern(DESCRIPTION_RE, line):
             if terms:
                 return terms, start_index, index
             return None
