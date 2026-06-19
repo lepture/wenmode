@@ -16,6 +16,7 @@ from .state import (
     LineSource,
     NullSourceTracker,
     PositionSourceTracker,
+    SourceCollector,
     SourceMap,
     StreamBlockState,
     StreamLineBuffer,
@@ -397,8 +398,35 @@ class Parser:
         return self._inline_rule_order[candidate[1].name] < self._inline_rule_order[current[1].name]
 
     def _parse_paragraph(self, state: BlockState) -> Node:
-        lines: list[str] = []
+        if self.positions:
+            return self._parse_positioned_paragraph(state)
+        return self._parse_plain_paragraph(state)
+
+    def _parse_plain_paragraph(self, state: BlockState) -> Node:
+        lines, parsed = self._read_paragraph_lines(state)
+        if parsed is not None:
+            return parsed
+        text = ''.join(lines).strip()
+        return Paragraph(children=self.parse_inlines(text, state))
+
+    def _parse_positioned_paragraph(self, state: BlockState) -> Node:
         source = state.source.collect()
+        lines, parsed = self._read_paragraph_lines(state, source)
+        if parsed is not None:
+            return parsed
+        raw_text = ''.join(lines)
+        start = len(raw_text) - len(raw_text.lstrip())
+        end = len(raw_text.rstrip())
+        text = raw_text[start:end]
+        inline_source = source.map()
+        if inline_source is not None:
+            inline_source = inline_source.slice(start, end)
+        return Paragraph(children=self.parse_inlines(text, state, source=inline_source))
+
+    def _read_paragraph_lines(
+        self, state: BlockState, source: SourceCollector | None = None
+    ) -> tuple[list[str], Node | None]:
+        lines: list[str] = []
         while not state.done:
             line = state.line
             if line.strip() == '':
@@ -409,25 +437,18 @@ class Parser:
                         continue
                     parsed = continuation.parse_paragraph_continuation(self, state, lines)
                     if parsed is not None:
-                        return parsed
+                        return lines, parsed
             if lines and self.is_paragraph_interrupt(line, state):
                 break
             if lines:
                 text = line.lstrip(' \t')
             else:
                 text = line
-            source.add(state.index, len(line) - len(text), text)
+            if source is not None:
+                source.add(state.index, len(line) - len(text), text)
             lines.append(text)
             state.advance()
-
-        raw_text = ''.join(lines)
-        start = len(raw_text) - len(raw_text.lstrip())
-        end = len(raw_text.rstrip())
-        text = raw_text[start:end]
-        inline_source = source.map()
-        if inline_source is not None:
-            inline_source = inline_source.slice(start, end)
-        return Paragraph(children=self.parse_inlines(text, state, source=inline_source))
+        return lines, None
 
     def _resolve_pending_inlines(self, state: BlockState) -> None:
         state.defer_inlines = False
