@@ -11,6 +11,17 @@ releases.
 This page records notable changes for released versions. Add unreleased entries
 here while preparing a release, then move them under the final version heading.
 
+## 0.1.1
+
+Released **Jun 19, 2026**.
+
+- Avoid potential regex DoS cases in ATX heading parsing, inline directives,
+  spoiler spans, and extended autolink trimming.
+- Change `RootTransform` from a protocol to a base class with default no-op
+  hooks, making custom root transforms easier to define without requiring
+  boilerplate `prepare()` methods.
+- Improve `StateKey` type hints for typed parser extension state.
+
 ## 0.1.0
 
 Released **Jun 18, 2026**.
