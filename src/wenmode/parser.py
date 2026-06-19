@@ -5,7 +5,7 @@ import string
 from collections.abc import Callable, Iterable, Iterator
 from typing import TypeVar, cast
 
-from .nodes import Node, Paragraph, Point, Root, Text
+from .nodes import Node, Paragraph, Root, Text
 from .rules.base import BlockRule, ContinueRule, InlineRule, Rule
 from .rules.blocks.html import is_html_block_tag
 from .rules.inlines.emphasis import parse_emphasis_sequence
@@ -108,6 +108,7 @@ class Parser:
         state = self._create_block_state(source, defer_inlines=self._defer_inlines)
         root = Root(children=self._parse_block_nodes(state))
         if self.positions:
+            root._line_starts = create_line_starts(state.lines)
             root.position = state.source.position_between(0, len(state.lines))
         for transform in self.root_transforms:
             transform.prepare(self, root, state)
@@ -150,7 +151,7 @@ class Parser:
         lines = text.splitlines(keepends=True)
         source_tracker: NullSourceTracker
         if self.positions and source is not None:
-            source_tracker = PositionSourceTracker(source.line_points(lines))
+            source_tracker = PositionSourceTracker(source.line_offsets(lines))
         else:
             source_tracker = NullSourceTracker()
         state = BlockState(
@@ -169,7 +170,7 @@ class Parser:
         if isinstance(source, str):
             lines = source.splitlines(keepends=True)
             if self.positions:
-                source_tracker = PositionSourceTracker(create_line_points(lines))
+                source_tracker = PositionSourceTracker(create_line_starts(lines))
             else:
                 source_tracker = NullSourceTracker()
             return BlockState(
@@ -180,7 +181,7 @@ class Parser:
 
         line_buffer = StreamLineBuffer(source, track_positions=self.positions)
         if self.positions:
-            source_tracker = PositionSourceTracker(cast(list[Point], line_buffer.line_points))
+            source_tracker = PositionSourceTracker(cast(list[int], line_buffer.line_offsets))
         else:
             source_tracker = NullSourceTracker()
         return StreamBlockState(
@@ -567,18 +568,15 @@ def sorted_by_order(rules: list[T]) -> list[T]:
     return [rule for _, rule in sorted(enumerate(rules), key=lambda item: (item[1].order, item[0]))]
 
 
-def create_line_points(lines: list[str]) -> list[Point]:
-    points: list[Point] = []
-    point = Point(line=1, column=1, offset=0)
+def create_line_starts(lines: list[str]) -> list[int]:
+    starts = [0]
+    offset = 0
     for line in lines:
-        points.append(point)
         length = len(line)
-        offset = point.offset + length
+        offset += length
         if length > 0 and line[length - 1] == '\n':
-            point = Point(line=point.line + 1, column=1, offset=offset)
-        else:
-            point = Point(line=point.line, column=point.column + length, offset=offset)
-    return points
+            starts.append(offset)
+    return starts
 
 
 def collect_root_transforms(rules: list[Rule]) -> list[RootTransform]:

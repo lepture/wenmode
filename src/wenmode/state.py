@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-import bisect
 from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass, field
 from typing import Any, Generic, TypeVar, cast
 
-from wenmode._positions import advance_point
-from wenmode.nodes import Node, Point, Position
+from wenmode.nodes import Node, Position
 
 LineSource = str | Iterable[str]
 T = TypeVar('T')
@@ -18,76 +16,59 @@ class SourceSegment:
 
     start: int
     end: int
-    point: Point
+    offset: int
 
 
 class SourceMap:
-    """Map parser text offsets back to source points."""
+    """Map parser text offsets back to source offsets."""
 
-    __slots__ = ('_cached_offset', '_cached_point', '_segment_starts', '_text_length', 'segments', 'text')
+    __slots__ = ('_text_length', 'segments', 'text')
 
     def __init__(self, text: str, segments: list[SourceSegment]) -> None:
         self.text = text
         self._text_length = len(text)
         self.segments = segments
-        self._segment_starts = [segment.start for segment in segments]
-        self._cached_offset: int | None = None
-        self._cached_point: Point | None = None
 
     @classmethod
-    def contiguous(cls, text: str, point: Point) -> SourceMap:
-        return cls(text, [SourceSegment(0, len(text), point)])
+    def contiguous(cls, text: str, offset: int) -> SourceMap:
+        return cls(text, [SourceSegment(0, len(text), offset)])
 
     @classmethod
-    def from_parts(cls, parts: list[tuple[str, Point]]) -> SourceMap:
+    def from_parts(cls, parts: list[tuple[str, int]]) -> SourceMap:
         text_parts: list[str] = []
         segments: list[SourceSegment] = []
         offset = 0
-        for text, point in parts:
+        for text, source_offset in parts:
             text_parts.append(text)
-            segments.append(SourceSegment(offset, offset + len(text), point))
+            segments.append(SourceSegment(offset, offset + len(text), source_offset))
             offset += len(text)
         return cls(''.join(text_parts), segments)
 
-    def point(self, offset: int) -> Point:
+    def source_offset(self, offset: int) -> int:
         if not self.segments:
-            return Point(line=1, column=1, offset=0)
+            return 0
 
         if offset < 0:
             offset = 0
         elif offset > self._text_length:
             offset = self._text_length
-        if offset == self._cached_offset and self._cached_point is not None:
-            return self._cached_point
 
-        if len(self.segments) == 1:
-            segment = self.segments[0]
-        else:
-            segment = self._segment_at(offset)
-        if offset == segment.start:
-            point = segment.point
-        elif segment.start < offset <= segment.end:
-            point = advance_point(segment.point, self.text[segment.start : offset])
-        elif offset <= self.segments[0].start:
-            point = self.segments[0].point
-        else:
-            segment = self.segments[-1]
-            point = advance_point(segment.point, self.text[segment.start : segment.end])
+        if offset <= self.segments[0].start:
+            return self.segments[0].offset
 
-        self._cached_offset = offset
-        self._cached_point = point
-        return point
+        for segment in self.segments:
+            if offset == segment.start:
+                return segment.offset
 
-    def _segment_at(self, offset: int) -> SourceSegment:
-        index = bisect.bisect_left(self._segment_starts, offset)
-        if index < len(self.segments) and self._segment_starts[index] == offset:
-            return self.segments[index]
-        if index == 0:
-            return self.segments[0]
-        return self.segments[index - 1]
+        for segment in self.segments:
+            if segment.start < offset <= segment.end:
+                return segment.offset + offset - segment.start
+
+        segment = self.segments[-1]
+        return segment.offset + segment.end - segment.start
 
     def position(self, start: int, end: int) -> Position:
-        return Position(start=self.point(start), end=self.point(end))
+        return Position(start=self.source_offset(start), end=self.source_offset(end))
 
     def slice(self, start: int, end: int) -> SourceMap:
         if start < 0:
@@ -111,27 +92,27 @@ class SourceMap:
             if segment_start > segment_end:
                 continue
             if segment_start == segment.start:
-                point = segment.point
+                source_offset = segment.offset
             else:
-                point = self.point(segment_start)
+                source_offset = self.source_offset(segment_start)
             segments.append(
                 SourceSegment(
                     start=segment_start - start,
                     end=segment_end - start,
-                    point=point,
+                    offset=source_offset,
                 )
             )
         if not segments:
-            segments.append(SourceSegment(0, 0, self.point(start)))
+            segments.append(SourceSegment(0, 0, self.source_offset(start)))
         return SourceMap(text, segments)
 
-    def line_points(self, lines: list[str]) -> list[Point]:
-        points: list[Point] = []
+    def line_offsets(self, lines: list[str]) -> list[int]:
+        offsets: list[int] = []
         offset = 0
         for line in lines:
-            points.append(self.point(offset))
+            offsets.append(self.source_offset(offset))
             offset += len(line)
-        return points
+        return offsets
 
 
 class SourceCollector:
@@ -162,12 +143,12 @@ class PositionSourceCollector(SourceCollector):
 
     def __init__(self, tracker: PositionSourceTracker) -> None:
         self.tracker = tracker
-        self.parts: list[tuple[str, Point]] = []
+        self.parts: list[tuple[str, int]] = []
 
     def add(self, index: int, offset: int, text: str) -> None:
-        point = self.tracker.point_at_line_offset(index, offset)
-        if point is not None:
-            self.parts.append((text, point))
+        source_offset = self.tracker.offset_at_line_offset(index, offset)
+        if source_offset is not None:
+            self.parts.append((text, source_offset))
 
     def map(self) -> SourceMap | None:
         if not self.parts:
@@ -184,10 +165,10 @@ class NullSourceTracker:
         """Bind this tracker to a block state."""
         return None
 
-    def point_at_index(self, index: int) -> Point | None:
+    def offset_at_index(self, index: int) -> int | None:
         return None
 
-    def point_at_line_offset(self, index: int, offset: int) -> Point | None:
+    def offset_at_line_offset(self, index: int, offset: int) -> int | None:
         return None
 
     def position_between(self, start_index: int, end_index: int) -> Position | None:
@@ -209,10 +190,10 @@ class NullSourceTracker:
 class PositionSourceTracker(NullSourceTracker):
     """Source tracker that maps generated parser text to source positions."""
 
-    __slots__ = ('_state', 'line_points')
+    __slots__ = ('_state', 'line_offsets')
 
-    def __init__(self, line_points: list[Point]) -> None:
-        self.line_points = line_points
+    def __init__(self, line_offsets: list[int]) -> None:
+        self.line_offsets = line_offsets
         self._state: BlockState | None = None
 
     def bind(self, state: BlockState) -> None:
@@ -223,44 +204,44 @@ class PositionSourceTracker(NullSourceTracker):
             raise RuntimeError('source tracker is not bound to a state')
         return self._state
 
-    def point_at_index(self, index: int) -> Point | None:
+    def offset_at_index(self, index: int) -> int | None:
         state = self._require_state()
-        if 0 <= index < len(self.line_points):
-            return self.line_points[index]
+        if 0 <= index < len(self.line_offsets):
+            return self.line_offsets[index]
         if index <= 0:
-            return Point(line=1, column=1, offset=0)
-        if not state.lines or not self.line_points:
-            return Point(line=1, column=1, offset=0)
+            return 0
+        if not state.lines or not self.line_offsets:
+            return 0
         last_index = len(state.lines) - 1
-        return advance_point(self.line_points[last_index], state.lines[last_index])
+        return self.line_offsets[last_index] + len(state.lines[last_index])
 
-    def point_at_line_offset(self, index: int, offset: int) -> Point | None:
-        point = self.point_at_index(index)
-        if point is None:
+    def offset_at_line_offset(self, index: int, offset: int) -> int | None:
+        source_offset = self.offset_at_index(index)
+        if source_offset is None:
             return None
         if offset <= 0:
-            return point
-        return advance_point(point, self._require_state().line_at(index)[:offset])
+            return source_offset
+        return source_offset + offset
 
     def position_between(self, start_index: int, end_index: int) -> Position | None:
-        start = self.point_at_index(start_index)
-        end = self.point_at_index(end_index)
+        start = self.offset_at_index(start_index)
+        end = self.offset_at_index(end_index)
         if start is None or end is None:
             return None
         return Position(start=start, end=end)
 
     def line_position(self, index: int, start: int, end: int) -> Position | None:
-        start_point = self.point_at_line_offset(index, start)
-        end_point = self.point_at_line_offset(index, end)
-        if start_point is None or end_point is None:
+        start_offset = self.offset_at_line_offset(index, start)
+        end_offset = self.offset_at_line_offset(index, end)
+        if start_offset is None or end_offset is None:
             return None
-        return Position(start=start_point, end=end_point)
+        return Position(start=start_offset, end=end_offset)
 
     def line_text(self, index: int, offset: int, text: str) -> SourceMap | None:
-        point = self.point_at_line_offset(index, offset)
-        if point is None:
+        source_offset = self.offset_at_line_offset(index, offset)
+        if source_offset is None:
             return None
-        return SourceMap.contiguous(text, point)
+        return SourceMap.contiguous(text, source_offset)
 
     def paragraph(self, lines: list[str], start_index: int) -> SourceMap | None:
         state = self._require_state()
@@ -323,12 +304,12 @@ class StreamLineBuffer:
     def __init__(self, source: Iterable[str], track_positions: bool = False) -> None:
         self.lines: list[str] = []
         if track_positions:
-            self.line_points: list[Point] | None = []
+            self.line_offsets: list[int] | None = []
         else:
-            self.line_points = None
+            self.line_offsets = None
         self._iterator: Iterator[str] = iter(source)
         self._exhausted = False
-        self._next_point = Point(line=1, column=1, offset=0)
+        self._next_offset = 0
 
     def has(self, index: int) -> bool:
         """Return whether a line index can be read."""
@@ -348,9 +329,9 @@ class StreamLineBuffer:
                 self._exhausted = True
                 break
             self.lines.append(line)
-            if self.line_points is not None:
-                self.line_points.append(self._next_point)
-                self._next_point = advance_point(self._next_point, line)
+            if self.line_offsets is not None:
+                self.line_offsets.append(self._next_offset)
+                self._next_offset += len(line)
 
 
 @dataclass

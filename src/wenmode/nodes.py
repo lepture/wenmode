@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import bisect
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -24,13 +26,18 @@ class Point:
 class Position:
     """Source range for a node."""
 
-    start: Point
-    end: Point
+    start: int
+    end: int
 
-    def to_ast(self) -> dict[str, dict[str, int]]:
+    def to_ast(self, line_starts: Sequence[int] | None = None) -> dict[str, dict[str, int]]:
+        if line_starts is None:
+            return {
+                'start': {'offset': self.start},
+                'end': {'offset': self.end},
+            }
         return {
-            'start': self.start.to_ast(),
-            'end': self.end.to_ast(),
+            'start': _point_ast_from_offset(line_starts, self.start),
+            'end': _point_ast_from_offset(line_starts, self.end),
         }
 
 
@@ -53,17 +60,20 @@ class Node:
         :returns: A dictionary made from strings, numbers, lists, and nested
             dictionaries.
         """
+        return self._to_ast(None)
+
+    def _to_ast(self, line_starts: Sequence[int] | None) -> dict[str, Any]:
         data: dict[str, Any] = {'type': self.type}
         for key, value in self.__dict__.items():
             if key == 'type' or key.startswith('_') or value is None:
                 continue
             if isinstance(value, Position):
-                data[key] = value.to_ast()
+                data[key] = value.to_ast(line_starts)
                 continue
             if isinstance(value, list):
-                data[key] = [item.to_ast() if isinstance(item, Node) else item for item in value]
+                data[key] = [item._to_ast(line_starts) if isinstance(item, Node) else item for item in value]
             elif isinstance(value, Node):
-                data[key] = value.to_ast()
+                data[key] = value._to_ast(line_starts)
             else:
                 data[key] = value
         return data
@@ -88,7 +98,11 @@ class Root(Parent):
     """Document root node."""
 
     _footnote_definitions: dict[str, FootnoteDefinition] | None = field(default=None, repr=False)
+    _line_starts: list[int] | None = field(default=None, repr=False)
     type: str = 'root'
+
+    def to_ast(self) -> dict[str, Any]:
+        return self._to_ast(self._line_starts)
 
     @property
     def footnote_definitions(self) -> dict[str, FootnoteDefinition] | None:
@@ -98,6 +112,17 @@ class Root(Parent):
     @footnote_definitions.setter
     def footnote_definitions(self, definitions: dict[str, FootnoteDefinition] | None) -> None:
         self._footnote_definitions = definitions
+
+
+def _point_ast_from_offset(line_starts: Sequence[int], offset: int) -> dict[str, int]:
+    index = bisect.bisect_right(line_starts, offset) - 1
+    if index < 0:
+        index = 0
+    return {
+        'line': index + 1,
+        'column': offset - line_starts[index] + 1,
+        'offset': offset,
+    }
 
 
 @dataclass

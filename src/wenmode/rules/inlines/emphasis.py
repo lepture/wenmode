@@ -4,7 +4,6 @@ import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from wenmode._positions import position_from_offsets
 from wenmode.nodes import Emphasis as EmphasisNode
 from wenmode.nodes import Node, Position
 from wenmode.nodes import Strong as StrongNode
@@ -95,7 +94,10 @@ def split_text_node(
     while pos < len(text):
         if text[pos] not in '*_':
             next_pos = next_delimiter_run(text, pos)
-            position = position_from_offsets(node.position, text, pos, next_pos)
+            if node.position is None:
+                position = None
+            else:
+                position = Position(start=node.position.start + pos, end=node.position.start + next_pos)
             parts.append(TextNode(value=text[pos:next_pos], position=position))
             pos = next_pos
             continue
@@ -110,7 +112,10 @@ def split_text_node(
         opener = can_open(source, absolute, run_length, marker)
         closer = can_close(source, absolute, run_length, marker)
         part_index = len(parts)
-        position = position_from_offsets(node.position, text, pos, end)
+        if node.position is None:
+            position = None
+        else:
+            position = Position(start=node.position.start + pos, end=node.position.start + end)
         parts.append(TextNode(value=text[pos:end], position=position))
         if opener or closer:
             delimiters.append(Delimiter(part_index, marker, delimiter_length, opener, closer))
@@ -174,12 +179,20 @@ def process_delimiters(parts: list[Node], delimiters: list[Delimiter]) -> None:
             continue
 
         node_position = emphasis_position(opener_text, closer_text, use_length)
-        remaining_opener_position = position_from_offsets(
-            opener_text.position, opener_text.value, 0, len(opener_text.value) - use_length
-        )
-        remaining_closer_position = position_from_offsets(
-            closer_text.position, closer_text.value, use_length, len(closer_text.value)
-        )
+        if opener_text.position is None:
+            remaining_opener_position = None
+        else:
+            remaining_opener_position = Position(
+                start=opener_text.position.start,
+                end=opener_text.position.start + len(opener_text.value) - use_length,
+            )
+        if closer_text.position is None:
+            remaining_closer_position = None
+        else:
+            remaining_closer_position = Position(
+                start=closer_text.position.start + use_length,
+                end=closer_text.position.start + len(closer_text.value),
+            )
         opener_text.value = opener_text.value[:-use_length]
         closer_text.value = closer_text.value[use_length:]
         opener_text.position = remaining_opener_position
@@ -234,11 +247,9 @@ def has_content(parts: list[Node], start: int, end: int) -> bool:
 
 
 def emphasis_position(opener: TextNode, closer: TextNode, size: int) -> Position | None:
-    opener_marker = position_from_offsets(opener.position, opener.value, len(opener.value) - size, len(opener.value))
-    closer_marker = position_from_offsets(closer.position, closer.value, 0, size)
-    if opener_marker is None or closer_marker is None:
+    if opener.position is None or closer.position is None:
         return None
-    return Position(start=opener_marker.start, end=closer_marker.end)
+    return Position(start=opener.position.end - size, end=closer.position.start + size)
 
 
 def can_match_delimiters(opener: Delimiter, closer: Delimiter) -> bool:
