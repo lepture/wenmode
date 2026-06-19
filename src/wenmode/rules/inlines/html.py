@@ -50,10 +50,18 @@ class Autolink(InlineRule):
     ) -> tuple[Node | None, int]:
         uri = match.groupdict().get('uri')
         if uri is not None:
-            return Link(url=normalize_uri(uri), children=[Text(value=uri)]), match.end()
+            text_node = Text(value=uri)
+            source = parser.inline_source(text, match.start('uri'), match.end('uri'))
+            if source is not None:
+                text_node.position = source.position(0, len(uri))
+            return Link(url=normalize_uri(uri), children=[text_node]), match.end()
 
         email = match.group('email')
-        return Link(url='mailto:' + normalize_uri(email), children=[Text(value=email)]), match.end()
+        text_node = Text(value=email)
+        source = parser.inline_source(text, match.start('email'), match.end('email'))
+        if source is not None:
+            text_node.position = source.position(0, len(email))
+        return Link(url='mailto:' + normalize_uri(email), children=[text_node]), match.end()
 
 
 class RawHtml(InlineRule):

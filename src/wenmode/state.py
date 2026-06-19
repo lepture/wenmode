@@ -4,10 +4,94 @@ from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass, field
 from typing import Any, Generic, TypeVar, cast
 
-from wenmode.nodes import Node
+from wenmode.nodes import Node, Point, Position, advance_point
 
 LineSource = str | Iterable[str]
 T = TypeVar('T')
+
+
+@dataclass(frozen=True)
+class SourceSegment:
+    """Map a contiguous slice of generated parser text to source coordinates."""
+
+    start: int
+    end: int
+    point: Point
+
+
+class SourceMap:
+    """Map parser text offsets back to source points."""
+
+    def __init__(self, text: str, segments: list[SourceSegment]) -> None:
+        self.text = text
+        self.segments = segments
+
+    @classmethod
+    def contiguous(cls, text: str, point: Point) -> SourceMap:
+        return cls(text, [SourceSegment(0, len(text), point)])
+
+    @classmethod
+    def from_parts(cls, parts: list[tuple[str, Point]]) -> SourceMap:
+        text_parts: list[str] = []
+        segments: list[SourceSegment] = []
+        offset = 0
+        for text, point in parts:
+            text_parts.append(text)
+            segments.append(SourceSegment(offset, offset + len(text), point))
+            offset += len(text)
+        return cls(''.join(text_parts), segments)
+
+    def point(self, offset: int) -> Point:
+        if not self.segments:
+            return Point(line=1, column=1, offset=0)
+
+        offset = max(0, min(offset, len(self.text)))
+        for segment in self.segments:
+            if offset == segment.start:
+                return segment.point
+        for segment in self.segments:
+            if segment.start < offset <= segment.end:
+                return advance_point(segment.point, self.text[segment.start : offset])
+
+        if offset <= self.segments[0].start:
+            return self.segments[0].point
+
+        segment = self.segments[-1]
+        return advance_point(segment.point, self.text[segment.start : segment.end])
+
+    def position(self, start: int, end: int) -> Position:
+        return Position(start=self.point(start), end=self.point(end))
+
+    def slice(self, start: int, end: int) -> SourceMap:
+        start = max(0, min(start, len(self.text)))
+        end = max(start, min(end, len(self.text)))
+        text = self.text[start:end]
+        segments: list[SourceSegment] = []
+        for segment in self.segments:
+            if segment.end < start or segment.start > end:
+                continue
+            segment_start = max(segment.start, start)
+            segment_end = min(segment.end, end)
+            if segment_start > segment_end:
+                continue
+            segments.append(
+                SourceSegment(
+                    start=segment_start - start,
+                    end=segment_end - start,
+                    point=self.point(segment_start),
+                )
+            )
+        if not segments:
+            segments.append(SourceSegment(0, 0, self.point(start)))
+        return SourceMap(text, segments)
+
+    def line_points(self, lines: list[str]) -> list[Point]:
+        points: list[Point] = []
+        offset = 0
+        for line in lines:
+            points.append(self.point(offset))
+            offset += len(line)
+        return points
 
 
 @dataclass(frozen=True)
@@ -46,10 +130,12 @@ class StateStore:
 class StreamLineBuffer:
     """Lazy line buffer for iterable Markdown sources."""
 
-    def __init__(self, source: Iterable[str]) -> None:
+    def __init__(self, source: Iterable[str], track_positions: bool = False) -> None:
         self.lines: list[str] = []
+        self.line_points: list[Point] | None = [] if track_positions else None
         self._iterator: Iterator[str] = iter(source)
         self._exhausted = False
+        self._next_point = Point(line=1, column=1, offset=0)
 
     def has(self, index: int) -> bool:
         """Return whether a line index can be read."""
@@ -64,10 +150,14 @@ class StreamLineBuffer:
     def _fill(self, index: int) -> None:
         while not self._exhausted and index >= len(self.lines):
             try:
-                self.lines.append(next(self._iterator))
+                line = next(self._iterator)
             except StopIteration:
                 self._exhausted = True
                 break
+            self.lines.append(line)
+            if self.line_points is not None:
+                self.line_points.append(self._next_point)
+                self._next_point = advance_point(self._next_point, line)
 
 
 @dataclass
@@ -89,9 +179,11 @@ class BlockState:
 
     lines: list[str]
     index: int = 0
+    line_points: list[Point] | None = None
+    track_positions: bool = False
     store: StateStore = field(default_factory=StateStore)
     depth: int = 0
-    pending_inlines: list[tuple[list[Node], str]] = field(default_factory=list)
+    pending_inlines: list[tuple[list[Node], str, SourceMap | None]] = field(default_factory=list)
     pending_inline_callbacks: list[Callable[[], None]] = field(default_factory=list)
     defer_inlines: bool = False
 
@@ -138,6 +230,36 @@ class BlockState:
             index += 1
         return None
 
+    def tracks_positions(self) -> bool:
+        return self.track_positions and self.line_points is not None
+
+    def point_at_index(self, index: int) -> Point | None:
+        if not self.tracks_positions():
+            return None
+        if self.line_points is None:  # pragma: no cover
+            return None
+        if 0 <= index < len(self.line_points):
+            return self.line_points[index]
+        if index <= 0:
+            return Point(line=1, column=1, offset=0)
+        if not self.lines:
+            return Point(line=1, column=1, offset=0)
+        last_index = len(self.lines) - 1
+        return advance_point(self.line_points[last_index], self.lines[last_index])
+
+    def point_at_line_offset(self, index: int, offset: int) -> Point | None:
+        point = self.point_at_index(index)
+        if point is None:
+            return None
+        return advance_point(point, self.line_at(index)[:offset])
+
+    def position_between(self, start_index: int, end_index: int) -> Position | None:
+        start = self.point_at_index(start_index)
+        end = self.point_at_index(end_index)
+        if start is None or end is None:
+            return None
+        return Position(start=start, end=end)
+
 
 class StreamBlockState(BlockState):
     """Block state backed by a lazy :class:`StreamLineBuffer`."""
@@ -148,14 +270,17 @@ class StreamBlockState(BlockState):
         index: int = 0,
         store: StateStore | None = None,
         depth: int = 0,
-        pending_inlines: list[tuple[list[Node], str]] | None = None,
+        pending_inlines: list[tuple[list[Node], str, SourceMap | None]] | None = None,
         pending_inline_callbacks: list[Callable[[], None]] | None = None,
         defer_inlines: bool = False,
+        track_positions: bool = False,
     ) -> None:
         self.line_buffer = line_buffer
         super().__init__(
             line_buffer.lines,
             index=index,
+            line_points=line_buffer.line_points,
+            track_positions=track_positions,
             store=store if store is not None else StateStore(),
             depth=depth,
             pending_inlines=pending_inlines if pending_inlines is not None else [],

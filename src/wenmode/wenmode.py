@@ -24,6 +24,7 @@ class Wenmode:
         used.
     :param directives: HTML directive renderers to register on the default or
         supplied HTML renderer.
+    :param positions: Attach source positions to parsed nodes when ``True``.
     """
 
     def __init__(
@@ -31,8 +32,9 @@ class Wenmode:
         rules: Iterable[type[Rule] | Rule] | None = None,
         renderer: BaseRenderer | None = None,
         directives: Iterable[DirectiveHtmlRenderer] = (),
+        positions: bool = False,
     ) -> None:
-        self.parser = Parser(commonmark if rules is None else rules)
+        self.parser = Parser(commonmark if rules is None else rules, positions=positions)
         self.renderer = renderer if renderer is not None else HTMLRenderer(directives=directives)
         if renderer is not None:
             for directive in directives:

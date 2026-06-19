@@ -1,16 +1,16 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from typing import TYPE_CHECKING, ClassVar
 
 from wenmode.nodes import ContainerDirective as ContainerDirectiveNode
 from wenmode.nodes import LeafDirective as LeafDirectiveNode
-from wenmode.nodes import Node, Paragraph
+from wenmode.nodes import Node, Paragraph, Point
 from wenmode.state import BlockState
 
 from ..base import BlockRule
 from ..directives import parse_directive_head
-from .util import collect_until
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
@@ -84,10 +84,18 @@ class ContainerDirective(BlockRule):
 
         state.advance()
         closer = re.compile(rf'[ \t]{{0,3}}:{{{len(fence)},}}[ \t]*$')
-        lines = collect_until(state, lambda line: closer.match(line.rstrip('\r\n')) is not None)
+        lines, source_parts = collect_until_with_source(
+            state, lambda line: closer.match(line.rstrip('\r\n')) is not None
+        )
 
         children = directive_label_children(parser, label, state)
-        children.extend(parser.parse_blocks(''.join(lines), parent_state=state))
+        children.extend(
+            parser.parse_blocks(
+                ''.join(lines),
+                parent_state=state,
+                source=parser.source_map_from_parts(source_parts),
+            )
+        )
         return ContainerDirectiveNode(name=name, attributes=attributes, children=children)
 
 
@@ -132,10 +140,18 @@ class FencedDirective(BlockRule):
             state.advance()
 
         closer = re.compile(rf'[ \t]{{0,3}}{re.escape(fence_char)}{{{len(fence)},}}[ \t]*$')
-        lines = collect_until(state, lambda line: closer.match(line.rstrip('\r\n')) is not None)
+        lines, source_parts = collect_until_with_source(
+            state, lambda line: closer.match(line.rstrip('\r\n')) is not None
+        )
 
         children = directive_label_children(parser, title, state)
-        children.extend(parser.parse_blocks(''.join(lines), parent_state=state))
+        children.extend(
+            parser.parse_blocks(
+                ''.join(lines),
+                parent_state=state,
+                source=parser.source_map_from_parts(source_parts),
+            )
+        )
         return ContainerDirectiveNode(name=name, attributes=attributes or None, children=children)
 
 
@@ -163,3 +179,21 @@ def parse_option_line(line: str) -> tuple[str, str] | None:
     if match is None:
         return None
     return match.group(1), match.group(2) or ''
+
+
+def collect_until_with_source(
+    state: BlockState, is_closer: Callable[[str], bool]
+) -> tuple[list[str], list[tuple[str, Point]]]:
+    lines: list[str] = []
+    source_parts: list[tuple[str, Point]] = []
+    while not state.done:
+        line = state.line
+        if is_closer(line):
+            state.advance()
+            break
+        lines.append(line)
+        point = state.point_at_line_offset(state.index, 0)
+        if point is not None:
+            source_parts.append((line, point))
+        state.advance()
+    return lines, source_parts

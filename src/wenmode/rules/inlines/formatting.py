@@ -41,8 +41,11 @@ class Mark(InlineRule):
         if close == -1:
             return None, start
 
-        value = text[match.end() : close]
-        return MarkNode(children=parser.parse_inlines(value, state)), close + 2
+        value_start = match.end()
+        value = text[value_start:close]
+        return MarkNode(
+            children=parser.parse_inlines(value, state, source=parser.inline_source(text, value_start, close))
+        ), close + 2
 
 
 class Insert(InlineRule):
@@ -69,8 +72,11 @@ class Insert(InlineRule):
         if close == -1:
             return None, start
 
-        value = text[match.end() : close]
-        return InsertNode(children=parser.parse_inlines(value, state)), close + 2
+        value_start = match.end()
+        value = text[value_start:close]
+        return InsertNode(
+            children=parser.parse_inlines(value, state, source=parser.inline_source(text, value_start, close))
+        ), close + 2
 
 
 class Superscript(InlineRule):

@@ -4,6 +4,7 @@ import re
 from typing import TYPE_CHECKING
 
 from wenmode.nodes import Blockquote as BlockquoteNode
+from wenmode.nodes import Point
 from wenmode.state import BlockState
 from wenmode.utils import expand_leading_tabs
 
@@ -37,6 +38,7 @@ class Blockquote(BlockRule):
             return BlockquoteNode(children=parse_shallow_block(parser, BLOCKQUOTE_RE, state))
 
         lines: list[str] = []
+        source_parts: list[tuple[str, Point]] = []
         paragraph_open = False
         lazy_used = False
         while not state.done:
@@ -44,21 +46,32 @@ class Blockquote(BlockRule):
             quote = BLOCKQUOTE_RE.match(line)
             if quote is None:
                 if paragraph_open and line.strip() != '' and not parser.is_paragraph_interrupt(line, state):
-                    lines.append(('    ' if lazy_used and is_setext_marker(line) else '') + line)
+                    text = ('    ' if lazy_used and is_setext_marker(line) else '') + line
+                    lines.append(text)
+                    point = state.point_at_line_offset(state.index, 0)
+                    if point is not None:
+                        source_parts.append((text, point))
                     lazy_used = True
                     state.advance()
                     continue
                 break
             line_end = '\n' if line.endswith('\n') else ''
             content = expand_leading_tabs(quote.group(1), 2)
-            lines.append(content + line_end)
+            text = content + line_end
+            lines.append(text)
+            point = state.point_at_line_offset(state.index, quote.start(1))
+            if point is not None:
+                source_parts.append((text, point))
             paragraph_open = content.strip() != '' and (
                 not starts_nonparagraph_block(parser, content) or has_nested_blockquote(content)
             )
             lazy_used = False
             state.advance()
 
-        return BlockquoteNode(children=parser.parse_blocks(''.join(lines), parent_state=state))
+        text = ''.join(lines)
+        return BlockquoteNode(
+            children=parser.parse_blocks(text, parent_state=state, source=parser.source_map_from_parts(source_parts))
+        )
 
 
 def has_nested_blockquote(line: str) -> bool:

@@ -5,12 +5,12 @@ import string
 from collections.abc import Callable, Iterable, Iterator
 from typing import TypeVar, cast
 
-from .nodes import Node, Paragraph, Root, Text
+from .nodes import Node, Paragraph, Point, Root, Text, advance_point
 from .rules.base import BlockRule, ContinueRule, InlineRule, Rule
 from .rules.blocks.html import is_html_block_tag
 from .rules.inlines.emphasis import parse_emphasis_sequence
 from .rules.transforms import RootTransform
-from .state import BlockState, LineSource, StreamBlockState, StreamLineBuffer
+from .state import BlockState, LineSource, SourceMap, StreamBlockState, StreamLineBuffer
 
 LIST_MARKER_RE = re.compile(
     r'^[ \t]{0,3}(?:(?P<bullet>[*+-])|(?P<ordered>\d{1,9})[.)])(?P<spaces>[ \t]+|$)(?P<rest>.*)$'
@@ -34,12 +34,15 @@ class Parser:
     is created for each parse.
 
     :param rules: Rule classes or configured rule instances to enable.
+    :param positions: Attach source positions to parsed nodes when ``True``.
     """
 
     max_container_depth = 20
 
-    def __init__(self, rules: Iterable[type[Rule] | Rule]) -> None:
+    def __init__(self, rules: Iterable[type[Rule] | Rule], positions: bool = False) -> None:
+        self.positions = positions
         self._registered_rules: list[Rule] = []
+        self._inline_sources: list[SourceMap] = []
         self.register_rules(rules)
 
     def register_rule(self, rule: type[Rule] | Rule) -> None:
@@ -99,6 +102,8 @@ class Parser:
         """
         state = self._create_block_state(source, defer_inlines=self._defer_inlines)
         root = Root(children=self._parse_block_nodes(state))
+        if self.positions:
+            root.position = state.position_between(0, len(state.lines))
         for transform in self.root_transforms:
             transform.prepare(self, root, state)
         self._resolve_pending_inlines(state)
@@ -124,7 +129,7 @@ class Parser:
             if node is not None:
                 yield node
 
-    def parse_blocks(self, text: str, parent_state: BlockState) -> list[Node]:
+    def parse_blocks(self, text: str, parent_state: BlockState, source: SourceMap | None = None) -> list[Node]:
         """Parse nested block content using a parent parse state.
 
         Custom block rules should use this helper for nested Markdown content so
@@ -133,10 +138,15 @@ class Parser:
 
         :param text: Markdown block content.
         :param parent_state: Current block state from the outer parse.
+        :param source: Optional source map for ``text`` when positions are
+            enabled.
         :returns: Parsed child nodes.
         """
+        lines = text.splitlines(keepends=True)
         state = BlockState(
-            text.splitlines(keepends=True),
+            lines,
+            line_points=source.line_points(lines) if self.positions and source is not None else None,
+            track_positions=self.positions and source is not None,
             store=parent_state.store,
             depth=parent_state.depth + 1,
             pending_inlines=parent_state.pending_inlines,
@@ -147,8 +157,18 @@ class Parser:
 
     def _create_block_state(self, source: LineSource, defer_inlines: bool) -> BlockState:
         if isinstance(source, str):
-            return BlockState(source.splitlines(keepends=True), defer_inlines=defer_inlines)
-        return StreamBlockState(StreamLineBuffer(source), defer_inlines=defer_inlines)
+            lines = source.splitlines(keepends=True)
+            return BlockState(
+                lines,
+                line_points=create_line_points(lines) if self.positions else None,
+                track_positions=self.positions,
+                defer_inlines=defer_inlines,
+            )
+        return StreamBlockState(
+            StreamLineBuffer(source, track_positions=self.positions),
+            defer_inlines=defer_inlines,
+            track_positions=self.positions,
+        )
 
     def _parse_block_nodes(self, state: BlockState) -> list[Node]:
         children: list[Node] = []
@@ -167,8 +187,9 @@ class Parser:
                 state.advance()
                 continue
 
+            start_index = state.index
             if self._is_plain_paragraph_start(line):
-                return self._parse_paragraph(state)
+                return self._with_block_position(self._parse_paragraph(state, start_index), state, start_index)
 
             match = self._block_openers.match(line) if self._block_openers else None
             if match is not None and not self._container_depth_exceeded(match, state):
@@ -176,11 +197,11 @@ class Parser:
                 previous_index = state.index
                 parsed = rule.parse(self, state, match)
                 if parsed is not None:
-                    return parsed
+                    return self._with_block_position(parsed, state, start_index)
                 if state.index != previous_index:
                     continue
 
-            return self._parse_paragraph(state)
+            return self._with_block_position(self._parse_paragraph(state, start_index), state, start_index)
         return None
 
     def _assert_streaming_supported(self) -> None:
@@ -190,7 +211,7 @@ class Parser:
             'streaming output requires rules without deferred inline transforms; use the streaming preset'
         )
 
-    def parse_inlines(self, text: str, state: BlockState | None = None) -> list[Node]:
+    def parse_inlines(self, text: str, state: BlockState | None = None, source: SourceMap | None = None) -> list[Node]:
         """Parse inline Markdown into child nodes.
 
         Custom inline, block, and continuation rules can call this method when
@@ -199,11 +220,13 @@ class Parser:
         :param text: Inline Markdown source.
         :param state: Current block state, if parsing happens inside a document
             parse.
+        :param source: Optional source map for ``text`` when positions are
+            enabled.
         :returns: Parsed inline nodes.
         """
         if state is not None and state.defer_inlines:
             pending_nodes: list[Node] = []
-            state.pending_inlines.append((pending_nodes, text))
+            state.pending_inlines.append((pending_nodes, text, source if self.positions else None))
             return pending_nodes
 
         inline_state = state if state is not None else BlockState([])
@@ -211,29 +234,36 @@ class Parser:
         search_cache: InlineSearchCache = {}
         pos = 0
 
-        while pos < len(text):
-            found = self._find_inline_match(text, pos, search_cache)
+        if self.positions and source is not None:
+            self._inline_sources.append(source)
+        try:
+            while pos < len(text):
+                found = self._find_inline_match(text, pos, search_cache)
 
-            if found is None:
-                nodes.append(Text(value=text[pos:]))
-                break
+                if found is None:
+                    nodes.append(self._text_node(text, pos, len(text), source))
+                    break
 
-            start, rule, match = found
-            if start > pos:
-                nodes.append(Text(value=text[pos:start]))
+                start, rule, match = found
+                if start > pos:
+                    nodes.append(self._text_node(text, pos, start, source))
 
-            node, end = rule.parse(self, text, match, inline_state)
-            if node is None or end <= start:
-                nodes.append(Text(value=text[start : start + 1]))
-                pos = start + 1
-            else:
-                nodes.append(node)
-                pos = end
+                node, end = rule.parse(self, text, match, inline_state)
+                if node is None or end <= start:
+                    nodes.append(self._text_node(text, start, start + 1, source))
+                    pos = start + 1
+                else:
+                    self._set_inline_position(node, source, start, end)
+                    nodes.append(node)
+                    pos = end
 
-        nodes = merge_text(nodes)
-        if self._emphasis_enabled and contains_emphasis_marker(nodes):
-            nodes = parse_emphasis_sequence(nodes)
-        return merge_text(nodes)
+            nodes = merge_text(nodes)
+            if self._emphasis_enabled and contains_emphasis_marker(nodes):
+                nodes = parse_emphasis_sequence(nodes)
+            return merge_text(nodes)
+        finally:
+            if self.positions and source is not None:
+                self._inline_sources.pop()
 
     def _find_inline_match(
         self, text: str, pos: int, search_cache: InlineSearchCache
@@ -289,8 +319,9 @@ class Parser:
             return candidate[0] < current[0]
         return self._inline_rule_order[candidate[1].name] < self._inline_rule_order[current[1].name]
 
-    def _parse_paragraph(self, state: BlockState) -> Node:
+    def _parse_paragraph(self, state: BlockState, start_index: int) -> Node:
         lines: list[str] = []
+        source_parts: list[tuple[str, Point]] = []
         while not state.done:
             line = state.line
             if line.strip() == '':
@@ -304,18 +335,24 @@ class Parser:
                         return parsed
             if lines and self.is_paragraph_interrupt(line, state):
                 break
-            lines.append(line.lstrip(' \t') if lines else line)
+            text = line.lstrip(' \t') if lines else line
+            if self.positions:
+                point = state.point_at_line_offset(state.index, len(line) - len(text))
+                if point is not None:
+                    source_parts.append((text, point))
+            lines.append(text)
             state.advance()
 
-        text = ''.join(lines).strip()
-        return Paragraph(children=self.parse_inlines(text, state))
+        raw_text = ''.join(lines)
+        text, source = self._strip_source_text(raw_text, source_parts)
+        return Paragraph(children=self.parse_inlines(text, state, source=source))
 
     def _resolve_pending_inlines(self, state: BlockState) -> None:
         state.defer_inlines = False
         pending = list(state.pending_inlines)
         state.pending_inlines.clear()
-        for nodes, text in pending:
-            nodes[:] = self.parse_inlines(text, state)
+        for nodes, text, source in pending:
+            nodes[:] = self.parse_inlines(text, state, source=source)
         callbacks = list(state.pending_inline_callbacks)
         state.pending_inline_callbacks.clear()
         for callback in callbacks:
@@ -413,6 +450,64 @@ class Parser:
             return None
         return re.compile(f'[{re.escape("".join(rules))}]')
 
+    def inline_source(self, text: str, start: int, end: int) -> SourceMap | None:
+        """Return a source map for a slice of the active inline source."""
+        if not self.positions:
+            return None
+        for source in reversed(self._inline_sources):
+            if source.text == text:
+                return source.slice(start, end)
+        return None
+
+    def source_map_from_parts(self, parts: list[tuple[str, Point]]) -> SourceMap | None:
+        if not self.positions or not parts:
+            return None
+        return SourceMap.from_parts(parts)
+
+    def source_map_for_text(self, text: str, point: Point | None) -> SourceMap | None:
+        if not self.positions or point is None:
+            return None
+        return SourceMap.contiguous(text, point)
+
+    def paragraph_source(self, lines: list[str], state: BlockState, start_index: int) -> SourceMap | None:
+        if not self.positions:
+            return None
+        parts: list[tuple[str, Point]] = []
+        for offset, text in enumerate(lines):
+            index = start_index + offset
+            if index < 0 or index >= len(state.lines):
+                return None
+            raw_line = state.line_at(index)
+            point = state.point_at_line_offset(index, len(raw_line) - len(text))
+            if point is None:
+                return None
+            parts.append((text, point))
+        raw_text = ''.join(lines)
+        _, source = self._strip_source_text(raw_text, parts)
+        return source
+
+    def _strip_source_text(self, text: str, parts: list[tuple[str, Point]]) -> tuple[str, SourceMap | None]:
+        start = len(text) - len(text.lstrip())
+        end = len(text.rstrip())
+        stripped = text[start:end]
+        if not self.positions or not parts:
+            return stripped, None
+        return stripped, SourceMap.from_parts(parts).slice(start, end)
+
+    def _with_block_position(self, node: Node, state: BlockState, start_index: int) -> Node:
+        if self.positions and node.position is None:
+            node.position = state.position_between(start_index, state.index)
+        return node
+
+    def _text_node(self, text: str, start: int, end: int, source: SourceMap | None) -> Text:
+        node = Text(value=text[start:end])
+        self._set_inline_position(node, source, start, end)
+        return node
+
+    def _set_inline_position(self, node: Node, source: SourceMap | None, start: int, end: int) -> None:
+        if self.positions and node.position is None and source is not None:
+            node.position = source.position(start, end)
+
 
 def merge_text(nodes: list[Node]) -> list[Node]:
     merged: list[Node] = []
@@ -423,6 +518,8 @@ def merge_text(nodes: list[Node]) -> list[Node]:
             and isinstance(merged[-1], Text)
             and node._parse_emphasis == merged[-1]._parse_emphasis
         ):
+            if merged[-1].position is not None and node.position is not None:
+                merged[-1].position = type(merged[-1].position)(start=merged[-1].position.start, end=node.position.end)
             merged[-1].value += node.value
         else:
             merged.append(node)
@@ -438,3 +535,12 @@ def contains_emphasis_marker(nodes: list[Node]) -> bool:
 
 def sorted_by_order(rules: list[T]) -> list[T]:
     return [rule for _, rule in sorted(enumerate(rules), key=lambda item: (item[1].order, item[0]))]
+
+
+def create_line_points(lines: list[str]) -> list[Point]:
+    points: list[Point] = []
+    point = Point(line=1, column=1, offset=0)
+    for line in lines:
+        points.append(point)
+        point = advance_point(point, line)
+    return points

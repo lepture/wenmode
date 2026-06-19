@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING
 
-from wenmode.nodes import Node, TableCell, TableRow
+from wenmode.nodes import Node, Position, TableCell, TableRow
 from wenmode.nodes import Table as TableNode
 from wenmode.state import BlockState
 from wenmode.utils import is_escaped
@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 
 
 DELIMITER_CELL_RE = re.compile(r'^:?-+:?$')
+CellSpan = tuple[str, int, int]
 
 
 class Table(BlockRule):
@@ -41,32 +42,51 @@ class Table(BlockRule):
         if not has_unescaped_pipe(header_line):
             return None
 
-        header_cells = split_table_row(header_line)
+        header_cells = split_table_row_spans(header_line)
         align = parse_delimiter_row(delimiter_line)
         if align is None or len(header_cells) != len(align):
             return None
 
-        rows: list[Node] = [TableRow(children=parse_cells(parser, header_cells, state))]
+        header = TableRow(children=parse_cells(parser, header_cells, state, state.index))
+        if parser.positions:
+            header.position = state.position_between(state.index, state.index + 1)
+        rows: list[Node] = [header]
         state.advance(2)
 
         while not state.done:
             line = state.line.rstrip('\r\n')
             if line.strip() == '' or parser.is_paragraph_interrupt(line, state):
                 break
-            cells = normalize_row(split_table_row(line), len(align))
-            rows.append(TableRow(children=parse_cells(parser, cells, state)))
+            row_index = state.index
+            cells = normalize_row(split_table_row_spans(line), len(align), len(line))
+            row = TableRow(children=parse_cells(parser, cells, state, row_index))
+            if parser.positions:
+                row.position = state.position_between(row_index, row_index + 1)
+            rows.append(row)
             state.advance()
 
         return TableNode(children=rows, align=align)
 
 
-def parse_cells(parser: Parser, cells: list[str], state: BlockState) -> list[Node]:
-    return [TableCell(children=parser.parse_inlines(unescape_table_pipes(cell.strip()), state)) for cell in cells]
+def parse_cells(parser: Parser, cells: list[CellSpan], state: BlockState, line_index: int) -> list[Node]:
+    parsed: list[Node] = []
+    for raw, start, end in cells:
+        stripped = raw.strip()
+        leading = len(raw) - len(raw.lstrip())
+        text = unescape_table_pipes(stripped)
+        point = state.point_at_line_offset(line_index, start + leading)
+        cell = TableCell(children=parser.parse_inlines(text, state, source=parser.source_map_for_text(text, point)))
+        start_point = state.point_at_line_offset(line_index, start)
+        end_point = state.point_at_line_offset(line_index, end)
+        if start_point is not None and end_point is not None:
+            cell.position = Position(start=start_point, end=end_point)
+        parsed.append(cell)
+    return parsed
 
 
 def parse_delimiter_row(line: str) -> list[str | None] | None:
     align: list[str | None] = []
-    for cell in split_table_row(line):
+    for cell, _, _ in split_table_row_spans(line):
         value = cell.strip(' \t')
         if DELIMITER_CELL_RE.fullmatch(value) is None:
             return None
@@ -83,33 +103,40 @@ def parse_delimiter_row(line: str) -> list[str | None] | None:
     return align
 
 
-def normalize_row(cells: list[str], size: int) -> list[str]:
+def normalize_row(cells: list[CellSpan], size: int, end: int) -> list[CellSpan]:
     if len(cells) < size:
-        return cells + [''] * (size - len(cells))
+        return cells + [('', end, end)] * (size - len(cells))
     return cells[:size]
 
 
 def split_table_row(line: str) -> list[str]:
-    value = line.strip()
-    if value.startswith('|'):
-        value = value[1:]
-    if value.endswith('|') and not is_escaped(value, len(value) - 1):
-        value = value[:-1]
+    return [cell for cell, _, _ in split_table_row_spans(line)]
 
-    cells: list[str] = []
-    start = 0
-    index = 0
+
+def split_table_row_spans(line: str) -> list[CellSpan]:
+    original = line
+    value = line.strip()
+    value_start = len(original) - len(original.lstrip())
+    value_end = value_start + len(value)
+    if value_start < value_end and original[value_start] == '|':
+        value_start += 1
+    if value_start < value_end and original[value_end - 1] == '|' and not is_escaped(original, value_end - 1):
+        value_end -= 1
+
+    cells: list[CellSpan] = []
+    start = value_start
+    index = value_start
     code_marker = ''
-    while index < len(value):
-        char = value[index]
+    while index < value_end:
+        char = original[index]
         if char == '\\':
             index += 2
             continue
         if char == '`':
             marker_end = index
-            while marker_end < len(value) and value[marker_end] == '`':
+            while marker_end < value_end and original[marker_end] == '`':
                 marker_end += 1
-            marker = value[index:marker_end]
+            marker = original[index:marker_end]
             if code_marker == marker:
                 code_marker = ''
             elif not code_marker:
@@ -117,11 +144,11 @@ def split_table_row(line: str) -> list[str]:
             index = marker_end
             continue
         if char == '|' and not code_marker:
-            cells.append(value[start:index])
+            cells.append((original[start:index], start, index))
             start = index + 1
         index += 1
 
-    cells.append(value[start:])
+    cells.append((original[start:value_end], start, value_end))
     return cells
 
 

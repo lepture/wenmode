@@ -4,7 +4,7 @@ import re
 from typing import TYPE_CHECKING
 
 from wenmode.nodes import List as ListNode
-from wenmode.nodes import ListItem, Node, Paragraph, Text
+from wenmode.nodes import ListItem, Node, Paragraph, Point, Text, position_from_offsets
 from wenmode.state import BlockState
 from wenmode.utils import count_indent, count_indent_from, expand_leading_tabs
 
@@ -54,6 +54,7 @@ class List(BlockRule):
         thematic_break = parser.rules.get('thematic_break')
 
         while not state.done:
+            item_start_index = state.index
             line = state.line.rstrip('\r\n')
             marker = MARKER_RE.match(line)
             if marker is None:
@@ -84,7 +85,12 @@ class List(BlockRule):
                     rest_column = marker_indent + marker_width + space_width
                     rest = ' ' * (rest_column - content_indent) + rest
 
-            item_lines = [rest + '\n']
+            first_item_line = rest + '\n'
+            item_lines = [first_item_line]
+            source_parts: list[tuple[str, Point]] = []
+            point = state.point_at_line_offset(state.index, marker.start('rest'))
+            if point is not None:
+                source_parts.append((first_item_line, point))
             state.advance()
             item_spread = False
 
@@ -94,6 +100,7 @@ class List(BlockRule):
                 if next_marker is not None and count_indent(next_marker.group('indent')) == marker_indent:
                     break
                 if next_line.strip() == '':
+                    blank_index = state.index
                     state.advance()
                     next_marker_after_blank = MARKER_RE.match(state.line.rstrip('\r\n')) if not state.done else None
                     if next_marker_after_blank is not None:
@@ -106,19 +113,41 @@ class List(BlockRule):
                             item_spread = True
                             spread = True
                         item_lines.append('\n')
+                        point = state.point_at_line_offset(blank_index, 0)
+                        if point is not None:
+                            source_parts.append(('\n', point))
                         continue
                     break
                 if has_continuation_indent(next_line, content_indent):
-                    item_lines.append(strip_continuation_indent(next_line, content_indent))
+                    text = strip_continuation_indent(next_line, content_indent)
+                    item_lines.append(text)
+                    point = state.point_at_line_offset(
+                        state.index, continuation_source_offset(next_line, content_indent)
+                    )
+                    if point is not None:
+                        source_parts.append((text, point))
                     state.advance()
                     continue
                 if item_lines and item_lines[-1].strip() != '' and not parser.is_paragraph_interrupt(next_line, state):
                     item_lines.append(next_line)
+                    point = state.point_at_line_offset(state.index, 0)
+                    if point is not None:
+                        source_parts.append((next_line, point))
                     state.advance()
                     continue
                 break
 
-            item = ListItem(children=parser.parse_blocks(''.join(item_lines), parent_state=state), spread=item_spread)
+            item_text = ''.join(item_lines)
+            item = ListItem(
+                children=parser.parse_blocks(
+                    item_text,
+                    parent_state=state,
+                    source=parser.source_map_from_parts(source_parts),
+                ),
+                spread=item_spread,
+            )
+            if parser.positions:
+                item.position = state.position_between(item_start_index, state.index)
             if self.task:
                 schedule_task_list_marker(state, item)
             items.append(item)
@@ -138,6 +167,7 @@ def parse_shallow_list(parser: Parser, state: BlockState, first: re.Match[str], 
     items: list[Node] = []
 
     while not state.done:
+        item_start_index = state.index
         marker = MARKER_RE.match(state.line.rstrip('\r\n'))
         if marker is None:
             break
@@ -163,6 +193,8 @@ def parse_shallow_list(parser: Parser, state: BlockState, first: re.Match[str], 
         text = '\n'.join(part for part in text_lines if part).strip()
         children: list[Node] = [Paragraph(children=parser.parse_inlines(text, state))] if text else []
         item = ListItem(children=children)
+        if parser.positions:
+            item.position = state.position_between(item_start_index, state.index)
         if task:
             schedule_task_list_marker(state, item)
         items.append(item)
@@ -191,6 +223,7 @@ def apply_task_list_marker(item: ListItem) -> None:
         return
 
     item.checked = match.group(1).lower() == 'x'
+    text.position = position_from_offsets(text.position, text.value, match.end(), len(text.value))
     text.value = text.value[match.end() :]
     if text.value == '':
         paragraph.children.pop(0)
@@ -255,3 +288,13 @@ def has_continuation_indent(line: str, columns: int) -> bool:
 def strip_continuation_indent(line: str, columns: int) -> str:
     expanded = expand_leading_tabs(line)
     return expanded[columns:] if len(expanded) >= columns else ''
+
+
+def continuation_source_offset(line: str, columns: int) -> int:
+    index = 0
+    width = 0
+    while index < len(line) and width < columns:
+        char = line[index]
+        width += 4 - width % 4 if char == '\t' else 1
+        index += 1
+    return index

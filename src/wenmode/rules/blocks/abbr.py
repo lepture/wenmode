@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from wenmode.nodes import Abbreviation as AbbreviationNode
-from wenmode.nodes import Node, Parent, Text
+from wenmode.nodes import Node, Parent, Text, position_from_offsets
 from wenmode.state import BlockState, StateKey
 
 from ..base import BlockRule, Rule
@@ -123,16 +123,41 @@ def replace_abbreviations(
     pos = 0
     for match in pattern.finditer(node.value):
         if match.start() > pos:
-            nodes.append(Text(value=node.value[pos : match.start()], _parse_emphasis=node._parse_emphasis))
+            nodes.append(
+                Text(
+                    value=node.value[pos : match.start()],
+                    _parse_emphasis=node._parse_emphasis,
+                    position=position_from_offsets(node.position, node.value, pos, match.start()),
+                )
+            )
         label = match.group(0)
         definition = definitions.get(label)
         if definition is None:
-            nodes.append(Text(value=label, _parse_emphasis=node._parse_emphasis))
+            nodes.append(
+                Text(
+                    value=label,
+                    _parse_emphasis=node._parse_emphasis,
+                    position=position_from_offsets(node.position, node.value, match.start(), match.end()),
+                )
+            )
         else:
-            nodes.append(AbbreviationNode(title=definition.title, children=[Text(value=label, _parse_emphasis=False)]))
+            position = position_from_offsets(node.position, node.value, match.start(), match.end())
+            nodes.append(
+                AbbreviationNode(
+                    title=definition.title,
+                    position=position,
+                    children=[Text(value=label, _parse_emphasis=False, position=position)],
+                )
+            )
         pos = match.end()
     if not nodes:
         return [node]
     if pos < len(node.value):
-        nodes.append(Text(value=node.value[pos:], _parse_emphasis=node._parse_emphasis))
+        nodes.append(
+            Text(
+                value=node.value[pos:],
+                _parse_emphasis=node._parse_emphasis,
+                position=position_from_offsets(node.position, node.value, pos, len(node.value)),
+            )
+        )
     return nodes

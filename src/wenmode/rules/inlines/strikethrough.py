@@ -38,10 +38,13 @@ class Strikethrough(InlineRule):
         if close == -1:
             return None, start
 
-        value = text[match.end() : close]
+        value_start = match.end()
+        value = text[value_start:close]
         if value == '':
             return None, start
-        return Delete(children=parser.parse_inlines(value, state)), close + len(marker)
+        return Delete(
+            children=parser.parse_inlines(value, state, source=parser.inline_source(text, value_start, close))
+        ), close + len(marker)
 
 
 def find_closing_marker(text: str, marker: str, start: int) -> int:

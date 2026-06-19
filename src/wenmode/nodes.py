@@ -4,16 +4,72 @@ from dataclasses import dataclass, field
 from typing import Any
 
 
+@dataclass(frozen=True)
+class Point:
+    """A 1-based source point in the parsed Markdown document."""
+
+    line: int
+    column: int
+    offset: int
+
+    def to_ast(self) -> dict[str, int]:
+        return {
+            'line': self.line,
+            'column': self.column,
+            'offset': self.offset,
+        }
+
+
+@dataclass(frozen=True)
+class Position:
+    """Source range for a node."""
+
+    start: Point
+    end: Point
+
+    def to_ast(self) -> dict[str, dict[str, int]]:
+        return {
+            'start': self.start.to_ast(),
+            'end': self.end.to_ast(),
+        }
+
+
+def advance_point(point: Point, text: str) -> Point:
+    """Return the point reached after consuming ``text``."""
+    line = point.line
+    column = point.column
+    offset = point.offset
+    for char in text:
+        offset += 1
+        if char == '\n':
+            line += 1
+            column = 1
+        else:
+            column += 1
+    return Point(line=line, column=column, offset=offset)
+
+
+def position_from_offsets(position: Position | None, text: str, start: int, end: int) -> Position | None:
+    """Return a position for ``text[start:end]`` within an existing position."""
+    if position is None:
+        return None
+    start_point = advance_point(position.start, text[:start])
+    end_point = advance_point(start_point, text[start:end])
+    return Position(start=start_point, end=end_point)
+
+
 @dataclass
 class Node:
     """Base class for all Wenmode AST nodes.
 
     :param type: mdast-compatible node type name.
     :param data: Optional extension data used by transforms or renderers.
+    :param position: Optional unist-style source range.
     """
 
     type: str
     data: dict[str, Any] | None = None
+    position: Position | None = None
 
     def to_ast(self) -> dict[str, Any]:
         """Convert this node and its children to plain Python data.
@@ -24,6 +80,9 @@ class Node:
         data: dict[str, Any] = {'type': self.type}
         for key, value in self.__dict__.items():
             if key == 'type' or key.startswith('_') or value is None:
+                continue
+            if isinstance(value, Position):
+                data[key] = value.to_ast()
                 continue
             if isinstance(value, list):
                 data[key] = [item.to_ast() if isinstance(item, Node) else item for item in value]

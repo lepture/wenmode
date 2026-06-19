@@ -101,6 +101,40 @@ assert ast == {
 The returned root node is a `wenmode.nodes.Root`. Nodes are data objects; their
 rendering behavior lives in renderers.
 
+### Source positions
+
+Pass `positions=True` when you need source ranges for editor integration,
+diagnostics, or AST-based tooling. Positions are opt-in so the default AST shape
+and parser overhead stay small.
+
+```python
+from wenmode import Wenmode
+
+wenmode = Wenmode(positions=True)
+ast = wenmode.parse('A **bold**.\n').to_ast()
+
+assert ast['children'][0]['children'][1] == {
+    'type': 'strong',
+    'position': {
+        'start': {'line': 1, 'column': 3, 'offset': 2},
+        'end': {'line': 1, 'column': 11, 'offset': 10},
+    },
+    'children': [
+        {
+            'type': 'text',
+            'position': {
+                'start': {'line': 1, 'column': 5, 'offset': 4},
+                'end': {'line': 1, 'column': 9, 'offset': 8},
+            },
+            'value': 'bold',
+        }
+    ],
+}
+```
+
+The same option is available on `Parser(commonmark, positions=True)` when you
+use parser and renderer objects separately.
+
 ## Rendering
 
 `Wenmode()` uses `HTMLRenderer` by default. Pass a different renderer when you

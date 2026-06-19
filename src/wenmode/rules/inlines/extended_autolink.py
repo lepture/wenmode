@@ -92,7 +92,11 @@ class ExtendedAutolink(InlineRule):
         elif is_email(value):
             url = 'mailto:' + value
 
-        return Link(url=normalize_uri(url), children=[Text(value=value)]), match.start() + len(value)
+        text_node = Text(value=value)
+        source = parser.inline_source(text, match.start(), match.start() + len(value))
+        if source is not None:
+            text_node.position = source.position(0, len(value))
+        return Link(url=normalize_uri(url), children=[text_node]), match.start() + len(value)
 
 
 def trim_trailing_punctuation(value: str) -> str:

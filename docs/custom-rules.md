@@ -74,7 +74,12 @@ class PlusMark(InlineRule):
         if end == -1:
             return None, match.start()
 
-        children = parser.parse_inlines(text[match.end() : end], state)
+        value_start = match.end()
+        children = parser.parse_inlines(
+            text[value_start:end],
+            state,
+            source=parser.inline_source(text, value_start, end),
+        )
         return MarkNode(children=children), end + 2
 ```
 
@@ -101,6 +106,11 @@ that need custom scanning behavior.
 
 If an inline rule decides not to handle a match, return
 `(None, match.start())`. The parser will emit the marker as text and continue.
+
+When source positions are enabled, the parser assigns a position to the node
+returned by the inline rule. If the rule recursively parses child inline
+content, pass `source=parser.inline_source(text, start, end)` so child nodes map
+back to the matching slice of the original inline source.
 
 ## Custom node and renderers
 
@@ -244,9 +254,14 @@ class BangParagraph(BlockRule):
         super().__init__('bang_paragraph', r'[ \t]{0,3}!')
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
-        text = state.line.lstrip(' \t!').rstrip('\r\n')
+        marker_end = state.line.find('!') + 1
+        text = state.line[marker_end:].strip()
+        source = parser.source_map_for_text(
+            text,
+            state.point_at_line_offset(state.index, state.line.find(text)),
+        )
         state.advance()
-        return Paragraph(children=parser.parse_inlines(text, state))
+        return Paragraph(children=parser.parse_inlines(text, state, source=source))
 ```
 
 If the rule decides not to handle a matched opener, return `None` without
@@ -255,6 +270,11 @@ advancing. The parser will fall back to paragraph parsing for that line.
 Use `parser.parse_blocks(text, parent_state=state)` when your block rule
 contains nested Markdown content. Nested parsing shares the same state store and
 increments `state.depth`.
+
+For nested block content with source positions, collect `(text, point)` parts
+from the consumed source and pass
+`source=parser.source_map_from_parts(parts)` to `parse_blocks()`. The parser
+will use that source map for nested block and inline nodes.
 
 ## Custom continuation rule
 

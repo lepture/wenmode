@@ -39,8 +39,12 @@ class TextDirective(InlineRule):
         if parsed is None:
             return None, match.start()
 
-        name, label, attributes, end = parsed
-        children = parser.parse_inlines(label, state) if label is not None else []
+        name, label, attributes, end, label_start, label_end = parsed
+        children = (
+            parser.parse_inlines(label, state, source=parser.inline_source(text, label_start, label_end))
+            if label is not None and label_start is not None and label_end is not None
+            else []
+        )
         return TextDirectiveNode(name=name, attributes=attributes, children=children), end
 
 
@@ -64,11 +68,17 @@ class Role(InlineRule):
         if parsed is None:
             return None, match.start()
 
-        name, label, end = parsed
-        return TextDirectiveNode(name=name, children=parser.parse_inlines(label, state)), end
+        name, label, end, label_start, label_end = parsed
+        return (
+            TextDirectiveNode(
+                name=name,
+                children=parser.parse_inlines(label, state, source=parser.inline_source(text, label_start, label_end)),
+            ),
+            end,
+        )
 
 
-def parse_role(text: str, start: int = 0) -> tuple[str, str, int] | None:
+def parse_role(text: str, start: int = 0) -> tuple[str, str, int, int, int] | None:
     if start >= len(text) or text[start] != '{':
         return None
 
@@ -91,14 +101,18 @@ def parse_role(text: str, start: int = 0) -> tuple[str, str, int] | None:
     if closing == -1:
         return None
 
-    return name, text[tick_end:closing], closing + len(fence)
+    return name, text[tick_end:closing], closing + len(fence), tick_end, closing
 
 
 def parse_text_directive_head(
     text: str, start: int, state: BlockState | None
-) -> tuple[str, str | None, dict[str, str] | None, int] | None:
+) -> tuple[str, str | None, dict[str, str] | None, int, int | None, int | None] | None:
     if state is None:
-        return parse_directive_head(text, start)
+        parsed = parse_directive_head(text, start)
+        if parsed is None:
+            return None
+        parsed_name, parsed_label, parsed_attributes, parsed_end = parsed
+        return parsed_name, parsed_label, parsed_attributes, parsed_end, None, None
 
     match = NAME_RE.match(text, start)
     if match is None:
@@ -107,24 +121,28 @@ def parse_text_directive_head(
     name = match.group(0)
     index = match.end()
     label: str | None = None
+    label_start: int | None = None
+    label_end: int | None = None
     attributes: dict[str, str] | None = None
     square_pairs, brace_pairs = directive_bracket_pairs(text, state)
 
     if index < len(text) and text[index] == '[':
-        end = square_pairs.get(index)
-        if end is None:
+        square_end = square_pairs.get(index)
+        if square_end is None:
             return None
-        label = text[index + 1 : end]
-        index = end + 1
+        label = text[index + 1 : square_end]
+        label_start = index + 1
+        label_end = square_end
+        index = square_end + 1
 
     if index < len(text) and text[index] == '{':
-        end = brace_pairs.get(index)
-        if end is None:
+        brace_end = brace_pairs.get(index)
+        if brace_end is None:
             return None
-        attributes = parse_attributes(text[index + 1 : end])
-        index = end + 1
+        attributes = parse_attributes(text[index + 1 : brace_end])
+        index = brace_end + 1
 
-    return name, label, attributes, index
+    return name, label, attributes, index, label_start, label_end
 
 
 def directive_bracket_pairs(text: str, state: BlockState) -> tuple[dict[int, int], dict[int, int]]:

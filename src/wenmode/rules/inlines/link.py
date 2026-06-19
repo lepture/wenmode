@@ -46,8 +46,11 @@ class Image(InlineRule):
         if parsed is None:
             return None, match.start()
 
-        label, url, title, end = parsed
-        return ImageNode(url=url, alt=plain_text(parser.parse_inlines(label, state)), title=title), end
+        label, url, title, end, label_start, label_end = parsed
+        label_source = parser.inline_source(text, label_start, label_end)
+        return ImageNode(
+            url=url, alt=plain_text(parser.parse_inlines(label, state, source=label_source)), title=title
+        ), end
 
 
 class Link(InlineRule):
@@ -76,13 +79,14 @@ class Link(InlineRule):
         if parsed is None:
             return None, match.start()
 
-        label, url, title, end = parsed
-        return LinkNode(url=url, title=title, children=parser.parse_inlines(label, state)), end
+        label, url, title, end, label_start, label_end = parsed
+        label_source = parser.inline_source(text, label_start, label_end)
+        return LinkNode(url=url, title=title, children=parser.parse_inlines(label, state, source=label_source)), end
 
 
 def parse_link_or_image(
     parser: Parser, text: str, start: int, image: bool, state: BlockState | None, references: bool = True
-) -> tuple[str, str, str | None, int] | None:
+) -> tuple[str, str, str | None, int, int, int] | None:
     bracket_cache = closing_bracket_cache(state)
     label_start = start + 2 if image else start + 1
     label_end = find_closing_bracket(text, label_start, bracket_cache)
@@ -97,7 +101,7 @@ def parse_link_or_image(
     direct = parse_direct_destination(text, after_label)
     if direct is not None:
         url, title, end = direct
-        return label, url, title, end
+        return label, url, title, end, label_start, label_end
     if not references:
         return None
 
@@ -119,7 +123,7 @@ def parse_link_or_image(
     if state:
         reference = resolve_state_reference(state, reference_label)
         if reference is not None:
-            return label, reference.url, reference.title, end
+            return label, reference.url, reference.title, end, label_start, label_end
     return None
 
 

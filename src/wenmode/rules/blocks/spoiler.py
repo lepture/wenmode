@@ -4,6 +4,7 @@ import re
 from typing import TYPE_CHECKING
 
 from wenmode.nodes import BlockSpoiler as BlockSpoilerNode
+from wenmode.nodes import Point
 from wenmode.state import BlockState
 from wenmode.utils import expand_leading_tabs
 
@@ -37,12 +38,20 @@ class BlockSpoiler(BlockRule):
             return BlockSpoilerNode(children=parse_shallow_block(parser, BLOCK_SPOILER_RE, state))
 
         lines: list[str] = []
+        source_parts: list[tuple[str, Point]] = []
         while not state.done:
             spoiler = BLOCK_SPOILER_RE.match(state.line)
             if spoiler is None:
                 break
             line_end = '\n' if state.line.endswith('\n') else ''
-            lines.append(expand_leading_tabs(spoiler.group(1), 2) + line_end)
+            text = expand_leading_tabs(spoiler.group(1), 2) + line_end
+            lines.append(text)
+            point = state.point_at_line_offset(state.index, spoiler.start(1))
+            if point is not None:
+                source_parts.append((text, point))
             state.advance()
 
-        return BlockSpoilerNode(children=parser.parse_blocks(''.join(lines), parent_state=state))
+        text = ''.join(lines)
+        return BlockSpoilerNode(
+            children=parser.parse_blocks(text, parent_state=state, source=parser.source_map_from_parts(source_parts))
+        )

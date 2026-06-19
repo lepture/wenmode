@@ -33,22 +33,32 @@ class InlineSpoiler(InlineRule):
         if parsed is None:
             return None, match.start()
 
-        spoiler_text, end = parsed
-        return InlineSpoilerNode(children=parser.parse_inlines(spoiler_text, state)), end
+        spoiler_text, content_start, content_end, end = parsed
+        return (
+            InlineSpoilerNode(
+                children=parser.parse_inlines(
+                    spoiler_text,
+                    state,
+                    source=parser.inline_source(text, content_start, content_end),
+                )
+            ),
+            end,
+        )
 
 
-def parse_spoiler_span(text: str, start: int) -> tuple[str, int] | None:
+def parse_spoiler_span(text: str, start: int) -> tuple[str, int, int, int] | None:
     content_start = start + 2
     close = text.find('!<', content_start)
     while close != -1:
-        spoiler_text = trim_spoiler_text(text[content_start:close])
-        if spoiler_text is not None:
-            return spoiler_text, close + 2
+        trimmed = trim_spoiler_text(text[content_start:close])
+        if trimmed is not None:
+            spoiler_text, trim_start, trim_end = trimmed
+            return spoiler_text, content_start + trim_start, content_start + trim_end, close + 2
         close = text.find('!<', close + 2)
     return None
 
 
-def trim_spoiler_text(text: str) -> str | None:
+def trim_spoiler_text(text: str) -> tuple[str, int, int] | None:
     start = 0
     while start < len(text) and text[start].isspace():
         start += 1
@@ -59,9 +69,9 @@ def trim_spoiler_text(text: str) -> str | None:
 
     if end > start:
         value = text[start:end]
-        return None if '\n' in value else value
+        return None if '\n' in value else (value, start, end)
 
-    for char in reversed(text):
+    for index, char in reversed(list(enumerate(text))):
         if char != '\n':
-            return char
+            return char, index, index + 1
     return None

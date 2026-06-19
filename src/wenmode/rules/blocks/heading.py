@@ -66,11 +66,17 @@ class AtxHeading(BlockRule):
             state.advance()
             return Heading(children=[])
 
-        marker, content = parsed
+        marker, content, content_start = parsed
         if content.strip('#').strip() == '':
             content = ''
         state.advance()
-        return Heading(depth=len(marker), children=parser.parse_inlines(content.strip(), state))
+        text = content.strip()
+        source = None
+        if text:
+            leading = len(content) - len(content.lstrip())
+            point = state.point_at_line_offset(state.index - 1, content_start + leading)
+            source = parser.source_map_for_text(text, point)
+        return Heading(depth=len(marker), children=parser.parse_inlines(text, state, source=source))
 
 
 class SetextHeading(ContinueRule):
@@ -99,13 +105,17 @@ class SetextHeading(ContinueRule):
         if marker is None:
             return None
 
+        start_index = state.index - len(lines)
         state.advance()
         depth = 1 if marker.group(1).startswith('=') else 2
         text = ''.join(lines).strip()
-        return Heading(depth=depth, children=parser.parse_inlines(text, state))
+        return Heading(
+            depth=depth,
+            children=parser.parse_inlines(text, state, source=parser.paragraph_source(lines, state, start_index)),
+        )
 
 
-def parse_atx_heading_line(line: str) -> tuple[str, str] | None:
+def parse_atx_heading_line(line: str) -> tuple[str, str, int] | None:
     index = 0
     while index < len(line) and index < 3 and line[index] in {' ', '\t'}:
         index += 1
@@ -121,7 +131,7 @@ def parse_atx_heading_line(line: str) -> tuple[str, str] | None:
     marker = line[marker_start:index]
     while index < len(line) and line[index] in {' ', '\t'}:
         index += 1
-    return marker, strip_atx_closing_sequence(line[index:])
+    return marker, strip_atx_closing_sequence(line[index:]), index
 
 
 def strip_atx_closing_sequence(content: str) -> str:
