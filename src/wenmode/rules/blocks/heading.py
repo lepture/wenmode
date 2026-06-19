@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from wenmode.headings import Slugger, add_heading_ids
 from wenmode.nodes import Heading, Node
@@ -61,11 +61,7 @@ class AtxHeading(BlockRule):
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Heading:
         line = state.line.rstrip('\r\n')
-        parsed = parse_atx_heading_line(line)
-        if parsed is None:
-            state.advance()
-            return Heading(children=[])
-
+        parsed = cast(tuple[str, str, int], parse_atx_heading_line(line))
         marker, content, content_start = parsed
         if content.strip('#').strip() == '':
             content = ''

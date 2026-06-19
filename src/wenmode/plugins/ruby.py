@@ -45,9 +45,7 @@ class RubyRule(InlineRule):
     def __init__(self) -> None:
         super().__init__('ruby', RUBY_PATTERN, '[')
 
-    def parse(
-        self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
-    ) -> tuple[Node | None, int]:
+    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
         ruby = RubyNode(segments=parse_ruby_segments(match.group(0)))
         source = parser.inline_source(text, match.start(), match.end())
         if source is not None:
@@ -64,7 +62,7 @@ def parse_ruby_segments(value: str) -> list[dict[str, str]]:
 
 
 def parse_ruby_link(
-    parser: Parser, text: str, start: int, ruby: RubyNode, state: BlockState | None
+    parser: Parser, text: str, start: int, ruby: RubyNode, state: BlockState
 ) -> tuple[Node, int] | None:
     if 'link' not in parser.rules or start >= len(text):
         return None
@@ -87,10 +85,9 @@ def parse_ruby_link(
     if not label or invalid_reference_label(label):
         return None
 
-    if state is not None:
-        reference = resolve_state_reference(state, label)
-        if reference:
-            return LinkNode(url=reference.url, title=reference.title, children=[ruby]), ref_end + 1
+    reference = resolve_state_reference(state, label)
+    if reference:
+        return LinkNode(url=reference.url, title=reference.title, children=[ruby]), ref_end + 1
     return None
 
 

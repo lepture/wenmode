@@ -53,12 +53,7 @@ class Footnote(InlineRule):
         super().__init__('footnote', FOOTNOTE_REFERENCE_RE, '[')
         self.root_transforms = [FootnoteTransform()]
 
-    def parse(
-        self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
-    ) -> tuple[Node | None, int]:
-        if state is None:
-            return None, match.start()
-
+    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
         identifier = normalize_label(match.group('label'))
         footnote = state.store.get(FOOTNOTES_KEY).get(identifier)
         if footnote is None:

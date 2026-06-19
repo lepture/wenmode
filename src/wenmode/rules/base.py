@@ -91,15 +91,13 @@ class InlineRule(Rule):
         """
         return self.compiled.search(text, pos)
 
-    def parse(
-        self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
-    ) -> tuple[Node | None, int]:
+    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
         """Parse a matched inline opener.
 
         :param parser: Active parser.
         :param text: Full inline source text.
         :param match: Match object returned by this rule.
-        :param state: Current block state, if available.
+        :param state: Current block state.
         :returns: A ``(node, end_index)`` pair. Return ``(None, match.start())``
             to decline the match.
         """

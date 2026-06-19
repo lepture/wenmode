@@ -32,9 +32,7 @@ class TextDirective(InlineRule):
     def __init__(self) -> None:
         super().__init__('text_directive', r':(?=[A-Za-z])', ':')
 
-    def parse(
-        self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
-    ) -> tuple[Node | None, int]:
+    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
         parsed = parse_text_directive_head(text, match.start() + 1, state)
         if parsed is None:
             return None, match.start()
@@ -49,15 +47,8 @@ class TextDirective(InlineRule):
 
 
 def parse_text_directive_head(
-    text: str, start: int, state: BlockState | None
+    text: str, start: int, state: BlockState
 ) -> tuple[str, str | None, dict[str, str] | None, int, int | None, int | None] | None:
-    if state is None:
-        parsed = parse_directive_head(text, start)
-        if parsed is None:
-            return None
-        parsed_name, parsed_label, parsed_attributes, parsed_end = parsed
-        return parsed_name, parsed_label, parsed_attributes, parsed_end, None, None
-
     match = NAME_RE.match(text, start)
     if match is None:
         return None

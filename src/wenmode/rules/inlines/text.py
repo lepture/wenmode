@@ -30,9 +30,7 @@ class BackslashEscape(InlineRule):
     def __init__(self) -> None:
         super().__init__('backslash_escape', rf'\\(?=[{ESCAPABLE}])', '\\')
 
-    def parse(
-        self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
-    ) -> tuple[Node | None, int]:
+    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
         return Text(value=text[match.end()], _parse_emphasis=False), match.end() + 1
 
 
@@ -49,9 +47,7 @@ class CharacterReference(InlineRule):
     def __init__(self) -> None:
         super().__init__('character_reference', r'&(?:#[xX][0-9A-Fa-f]+|#[0-9]+|[A-Za-z][A-Za-z0-9]{1,31});', '&')
 
-    def parse(
-        self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
-    ) -> tuple[Node | None, int]:
+    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
         value = match.group(0)
         numeric = NUMERIC_CHARACTER_REFERENCE_RE.match(value)
         if numeric is not None:
@@ -82,9 +78,7 @@ class HardBreak(InlineRule):
         start = find_hard_break(text, pos)
         return self.compiled.match(text, start) if start is not None else None
 
-    def parse(
-        self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
-    ) -> tuple[Node | None, int]:
+    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
         return Break(), match.end()
 
 

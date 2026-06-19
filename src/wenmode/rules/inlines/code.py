@@ -29,9 +29,7 @@ class InlineCode(InlineRule):
     def __init__(self) -> None:
         super().__init__('inline_code', r'`+', '`')
 
-    def parse(
-        self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
-    ) -> tuple[Node | None, int]:
+    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
         if match.start() > 0 and text[match.start() - 1] == '`':
             return None, match.start()
         marker = match.group(0)

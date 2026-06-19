@@ -74,9 +74,7 @@ class ExtendedAutolink(InlineRule):
             cursor = text.find('@', cursor + 1)
         return None
 
-    def parse(
-        self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
-    ) -> tuple[Node | None, int]:
+    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
         value = match.group(0)
         if is_mailto_or_xmpp(value):
             value = trim_mailto_or_xmpp(value)

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from wenmode.nodes import Code, Node, Paragraph
 from wenmode.state import BlockState
@@ -33,11 +33,7 @@ class FencedCode(BlockRule):
         super().__init__('fenced_code', r'[ \t]{0,3}(?:`{3,}|~{3,})')
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node:
-        opener = FENCE_OPENER_RE.match(state.line.rstrip('\r\n'))
-        if opener is None:
-            state.advance()
-            return Code(value='')
-
+        opener = cast(re.Match[str], FENCE_OPENER_RE.match(state.line.rstrip('\r\n')))
         indent = len(opener.group('indent').replace('\t', '    '))
         fence = opener.group(2)
         fence_char = fence[0]

@@ -33,9 +33,7 @@ class SubscriptRule(InlineRule):
     def __init__(self) -> None:
         super().__init__('subscript', r'(?<!~)~(?!~)(?:(?<!\\)(?:\\\\)*\\~|[^\s~]|\\ )+?(?<!~)~(?!~)', '~')
 
-    def parse(
-        self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
-    ) -> tuple[Node | None, int]:
+    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
         value = match.group(0)[1:-1].replace('\\ ', ' ')
         return SubscriptNode(children=parser.parse_inlines(value, state)), match.end()
 

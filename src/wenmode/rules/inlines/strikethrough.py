@@ -26,9 +26,7 @@ class Strikethrough(InlineRule):
     def __init__(self) -> None:
         super().__init__('strikethrough', r'~{1,2}', '~')
 
-    def parse(
-        self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
-    ) -> tuple[Node | None, int]:
+    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
         marker = match.group(0)
         start = match.start()
         if is_part_of_longer_run(text, start, len(marker)):

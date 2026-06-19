@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from wenmode.nodes import Literal, Node
 from wenmode.renderers import MarkdownRenderer, RenderContext
@@ -44,11 +44,7 @@ class MathBlockRule(BlockRule):
         super().__init__('math_block', r'[ \t]{0,3}\$\$')
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node:
-        opener = MATH_OPENER_RE.match(state.line)
-        if opener is None:
-            state.advance()
-            return MathNode(value='')
-
+        opener = cast(re.Match[str], MATH_OPENER_RE.match(state.line))
         lines: list[str] = []
         rest = opener.group('rest')
         if rest:
@@ -64,9 +60,7 @@ class InlineMathRule(InlineRule):
     def __init__(self) -> None:
         super().__init__('inline_math', r'\$', '$')
 
-    def parse(
-        self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
-    ) -> tuple[Node | None, int]:
+    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
         start = match.start()
         if is_escaped(text, start) or is_adjacent_to_dollar(text, start) or is_opening_space(text, start):
             return None, start

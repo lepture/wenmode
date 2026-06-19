@@ -32,9 +32,7 @@ class MarkRule(InlineRule):
     def __init__(self) -> None:
         super().__init__('mark', r'==(?=[^\s=])', '=')
 
-    def parse(
-        self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
-    ) -> tuple[Node | None, int]:
+    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
         start = match.start()
         if is_part_of_longer_run(text, start, '='):
             return None, start

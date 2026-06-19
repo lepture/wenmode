@@ -29,9 +29,7 @@ class Emphasis(InlineRule):
     def __init__(self) -> None:
         super().__init__('emphasis', r'(?:\*+|_+)')
 
-    def parse(
-        self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
-    ) -> tuple[Node | None, int]:
+    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
         return None, match.start()
 
 

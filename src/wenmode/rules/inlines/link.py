@@ -39,9 +39,7 @@ class Image(InlineRule):
         self.references = references
         self.root_transforms = [ReferenceTransform()] if references else []
 
-    def parse(
-        self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
-    ) -> tuple[Node | None, int]:
+    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
         parsed = parse_link_or_image(parser, text, match.start(), image=True, state=state, references=self.references)
         if parsed is None:
             return None, match.start()
@@ -70,9 +68,7 @@ class Link(InlineRule):
         self.references = references
         self.root_transforms = [ReferenceTransform()] if references else []
 
-    def parse(
-        self, parser: Parser, text: str, match: re.Match[str], state: BlockState | None = None
-    ) -> tuple[Node | None, int]:
+    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
         if match.start() > 0 and text[match.start() - 1] == '!' and not is_escaped(text, match.start() - 1):
             return None, match.start()
         parsed = parse_link_or_image(parser, text, match.start(), image=False, state=state, references=self.references)
@@ -85,7 +81,7 @@ class Link(InlineRule):
 
 
 def parse_link_or_image(
-    parser: Parser, text: str, start: int, image: bool, state: BlockState | None, references: bool = True
+    parser: Parser, text: str, start: int, image: bool, state: BlockState, references: bool = True
 ) -> tuple[str, str, str | None, int, int, int] | None:
     bracket_cache = closing_bracket_cache(state)
     label_start = start + 2 if image else start + 1
@@ -120,29 +116,21 @@ def parse_link_or_image(
     elif invalid_reference_label(reference_label):
         return None
 
-    if state:
-        reference = resolve_state_reference(state, reference_label)
-        if reference is not None:
-            return label, reference.url, reference.title, end, label_start, label_end
+    reference = resolve_state_reference(state, reference_label)
+    if reference is not None:
+        return label, reference.url, reference.title, end, label_start, label_end
     return None
 
 
-def closing_bracket_cache(state: BlockState | None) -> ClosingBracketCache | None:
-    if state is None:
-        return None
+def closing_bracket_cache(state: BlockState) -> ClosingBracketCache:
     return state.store.get(CLOSING_BRACKET_CACHE)
 
 
-def find_closing_bracket(text: str, start: int, cache: ClosingBracketCache | None = None) -> int | None:
-    if start > 0 and text[start - 1] == '[':
-        return closing_bracket_map(text, cache).get(start)
-    return find_closing_bracket_uncached(text, start)
+def find_closing_bracket(text: str, start: int, cache: ClosingBracketCache) -> int | None:
+    return closing_bracket_map(text, cache).get(start)
 
 
-def closing_bracket_map(text: str, cache: ClosingBracketCache | None) -> dict[int, int]:
-    if cache is None:
-        return build_closing_bracket_map(text)
-
+def closing_bracket_map(text: str, cache: ClosingBracketCache) -> dict[int, int]:
     key = id(text)
     cached = cache.get(key)
     if cached is not None and cached[0] is text:
@@ -180,35 +168,7 @@ def build_closing_bracket_map(text: str) -> dict[int, int]:
     return pairs
 
 
-def find_closing_bracket_uncached(text: str, start: int) -> int | None:
-    depth = 0
-    index = start
-    while index < len(text):
-        char = text[index]
-        if char == '\\':
-            index += 2
-            continue
-        if char == '`':
-            code_end = find_code_span_end(text, index)
-            if code_end is not None:
-                index = code_end
-                continue
-        if char == '<':
-            angle_end = find_angle_span_end(text, index)
-            if angle_end is not None:
-                index = angle_end
-                continue
-        if char == '[':
-            depth += 1
-        elif char == ']':
-            if depth == 0:
-                return index
-            depth -= 1
-        index += 1
-    return None
-
-
-def label_contains_link(parser: Parser, label: str, state: BlockState | None) -> bool:
+def label_contains_link(parser: Parser, label: str, state: BlockState) -> bool:
     if '[' not in label:
         return False
     return any(contains_link(node) for node in parser.parse_inlines(label, state))

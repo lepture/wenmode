@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from wenmode.nodes import List as ListNode
 from wenmode.nodes import ListItem, Node, Paragraph, Position, Text
@@ -37,10 +37,7 @@ class List(BlockRule):
         self.task = task
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> ListNode:
-        first = MARKER_RE.match(state.line.rstrip('\r\n'))
-        if first is None:
-            state.advance()
-            return ListNode(children=[])
+        first = cast(re.Match[str], MARKER_RE.match(state.line.rstrip('\r\n')))
         if state.depth >= parser.max_container_depth - 1:
             return parse_shallow_list(parser, state, first, task=self.task)
 
@@ -84,7 +81,7 @@ class List(BlockRule):
                     content_indent = marker_indent + 2
                 elif 1 <= space_width <= 4:
                     content_indent = marker_indent + marker_width + space_width
-                elif space_width > 4:  # pragma: no branch
+                else:
                     rest_column = marker_indent + marker_width + space_width
                     rest = ' ' * (rest_column - content_indent) + rest
 
@@ -146,10 +143,6 @@ class List(BlockRule):
             if self.task:
                 schedule_task_list_marker(state, item)
             items.append(item)
-
-            if item_spread:
-                while not state.done and state.line.strip() == '':
-                    state.advance()  # pragma: no cover
 
         return ListNode(children=items, ordered=ordered, start=start, spread=spread)
 

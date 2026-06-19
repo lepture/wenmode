@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 from wenmode.nodes import ContainerDirective as ContainerDirectiveNode
 from wenmode.nodes import Node
@@ -28,10 +28,7 @@ class FencedDirectiveRule(BlockRule):
         super().__init__('fenced_directive', r'[ \t]{0,3}(?:`{3,}|~{3,})\{[A-Za-z][A-Za-z0-9_-]*}')
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
-        opener = FENCED_DIRECTIVE_RE.match(state.line.rstrip('\r\n'))
-        if opener is None:
-            return None
-
+        opener = cast(re.Match[str], FENCED_DIRECTIVE_RE.match(state.line.rstrip('\r\n')))
         fence = opener.group('fence')
         fence_char = fence[0]
         name = opener.group('name')

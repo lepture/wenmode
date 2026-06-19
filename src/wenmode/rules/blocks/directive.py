@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from wenmode.nodes import ContainerDirective as ContainerDirectiveNode
 from wenmode.nodes import LeafDirective as LeafDirectiveNode
@@ -34,10 +34,7 @@ class LeafDirective(BlockRule):
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
         line = state.line.rstrip('\r\n')
-        head = parse_leaf_directive_head(line)
-        if head is None:
-            return None
-
+        head = cast(str, parse_leaf_directive_head(line))
         parsed = parse_directive_head(head, 0)
         if parsed is None:
             return None
@@ -69,10 +66,7 @@ class ContainerDirective(BlockRule):
         super().__init__('container_directive', r'[ \t]{0,3}:{3,}(?=[A-Za-z])')
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
-        opener = CONTAINER_DIRECTIVE_RE.match(state.line.rstrip('\r\n'))
-        if opener is None:
-            return None
-
+        opener = cast(re.Match[str], CONTAINER_DIRECTIVE_RE.match(state.line.rstrip('\r\n')))
         fence = opener.group('fence')
         parsed = parse_directive_head(opener.group('head'), 0)
         if parsed is None:

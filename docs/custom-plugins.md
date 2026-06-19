@@ -96,7 +96,7 @@ class PlusMarkRule(InlineRule):
         parser: Parser,
         text: str,
         match: re.Match[str],
-        state: BlockState | None = None,
+        state: BlockState,
     ) -> tuple[Node | None, int]:
         end = text.find('++', match.end())
         if end == -1:
