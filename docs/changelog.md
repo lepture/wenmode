@@ -13,6 +13,10 @@ here while preparing a release, then move them under the final version heading.
 
 ## Unreleased
 
+## 0.2.0
+
+Released **Jun 20, 2026**.
+
 - Add the `Wenmode.use(plugin, **options)` plugin API and built-in
   `wenmode.plugins` modules for non-standard syntax such as math, definition
   lists, abbreviations, spoilers, ruby text, inline roles, and extra inline
