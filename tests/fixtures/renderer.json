@@ -312,5 +312,84 @@
     "html": "<p><a href=\"/a%20b(1)\" title=\"a &quot;quote&quot;\">link</a> <img src=\"/a)b\" alt=\"a*b\" title=\"title\" /></p>\n",
     "markdown": "[link](</a%20b(1)> \"a \\\"quote\\\"\") ![a\\*b](</a)b> \"title\")\n",
     "rst": "`link </a%20b(1)>`__ |image-1|\n\n.. |image-1| image:: /a)b\n   :alt: a*b\n   :title: title\n"
+  },
+  {
+    "name": "empty document",
+    "input": "",
+    "html": "",
+    "markdown": "",
+    "rst": ""
+  },
+  {
+    "name": "empty blockquote",
+    "input": ">\n",
+    "rules": [
+      "blockquote"
+    ],
+    "html": "<blockquote>\n</blockquote>\n",
+    "markdown": ">\n",
+    "rst": ""
+  },
+  {
+    "name": "ordered list default start",
+    "input": "1. one\n2. two\n",
+    "rules": [
+      "list"
+    ],
+    "html": "<ol>\n<li>one</li>\n<li>two</li>\n</ol>\n",
+    "markdown": "1. one\n2. two\n",
+    "rst": "#. one\n#. two\n"
+  },
+  {
+    "name": "unclosed fenced code with meta",
+    "input": "```py meta\nprint(1)",
+    "rules": [
+      "fenced_code"
+    ],
+    "html": "<pre><code class=\"language-py\">print(1)</code></pre>\n",
+    "markdown": "```py meta\nprint(1)\n```\n",
+    "rst": ".. code-block:: py\n\n   print(1)\n"
+  },
+  {
+    "name": "bare leaf directive quoted attributes",
+    "input": "::note[Title]{title=\"a b\" empty}\n",
+    "rules": [
+      "leaf_directive"
+    ],
+    "html_directives": [],
+    "html": "Title",
+    "markdown": "::note[Title]{title=\"a b\" empty}\n",
+    "rst": ".. note:: Title\n   :title: a b\n   :empty:\n"
+  },
+  {
+    "name": "leaf directive empty id attribute",
+    "input": "::note{id=}\n",
+    "rules": [
+      "leaf_directive"
+    ],
+    "html_directives": [],
+    "html": "",
+    "markdown": "::note\n",
+    "rst": ".. note::\n   :name:\n"
+  },
+  {
+    "name": "unclosed math block without trailing newline",
+    "input": "$$\nx",
+    "rules": [
+      "math_block"
+    ],
+    "html": "<div class=\"math math-display\">x</div>\n",
+    "markdown": "$$\nx\n$$\n",
+    "rst": ".. math::\n\n   x\n"
+  },
+  {
+    "name": "multiline raw html rst block",
+    "input": "<div>one\n\ntwo</div>\n",
+    "rules": [
+      "html_block"
+    ],
+    "html": "&lt;div&gt;one\n<p>two&lt;/div&gt;</p>\n",
+    "markdown": "<div>one\n\ntwo\\</div\\>\n",
+    "rst": ".. raw:: html\n\n   <div>one\n\ntwo</div>\n"
   }
 ]

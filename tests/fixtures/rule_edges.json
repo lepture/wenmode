@@ -1019,6 +1019,22 @@
     "html": "<p><a href=\"/url\" title=\"title\">x\n</a></p>\n"
   },
   {
+    "name": "reference multiline title with escaped quote",
+    "rules": [
+      "link"
+    ],
+    "markdown": "[x]: /url \"a\nb\\\"c\"\n\n[x]\n",
+    "html": "<p><a href=\"/url\" title=\"a\nb&quot;c\">x</a></p>\n"
+  },
+  {
+    "name": "reference multiline title with trailing escaped newline",
+    "rules": [
+      "link"
+    ],
+    "markdown": "[x]: /url \"a\\\nb\"\n\n[x]\n",
+    "html": "<p><a href=\"/url\" title=\"a\\\nb\">x</a></p>\n"
+  },
+  {
     "name": "html inline tag does not interrupt paragraph",
     "rules": [
       "html_block"
@@ -1178,5 +1194,39 @@
     ],
     "markdown": "a | b\n--- | ---\n`a `` b` | c\n",
     "html": "<table>\n<thead>\n<tr>\n<th>a</th>\n<th>b</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>`a `` b`</td>\n<td>c</td>\n</tr>\n</tbody>\n</table>\n"
+  },
+  {
+    "name": "hard break with crlf",
+    "rules": [
+      "hard_break"
+    ],
+    "markdown": "a  \r\nb\n",
+    "html": "<p>a<br />\nb</p>\n"
+  },
+  {
+    "name": "xmpp autolink trims empty path",
+    "rules": [
+      "extended_autolink"
+    ],
+    "markdown": "xmpp:a@example.com/\n",
+    "html": "<p><a>xmpp:a@example.com</a>/</p>\n"
+  },
+  {
+    "name": "shallow empty list item",
+    "rules": [
+      "list"
+    ],
+    "max_container_depth": 1,
+    "markdown": "-\n",
+    "html": "<ul>\n<li></li>\n</ul>\n"
+  },
+  {
+    "name": "shallow empty blockquote",
+    "rules": [
+      "blockquote"
+    ],
+    "max_container_depth": 1,
+    "markdown": ">\n",
+    "html": "<blockquote>\n</blockquote>\n"
   }
 ]

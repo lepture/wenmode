@@ -336,5 +336,25 @@
     ],
     "markdown": "$a\nb$\n",
     "html": "<p>$a\nb$</p>\n"
+  },
+  {
+    "name": "inline math skips closing before digit",
+    "rules": [
+      "math_block",
+      "inline_code",
+      "inline_math"
+    ],
+    "markdown": "$a$2 and $b$\n",
+    "html": "<p><span class=\"math math-inline\">a$2 and $b</span></p>\n"
+  },
+  {
+    "name": "inline math skips closing after space",
+    "rules": [
+      "math_block",
+      "inline_code",
+      "inline_math"
+    ],
+    "markdown": "$a $ and $b$\n",
+    "html": "<p><span class=\"math math-inline\">a $ and $b</span></p>\n"
   }
 ]
