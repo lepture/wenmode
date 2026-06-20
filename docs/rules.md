@@ -10,6 +10,10 @@ Understand how Wenmode composes Markdown syntax from opt-in parser rules.
 Rules are opt-in and composable. A parser only recognizes syntax for rules that
 you enable.
 
+Read this page when you are building a custom dialect. If you only need common
+Markdown, start with {ref}`presets`; if you need non-standard syntax packaged
+with renderer behavior, start with {ref}`plugins`.
+
 ```python
 from wenmode import Wenmode
 from wenmode.rules import AtxHeading, Emphasis, InlineCode
@@ -89,6 +93,9 @@ Some rules also attach root transforms. Transforms can collect definitions,
 defer inline resolution until the whole document is known, or update parsed
 nodes after block parsing is complete.
 
+If a feature needs both syntax and output behavior, register it through a plugin
+so the rule and renderer handlers stay together.
+
 ## Rule order
 
 Block and inline rules are sorted by their `order` value. When multiple inline
@@ -96,6 +103,10 @@ rules match at the same position, the sorted rule order decides which rule wins.
 
 Most custom rules can keep the default order. Set a custom `order` only when
 your rule must run before or after another syntax with overlapping markers.
+
+Prefer changing rule order in the smallest possible rule set and cover the
+overlap with tests. Rule order changes can affect unrelated syntax that shares
+the same opening character.
 
 ## Inspecting enabled rules
 

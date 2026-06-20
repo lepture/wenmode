@@ -11,6 +11,20 @@ Plugins are feature modules that install parser rules and renderer handlers
 together. Use them when syntax creates nodes outside the CommonMark, GFM, or
 mdast directive surface.
 
+Most applications use plugins in addition to a preset:
+
+```python
+from wenmode import Wenmode
+from wenmode.presets import github
+from wenmode.plugins import math
+
+wenmode = Wenmode(github).use(math)
+```
+
+Use a plugin when you want a complete feature. Use individual rules when you
+are deliberately building a small dialect and already know which parser
+behavior you need.
+
 ## Using Plugins
 
 Import a plugin module from `wenmode.plugins` and pass it to `Wenmode.use()`.
@@ -64,6 +78,9 @@ block_math = Wenmode().use(math, inline=False)
 | `wenmode.plugins.subscript` | `subscript` inline nodes |
 | `wenmode.plugins.superscript` | `superscript` inline nodes |
 
+Each plugin also registers default HTML, Markdown, or RST renderer handlers when
+the feature has a standard representation in Wenmode's built-in renderers.
+
 ## Fenced Directives And Roles
 
 The `fenced_directive` and `inline_role` plugins provide MyST-style directive
@@ -103,6 +120,10 @@ directive `name`, and the backtick content becomes children.
 After these plugins create directive nodes, HTML output still depends on
 directive renderers. Register directive renderers the same way you would for
 mdast-style directives.
+
+Use these plugins when you want MyST-style syntax. Use the core
+`TextDirective`, `LeafDirective`, and `ContainerDirective` rules when you want
+mdast directive syntax with colon markers.
 
 ## Creating Plugins
 

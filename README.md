@@ -10,6 +10,14 @@ parses CommonMark-style Markdown and renders HTML.
 
 Documentation: <https://wenmode.lepture.com>
 
+Use Wenmode when you need one or more of these behaviors:
+
+- render Markdown to HTML with safe defaults for user-authored content,
+- choose the exact Markdown rules your application accepts,
+- inspect or store an mdast-compatible AST,
+- build a custom Markdown dialect with parser rules and renderer handlers,
+- stream HTML output from Markdown input.
+
 ## Installation
 
 ```bash
@@ -99,7 +107,14 @@ rst = wenmode.render(text)
 assert rst == expected.lstrip()
 ```
 
-## Rules
+## Rules, presets, and plugins
+
+Most applications start with a preset:
+
+- `commonmark`, the default CommonMark-style rule set,
+- `github`, for GitHub-flavored Markdown features such as tables and task
+  lists,
+- `streaming`, for incremental HTML output.
 
 Rules are opt-in and composable. `Wenmode()` uses the `commonmark` preset by
 default; pass an explicit rule list when you want a custom Markdown dialect.
@@ -147,6 +162,20 @@ from wenmode import Wenmode
 from wenmode.presets import github
 
 wenmode = Wenmode(github)
+```
+
+Use built-in plugins for non-standard syntax such as math, definition lists,
+abbreviations, spoilers, ruby text, and extra inline formatting:
+
+```python
+from wenmode import Wenmode
+from wenmode.plugins import math
+
+wenmode = Wenmode().use(math)
+
+assert wenmode.render('Inline $x + y$.\n') == (
+    '<p>Inline <span class="math math-inline">x + y</span>.</p>\n'
+)
 ```
 
 ## Benchmark
@@ -219,6 +248,10 @@ Mean time from one local `--case all` run:
 In this run, `wenmode-all` remains faster than the other parsers even after
 loading many extra rules that the benchmark inputs mostly do not use.
 
+Benchmark numbers depend on hardware, Python version, corpus, and parser
+configuration. See the full methodology in the
+[Benchmarks](https://wenmode.lepture.com/benchmarks/) documentation.
+
 ## Streaming
 
 Use the `streaming` preset when you want to render HTML chunks without waiting
@@ -242,3 +275,13 @@ for chunk in wenmode.stream(text):
 
 The returned iterator can be passed to streaming responses in frameworks such
 as Django, Flask, and FastAPI.
+
+## Learn more
+
+- [Usage](https://wenmode.lepture.com/usage/) for the main APIs.
+- [Presets](https://wenmode.lepture.com/presets/) for choosing a rule set.
+- [Security](https://wenmode.lepture.com/security/) for raw HTML and URL
+  handling.
+- [Plugins](https://wenmode.lepture.com/plugins/) for built-in extensions.
+- [Migration guides](https://wenmode.lepture.com/migration/) for moving from
+  other Python Markdown parsers.

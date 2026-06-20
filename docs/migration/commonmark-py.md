@@ -143,4 +143,5 @@ For untrusted user-authored Markdown, leave Wenmode's default escaping enabled.
 - Replace `commonmark.commonmark(text)` with `Wenmode().render(text)`.
 - Replace commonmark.py AST traversal with Wenmode node traversal or `to_ast()`.
 - Review raw HTML passthrough assumptions.
-- Add `github`, built-in plugins, or custom plugins only after the CommonMark migration is stable.
+- Add `github`, built-in plugins, or custom plugins only after the CommonMark
+  migration is stable.

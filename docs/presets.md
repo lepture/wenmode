@@ -21,6 +21,9 @@ wenmode = Wenmode(github)
 Use {ref}`plugins` for non-standard syntax that needs its own nodes and renderer
 handlers.
 
+In most applications, choose one preset first, then add plugins or custom rules
+only for the syntax that preset does not cover.
+
 ## Choosing a preset
 
 | Preset | Use it when | Includes | Main tradeoff |
@@ -93,9 +96,11 @@ footnotes, are not compatible with streaming output.
 
 ## Custom preset
 
-A preset is just a reusable rule list. Keep custom dialects in one module so
-the editor preview, API renderer, background jobs, and tests all use the same
-Markdown behavior.
+A preset is a reusable rule list. Create a custom one when your product needs a
+smaller or stricter dialect than `commonmark`, `github`, or `streaming`.
+
+Keep custom dialects in one module so the editor preview, API renderer,
+background jobs, and tests all use the same Markdown behavior.
 
 ```python
 from wenmode import Wenmode
@@ -130,3 +135,6 @@ This example starts from `commonmark`, removes raw HTML parsing, and replaces
 reference-style image and link rules with direct-only variants. Export
 `product_preset` from your own package when multiple services need the same
 syntax rules.
+
+When a feature needs a new node type or renderer behavior, prefer a plugin over
+a long shared rule list. See {ref}`plugins` and {ref}`custom-plugins`.

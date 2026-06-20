@@ -7,6 +7,9 @@ Block-level and document-wide syntax provided by built-in plugins.
 
 ---
 
+Enable these features with `Wenmode().use(...)` from `wenmode.plugins`. For
+setup options and renderer behavior, see {ref}`plugins`.
+
 ## Abbreviation Plugin
 
 `wenmode.plugins.abbr` parses abbreviation definitions and rewrites matching

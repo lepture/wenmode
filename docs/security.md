@@ -11,6 +11,11 @@ controls.
 Wenmode parses Markdown into an AST and then renders that AST. Security behavior
 comes mostly from the renderer you choose and the rules you enable.
 
+For untrusted user content, the safest starting point is the default
+`Wenmode()` or `Wenmode(github)` with the default `HTMLRenderer()`. Change
+renderer safety options only after you know where raw HTML and URLs are
+validated in your application.
+
 ## Threat model
 
 The default HTML path is designed for user-authored Markdown where raw HTML
@@ -107,6 +112,9 @@ the rule list as shown below.
 For trusted Markdown, `HTMLRenderer(escape=False)` can preserve raw HTML output.
 Use it only when the source is controlled by your application or has already
 passed through an HTML sanitizer.
+
+Do not treat `escape=False` as a sanitizer setting. It is an output passthrough
+setting for content you have already decided to trust.
 
 ## Security profiles
 

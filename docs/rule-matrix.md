@@ -58,6 +58,9 @@ adding those definition rules directly.
 These rules are not part of `wenmode.rules`. Enable them with `Wenmode.use()`
 from `wenmode.plugins` when your dialect needs the syntax.
 
+The plugin name in the first column is the module you import from
+`wenmode.plugins`.
+
 | Plugin | Rule class | Kind | Generated node or behavior | Streaming note |
 | --- | --- | --- | --- | --- |
 | `abbr` | `AbbreviationRule` | transform | rewrites matching text to `abbreviation` | not streaming-compatible |
@@ -87,6 +90,10 @@ resolution. Avoid these when using `Wenmode(streaming).stream(...)`:
 
 Use the `streaming` preset when latency matters. It keeps direct links and
 images, but leaves shortcut and reference-style links as text.
+
+If a custom rule set raises `StreamingUnsupportedError`, compare it with this
+section first. The issue is usually a rule or transform that waits for the full
+document before resolving inline content.
 
 ## Common customizations
 

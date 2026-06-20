@@ -13,6 +13,11 @@ Use this page when you are wiring Wenmode into an application rather than
 trying one API call. The examples keep parser setup, rendering policy, and
 post-processing in one place so the behavior is easy to test.
 
+The main integration rule is: configure Markdown once, then reuse that
+configuration everywhere the same content type is rendered. Avoid letting the
+editor preview, API response, and background indexing job drift into different
+rule sets.
+
 ## Reuse one configured instance
 
 Create a small service object around the rule set your product supports. A

@@ -12,6 +12,14 @@ Create a plugin when you want to add syntax or output behavior that is not part
 of the CommonMark, GFM, mdast directive, or built-in plugin surface. A plugin is
 the unit your application installs with `Wenmode.use(plugin)`.
 
+Before writing a custom plugin, check whether the feature can be expressed as:
+
+- a preset or configured rule list, when no new node type is needed,
+- a built-in plugin from {ref}`plugins`, when Wenmode already provides the
+  syntax,
+- a directive renderer, when the syntax should stay in the mdast directive
+  family.
+
 Plugins usually keep these pieces together:
 
 - custom node classes,
@@ -211,19 +219,24 @@ useful when the rule itself has options.
 ## Parsing Nested Content
 
 When a rule contains nested Markdown content, call parser helpers so the nested
-content uses the same rule set and source-position behavior.
+content uses the same rule set and, when enabled, the same source-position
+behavior.
 
-Inline rules should call `parser.parse_inlines()`:
+Inline rules should pass the source range of the nested label or body:
 
 ```{code-block} python
+value_start = match.end()
+value_end = text.find('++', value_start)
+
 children = parser.parse_inlines(
-    text[start:end],
+    text[value_start:value_end],
     state,
-    source=parser.inline_source(text, start, end),
+    source=parser.inline_source(text, value_start, value_end),
 )
 ```
 
-Block rules should call `parser.parse_blocks()`:
+Block rules should collect the original source for generated nested text before
+calling `parser.parse_blocks()`:
 
 ```{code-block} python
 source = state.source.collect()
@@ -238,27 +251,73 @@ children = parser.parse_blocks(
 )
 ```
 
-When positions are enabled, `Position.start` and `Position.end` are 0-based
-source offsets. This makes rule-local position updates the same shape as regex
-match indices and string slices:
-
-```{code-block} python
-from wenmode.nodes import Position
-
-if node.position is not None:
-    child.position = Position(
-        start=node.position.start + start,
-        end=node.position.start + end,
-    )
-```
-
-`Root.to_ast()` later converts those offsets to unist-style `line` and `column`
-fields. Standalone nodes, including nodes yielded by `Parser.parse_iter()`, do
-not have root line-start context and serialize positions with offsets only.
-
 If a rule decides not to handle a match, return `None` without consuming input.
 For inline rules, return `(None, match.start())`. The parser will continue with
 the normal fallback behavior.
+
+## Source Positions
+
+Most rules should not set the outer node position. If `positions=True` and the
+returned node has `position=None`, the parser fills it with the complete source
+range consumed by the rule. Positions store 0-based offsets. If a rule sets a
+position itself, the parser will not overwrite it.
+
+For a simple inline rule, this is enough:
+
+```{code-block} python
+from dataclasses import dataclass
+
+from wenmode.nodes import Node
+
+
+@dataclass
+class MentionNode(Node):
+    name: str = ''
+    type: str = 'mention'
+
+
+class MentionRule(InlineRule):
+    def __init__(self) -> None:
+        super().__init__('mention', r'@[A-Za-z][A-Za-z0-9_]*', '@')
+
+    def parse(
+        self,
+        parser: Parser,
+        text: str,
+        match: re.Match[str],
+        state: BlockState,
+    ) -> tuple[Node | None, int]:
+        return MentionNode(name=match.group(0)[1:]), match.end()
+```
+
+The parser will assign `MentionNode.position` to the `@name` span. Do not set it
+manually unless the node should point somewhere else.
+
+Set positions manually only when a node or child node should point to a smaller
+range than the complete syntax. This usually happens when a transform splits an
+existing text node:
+
+```{code-block} python
+from wenmode.nodes import Position, Text
+
+if node.position is not None:
+    child = Text(
+        value=node.value[start:end],
+        position=Position(
+            start=node.position.start + start,
+            end=node.position.start + end,
+        ),
+    )
+```
+
+For nested Markdown, prefer passing a source map instead of setting every child
+manually. In the `++marked++` example above, `parser.inline_source()` maps
+children to `marked`, while the returned `PlusMarkNode` still gets the full
+`++marked++` range from the parser.
+
+`Root.to_ast()` converts offsets to unist-style `line` and `column` fields.
+Standalone nodes, including nodes yielded by `Parser.parse_iter()`, do not have
+root line-start context and serialize positions with offsets only.
 
 ## Plugin State And Transforms
 
@@ -279,6 +338,10 @@ Use `defer_inlines = True` only when inline parsing needs document-wide state
 collected by a transform, such as reference-style links or abbreviation
 definitions. Rule sets with deferred inline parsing cannot be used with
 streaming output.
+
+If a plugin is intended for streaming output, test it through
+`Wenmode(streaming).use(plugin).stream(...)` or through an equivalent custom
+streaming rule list.
 
 ## Testing Plugins
 

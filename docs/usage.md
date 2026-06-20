@@ -30,6 +30,20 @@ uv add wenmode
 :::
 ::::
 
+## Core objects
+
+Most code uses one of these shapes:
+
+| Object | Use it when |
+| --- | --- |
+| `Wenmode` | You want one object that parses Markdown and renders output. |
+| `Parser` | You want the AST and will render, transform, or store it yourself. |
+| `HTMLRenderer`, `MarkdownRenderer`, `RSTRenderer` | You already have parsed nodes and want a specific output format. |
+
+`Wenmode()` defaults to the `commonmark` preset and `HTMLRenderer()`. Pass a
+different preset, rule list, renderer, or `positions=True` only when your
+application needs that behavior.
+
 ## Quick start
 
 `Wenmode` is the main convenience API. It owns a `Parser` and a renderer, and
@@ -141,6 +155,9 @@ those offsets to the `line` and `column` fields shown above. If you call
 the position object contains offsets only because there is no document root to
 provide line-start context.
 
+Enable positions only for tooling that needs source ranges. Leave them disabled
+for ordinary HTML rendering.
+
 ## Rendering
 
 `Wenmode()` uses `HTMLRenderer` by default. Pass a different renderer when you
@@ -204,6 +221,9 @@ Parser state is created per parse. Reference definitions, footnote definitions,
 and abbreviation definitions do not leak between calls, so a parser instance can
 be reused safely.
 
+Use this split form when parsing and rendering happen in different layers of
+your application, or when you need to run AST transforms before rendering.
+
 ## Streaming output
 
 Use the `streaming` preset when you want HTML chunks without waiting for the
@@ -241,8 +261,8 @@ If unsupported rules are enabled, `stream()` raises `StreamingUnsupportedError`.
 `Wenmode.stream()` returns a synchronous iterator of HTML chunks. Web frameworks
 that accept iterable response bodies can send those chunks directly.
 
-See {ref}`choosing a rule preset <presets>`, {ref}`HTML and URL safety behavior
-<security>`, and {ref}`common integration tasks <recipes>`.
+See {ref}`choosing a rule preset <presets>`, {ref}`security`, and
+{ref}`common integration tasks <recipes>`.
 
 ### FastAPI
 

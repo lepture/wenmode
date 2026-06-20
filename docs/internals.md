@@ -11,6 +11,10 @@ and renderer internals.
 Wenmode is organized around a small set of data objects and dispatch points:
 AST nodes, parser rules, root transforms, parser state, and renderers.
 
+This page is for contributors and plugin authors who need to understand how
+parsing and rendering are wired internally. For application usage, start with
+{ref}`usage`, {ref}`presets`, and {ref}`custom-plugins`.
+
 The AST is mdast-compatible. Core Markdown nodes use mdast-style names and
 fields: `root.children`, `paragraph.children`, `heading.depth`, `link.url`,
 `link.title`, `image.url`, `image.alt`, `code.lang`, and literal `value`
@@ -105,6 +109,10 @@ At a high level:
 4. Paragraph text is parsed with enabled inline rules.
 5. Root transforms finalize document-wide features.
 
+The important boundary for extension authors is that block parsing creates the
+tree shape, inline parsing fills span-level children, and root transforms handle
+features that need document-wide state.
+
 `Parser.parse_iter()` follows the block parser incrementally and yields nodes as
 they are parsed. It rejects rule sets that require deferred inline transforms.
 Because it does not build a root node, position-aware `parse_iter()` output
@@ -190,3 +198,7 @@ def render_text(renderer: UpperRenderer, node: Text, context: RenderContext) -> 
 If no handler is registered, `BaseRenderer` renders child nodes or a literal
 `value` field. `HTMLRenderer` registers explicit handlers for Wenmode's node
 types and falls back to the same child/value behavior for unknown nodes.
+
+Register handlers on a renderer subclass when the behavior is application
+specific. Register handlers through a plugin when the behavior belongs to a
+syntax extension that other applications may reuse.

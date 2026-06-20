@@ -8,6 +8,10 @@ directives, streaming, custom renderers, and rule selection.
 
 ---
 
+Use this page when Wenmode runs successfully but the rendered output or AST does
+not match what you expected. If you are still choosing a dialect, start with
+{ref}`presets` and {ref}`rule-matrix` instead.
+
 ## Raw HTML is escaped
 
 `HTMLRenderer()` escapes raw HTML nodes by default. This is the recommended

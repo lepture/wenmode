@@ -13,6 +13,10 @@ here while preparing a release, then move them under the final version heading.
 
 ## Unreleased
 
+- Add the `Wenmode.use(plugin, **options)` plugin API and built-in
+  `wenmode.plugins` modules for non-standard syntax such as math, definition
+  lists, abbreviations, spoilers, ruby text, inline roles, and extra inline
+  formatting.
 - Add opt-in source positions with `Wenmode(..., positions=True)` and
   `Parser(..., positions=True)`. `Root.to_ast()` includes unist-style
   `position.start` and `position.end` objects when positions are enabled, while
@@ -20,6 +24,12 @@ here while preparing a release, then move them under the final version heading.
   custom rule code.
 - Add source mapping helpers for custom rules that recursively parse nested
   inline or block content.
+- Require custom `InlineRule.parse()` implementations to receive a concrete
+  `BlockState`; `Parser.parse_inlines()` remains the standalone inline parsing
+  entry point.
+- Move non-standard extension syntax out of `wenmode.rules` and into explicit
+  plugins. Code using those extension rules directly should migrate to
+  `Wenmode().use(wenmode.plugins.<name>)`.
 
 ## 0.1.1
 

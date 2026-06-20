@@ -21,6 +21,11 @@ Directive parsing and directive rendering are separate steps:
 Without a matching HTML directive renderer, Wenmode falls back to rendering the
 directive children.
 
+Use directives when your document needs named, structured blocks or spans such
+as admonitions, figures, details sections, or a table of contents. Use plugins
+when the syntax should create a new Wenmode-specific node type such as `math`,
+`ruby`, or `mark`.
+
 MyST-style fenced directives and inline roles are plugins. See {ref}`plugins`
 when you want code-fence-style `` ```{name}`` directives or
 `` {name}`content` `` roles.
@@ -133,6 +138,10 @@ wenmode = Wenmode(
     directives=[Abbreviation(), Admonition(), Details(), Figure(), TableOfContents()],
 )
 ```
+
+Choose this construction-time form when the directive set is part of your
+application's Markdown policy. Use `register_directive_renderer()` when a test
+or integration needs to add one renderer to an already configured instance.
 
 ## Built-in directive renderers
 

@@ -13,6 +13,10 @@ The tests render with `HTMLRenderer(escape=False, sanitize_urls=False)` so the
 comparison focuses on parser and renderer compatibility rather than Wenmode's
 safer default HTML policy.
 
+This page is about spec fixture alignment, not production security defaults. In
+real applications, keep the default renderer safety settings unless your content
+is trusted or sanitized elsewhere.
+
 ## Fixture coverage
 
 | Suite | Fixture | Examples | Test command | Current status |

@@ -51,6 +51,10 @@ broader than tables, and `commonmark.py` is CommonMark-only because it does not
 support pipe tables. `wenmode-all` is deliberately broader than the other
 targets and measures the overhead of carrying many enabled rules and plugins.
 
+That means `wenmode-core` is the closest cross-library comparison, while
+`wenmode-all` answers a different question: how much overhead remains when a
+Wenmode application enables many optional features.
+
 ## Versions
 
 | Library | Version |

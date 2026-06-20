@@ -82,6 +82,21 @@ Wenmode separates parsing, rendering, syntax rules, and directive rendering so
 you can start with a CommonMark-style parser and then opt in to only the
 Markdown features you need.
 
+## Core concepts
+
+If you are new to Wenmode, these are the names you will see throughout the
+docs:
+
+| Concept | What it means |
+| --- | --- |
+| `Wenmode` | The high-level object most applications use. It owns a parser and a renderer. |
+| `Parser` | Parses Markdown into node objects when you want to render later or inspect the AST. |
+| Renderer | Turns nodes into HTML, Markdown, RST, or application-specific output. |
+| Preset | A ready-made rule list such as `commonmark`, `github`, or `streaming`. |
+| Rule | One parser feature, such as headings, links, tables, or directives. |
+| Plugin | A package of rules, nodes, and renderer handlers for non-standard syntax. |
+| Directive renderer | HTML output behavior for mdast-style directive nodes. |
+
 Install Wenmode from PyPI:
 
 ::::{tab-set}
@@ -122,6 +137,9 @@ assert html == expected.lstrip()
 ```
 
 ## Choose your path
+
+Start with {doc}`Usage <usage>` if you only need to parse Markdown and render
+HTML. Use the table below when you already know what you are trying to build.
 
 | Goal | Start here |
 | --- | --- |

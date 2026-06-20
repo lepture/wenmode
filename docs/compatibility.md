@@ -13,6 +13,10 @@ documented extension APIs are ready for real integration work, but the project
 may still refine edge-case behavior and smaller public APIs before a stable
 1.0 release. See {ref}`changelog` for release history and upgrade notes.
 
+For application users, the practical rule is: depend on documented presets,
+rules, nodes, renderer options, and plugin APIs; avoid depending on private
+helpers or incidental HTML formatting details not described in the docs.
+
 ## Python support
 
 Wenmode supports Python 3.10 and newer. The test matrix and package metadata

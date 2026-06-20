@@ -183,6 +183,10 @@ assert '"url": "https://example.com"' in payload
 Renderers inherit from `BaseRenderer` and register handlers by node type. This
 example turns Markdown into plain uppercase text.
 
+Use this pattern when the output format is not HTML with a few changed tags. If
+you only need to customize one HTML feature, registering a handler on an
+`HTMLRenderer` subclass is usually enough.
+
 ```python
 from wenmode import Wenmode
 from wenmode.nodes import Text

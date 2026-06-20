@@ -11,6 +11,14 @@ HTML output.
 This section is split by lookup task so syntax examples, AST shapes, and
 renderer output stay readable as the rule set grows.
 
+Use these pages after you know which feature you are looking for. If you are
+still choosing a dialect, start with {ref}`presets` or {ref}`rule-matrix`.
+
+Each rule entry shows the Markdown input and the AST shape produced by
+`root.to_ast()`. The default HTML behavior follows from the built-in renderer
+for that node type unless the entry says a directive renderer or plugin handler
+is required.
+
 ```{toctree}
 :maxdepth: 2
 

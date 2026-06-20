@@ -71,6 +71,10 @@ Runnable Python examples in guide pages are exercised by
 snippet is intentionally partial, make sure the test skip rules identify it
 explicitly rather than silently ignoring a whole page.
 
+When a change affects multiple pages, update the conceptual page first, then the
+recipe or reference page that users copy from. This keeps explanations and code
+examples aligned.
+
 ## Rule change checklist
 
 When adding or changing a public rule or built-in plugin:
