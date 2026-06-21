@@ -64,8 +64,9 @@ wenmode = Wenmode(github)
 ```
 
 It adds tables, strikethrough, task list items, extended autolinks, and
-footnotes. It also configures HTML block and inline HTML handling with the GFM
-disallowed HTML tag list.
+footnotes. It configures `Table(require_body_pipe=False)` so GFM-compatible
+table body rows can omit a pipe, and it configures HTML block and inline HTML
+handling with the GFM disallowed HTML tag list.
 
 ## Streaming
 

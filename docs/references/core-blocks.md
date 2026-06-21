@@ -372,7 +372,10 @@ Option example: use `List(task=True)` to parse GFM task list markers.
 
 ## Table
 
-`Table` parses GFM pipe tables.
+`Table` parses pipe tables. By default, table body rows must contain an
+unescaped pipe; this keeps a following plain paragraph from being padded into
+the table body. Use `Table(require_body_pipe=False)` for GFM-compatible short
+body rows, as the `github` preset does.
 
 ```markdown
 | A    | B    |

@@ -11,6 +11,22 @@ releases.
 This page records notable changes for released versions. Add unreleased entries
 here while preparing a release, then move them under the final version heading.
 
+## 0.3.1
+
+Released **Jun 21, 2026**.
+
+- Harden `HTMLRenderer` attribute output by escaping generated attribute values,
+  dropping unsafe attribute names such as event handlers and `style` by default,
+  and sanitizing link and image URLs.
+- Fix HTML block parsing so nested tags are preserved correctly.
+- Fix normalized Markdown output for list rendering and RST output for literal
+  code and links.
+- Fix table parsing in custom rule lists so body lines without an unescaped pipe
+  end the table instead of being padded into table rows.
+- Add `Table(require_body_pipe=False)` and configure the `github` preset with it
+  to preserve GFM-compatible short table body rows.
+- Enforce UTF-8 output in the CLI.
+
 ## 0.3.0
 
 Released **Jun 21, 2026**.

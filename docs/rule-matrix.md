@@ -34,7 +34,7 @@ rules to enable. For syntax examples and default HTML output, use the
 | `Link` | inline | yes | yes | configured | `link` | `references=True` |
 | `InlineCode` | inline | yes | yes | yes | `inlineCode` | none |
 | `Emphasis` | inline | yes | yes | yes | `emphasis`, `strong` | none |
-| `Table` | block | no | yes | no | `table`, `tableRow`, `tableCell` | none |
+| `Table` | block | no | configured | no | `table`, `tableRow`, `tableCell` | `require_body_pipe=True` |
 | `Footnote` | inline + transform | no | yes | no | `footnoteReference`, `footnoteDefinition` | none |
 | `Strikethrough` | inline | no | yes | no | `delete` | none |
 | `ExtendedAutolink` | inline | no | yes | no | `link` | none |
@@ -42,9 +42,10 @@ rules to enable. For syntax examples and default HTML output, use the
 | `ContainerDirective` | block | no | no | no | `containerDirective` | none |
 | `TextDirective` | inline | no | no | no | `textDirective` | none |
 
-`github` configures `HtmlBlock` and `RawHtml` with the GFM disallowed tag list,
-uses `RawHtml(comment_style="gfm")`, and configures `List(task=True)` so task
-list markers become `listItem.checked` values. `streaming` configures
+`github` configures `Table(require_body_pipe=False)`, configures `HtmlBlock`
+and `RawHtml` with the GFM disallowed tag list, uses
+`RawHtml(comment_style="gfm")`, and configures `List(task=True)` so task list
+markers become `listItem.checked` values. `streaming` configures
 `Image(references=False)` and `Link(references=False)` to avoid document-wide
 reference resolution.
 
