@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
+from wenmode.ast import plain_text
 from wenmode.nodes import (
     Blockquote,
     Break,
@@ -75,7 +76,20 @@ class RSTRenderer(BaseRenderer):
 
     def escape_inline_literal(self, value: str) -> str:
         """Escape text inside an inline literal."""
-        return value.replace('``', '`\\`')
+        return value
+
+    def escape_interpreted_text(self, value: str) -> str:
+        """Escape text inside a reStructuredText interpreted text role."""
+        escaped = value.replace('`', '\\`')
+        if escaped.startswith(' '):
+            escaped = '\\' + escaped
+        if escaped.endswith(' '):
+            escaped = escaped[:-1] + '\\ '
+        return escaped
+
+    def escape_link_label(self, value: str) -> str:
+        """Escape text inside a reStructuredText hyperlink label."""
+        return self.escape_text(value.replace('\n', ' ')).replace('<', '\\<').replace('>', '\\>')
 
     def escape_link_target(self, value: str) -> str:
         """Escape a link or image target."""
@@ -297,6 +311,8 @@ def render_text(renderer: RSTRenderer, node: Text, context: RSTRenderContext) ->
 
 @RSTRenderer.register('inlineCode')
 def render_inline_code(renderer: RSTRenderer, node: InlineCode, context: RSTRenderContext) -> str:
+    if '`' in node.value:
+        return f':literal:`{renderer.escape_interpreted_text(node.value)}`'
     return f'``{renderer.escape_inline_literal(node.value)}``'
 
 
@@ -312,7 +328,7 @@ def render_emphasis(renderer: RSTRenderer, node: Emphasis, context: RSTRenderCon
 
 @RSTRenderer.register('link')
 def render_link(renderer: RSTRenderer, node: Link, context: RSTRenderContext) -> str:
-    label = renderer.render_children(node.children, context) or renderer.escape_text(node.url)
+    label = renderer.escape_link_label(plain_text(node.children) or node.url)
     return f'`{label} <{renderer.escape_link_target(node.url)}>`__'
 
 

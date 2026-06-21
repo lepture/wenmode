@@ -228,7 +228,7 @@
     "input": "[![alt](/img.png)][image-ref]\n\n[a  \nb][break-ref]\n\n[image-ref]: /image-link\n[break-ref]: /break-link\n",
     "html": "<p><a href=\"/image-link\"><img src=\"/img.png\" alt=\"alt\" /></a></p>\n<p><a href=\"/break-link\">a<br />\nb</a></p>\n",
     "markdown": "[![alt](/img.png)](/image-link)\n\n[a  \nb](/break-link)\n",
-    "rst": "`|image-1| </image-link>`__\n\n`a\nb </break-link>`__\n\n.. |image-1| image:: /img.png\n   :alt: alt\n"
+    "rst": "`alt </image-link>`__\n\n`ab </break-link>`__\n"
   },
   {
     "name": "task list",
@@ -304,7 +304,7 @@
     "input": "`` `x` ``\n",
     "html": "<p><code>`x`</code></p>\n",
     "markdown": "`` `x` ``\n",
-    "rst": "```x```\n"
+    "rst": ":literal:`\\`x\\``\n"
   },
   {
     "name": "link and image escaping",

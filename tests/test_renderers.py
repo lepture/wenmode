@@ -172,3 +172,17 @@ def test_html_renderer_reuses_instance_without_leaking_footnote_state() -> None:
 
     assert second == first
     assert 'id="user-content-fnref-one-2"' not in second
+
+
+def test_rst_renderer_keeps_backticks_inside_inline_code_valid() -> None:
+    app = configured_app(['inline_code'], renderer=RSTRenderer())
+
+    assert app.render('```` ```{name} ````\n') == ':literal:`\\`\\`\\`{name}`\n'
+
+
+def test_rst_renderer_uses_plain_text_for_link_labels() -> None:
+    app = configured_app(['link', 'inline_code'], renderer=RSTRenderer())
+
+    assert app.render('[`mdast-util-directive`](https://example.com)\n') == (
+        '`mdast-util-directive <https://example.com>`__\n'
+    )
