@@ -7,160 +7,83 @@ description: Wenmode is a fast, composable Markdown toolkit for Python with expl
 # Wenmode
 
 ```{rst-class} lead
-Build exactly the Markdown dialect your Python application needs. Wenmode gives
-you fast CommonMark-style parsing, explicit rule composition, mdast-compatible
-AST output, safe HTML defaults, streaming, and pluggable renderers.
+Build a Markdown dialect with explicit rules, AST output, safe defaults, and
+pluggable renderers.
 ```
 
 ```{container} buttons
+{doc}`Introduction <introduce>`
 {doc}`Quick Start <usage>`
-{doc}`Recipes <recipes>`
 ```
 
-Wenmode is designed for applications that need more control than a single
-Markdown-to-HTML helper can provide: documentation systems, user-generated
-content, static-site pipelines, AI/AST workflows, custom Markdown dialects, and
-format converters.
+Wenmode is for Python applications where Markdown is part of the product model:
+documentation systems, user-generated content, static-site pipelines, AI/AST
+workflows, custom dialects, and format converters.
 
 ## Why Wenmode?
 
-::::{grid} 1 1 2 3
+::::{grid} 1 1 2 2
 :gutter: 2
 :padding: 0
 :class-row: surface
 
-:::{grid-item-card} Composable syntax
+:::{grid-item-card} Explicit dialects
 :link: presets
 :link-type: doc
 
-Start with CommonMark-style Markdown, switch to GitHub-flavored Markdown, use
-streaming output, or pass the exact rule list your product needs.
+Choose CommonMark-style Markdown, GitHub-flavored Markdown, streaming output, or
+the exact rule list your product needs.
 :::
 
 :::{grid-item-card} AST-first workflows
 :link: references/nodes
 :link-type: doc
 
-Parse to mdast-compatible nodes for indexing, transforms, storage, analysis,
-or conversion before choosing an output format.
-:::
-
-:::{grid-item-card} Pluggable output
-:link: recipes
-:link-type: doc
-
-Render HTML, normalized Markdown, reStructuredText, or your own output by
-registering handlers for the node types you care about.
+Parse to mdast-compatible nodes before indexing, transforming, storing,
+validating, or rendering content.
 :::
 
 :::{grid-item-card} Safe HTML defaults
 :link: security
 :link-type: doc
 
-Escape raw HTML and sanitize unsafe URLs by default, then opt into trusted HTML
-only when your application has a separate sanitization layer.
+Escape raw HTML and sanitize unsafe URLs by default, then opt into trusted
+passthrough only when your application has a separate sanitization layer.
 :::
 
-:::{grid-item-card} Streaming support
-:link: usage
+:::{grid-item-card} Pluggable rendering
+:link: recipes
 :link-type: doc
 
-Emit HTML chunks as Markdown is parsed when latency matters, using a preset that
-avoids document-wide deferred resolution.
-:::
-
-:::{grid-item-card} Fast and lightweight
-:link: compatibility
-:link-type: doc
-
-Keep runtime dependencies at zero and enable only the syntax rules you need, so
-larger dialects do not become the default cost for every parse.
+Render HTML, normalized Markdown, reStructuredText, or application-specific
+output with renderer handlers.
 :::
 ::::
 
-Wenmode separates parsing, rendering, syntax rules, and directive rendering so
-you can start with a CommonMark-style parser and then opt in to only the
-Markdown features you need.
+Parsing, rule selection, transforms, directive handling, and rendering are
+separate pieces. Start with the default renderer, then opt into presets,
+plugins, or AST workflows only when your application needs them.
 
-## Core concepts
-
-If you are new to Wenmode, these are the names you will see throughout the
-docs:
-
-| Concept | What it means |
-| --- | --- |
-| `Wenmode` | The high-level object most applications use. It owns a parser and a renderer. |
-| `Parser` | Parses Markdown into node objects when you want to render later or inspect the AST. |
-| Renderer | Turns nodes into HTML, Markdown, RST, or application-specific output. |
-| Preset | A ready-made rule list such as `commonmark`, `github`, or `streaming`. |
-| Rule | One parser feature, such as headings, links, tables, or directives. |
-| Plugin | A package of rules, nodes, and renderer handlers for non-standard syntax. |
-| Directive renderer | HTML output behavior for mdast-style directive nodes. |
-
-Install Wenmode from PyPI:
-
-::::{tab-set}
-:class: outline
-
-:::{tab-item} {iconify}`devicon:pypi` pip
-
-```bash
-pip install wenmode
-```
-:::
-
-:::{tab-item} {iconify}`material-icon-theme:uv` uv
-
-```bash
-uv add wenmode
-```
-:::
-::::
-
-```python
-from wenmode import Wenmode
-
-wenmode = Wenmode()
-text = '''
-# Hello
-
-This is **wenmode**.
-'''
-expected = '''
-<h1>Hello</h1>
-<p>This is <strong>wenmode</strong>.</p>
-'''
-
-html = wenmode.render(text)
-
-assert html == expected.lstrip()
-```
-
-## Choose your path
-
-Start with {doc}`Usage <usage>` if you only need to parse Markdown and render
-HTML. Use the table below when you already know what you are trying to build.
+## Start here
 
 | Goal | Start here |
 | --- | --- |
+| Decide whether Wenmode fits your application | {doc}`Introduction <introduce>` |
 | Parse Markdown and render HTML | {doc}`Usage <usage>` |
-| Choose CommonMark, GFM, streaming, or a custom dialect | {doc}`Presets <presets>` |
-| Use mdast-style directives | {doc}`Directives <directives>` |
-| Enable non-standard syntax | {doc}`Plugins <plugins>` |
+| Choose CommonMark, GFM, streaming, or custom rules | {doc}`Presets <presets>` |
+| Add directives or non-standard syntax | {doc}`Directives <directives>` and {doc}`Plugins <plugins>` |
 | Render user-authored Markdown safely | {doc}`Security <security>` |
-| Add a table of contents, heading IDs, or a custom renderer | {doc}`Recipes <recipes>` |
-| Build application pipelines around Wenmode | {doc}`Integrations <integrations>` |
-| Troubleshoot escaping, directives, streaming, or custom renderers | {doc}`Troubleshooting <troubleshooting>` |
+| Build AST transforms, TOCs, or custom renderers | {doc}`Recipes <recipes>` |
+| Integrate Wenmode into an application pipeline | {doc}`Integrations <integrations>` |
 | Migrate from another Markdown parser | {doc}`Migration guides <migration/index>` |
-| Review benchmark methodology and results | {doc}`Benchmarks <benchmarks>` |
-| Create custom plugins | {doc}`Custom plugins <custom-plugins>` |
-| Check compatibility, compliance, changelog, and project status | {doc}`Compatibility <compatibility>`, {doc}`Compliance <compliance>`, and {doc}`Changelog <changelog>` |
+| Check compatibility and project status | {doc}`Compatibility <compatibility>` |
 
 ```{toctree}
 :caption: User Guide
 :hidden:
 :maxdepth: 2
 
+introduce
 usage
 presets
 directives

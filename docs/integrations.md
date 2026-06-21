@@ -2,9 +2,7 @@
 # Integrations
 
 ```{rst-class} lead
-Build application-level Markdown pipelines with a reusable Wenmode instance,
-safe user-content defaults, generated heading IDs, table-of-contents output,
-AST export, and streaming previews.
+Build reusable Markdown pipelines with safe defaults, AST export, and streaming.
 ```
 
 ---

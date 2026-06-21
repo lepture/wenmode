@@ -13,6 +13,9 @@ around explicit rule composition and renderer dispatch, so migration is usually
 best handled by identifying which syntax and output behavior your application
 depends on, then choosing a preset or rule list that matches it.
 
+If you are still deciding whether this model fits your application, read
+{doc}`../introduce` before choosing a parser-specific migration guide.
+
 Before changing code, collect a few representative Markdown documents from your
 application and save the HTML or AST output you currently rely on. Use those
 fixtures to compare Wenmode behavior during the migration.
