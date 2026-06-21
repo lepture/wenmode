@@ -77,42 +77,6 @@ class MarkdownRenderer(BaseRenderer):
         """Escape a link or image title."""
         return value.replace('\\', '\\\\').replace('"', '\\"')
 
-    def render_table_cell_content(self, cell: TableCell, context: RenderContext) -> str:
-        return self.render_children(cell.children, context).replace('\n', ' ').strip()
-
-    def render_directive_label(self, node: Node, context: RenderContext) -> str:
-        if not isinstance(node, Parent):
-            return ''
-        if node.children:
-            return '[' + self.render_children(node.children, context).strip() + ']'
-        return ''
-
-    def render_directive_attributes(self, attributes: dict[str, str] | None) -> str:
-        """Render directive attributes in Markdown directive syntax."""
-        if not attributes:
-            return ''
-
-        parts: list[str] = []
-        identifier = attributes.get('id')
-        if identifier:
-            parts.append('#' + identifier)
-
-        class_name = attributes.get('class')
-        if class_name:
-            parts.extend('.' + value for value in class_name.split() if value)
-
-        for key, value in attributes.items():
-            if key in {'id', 'class'}:
-                continue
-            if value == '':
-                parts.append(key)
-            else:
-                parts.append(f'{key}={quote_directive_attribute(value)}')
-
-        if parts:
-            return '{' + ' '.join(parts) + '}'
-        return ''
-
     def render_script_children(self, node: Parent, marker: str, context: RenderContext) -> str:
         content = self.render_children(node.children, context)
         return content.replace(' ', '\\ ').replace(marker, '\\' + marker)
@@ -177,9 +141,7 @@ def render_delete(renderer: MarkdownRenderer, node: Delete, context: RenderConte
 @MarkdownRenderer.register('textDirective')
 def render_text_directive(renderer: MarkdownRenderer, node: TextDirective, context: RenderContext) -> str:
     return (
-        f':{node.name}'
-        f'{renderer.render_directive_label(node, context)}'
-        f'{renderer.render_directive_attributes(node.attributes)}'
+        f':{node.name}{render_directive_label(renderer, node, context)}{render_directive_attributes(node.attributes)}'
     )
 
 
@@ -187,8 +149,8 @@ def render_text_directive(renderer: MarkdownRenderer, node: TextDirective, conte
 def render_leaf_directive(renderer: MarkdownRenderer, node: LeafDirective, context: RenderContext) -> str:
     return (
         f'::{node.name}'
-        f'{renderer.render_directive_label(node, context)}'
-        f'{renderer.render_directive_attributes(node.attributes)}'
+        f'{render_directive_label(renderer, node, context)}'
+        f'{render_directive_attributes(node.attributes)}'
         '\n\n'
     )
 
@@ -198,13 +160,48 @@ def render_container_directive(renderer: MarkdownRenderer, node: ContainerDirect
     children = list(node.children)
     label = ''
     if children and isinstance(children[0], Paragraph) and children[0].data == {'directiveLabel': True}:
-        label = renderer.render_directive_label(children.pop(0), context)
+        label = render_directive_label(renderer, children.pop(0), context)
 
     body = renderer.render_children(children, context).rstrip('\n')
-    head = f':::{node.name}{label}{renderer.render_directive_attributes(node.attributes)}'
+    head = f':::{node.name}{label}{render_directive_attributes(node.attributes)}'
     if body:
         return f'{head}\n{body}\n:::\n\n'
     return f'{head}\n:::\n\n'
+
+
+def render_directive_label(renderer: MarkdownRenderer, node: Node, context: RenderContext) -> str:
+    if not isinstance(node, Parent):
+        return ''
+    if node.children:
+        return '[' + renderer.render_children(node.children, context).strip() + ']'
+    return ''
+
+
+def render_directive_attributes(attributes: dict[str, str] | None) -> str:
+    """Render directive attributes in Markdown directive syntax."""
+    if not attributes:
+        return ''
+
+    parts: list[str] = []
+    identifier = attributes.get('id')
+    if identifier:
+        parts.append('#' + identifier)
+
+    class_name = attributes.get('class')
+    if class_name:
+        parts.extend('.' + value for value in class_name.split() if value)
+
+    for key, value in attributes.items():
+        if key in {'id', 'class'}:
+            continue
+        if value == '':
+            parts.append(key)
+        else:
+            parts.append(f'{key}={quote_directive_attribute(value)}')
+
+    if parts:
+        return '{' + ' '.join(parts) + '}'
+    return ''
 
 
 @MarkdownRenderer.register('table')
@@ -215,11 +212,11 @@ def render_table(renderer: MarkdownRenderer, node: Table, context: RenderContext
     header = normalize_table_row(node.children[0], len(node.align))
     body = [normalize_table_row(row, len(node.align)) for row in node.children[1:]]
     lines = [
-        '| ' + ' | '.join(renderer.render_table_cell_content(cell, context) for cell in header) + ' |',
+        '| ' + ' | '.join(render_table_cell_content(renderer, cell, context) for cell in header) + ' |',
         '| ' + ' | '.join(delimiter_for_align(align) for align in node.align) + ' |',
     ]
     lines.extend(
-        '| ' + ' | '.join(renderer.render_table_cell_content(cell, context) for cell in row) + ' |' for row in body
+        '| ' + ' | '.join(render_table_cell_content(renderer, cell, context) for cell in row) + ' |' for row in body
     )
     return '\n'.join(lines) + '\n\n'
 
@@ -233,6 +230,10 @@ def normalize_table_row(row: Node, size: int) -> list[TableCell]:
     if len(cells) < size:
         cells.extend(TableCell() for _ in range(size - len(cells)))
     return cells[:size]
+
+
+def render_table_cell_content(renderer: MarkdownRenderer, cell: TableCell, context: RenderContext) -> str:
+    return renderer.render_children(cell.children, context).replace('\n', ' ').strip()
 
 
 def delimiter_for_align(align: str | None) -> str:

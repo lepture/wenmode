@@ -81,54 +81,6 @@ class RSTRenderer(BaseRenderer):
         """Escape a link or image target."""
         return value.replace('\n', ' ').replace('`', '\\`').replace('>', '\\>')
 
-    def render_list_item(self, item: ListItem, marker: str, context: RSTRenderContext) -> str:
-        if item.checked is not None:
-            if item.checked:
-                marker += '[x] '
-            else:
-                marker += '[ ] '
-        if not item.children:
-            return marker.rstrip()
-
-        body = self.render_children(item.children, context).rstrip('\n')
-        lines = body.splitlines() or ['']
-        indent = ' ' * len(marker)
-        parts = [marker + lines[0]]
-        for line in lines[1:]:
-            if line:
-                parts.append(indent + line)
-            else:
-                parts.append('')
-        return '\n'.join(parts)
-
-    def render_table_cell_content(self, cell: TableCell, context: RSTRenderContext) -> str:
-        return self.render_children(cell.children, context).replace('\n', ' ').strip()
-
-    def render_directive_argument(self, node: Node, context: RSTRenderContext) -> str:
-        """Render a directive argument from a directive or label node."""
-        children = getattr(node, 'children', None)
-        if not isinstance(children, list):
-            return ''
-        return self.render_children(children, context).strip()
-
-    def render_directive_options(self, attributes: dict[str, str] | None) -> list[str]:
-        if not attributes:
-            return []
-
-        options: list[str] = []
-        for key, value in attributes.items():
-            if key == 'id':
-                option_name = 'name'
-            else:
-                option_name = key
-            if key == 'class':
-                option_name = 'class'
-            if value == '':
-                options.append(f'   :{option_name}:')
-            else:
-                options.append(f'   :{option_name}: {value}')
-        return options
-
     def render_image_definition(self, reference: ImageReference) -> str:
         node = reference.node
         lines = [f'.. |{reference.name}| image:: {self.escape_link_target(node.url)}']
@@ -189,14 +141,30 @@ def render_list(renderer: RSTRenderer, node: List, context: RSTRenderContext) ->
             marker = '#. '
         else:
             marker = '- '
-        parts.append(renderer.render_list_item(child, marker, context))
+        parts.append(render_list_item(renderer, child, marker, context))
 
     return separator.join(parts) + '\n\n'
 
 
-@RSTRenderer.register('listItem')
-def render_list_item(renderer: RSTRenderer, node: ListItem, context: RSTRenderContext) -> str:
-    return renderer.render_children(node.children, context)
+def render_list_item(renderer: RSTRenderer, item: ListItem, marker: str, context: RSTRenderContext) -> str:
+    if item.checked is not None:
+        if item.checked:
+            marker += '[x] '
+        else:
+            marker += '[ ] '
+    if not item.children:
+        return marker.rstrip()
+
+    body = renderer.render_children(item.children, context).rstrip('\n')
+    lines = body.splitlines() or ['']
+    indent = ' ' * len(marker)
+    parts = [marker + lines[0]]
+    for line in lines[1:]:
+        if line:
+            parts.append(indent + line)
+        else:
+            parts.append('')
+    return '\n'.join(parts)
 
 
 @RSTRenderer.register('delete')
@@ -206,17 +174,17 @@ def render_delete(renderer: RSTRenderer, node: Delete, context: RSTRenderContext
 
 @RSTRenderer.register('textDirective')
 def render_text_directive(renderer: RSTRenderer, node: TextDirective, context: RSTRenderContext) -> str:
-    content = renderer.render_directive_argument(node, context)
+    content = render_directive_argument(renderer, node, context)
     return f':{node.name}:`{content}`'
 
 
 @RSTRenderer.register('leafDirective')
 def render_leaf_directive(renderer: RSTRenderer, node: LeafDirective, context: RSTRenderContext) -> str:
-    argument = renderer.render_directive_argument(node, context)
+    argument = render_directive_argument(renderer, node, context)
     head = f'.. {node.name}::'
     if argument:
         head += f' {argument}'
-    options = renderer.render_directive_options(node.attributes)
+    options = render_directive_options(node.attributes)
     if options:
         return '\n'.join([head, *options]) + '\n\n'
     return head + '\n\n'
@@ -228,12 +196,12 @@ def render_container_directive(renderer: RSTRenderer, node: ContainerDirective, 
     argument = ''
     if children and isinstance(children[0], Paragraph) and children[0].data == {'directiveLabel': True}:
         label = children.pop(0)
-        argument = renderer.render_directive_argument(label, context)
+        argument = render_directive_argument(renderer, label, context)
 
     head = f'.. {node.name}::'
     if argument:
         head += f' {argument}'
-    options = renderer.render_directive_options(node.attributes)
+    options = render_directive_options(node.attributes)
     body = renderer.render_children(children, context).rstrip('\n')
 
     if not body:
@@ -245,13 +213,40 @@ def render_container_directive(renderer: RSTRenderer, node: ContainerDirective, 
     return '\n'.join(lines) + '\n\n'
 
 
+def render_directive_argument(renderer: RSTRenderer, node: Node, context: RSTRenderContext) -> str:
+    """Render a directive argument from a directive or label node."""
+    children = getattr(node, 'children', None)
+    if not isinstance(children, list):
+        return ''
+    return renderer.render_children(children, context).strip()
+
+
+def render_directive_options(attributes: dict[str, str] | None) -> list[str]:
+    if not attributes:
+        return []
+
+    options: list[str] = []
+    for key, value in attributes.items():
+        if key == 'id':
+            option_name = 'name'
+        else:
+            option_name = key
+        if key == 'class':
+            option_name = 'class'
+        if value == '':
+            options.append(f'   :{option_name}:')
+        else:
+            options.append(f'   :{option_name}: {value}')
+    return options
+
+
 @RSTRenderer.register('table')
 def render_table(renderer: RSTRenderer, node: Table, context: RSTRenderContext) -> str:
     rows = table_rows(node)
     if not rows:
         return ''
 
-    rendered_rows = [[renderer.render_table_cell_content(cell, context) for cell in row] for row in rows]
+    rendered_rows = [[render_table_cell_content(renderer, cell, context) for cell in row] for row in rows]
     column_count = max((len(row) for row in rendered_rows), default=0)
     if column_count == 0:
         return ''
@@ -264,6 +259,10 @@ def render_table(renderer: RSTRenderer, node: Table, context: RSTRenderContext) 
     lines.extend(render_table_line(row, widths) for row in rendered_rows[1:])
     lines.append(delimiter)
     return '\n'.join(lines) + '\n\n'
+
+
+def render_table_cell_content(renderer: RSTRenderer, cell: TableCell, context: RSTRenderContext) -> str:
+    return renderer.render_children(cell.children, context).replace('\n', ' ').strip()
 
 
 @RSTRenderer.register('code')

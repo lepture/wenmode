@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
-from typing import Any, Protocol
+from typing import Any, Protocol, cast
 from urllib.parse import quote, urlsplit
 
 from wenmode.nodes import (
@@ -120,54 +120,6 @@ class HTMLRenderer(BaseRenderer):
         """
         for name in directive.names:
             self.directives[(directive.node_type, name)] = directive
-
-    def render_list_item(self, item: Node, loose: bool, context: HTMLRenderContext) -> str:
-        if not isinstance(item, ListItem):
-            return self.render_node(item, context)
-        if not item.children:
-            return '<li></li>\n'
-        if not loose:
-            if isinstance(item.children[0], Paragraph):
-                prefix = '<li>'
-            else:
-                prefix = '<li>\n'
-            parts: list[str] = []
-            for index, child in enumerate(item.children):
-                if isinstance(child, Paragraph):
-                    if index == 0:
-                        marker = self.render_task_marker(item)
-                    else:
-                        marker = ''
-                    parts.append(marker)
-                    parts.append(self.render_children(child.children, context))
-                    if index < len(item.children) - 1:
-                        parts.append('\n')
-                else:
-                    if index == 0:
-                        parts.append(self.render_task_marker(item))
-                    parts.append(self.render_node(child, context))
-            return prefix + ''.join(parts) + '</li>\n'
-        return '<li>\n' + self.render_loose_list_item_children(item, context) + '</li>\n'
-
-    def render_loose_list_item_children(self, item: ListItem, context: HTMLRenderContext) -> str:
-        parts: list[str] = []
-        for index, child in enumerate(item.children):
-            if index == 0 and isinstance(child, Paragraph) and item.checked is not None:
-                parts.append(
-                    '<p>' + self.render_task_marker(item) + self.render_children(child.children, context) + '</p>\n'
-                )
-            else:
-                if index == 0 and item.checked is not None:
-                    parts.append(self.render_task_marker(item))
-                parts.append(self.render_node(child, context))
-        return ''.join(parts)
-
-    def render_task_marker(self, item: ListItem) -> str:
-        if item.checked is None:
-            return ''
-        if item.checked:
-            return '<input checked="" disabled="" type="checkbox"> '
-        return '<input disabled="" type="checkbox"> '
 
     def escape(self, value: str) -> str:
         """Escape raw HTML when renderer escaping is enabled."""
@@ -299,14 +251,58 @@ def render_list(renderer: HTMLRenderer, node: List, context: HTMLRenderContext) 
         start = ''
     return (
         f'<{tag}{start}>\n'
-        + ''.join(renderer.render_list_item(child, node.spread, context) for child in node.children)
+        + ''.join(render_list_item(renderer, cast(ListItem, child), node.spread, context) for child in node.children)
         + f'</{tag}>\n'
     )
 
 
-@HTMLRenderer.register('listItem')
-def render_list_item(renderer: HTMLRenderer, node: ListItem, context: HTMLRenderContext) -> str:
-    return renderer.render_list_item(node, node.spread, context)
+def render_list_item(renderer: HTMLRenderer, item: ListItem, loose: bool, context: HTMLRenderContext) -> str:
+    if not item.children:
+        return '<li></li>\n'
+    if not loose:
+        if isinstance(item.children[0], Paragraph):
+            prefix = '<li>'
+        else:
+            prefix = '<li>\n'
+        parts: list[str] = []
+        for index, child in enumerate(item.children):
+            if isinstance(child, Paragraph):
+                if index == 0:
+                    marker = render_task_marker(item)
+                else:
+                    marker = ''
+                parts.append(marker)
+                parts.append(renderer.render_children(child.children, context))
+                if index < len(item.children) - 1:
+                    parts.append('\n')
+            else:
+                if index == 0:
+                    parts.append(render_task_marker(item))
+                parts.append(renderer.render_node(child, context))
+        return prefix + ''.join(parts) + '</li>\n'
+    return '<li>\n' + render_loose_list_item_children(renderer, item, context) + '</li>\n'
+
+
+def render_loose_list_item_children(renderer: HTMLRenderer, item: ListItem, context: HTMLRenderContext) -> str:
+    parts: list[str] = []
+    for index, child in enumerate(item.children):
+        if index == 0 and isinstance(child, Paragraph) and item.checked is not None:
+            parts.append(
+                '<p>' + render_task_marker(item) + renderer.render_children(child.children, context) + '</p>\n'
+            )
+        else:
+            if index == 0 and item.checked is not None:
+                parts.append(render_task_marker(item))
+            parts.append(renderer.render_node(child, context))
+    return ''.join(parts)
+
+
+def render_task_marker(item: ListItem) -> str:
+    if item.checked is None:
+        return ''
+    if item.checked:
+        return '<input checked="" disabled="" type="checkbox"> '
+    return '<input disabled="" type="checkbox"> '
 
 
 @HTMLRenderer.register('delete')
@@ -330,44 +326,35 @@ def render_table(renderer: HTMLRenderer, node: Table, context: HTMLRenderContext
 
     header = node.children[0]
     body = node.children[1:]
-    output = ['<table>\n<thead>\n', render_table_row(renderer, header, 'th', node.align, context), '</thead>\n']
+    output = (
+        '<table>\n<thead>\n'
+        + render_table_row(renderer, cast(TableRow, header), 'th', node.align, context)
+        + '</thead>\n'
+    )
     if body:
-        output.append('<tbody>\n')
-        output.extend(render_table_row(renderer, row, 'td', node.align, context) for row in body)
-        output.append('</tbody>\n')
-    output.append('</table>\n')
-    return ''.join(output)
-
-
-@HTMLRenderer.register('tableRow')
-def render_table_row_node(renderer: HTMLRenderer, node: TableRow, context: HTMLRenderContext) -> str:
-    return render_table_row(renderer, node, 'td', [], context)
-
-
-@HTMLRenderer.register('tableCell')
-def render_table_cell_node(renderer: HTMLRenderer, node: TableCell, context: HTMLRenderContext) -> str:
-    return f'<td>{renderer.render_children(node.children, context)}</td>'
+        output += '<tbody>\n'
+        for row in body:
+            output += render_table_row(renderer, cast(TableRow, row), 'td', node.align, context)
+        output += '</tbody>\n'
+    output += '</table>\n'
+    return output
 
 
 def render_table_row(
-    renderer: HTMLRenderer, row: Node, tag: str, align: list[str | None], context: HTMLRenderContext
+    renderer: HTMLRenderer, row: TableRow, tag: str, align: list[str | None], context: HTMLRenderContext
 ) -> str:
-    if not isinstance(row, TableRow):
-        return renderer.render_node(row, context)
-    output = ['<tr>\n']
+    output = '<tr>\n'
     for index, cell in enumerate(row.children):
         if not isinstance(cell, TableCell):
-            output.append(renderer.render_node(cell, context))
+            output += renderer.render_node(cell, context)
             continue
         if index < len(align) and align[index] is not None:
             attrs = {'align': align[index]}
         else:
             attrs = {}
-        output.append(
-            f'<{tag}{renderer.render_attrs(attrs)}>{renderer.render_children(cell.children, context)}</{tag}>\n'
-        )
-    output.append('</tr>\n')
-    return ''.join(output)
+        output += f'<{tag}{renderer.render_attrs(attrs)}>{renderer.render_children(cell.children, context)}</{tag}>\n'
+    output += '</tr>\n'
+    return output
 
 
 @HTMLRenderer.register('code')
