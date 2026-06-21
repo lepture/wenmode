@@ -105,8 +105,8 @@ Read this first.
 ````
 
 The fenced directive plugin creates a `containerDirective` node. Its first-line
-argument becomes the directive label, and `:key: value` option lines become
-attributes.
+argument becomes the directive label, `:key: value` option lines become
+attributes, and body content is parsed as Markdown.
 
 Inline roles use MyST-style role syntax:
 

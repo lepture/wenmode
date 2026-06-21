@@ -1,17 +1,22 @@
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / 'examples' / 'wenmode-myst' / 'src'))
+
 project = 'Wenmode'
 author = 'Hsiaoming Yang'
 copyright = '2026, Hsiaoming Yang'
 
 extensions = [
-    'myst_parser',
+    'wenmode_myst',
     'sphinx.ext.autodoc',
     'sphinx_design',
     'sphinx_iconify',
     'shibuya.sponsors',
 ]
-myst_enable_extensions = ['colon_fence']
 autodoc_member_order = 'bysource'
 autodoc_typehints = 'description'
 autodoc_typehints_description_target = 'documented'

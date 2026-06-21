@@ -27,7 +27,7 @@ when the syntax should create a new Wenmode-specific node type such as `math`,
 `ruby`, or `mark`.
 
 MyST-style fenced directives and inline roles are plugins. See {ref}`plugins`
-when you want code-fence-style `` ```{name}`` directives or
+when you want code-fence-style `` ```{name} `` directives or
 `` {name}`content` `` roles.
 
 ## Enable Directives

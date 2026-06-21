@@ -16,28 +16,36 @@ if TYPE_CHECKING:
 FENCED_DIRECTIVE_RE = re.compile(
     r'(?P<indent>[ \t]{0,3})(?P<fence>`{3,}|~{3,})\{(?P<name>[A-Za-z][A-Za-z0-9_-]*)}(?P<title>.*)$'
 )
-OPTION_RE = re.compile(r'[ \t]*:([A-Za-z][A-Za-z0-9_-]*):(?:[ \t]*(.*))?$')
+ATTRIBUTE_RE = re.compile(r'[ \t]*:([A-Za-z][A-Za-z0-9_-]*):(?:[ \t]*(.*))?$')
 
 
 class FencedDirectiveRule(BlockRule):
     """Parse MyST-style fenced directives such as code fences with ``{name}``."""
 
+    name: str = 'fenced_directive'
     order: ClassVar[int] = 60
+    pattern: str = r'[ \t]{0,3}(?:`{3,}|~{3,})\{[A-Za-z][A-Za-z0-9_-]*}'
+    head_pattern: ClassVar[re.Pattern[str]] = FENCED_DIRECTIVE_RE
 
     def __init__(self) -> None:
-        super().__init__('fenced_directive', r'[ \t]{0,3}(?:`{3,}|~{3,})\{[A-Za-z][A-Za-z0-9_-]*}')
+        super().__init__(self.name, self.pattern)
 
-    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
-        opener = cast(re.Match[str], FENCED_DIRECTIVE_RE.match(state.line.rstrip('\r\n')))
+    @staticmethod
+    def parse_directive_head(state: BlockState, pattern: re.Pattern[str]) -> tuple[str, str | None, re.Pattern[str]]:
+        opener = cast(re.Match[str], pattern.match(state.line.rstrip('\r\n')))
         fence = opener.group('fence')
         fence_char = fence[0]
         name = opener.group('name')
         title = opener.group('title').strip() or None
+        closer = re.compile(rf'[ \t]{{0,3}}{re.escape(fence_char)}{{{len(fence)},}}[ \t]*$')
         state.advance()
+        return name, title, closer
 
+    @staticmethod
+    def parse_directive_attributes(state: BlockState) -> dict[str, str] | None:
         attributes: dict[str, str] = {}
         while not state.done:
-            option = parse_option_line(state.line)
+            option = parse_attribute_line(state.line)
             if option is None:
                 break
             key, value = option
@@ -46,11 +54,14 @@ class FencedDirectiveRule(BlockRule):
 
         if not state.done and state.line.strip() == '':
             state.advance()
+        return attributes
 
-        closer = re.compile(rf'[ \t]{{0,3}}{re.escape(fence_char)}{{{len(fence)},}}[ \t]*$')
+    @staticmethod
+    def parse_directive_body(
+        parser: Parser, state: BlockState, title: str | None, closer: re.Pattern[str]
+    ) -> list[Node]:
         source = state.source.collect()
         lines = collect_until_with_source(state, source, lambda line: closer.match(line.rstrip('\r\n')) is not None)
-
         children = directive_label_children(parser, title, state)
         children.extend(
             parser.parse_blocks(
@@ -59,11 +70,17 @@ class FencedDirectiveRule(BlockRule):
                 source=source.map(),
             )
         )
+        return children
+
+    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
+        name, title, closer = self.parse_directive_head(state, self.head_pattern)
+        attributes = self.parse_directive_attributes(state)
+        children = self.parse_directive_body(parser, state, title, closer)
         return ContainerDirectiveNode(name=name, attributes=attributes or None, children=children)
 
 
-def parse_option_line(line: str) -> tuple[str, str] | None:
-    match = OPTION_RE.match(line.rstrip('\r\n'))
+def parse_attribute_line(line: str) -> tuple[str, str] | None:
+    match = ATTRIBUTE_RE.match(line.rstrip('\r\n'))
     if match is None:
         return None
     return match.group(1), match.group(2) or ''
