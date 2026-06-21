@@ -23,8 +23,9 @@ class Strikethrough(InlineRule):
        ~~deleted~~
     """
 
-    def __init__(self) -> None:
-        super().__init__('strikethrough', r'~{1,2}', '~')
+    name = 'strikethrough'
+    pattern = r'~{1,2}'
+    trigger_chars = '~'
 
     def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
         marker = match.group(0)

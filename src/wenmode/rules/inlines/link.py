@@ -34,8 +34,12 @@ class Image(InlineRule):
     :param references: Enable reference-style images and reference definitions.
     """
 
+    name = 'image'
+    pattern = r'!\['
+    trigger_chars = '!'
+
     def __init__(self, references: bool = True) -> None:
-        super().__init__('image', r'!\[', '!')
+        super().__init__()
         self.references = references
         if references:
             self.root_transforms = [ReferenceTransform()]
@@ -66,8 +70,12 @@ class Link(InlineRule):
     :param references: Enable reference-style links and reference definitions.
     """
 
+    name = 'link'
+    pattern = r'\['
+    trigger_chars = '['
+
     def __init__(self, references: bool = True) -> None:
-        super().__init__('link', r'\[', '[')
+        super().__init__()
         self.references = references
         if references:
             self.root_transforms = [ReferenceTransform()]

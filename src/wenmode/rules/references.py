@@ -42,8 +42,8 @@ class ReferenceDefinition(BlockRule):
        [label]: https://example.com "Title"
     """
 
-    def __init__(self) -> None:
-        super().__init__('reference_definition', r'[ \t]{0,3}\[(?!\^)')
+    name = 'reference_definition'
+    pattern = r'[ \t]{0,3}\[(?!\^)'
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> None:
         multiline_label = parse_multiline_label_reference(state, state.index)

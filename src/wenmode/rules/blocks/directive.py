@@ -29,8 +29,8 @@ class LeafDirective(BlockRule):
        ::toc[On this page]{min=2 max=3}
     """
 
-    def __init__(self) -> None:
-        super().__init__('leaf_directive', r'[ \t]{0,3}::(?=[A-Za-z])')
+    name = 'leaf_directive'
+    pattern = r'[ \t]{0,3}::(?=[A-Za-z])'
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
         line = state.line.rstrip('\r\n')
@@ -62,8 +62,8 @@ class ContainerDirective(BlockRule):
        :::
     """
 
-    def __init__(self) -> None:
-        super().__init__('container_directive', r'[ \t]{0,3}:{3,}(?=[A-Za-z])')
+    name = 'container_directive'
+    pattern = r'[ \t]{0,3}:{3,}(?=[A-Za-z])'
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
         opener = cast(re.Match[str], CONTAINER_DIRECTIVE_RE.match(state.line.rstrip('\r\n')))

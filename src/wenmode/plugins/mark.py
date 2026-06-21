@@ -29,8 +29,9 @@ class MarkNode(Parent):
 class MarkRule(InlineRule):
     """Parse highlighted text delimited by ``==``."""
 
-    def __init__(self) -> None:
-        super().__init__('mark', r'==(?=[^\s=])', '=')
+    name = 'mark'
+    pattern = r'==(?=[^\s=])'
+    trigger_chars = '='
 
     def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
         start = match.start()

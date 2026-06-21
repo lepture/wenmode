@@ -29,8 +29,8 @@ class FencedCode(BlockRule):
        ```
     """
 
-    def __init__(self) -> None:
-        super().__init__('fenced_code', r'[ \t]{0,3}(?:`{3,}|~{3,})')
+    name = 'fenced_code'
+    pattern = r'[ \t]{0,3}(?:`{3,}|~{3,})'
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node:
         opener = cast(re.Match[str], FENCE_OPENER_RE.match(state.line.rstrip('\r\n')))

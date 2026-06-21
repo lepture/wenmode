@@ -41,9 +41,8 @@ class BlockSpoilerRule(BlockRule):
     """Parse ``>!`` block spoiler containers."""
 
     order: ClassVar[int] = 90
-
-    def __init__(self) -> None:
-        super().__init__('block_spoiler', r'[ \t]{0,3}>!')
+    name = 'block_spoiler'
+    pattern = r'[ \t]{0,3}>!'
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> BlockSpoilerNode:
         if state.depth >= parser.max_container_depth - 1:
@@ -71,8 +70,9 @@ class BlockSpoilerRule(BlockRule):
 class InlineSpoilerRule(InlineRule):
     """Parse spoiler spans delimited by ``>!`` and ``!<``."""
 
-    def __init__(self) -> None:
-        super().__init__('inline_spoiler', r'>!', '>')
+    name = 'inline_spoiler'
+    pattern = r'>!'
+    trigger_chars = '>'
 
     def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
         parsed = parse_spoiler_span(text, match.start())

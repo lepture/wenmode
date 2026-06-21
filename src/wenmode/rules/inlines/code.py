@@ -26,8 +26,9 @@ class InlineCode(InlineRule):
        `code`
     """
 
-    def __init__(self) -> None:
-        super().__init__('inline_code', r'`+', '`')
+    name = 'inline_code'
+    pattern = r'`+'
+    trigger_chars = '`'
 
     def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
         if match.start() > 0 and text[match.start() - 1] == '`':

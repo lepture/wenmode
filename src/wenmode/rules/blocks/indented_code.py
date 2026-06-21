@@ -23,8 +23,8 @@ class IndentedCode(BlockRule):
            print(1)
     """
 
-    def __init__(self) -> None:
-        super().__init__('indented_code', r'(?: {4,}|[ \t]{0,3}\t)')
+    name = 'indented_code'
+    pattern = r'(?: {4,}|[ \t]{0,3}\t)'
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Code:
         lines: list[str] = []

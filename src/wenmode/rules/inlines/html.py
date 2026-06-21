@@ -42,8 +42,9 @@ class Autolink(InlineRule):
        <https://example.com>
     """
 
-    def __init__(self) -> None:
-        super().__init__('autolink', rf'{URI_RE}|{EMAIL_RE}', '<')
+    name = 'autolink'
+    pattern = rf'{URI_RE}|{EMAIL_RE}'
+    trigger_chars = '<'
 
     def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
         uri = match.groupdict().get('uri')
@@ -77,6 +78,9 @@ class RawHtml(InlineRule):
         comments. ``"gfm"`` uses the stricter GFM 0.29 comment grammar.
     """
 
+    name = 'raw_html'
+    trigger_chars = '<'
+
     def __init__(
         self,
         disallowed_tags: Sequence[str] = (),
@@ -84,7 +88,7 @@ class RawHtml(InlineRule):
     ) -> None:
         comment_re = HTML_COMMENT_STYLE_RE[comment_style]
         html_re = rf'{comment_re}|<\?.*?\?>|<![A-Z]+[^>]*>|<!\[CDATA\[.*?\]\]>|{HTML_TAG_RE}'
-        super().__init__('raw_html', html_re, '<')
+        super().__init__(pattern=html_re)
         self.disallowed_html_filter = compile_disallowed_html_filter(disallowed_tags)
         self.comment_style = comment_style
 

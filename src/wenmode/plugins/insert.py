@@ -29,8 +29,9 @@ class InsertNode(Parent):
 class InsertRule(InlineRule):
     """Parse inserted text delimited by ``^^``."""
 
-    def __init__(self) -> None:
-        super().__init__('insert', r'\^\^(?=[^\s\^])', '^')
+    name = 'insert'
+    pattern = r'\^\^(?=[^\s\^])'
+    trigger_chars = '^'
 
     def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
         start = match.start()

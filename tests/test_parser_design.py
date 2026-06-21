@@ -6,7 +6,7 @@ from io import StringIO
 import pytest
 
 from wenmode import HTMLRenderer, Parser, StreamingUnsupportedError, Wenmode
-from wenmode.nodes import Node, Root
+from wenmode.nodes import Node, Paragraph, Root, Text
 from wenmode.presets import commonmark, github, streaming
 from wenmode.rules import (
     AtxHeading,
@@ -17,6 +17,7 @@ from wenmode.rules import (
     HtmlBlock,
     Image,
     InlineCode,
+    InlineRule,
     Link,
     List,
     RootTransform,
@@ -65,6 +66,43 @@ def render(parser: Parser, markdown: str) -> str:
 
 def lines(markdown: str):
     yield from markdown.splitlines(keepends=True)
+
+
+def test_rule_base_state_is_instance_local() -> None:
+    first = Rule('first')
+    second = Rule('second')
+
+    first.root_transforms.append(GlossaryTransform())
+
+    assert second.root_transforms == []
+
+
+def test_inline_rule_compiles_pattern_on_init() -> None:
+    rule = InlineCode()
+
+    assert rule.compiled.pattern == rule.pattern
+
+
+def test_rule_subclasses_can_define_identity_as_class_attributes() -> None:
+    class BangBlock(BlockRule):
+        name = 'bang_block'
+        pattern = r'[ \t]{0,3}!!$'
+
+        def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
+            state.advance()
+            return Paragraph(children=[Text(value='bang')])
+
+    class BangInline(InlineRule):
+        name = 'bang_inline'
+        pattern = r'!!'
+        trigger_chars = '!'
+
+        def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
+            return Text(value='inline'), match.end()
+
+    app = Wenmode([BangBlock, BangInline])
+
+    assert app.render('!!\n\nhi !!\n') == '<p>bang</p>\n<p>hi inline</p>\n'
 
 
 def test_parser_reuses_reference_state_per_parse() -> None:

@@ -27,9 +27,6 @@ class FencedDirectiveRule(BlockRule):
     pattern: str = r'[ \t]{0,3}(?:`{3,}|~{3,})\{[A-Za-z][A-Za-z0-9_-]*}'
     head_pattern: ClassVar[re.Pattern[str]] = FENCED_DIRECTIVE_RE
 
-    def __init__(self) -> None:
-        super().__init__(self.name, self.pattern)
-
     @staticmethod
     def parse_directive_head(state: BlockState, pattern: re.Pattern[str]) -> tuple[str, str | None, re.Pattern[str]]:
         opener = cast(re.Match[str], pattern.match(state.line.rstrip('\r\n')))

@@ -32,8 +32,11 @@ class List(BlockRule):
     :param task: Parse GFM task list markers when ``True``.
     """
 
+    name = 'list'
+    pattern = r'[ \t]{0,3}(?:[*+-](?:[ \t]+|$)|\d{1,9}[.)](?:[ \t]+|$))'
+
     def __init__(self, task: bool = False) -> None:
-        super().__init__('list', r'[ \t]{0,3}(?:[*+-](?:[ \t]+|$)|\d{1,9}[.)](?:[ \t]+|$))')
+        super().__init__()
         self.task = task
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> ListNode:

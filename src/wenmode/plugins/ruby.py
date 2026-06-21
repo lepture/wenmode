@@ -41,9 +41,9 @@ class RubyRule(InlineRule):
     """Parse ruby annotation syntax."""
 
     order: ClassVar[int] = 90
-
-    def __init__(self) -> None:
-        super().__init__('ruby', RUBY_PATTERN, '[')
+    name = 'ruby'
+    pattern = RUBY_PATTERN
+    trigger_chars = '['
 
     def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
         ruby = RubyNode(segments=parse_ruby_segments(match.group(0)))

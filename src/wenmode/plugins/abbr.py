@@ -48,16 +48,17 @@ ABBREVIATIONS_KEY = StateKey('wenmode.abbreviations', create_abbreviations)
 class AbbreviationRule(Rule):
     """Parse abbreviation definitions and rewrite matching text nodes."""
 
+    name = 'abbreviation'
+
     def __init__(self) -> None:
-        super().__init__('abbreviation')
+        super().__init__()
         self.root_transforms = [AbbreviationTransform()]
 
 
 class AbbreviationDefinitionRule(BlockRule):
     order: ClassVar[int] = 80
-
-    def __init__(self) -> None:
-        super().__init__('abbreviation_definition', r'[ \t]{0,3}\*\[')
+    name = 'abbreviation_definition'
+    pattern = r'[ \t]{0,3}\*\['
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> None:
         parsed = parse_abbreviation_definition(state, state.index)

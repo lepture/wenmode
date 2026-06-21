@@ -41,8 +41,8 @@ class ExtendedAutolink(InlineRule):
        https://example.com
     """
 
-    def __init__(self) -> None:
-        super().__init__('extended_autolink', EXTENDED_AUTOLINK_RE)
+    name = 'extended_autolink'
+    pattern = EXTENDED_AUTOLINK_RE
 
     def search(self, text: str, pos: int = 0) -> re.Match[str] | None:
         url_match = self.search_url(text, pos)

@@ -47,8 +47,7 @@ class DefinitionDescriptionNode(Parent):
 class DefinitionListRule(ContinueRule):
     """Parse colon-prefixed definition list continuations."""
 
-    def __init__(self) -> None:
-        super().__init__('definition_list')
+    name = 'definition_list'
 
     def matches(self, line: str) -> bool:
         return line.lstrip(' \t').startswith(':')

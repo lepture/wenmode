@@ -40,8 +40,8 @@ class InlineMathNode(Literal):
 class MathBlockRule(BlockRule):
     """Parse display math blocks fenced by ``$$`` markers."""
 
-    def __init__(self) -> None:
-        super().__init__('math_block', r'[ \t]{0,3}\$\$')
+    name = 'math_block'
+    pattern = r'[ \t]{0,3}\$\$'
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node:
         opener = cast(re.Match[str], MATH_OPENER_RE.match(state.line))
@@ -57,8 +57,9 @@ class MathBlockRule(BlockRule):
 class InlineMathRule(InlineRule):
     """Parse inline math delimited by dollar signs."""
 
-    def __init__(self) -> None:
-        super().__init__('inline_math', r'\$', '$')
+    name = 'inline_math'
+    pattern = r'\$'
+    trigger_chars = '$'
 
     def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
         start = match.start()

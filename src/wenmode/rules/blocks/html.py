@@ -118,11 +118,11 @@ class HtmlBlock(BlockRule):
         parsing.
     """
 
+    name = 'html_block'
+    pattern = rf'(?i:[ \t]{{0,3}}<(?:script(?:\s|>|$)|pre(?:\s|>|$)|style(?:\s|>|$)|!--|\?|![A-Z]|\!\[CDATA\[|/?(?:{BLOCK_TAGS_PATTERN})(?:\s|/?>|$)|[A-Za-z][A-Za-z0-9-]*(?:\s+[A-Za-z_:][A-Za-z0-9_.:-]*(?:\s*=\s*(?:[^\s"\'=<>`]+|\'[^\']*\'|"[^"]*"))?)*\s*/?>[ \t]*$|/[A-Za-z][A-Za-z0-9-]*\s*>[ \t]*$))'
+
     def __init__(self, disallowed_tags: Sequence[str] = ()) -> None:
-        super().__init__(
-            'html_block',
-            rf'(?i:[ \t]{{0,3}}<(?:script(?:\s|>|$)|pre(?:\s|>|$)|style(?:\s|>|$)|!--|\?|![A-Z]|\!\[CDATA\[|/?(?:{BLOCK_TAGS_PATTERN})(?:\s|/?>|$)|[A-Za-z][A-Za-z0-9-]*(?:\s+[A-Za-z_:][A-Za-z0-9_.:-]*(?:\s*=\s*(?:[^\s"\'=<>`]+|\'[^\']*\'|"[^"]*"))?)*\s*/?>[ \t]*$|/[A-Za-z][A-Za-z0-9-]*\s*>[ \t]*$))',
-        )
+        super().__init__()
         self.disallowed_html_filter = compile_disallowed_html_filter(disallowed_tags)
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Html:

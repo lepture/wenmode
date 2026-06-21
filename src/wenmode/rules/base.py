@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, ClassVar
 
 from wenmode.nodes import Node
@@ -13,7 +12,6 @@ if TYPE_CHECKING:
     from wenmode.parser import Parser
 
 
-@dataclass
 class Rule:
     """Base class for parser rules.
 
@@ -23,10 +21,12 @@ class Rule:
 
     name: str
     order: ClassVar[int] = 100
-    root_transforms: list[RootTransform] = field(init=False, default_factory=list)
+
+    def __init__(self, name: str | None = None) -> None:
+        self.name = resolve_string_attribute(self, 'name', name)
+        self.root_transforms: list[RootTransform] = []
 
 
-@dataclass
 class BlockRule(Rule):
     """Base class for block-level Markdown rules.
 
@@ -34,6 +34,10 @@ class BlockRule(Rule):
     """
 
     pattern: str
+
+    def __init__(self, name: str | None = None, pattern: str | None = None) -> None:
+        super().__init__(name)
+        self.pattern = resolve_string_attribute(self, 'pattern', pattern)
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
         """Parse a matched block opener.
@@ -48,7 +52,6 @@ class BlockRule(Rule):
         raise NotImplementedError
 
 
-@dataclass
 class ContinueRule(Rule):
     """Base class for rules that transform paragraph continuations."""
 
@@ -67,7 +70,6 @@ class ContinueRule(Rule):
         raise NotImplementedError
 
 
-@dataclass
 class InlineRule(Rule):
     """Base class for inline Markdown rules.
 
@@ -79,9 +81,17 @@ class InlineRule(Rule):
 
     pattern: str
     trigger_chars: str = ''
-    compiled: re.Pattern[str] = field(init=False)
+    compiled: re.Pattern[str]
 
-    def __post_init__(self) -> None:
+    def __init__(
+        self,
+        name: str | None = None,
+        pattern: str | None = None,
+        trigger_chars: str | None = None,
+    ) -> None:
+        super().__init__(name)
+        self.pattern = resolve_string_attribute(self, 'pattern', pattern)
+        self.trigger_chars = resolve_string_attribute(self, 'trigger_chars', trigger_chars, default='')
         self.compiled = re.compile(self.pattern)
 
     def search(self, text: str, pos: int = 0) -> re.Match[str] | None:
@@ -102,3 +112,13 @@ class InlineRule(Rule):
             to decline the match.
         """
         raise NotImplementedError
+
+
+def resolve_string_attribute(obj: object, name: str, value: str | None, default: str | None = None) -> str:
+    if value is None:
+        resolved = getattr(type(obj), name, default)
+    else:
+        resolved = value
+    if isinstance(resolved, str):
+        return resolved
+    raise TypeError(f'{type(obj).__name__} requires a {name} string')

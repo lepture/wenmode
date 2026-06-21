@@ -29,8 +29,9 @@ class TextDirective(InlineRule):
        :abbr[HTML]{title="HyperText Markup Language"}
     """
 
-    def __init__(self) -> None:
-        super().__init__('text_directive', r':(?=[A-Za-z])', ':')
+    name = 'text_directive'
+    pattern = r':(?=[A-Za-z])'
+    trigger_chars = ':'
 
     def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
         parsed = parse_text_directive_head(text, match.start() + 1, state)

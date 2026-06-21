@@ -30,8 +30,11 @@ class Table(BlockRule):
        | x | y |
     """
 
+    name = 'table'
+    pattern = r'[ \t]{0,3}.*\|.*(?:\r?\n)?$'
+
     def __init__(self, require_body_pipe: bool = True) -> None:
-        super().__init__('table', r'[ \t]{0,3}.*\|.*(?:\r?\n)?$')
+        super().__init__()
         self.require_body_pipe = require_body_pipe
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> TableNode | None:

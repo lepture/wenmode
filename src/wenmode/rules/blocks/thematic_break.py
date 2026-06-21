@@ -23,11 +23,8 @@ class ThematicBreak(BlockRule):
     """
 
     order: ClassVar[int] = 50
-
-    def __init__(self) -> None:
-        super().__init__(
-            'thematic_break', r'[ \t]{0,3}(?:\*[ \t]*){3,}$|[ \t]{0,3}(?:-[ \t]*){3,}$|[ \t]{0,3}(?:_[ \t]*){3,}$'
-        )
+    name = 'thematic_break'
+    pattern = r'[ \t]{0,3}(?:\*[ \t]*){3,}$|[ \t]{0,3}(?:-[ \t]*){3,}$|[ \t]{0,3}(?:_[ \t]*){3,}$'
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> ThematicBreakNode:
         state.advance()

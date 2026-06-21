@@ -29,8 +29,8 @@ class Blockquote(BlockRule):
        > blockquote
     """
 
-    def __init__(self) -> None:
-        super().__init__('blockquote', r'[ \t]{0,3}>')
+    name = 'blockquote'
+    pattern = r'[ \t]{0,3}>'
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> BlockquoteNode:
         if state.depth >= parser.max_container_depth - 1:

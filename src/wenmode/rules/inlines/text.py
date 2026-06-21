@@ -27,8 +27,9 @@ class BackslashEscape(InlineRule):
        \\*
     """
 
-    def __init__(self) -> None:
-        super().__init__('backslash_escape', rf'\\(?=[{ESCAPABLE}])', '\\')
+    name = 'backslash_escape'
+    pattern = rf'\\(?=[{ESCAPABLE}])'
+    trigger_chars = '\\'
 
     def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
         return Text(value=text[match.end()], _parse_emphasis=False), match.end() + 1
@@ -44,8 +45,9 @@ class CharacterReference(InlineRule):
        &copy;
     """
 
-    def __init__(self) -> None:
-        super().__init__('character_reference', r'&(?:#[xX][0-9A-Fa-f]+|#[0-9]+|[A-Za-z][A-Za-z0-9]{1,31});', '&')
+    name = 'character_reference'
+    pattern = r'&(?:#[xX][0-9A-Fa-f]+|#[0-9]+|[A-Za-z][A-Za-z0-9]{1,31});'
+    trigger_chars = '&'
 
     def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
         value = match.group(0)
@@ -74,8 +76,8 @@ class HardBreak(InlineRule):
        break
     """
 
-    def __init__(self) -> None:
-        super().__init__('hard_break', r'(?:\\| {2,})\r?\n')
+    name = 'hard_break'
+    pattern = r'(?:\\| {2,})\r?\n'
 
     def search(self, text: str, pos: int = 0) -> re.Match[str] | None:
         start = find_hard_break(text, pos)

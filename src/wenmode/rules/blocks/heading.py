@@ -55,8 +55,11 @@ class AtxHeading(BlockRule):
     :param id_transform: ``True`` or a custom transform to generate heading IDs.
     """
 
+    name = 'atx_heading'
+    pattern = r'[ \t]{0,3}#{1,6}(?:[ \t]+|$)'
+
     def __init__(self, id_transform: HeadingIdTransformOption = False) -> None:
-        super().__init__('atx_heading', r'[ \t]{0,3}#{1,6}(?:[ \t]+|$)')
+        super().__init__()
         self.root_transforms = resolve_heading_id_transform(id_transform)
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Heading:
@@ -85,8 +88,10 @@ class SetextHeading(ContinueRule):
     :param id_transform: ``True`` or a custom transform to generate heading IDs.
     """
 
+    name = 'setext_heading'
+
     def __init__(self, id_transform: HeadingIdTransformOption = False) -> None:
-        super().__init__('setext_heading')
+        super().__init__()
         self.root_transforms = resolve_heading_id_transform(id_transform)
 
     def matches(self, line: str) -> bool:

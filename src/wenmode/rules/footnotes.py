@@ -48,9 +48,12 @@ class Footnote(InlineRule):
     """
 
     order: ClassVar[int] = 50
+    name = 'footnote'
+    pattern = FOOTNOTE_REFERENCE_RE
+    trigger_chars = '['
 
     def __init__(self) -> None:
-        super().__init__('footnote', FOOTNOTE_REFERENCE_RE, '[')
+        super().__init__()
         self.root_transforms = [FootnoteTransform()]
 
     def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
@@ -72,8 +75,8 @@ class FootnoteDefinition(BlockRule):
        [^a]: Footnote text.
     """
 
-    def __init__(self) -> None:
-        super().__init__('footnote_definition', r'[ \t]{0,3}\[\^')
+    name = 'footnote_definition'
+    pattern = r'[ \t]{0,3}\[\^'
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> FootnoteDefinitionNode | None:
         parsed = FOOTNOTE_DEFINITION_RE.match(state.line.rstrip('\r\n'))
