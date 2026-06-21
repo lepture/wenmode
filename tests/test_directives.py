@@ -98,6 +98,20 @@ def test_abbreviation_directive_falls_back_without_title() -> None:
     assert app.render(':abbr[HTML]\n') == '<p>HTML</p>\n'
 
 
+def test_builtin_directives_drop_event_and_style_attributes() -> None:
+    app = Wenmode([ContainerDirective], renderer=HTMLRenderer(directives=[Figure()]))
+
+    assert app.render(':::figure{#fig .wide onclick="alert(1)" style="position:fixed" empty}\n:::\n') == (
+        '<figure id="fig" empty="" class="wide">\n</figure>\n'
+    )
+
+
+def test_html_renderer_can_disable_attribute_sanitization() -> None:
+    app = Wenmode([ContainerDirective], renderer=HTMLRenderer(sanitize_attrs=False, directives=[Figure()]))
+
+    assert app.render(':::figure{onclick="alert(1)"}\n:::\n') == ('<figure onclick="alert(1)">\n</figure>\n')
+
+
 def test_markdown_renderer_outputs_directives() -> None:
     app = configured_app(
         ['text_directive', 'role', 'leaf_directive', 'container_directive'],

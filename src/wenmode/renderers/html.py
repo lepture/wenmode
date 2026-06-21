@@ -39,6 +39,7 @@ from .base import BaseRenderer, RenderContext
 
 HtmlAttrValue = str | int | bool | None
 SOFT_BREAK_SPACE_RE = re.compile(r'(?<! ) (?=\r?\n)')
+HTML_ATTR_NAME_RE = re.compile(r'^[A-Za-z_:][A-Za-z0-9_.:-]*$')
 
 
 @dataclass
@@ -80,6 +81,8 @@ class HTMLRenderer(BaseRenderer):
     :param escape: Escape raw HTML nodes when ``True``.
     :param sanitize_urls: Drop unsafe URL schemes from links and images when
         ``True``.
+    :param sanitize_attrs: Drop event handler and style attribute names when
+        ``True``.
     :param directives: Directive renderers to register at construction time.
     """
 
@@ -90,11 +93,13 @@ class HTMLRenderer(BaseRenderer):
         self,
         escape: bool = True,
         sanitize_urls: bool = True,
+        sanitize_attrs: bool = True,
         directives: Iterable[DirectiveHtmlRenderer] = (),
     ) -> None:
         super().__init__()
         self.escape_enabled = escape
         self.sanitize_urls = sanitize_urls
+        self.sanitize_attrs = sanitize_attrs
         self.directives: dict[tuple[str, str], DirectiveHtmlRenderer] = {}
         for directive in directives:
             self.register_directive_renderer(directive)
@@ -139,6 +144,8 @@ class HTMLRenderer(BaseRenderer):
         """
         rendered: list[str] = []
         for name, value in attrs.items():
+            if self.sanitize_attrs and not self.is_safe_attr_name(name):
+                continue
             if value is None or value is False:
                 continue
             if value is True:
@@ -148,6 +155,13 @@ class HTMLRenderer(BaseRenderer):
         if rendered:
             return ' ' + ' '.join(rendered)
         return ''
+
+    def is_safe_attr_name(self, name: str) -> bool:
+        """Return whether an attribute name is safe for generated HTML."""
+        if HTML_ATTR_NAME_RE.match(name) is None:
+            return False
+        lowered = name.lower()
+        return not lowered.startswith('on') and lowered != 'style'
 
     def sanitize_url(self, value: str) -> str | None:
         """Return a URL if its scheme is allowed, otherwise ``None``."""
