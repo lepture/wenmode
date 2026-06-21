@@ -32,7 +32,6 @@ def create_parser() -> argparse.ArgumentParser:
     add_source_argument(render)
     add_preset_argument(render)
     render.add_argument(
-        '-f',
         '--format',
         choices=('html', 'markdown', 'rst'),
         default='html',

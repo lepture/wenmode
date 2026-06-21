@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import json
 import subprocess
 import sys
@@ -7,7 +8,7 @@ from io import StringIO
 
 import pytest
 
-from wenmode import __version__
+from wenmode import __version__, cli
 from wenmode.cli import main
 
 
@@ -53,6 +54,16 @@ def test_cli_renders_rst_format(tmp_path, capsys) -> None:
     assert captured.out == 'Hello\n=====\n'
 
 
+def test_cli_renders_markdown_format(tmp_path, capsys) -> None:
+    source = tmp_path / 'input.md'
+    source.write_text('# Hello\n\nA **bold** word.\n', encoding='utf-8')
+
+    assert main(['render', '--format', 'markdown', str(source)]) == 0
+
+    captured = capsys.readouterr()
+    assert captured.out == '# Hello\n\nA **bold** word\\.\n'
+
+
 def test_cli_html_output_escapes_raw_html_and_sanitizes_urls_by_default(tmp_path, capsys) -> None:
     source = tmp_path / 'input.md'
     source.write_text('<div>div</div>\n\n[bad](javascript:alert(1))\n', encoding='utf-8')
@@ -83,6 +94,39 @@ def test_cli_rejects_unsafe_html_options_for_non_html_output(tmp_path, capsys) -
     captured = capsys.readouterr()
     assert exc_info.value.code == 2
     assert '--unsafe-html and --unsafe-urls can only be used with --format html' in captured.err
+
+
+def test_cli_reports_missing_input_file(tmp_path, capsys) -> None:
+    missing = tmp_path / 'missing.md'
+
+    with pytest.raises(SystemExit) as exc_info:
+        main(['render', str(missing)])
+
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 1
+    assert 'wenmode:' in captured.err
+    assert str(missing) in captured.err
+
+
+def test_create_renderer_rejects_unknown_format() -> None:
+    with pytest.raises(ValueError, match='unsupported output format: xml'):
+        cli.create_renderer('xml')
+
+
+def test_cli_reports_unexpected_unknown_command(monkeypatch) -> None:
+    class FakeParser:
+        def parse_args(self, argv):
+            return argparse.Namespace(command='unknown')
+
+        def error(self, message):
+            raise SystemExit(message)
+
+    monkeypatch.setattr(cli, 'create_parser', FakeParser)
+
+    with pytest.raises(SystemExit) as exc_info:
+        cli.main([])
+
+    assert str(exc_info.value) == 'unknown command: unknown'
 
 
 def test_cli_prints_ast_json_with_positions(tmp_path, capsys) -> None:

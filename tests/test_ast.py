@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from wenmode import Wenmode
 from wenmode.ast import find, find_all, iter_children, plain_text, walk
-from wenmode.nodes import FootnoteReference, Heading, Image, Link, Paragraph, Text
+from wenmode.nodes import FootnoteReference, Heading, Image, Link, Node, Paragraph, Text
 from wenmode.presets import github
 
 
@@ -31,6 +31,13 @@ def test_iter_children_yields_direct_child_nodes() -> None:
     assert list(iter_children(Text(value='leaf'))) == []
 
 
+def test_iter_children_ignores_non_node_items() -> None:
+    paragraph = Paragraph(children=[Text(value='a')])
+    paragraph.children.append('not a node')
+
+    assert list(iter_children(paragraph)) == [Text(value='a')]
+
+
 def test_find_returns_first_matching_node() -> None:
     root = Wenmode().parse('# Title\n\nA [link](/url).\n')
 
@@ -38,6 +45,7 @@ def test_find_returns_first_matching_node() -> None:
 
     assert isinstance(node, Link)
     assert node.url == '/url'
+    assert find(root) is root
     assert find(root, 'image') is None
 
 
@@ -57,9 +65,13 @@ def test_plain_text_extracts_textual_content() -> None:
     link = Link(url='/url', children=[Text(value='label')])
     image = Image(url='/img.png', alt='image alt')
     footnote = FootnoteReference(identifier='note-id', label='Note Label')
+    identifier_node = Node(type='custom')
+    identifier_node.identifier = 'identifier'
 
     assert plain_text(link) == 'label'
     assert plain_text(image) == 'image alt'
     assert plain_text(footnote) == 'Note Label'
+    assert plain_text(identifier_node) == 'identifier'
+    assert plain_text(Node(type='custom')) == ''
     assert plain_text([Text(value='a'), link, image]) == 'alabelimage alt'
     assert plain_text(Text(value='literal')) == 'literal'
