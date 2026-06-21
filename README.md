@@ -84,9 +84,47 @@ from wenmode import Wenmode
 wenmode = Wenmode(positions=True)
 ast = wenmode.parse('A **bold**.\n').to_ast()
 
-assert ast['children'][0]['children'][1]['position'] == {
-    'start': {'line': 1, 'column': 3, 'offset': 2},
-    'end': {'line': 1, 'column': 11, 'offset': 10},
+assert ast['children'][0] == {
+    'type': 'paragraph',
+    'position': {
+        'start': {'line': 1, 'column': 1, 'offset': 0},
+        'end': {'line': 2, 'column': 1, 'offset': 12}
+    },
+    'children': [
+        {
+            'type': 'text',
+            'position': {
+                'start': {'line': 1, 'column': 1, 'offset': 0},
+                'end': {'line': 1, 'column': 3, 'offset': 2}
+            },
+            'value': 'A '
+        },
+        {
+            'type': 'strong',
+            'position': {
+                'start': {'line': 1, 'column': 3, 'offset': 2},
+                'end': {'line': 1, 'column': 11, 'offset': 10}
+            },
+            'children': [
+                {
+                    'type': 'text',
+                    'position': {
+                        'start': {'line': 1, 'column': 5, 'offset': 4},
+                        'end': {'line': 1, 'column': 9, 'offset': 8}
+                    },
+                    'value': 'bold'
+                }
+            ]
+        },
+        {
+            'type': 'text',
+            'position': {
+                'start': {'line': 1, 'column': 11, 'offset': 10},
+                'end': {'line': 1, 'column': 12, 'offset': 11}
+            },
+            'value': '.'
+        }
+    ]
 }
 ```
 
