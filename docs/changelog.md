@@ -11,12 +11,18 @@ releases.
 This page records notable changes for released versions. Add unreleased entries
 here while preparing a release, then move them under the final version heading.
 
-## Unreleased
+## 0.3.0
+
+Released **Jun 21, 2026**.
 
 - Add a `wenmode` command line interface, also available with
   `python -m wenmode`, for rendering Markdown and printing AST JSON.
 - Add `wenmode.ast` helpers for walking node trees, finding nodes by type or
   predicate, and extracting plain text from nodes.
+- Add an introduction page and streamline the documentation index for users
+  evaluating Wenmode.
+- Improve stability coverage for source positions, plugin state isolation,
+  streaming preset compatibility, and `parse_iter()` plugin nodes.
 
 ## 0.2.0
 
