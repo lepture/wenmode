@@ -1,0 +1,28 @@
+[project]
+name = "wenmode-mkdocs"
+version = "0.1.0"
+description = "Example MkDocs plugin that renders Markdown pages through Wenmode."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "mkdocs",
+    "wenmode",
+]
+
+[tool.uv.sources]
+wenmode = { path = "../..", editable = true }
+
+[project.entry-points."mkdocs.plugins"]
+wenmode = "wenmode_mkdocs:WenmodePlugin"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+test = [
+    "pytest>=8.4.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
