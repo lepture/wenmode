@@ -5,9 +5,23 @@ import json
 import sys
 from collections.abc import Sequence
 from pathlib import Path
+from types import ModuleType
 from typing import cast
 
 from . import __version__
+from .plugins import (
+    abbr,
+    definition_list,
+    fenced_directive,
+    inline_role,
+    insert,
+    mark,
+    math,
+    ruby,
+    spoiler,
+    subscript,
+    superscript,
+)
 from .presets import commonmark, github, streaming
 from .renderers import HTMLRenderer, MarkdownRenderer, RSTRenderer
 from .rules.base import Rule
@@ -21,6 +35,20 @@ PRESETS: dict[str, RuleList] = {
     'streaming': cast(RuleList, streaming),
 }
 
+BUILTIN_PLUGINS: dict[str, ModuleType] = {
+    'abbr': abbr,
+    'definition_list': definition_list,
+    'fenced_directive': fenced_directive,
+    'inline_role': inline_role,
+    'insert': insert,
+    'mark': mark,
+    'math': math,
+    'ruby': ruby,
+    'spoiler': spoiler,
+    'subscript': subscript,
+    'superscript': superscript,
+}
+
 
 def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog='wenmode', description='Parse and render Markdown with Wenmode.')
@@ -31,6 +59,7 @@ def create_parser() -> argparse.ArgumentParser:
     render = commands.add_parser('render', help='Render Markdown to HTML, Markdown, or reStructuredText.')
     add_source_argument(render)
     add_preset_argument(render)
+    add_plugin_argument(render)
     render.add_argument(
         '--format',
         choices=('html', 'markdown', 'rst'),
@@ -52,6 +81,7 @@ def create_parser() -> argparse.ArgumentParser:
     ast = commands.add_parser('ast', help='Parse Markdown and print the AST as JSON.')
     add_source_argument(ast)
     add_preset_argument(ast)
+    add_plugin_argument(ast)
     ast.add_argument('--positions', action='store_true', help='Include source positions in AST output.')
     ast.add_argument('--indent', type=int, default=2, help='JSON indentation level. Defaults to 2.')
     ast.add_argument('-o', '--output', help='Write output to a file instead of stdout.')
@@ -72,6 +102,17 @@ def add_preset_argument(parser: argparse.ArgumentParser) -> None:
         choices=tuple(PRESETS),
         default='commonmark',
         help='Markdown preset to use. Defaults to commonmark.',
+    )
+
+
+def add_plugin_argument(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        '--plugin',
+        action='append',
+        choices=tuple(BUILTIN_PLUGINS),
+        default=None,
+        metavar='PLUGIN',
+        help='Built-in plugin to enable. Repeat to enable multiple plugins.',
     )
 
 
@@ -116,6 +157,12 @@ def create_renderer(
     raise ValueError(f'unsupported output format: {output_format}')
 
 
+def configure_plugins(wenmode: Wenmode, names: Sequence[str] | None) -> Wenmode:
+    for name in names or ():
+        wenmode.use(BUILTIN_PLUGINS[name])
+    return wenmode
+
+
 def run_render(args: argparse.Namespace) -> int:
     source = read_source(str(args.source))
     renderer = create_renderer(
@@ -123,7 +170,10 @@ def run_render(args: argparse.Namespace) -> int:
         unsafe_html=bool(args.unsafe_html),
         unsafe_urls=bool(args.unsafe_urls),
     )
-    wenmode = Wenmode(PRESETS[str(args.preset)], renderer=renderer)
+    wenmode = configure_plugins(
+        Wenmode(PRESETS[str(args.preset)], renderer=renderer),
+        cast(Sequence[str] | None, args.plugin),
+    )
     output = wenmode.render(source)
     write_output(output, args.output)
     return 0
@@ -131,7 +181,10 @@ def run_render(args: argparse.Namespace) -> int:
 
 def run_ast(args: argparse.Namespace) -> int:
     source = read_source(str(args.source))
-    wenmode = Wenmode(PRESETS[str(args.preset)], positions=bool(args.positions))
+    wenmode = configure_plugins(
+        Wenmode(PRESETS[str(args.preset)], positions=bool(args.positions)),
+        cast(Sequence[str] | None, args.plugin),
+    )
     root = wenmode.parse(source)
     output = json.dumps(root.to_ast(), ensure_ascii=False, indent=int(args.indent)) + '\n'
     write_output(output, args.output)

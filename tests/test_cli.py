@@ -45,6 +45,18 @@ def test_cli_renders_github_preset(tmp_path, capsys) -> None:
     assert '<td>B</td>' in captured.out
 
 
+def test_cli_render_enables_builtin_plugins(tmp_path, capsys) -> None:
+    source = tmp_path / 'input.md'
+    source.write_text('Inline $x + y$ and ==marked==.\n', encoding='utf-8')
+
+    assert main(['render', '--plugin', 'math', '--plugin', 'mark', str(source)]) == 0
+
+    captured = capsys.readouterr()
+    assert captured.out == (
+        '<p>Inline <span class="math math-inline">x + y</span> and <mark>marked</mark>.</p>\n'
+    )
+
+
 def test_cli_renders_rst_format(tmp_path, capsys) -> None:
     source = tmp_path / 'input.md'
     source.write_text('# Hello\n', encoding='utf-8')
@@ -109,6 +121,15 @@ def test_cli_reports_missing_input_file(tmp_path, capsys) -> None:
     assert str(missing) in captured.err
 
 
+def test_cli_rejects_unknown_plugin(capsys) -> None:
+    with pytest.raises(SystemExit) as exc_info:
+        main(['render', '--plugin', 'unknown'])
+
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 2
+    assert "invalid choice: 'unknown'" in captured.err
+
+
 def test_create_renderer_rejects_unknown_format() -> None:
     with pytest.raises(ValueError, match='unsupported output format: xml'):
         cli.create_renderer('xml')
@@ -144,6 +165,18 @@ def test_cli_prints_ast_json_with_positions(tmp_path, capsys) -> None:
         'start': {'line': 1, 'column': 3, 'offset': 2},
         'end': {'line': 1, 'column': 11, 'offset': 10},
     }
+
+
+def test_cli_ast_enables_builtin_plugins(tmp_path, capsys) -> None:
+    source = tmp_path / 'input.md'
+    source.write_text('Inline $x + y$.\n', encoding='utf-8')
+
+    assert main(['ast', '--plugin', 'math', str(source)]) == 0
+
+    captured = capsys.readouterr()
+    ast = json.loads(captured.out)
+    inline_math = ast['children'][0]['children'][1]
+    assert inline_math == {'type': 'inlineMath', 'value': 'x + y'}
 
 
 def test_cli_writes_output_file(tmp_path, capsys) -> None:
