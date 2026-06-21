@@ -70,10 +70,6 @@ def render_toc_list(items: list[TocItem]) -> str:
             child_list = f'\n{render_toc_list(item.children)}'
         else:
             child_list = ''
-        parts.append(
-            f'<li><a href="#{escape(item.id, quote=True)}">{escape(item.title)}</a>'
-            + child_list
-            + '</li>\n'
-        )
+        parts.append(f'<li><a href="#{escape(item.id, quote=True)}">{escape(item.title)}</a>' + child_list + '</li>\n')
     parts.append('</ol>\n')
     return ''.join(parts)
