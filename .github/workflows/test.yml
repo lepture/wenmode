@@ -82,3 +82,32 @@ jobs:
           language: Python
           label: code-coverage/pytest
           fail-on-error: false
+
+  examples:
+    needs: lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        example:
+          - wenmode-mkdocs
+          - wenmode-myst
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade uv
+
+      - name: Test ${{ matrix.example }}
+        working-directory: examples/${{ matrix.example }}
+        run: uv run --group test pytest -q
