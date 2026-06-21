@@ -23,7 +23,7 @@
     "name": "block nodes",
     "input": "> quote\n\n- one\n- two\n\n3. three\n4. four\n\n- loose\n  \n  item\n\n- next\n\n```py\nprint(1)\n```\n\n---\n\na  \nb\n",
     "html": "<blockquote>\n<p>quote</p>\n</blockquote>\n<ul>\n<li>\n<p>one</p>\n</li>\n<li>\n<p>two</p>\n</li>\n</ul>\n<ol start=\"3\">\n<li>\n<p>three</p>\n</li>\n<li>\n<p>four</p>\n</li>\n</ol>\n<ul>\n<li>\n<p>loose</p>\n<p>item</p>\n</li>\n<li>\n<p>next</p>\n</li>\n</ul>\n<pre><code class=\"language-py\">print(1)\n</code></pre>\n<hr />\n<p>a<br />\nb</p>\n",
-    "markdown": "> quote\n\n- one\n\n- two\n\n3. three\n\n4. four\n\n- loose\n  \n  item\n\n- next\n\n```py\nprint(1)\n```\n\n---\n\na  \nb\n",
+    "markdown": "> quote\n\n- one\n\n- two\n\n3. three\n\n4. four\n\n- loose\n\n  item\n\n- next\n\n```py\nprint(1)\n```\n\n---\n\na  \nb\n",
     "rst": "   quote\n\n- one\n\n- two\n\n3. three\n\n4. four\n\n- loose\n\n  item\n\n- next\n\n.. code-block:: py\n\n   print(1)\n\n----\n\na\nb\n"
   },
   {
@@ -241,7 +241,7 @@
     "name": "loose task list",
     "input": "- [x] done\n\n  more\n",
     "html": "<ul>\n<li>\n<p><input checked=\"\" disabled=\"\" type=\"checkbox\"> done</p>\n<p>more</p>\n</li>\n</ul>\n",
-    "markdown": "- [x] done\n      \n      more\n",
+    "markdown": "- [x] done\n\n  more\n",
     "rst": "- [x] done\n\n      more\n"
   },
   {

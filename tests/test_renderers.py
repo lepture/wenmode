@@ -186,3 +186,21 @@ def test_rst_renderer_uses_plain_text_for_link_labels() -> None:
     assert app.render('[`mdast-util-directive`](https://example.com)\n') == (
         '`mdast-util-directive <https://example.com>`__\n'
     )
+
+
+@pytest.mark.parametrize(
+    'markdown',
+    [
+        '- item\n  - sub\n',
+        '- item\n  continued\n  - sub\n',
+        '- [ ] task\n  - [x] subtask\n',
+        '- [ ] task\n  continued\n  - [x] subtask\n',
+    ],
+)
+def test_markdown_renderer_round_trips_nested_lists(markdown: str) -> None:
+    html_app = configured_app(['task_list'])
+    markdown_app = configured_app(['task_list'], renderer=MarkdownRenderer())
+
+    reformatted = markdown_app.render(markdown)
+
+    assert html_app.render(reformatted) == html_app.render(markdown)

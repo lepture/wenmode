@@ -48,6 +48,7 @@ class MarkdownRenderer(BaseRenderer):
     name = 'markdown'
 
     def render_list_item(self, item: ListItem, marker: str, context: RenderContext) -> str:
+        content_indent = ' ' * len(marker)
         if item.checked is not None:
             if item.checked:
                 marker += '[x] '
@@ -56,11 +57,26 @@ class MarkdownRenderer(BaseRenderer):
         if not item.children:
             return marker.rstrip()
 
-        body = self.render_children(item.children, context).rstrip('\n')
+        body = self.render_list_item_body(item, context)
         lines = body.splitlines() or ['']
-        indent = ' ' * len(marker)
-        parts = [marker + lines[0]]
-        parts.extend(indent + line for line in lines[1:])
+        if isinstance(item.children[0], Paragraph):
+            parts = [marker + lines[0]]
+            rest = lines[1:]
+        else:
+            parts = [marker.rstrip()]
+            rest = lines
+        parts.extend(content_indent + line if line else '' for line in rest)
+        return '\n'.join(parts)
+
+    def render_list_item_body(self, item: ListItem, context: RenderContext) -> str:
+        parts: list[str] = []
+        for child in item.children:
+            if isinstance(child, Paragraph):
+                parts.append(self.render_children(child.children, context))
+            else:
+                parts.append(self.render_node(child, context).rstrip('\n'))
+        if item.spread:
+            return '\n\n'.join(parts)
         return '\n'.join(parts)
 
     def escape_text(self, value: str) -> str:
