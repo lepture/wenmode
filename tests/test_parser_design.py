@@ -14,6 +14,7 @@ from wenmode.rules import (
     BlockRule,
     Emphasis,
     Footnote,
+    HtmlBlock,
     Image,
     InlineCode,
     Link,
@@ -233,6 +234,37 @@ def test_link_and_image_share_one_reference_transform() -> None:
 
     assert [transform.name for transform in app.parser.root_transforms] == ['reference']
     assert app.render('[x]: /url\n\n[x] and ![x]\n') == ('<p><a href="/url">x</a> and <img src="/url" alt="x" /></p>\n')
+
+
+def test_uri_normalization_requires_semicolon_for_character_references() -> None:
+    app = Wenmode([Link, Image])
+
+    assert app.render('[link](https://example.com/search?tag=red&section=all)\n') == (
+        '<p><a href="https://example.com/search?tag=red&amp;section=all">link</a></p>\n'
+    )
+    assert app.render('[link](https://example.com/search?tag=red&sect;ion=all)\n') == (
+        '<p><a href="https://example.com/search?tag=red%C2%A7ion=all">link</a></p>\n'
+    )
+    assert app.render('[&quotidian](&quotidian) ![&quotidian](&quotidian)\n') == (
+        '<p><a href="&amp;quotidian">&amp;quotidian</a> <img src="&amp;quotidian" alt="&amp;quotidian" /></p>\n'
+    )
+
+
+def test_reference_uri_normalization_requires_semicolon_for_character_references() -> None:
+    app = Wenmode([Link])
+
+    assert app.render('[x]: https://example.com/search?tag=red&section=all\n\n[x]\n') == (
+        '<p><a href="https://example.com/search?tag=red&amp;section=all">x</a></p>\n'
+    )
+
+
+def test_html_block_preserves_nested_pre_across_blank_lines() -> None:
+    renderer = HTMLRenderer(escape=False)
+    app = Wenmode([HtmlBlock], renderer=renderer)
+
+    assert app.render('<div>\n<pre>\nbefore\n\nafter\n</pre>\n</div>\n') == (
+        '<div>\n<pre>\nbefore\n\nafter\n</pre>\n</div>\n'
+    )
 
 
 def test_link_and_image_can_disable_references() -> None:

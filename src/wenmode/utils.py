@@ -3,16 +3,18 @@ from __future__ import annotations
 import html
 import re
 from collections.abc import Sequence
+from html.entities import html5
 from urllib.parse import quote
 
 ESCAPABLE = r'!"#$%&\'()*+,\-./:;<=>?@\[\\\]^_`{|}~'
 BACKSLASH_ESCAPE_RE = re.compile(rf'\\([{ESCAPABLE}])')
 WHITESPACE_RE = re.compile(r'\s+')
+CHARACTER_REFERENCE_RE = re.compile(r'&(?:#[xX][0-9A-Fa-f]+|#[0-9]+|[A-Za-z][A-Za-z0-9]{1,31});')
 
 
 def normalize_label_text(value: str) -> str:
     value = BACKSLASH_ESCAPE_RE.sub(r'\1', value)
-    return html.unescape(value)
+    return decode_character_references(value)
 
 
 def normalize_label(value: str) -> str:
@@ -21,6 +23,32 @@ def normalize_label(value: str) -> str:
 
 def normalize_uri_text(value: str) -> str:
     return quote(normalize_label_text(value), safe="/:?#@!$&'()*+,;=%._~-")
+
+
+def decode_character_references(value: str) -> str:
+    """Decode Markdown character references without accepting legacy no-semicolon names."""
+
+    def replace(match: re.Match[str]) -> str:
+        raw = match.group(0)
+        if raw.startswith(('&#x', '&#X')):
+            codepoint = int(raw[3:-1], 16)
+            return character_reference_from_codepoint(codepoint, raw)
+        if raw.startswith('&#'):
+            codepoint = int(raw[2:-1], 10)
+            return character_reference_from_codepoint(codepoint, raw)
+        if raw[1:] not in html5:
+            return raw
+        return html.unescape(raw)
+
+    return CHARACTER_REFERENCE_RE.sub(replace, value)
+
+
+def character_reference_from_codepoint(codepoint: int, raw: str) -> str:
+    if codepoint == 0:
+        return '\ufffd'
+    if codepoint > 0x10FFFF or 0xD800 <= codepoint <= 0xDFFF:
+        return raw
+    return html.unescape(raw)
 
 
 def expand_leading_tabs(line: str, start_column: int = 0) -> str:

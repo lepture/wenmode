@@ -86,6 +86,23 @@ HTML_DECLARATION_RE = re.compile(r'^<![A-Z]')
 COMPLETE_HTML_TAG_RE = re.compile(
     r'(?i)</?[A-Za-z][A-Za-z0-9-]*(?:\s+[A-Za-z_:][A-Za-z0-9_.:-]*(?:\s*=\s*(?:[^\s"\'=<>`]+|\'[^\']*\'|"[^"]*"))?)*\s*/?>[ \t]*'
 )
+PRESERVE_NESTED_RAW_TAGS = frozenset(
+    {
+        'article',
+        'aside',
+        'div',
+        'details',
+        'dialog',
+        'figcaption',
+        'figure',
+        'footer',
+        'header',
+        'main',
+        'nav',
+        'section',
+        'summary',
+    }
+)
 
 
 class HtmlBlock(BlockRule):
@@ -126,9 +143,23 @@ class HtmlBlock(BlockRule):
             return self.html_node(''.join(lines))
 
         if is_html_block_tag(stripped) or is_complete_html_tag(stripped):
-            while not state.done and state.line.strip() != '':
-                lines.append(state.line)
-                state.advance()
+            if preserves_nested_raw_html(stripped):
+                nested_end_pattern: re.Pattern[str] | None = None
+                while not state.done:
+                    if nested_end_pattern is None and state.line.strip() == '':
+                        break
+                    line = state.line
+                    lines.append(line)
+                    state.advance()
+                    if nested_end_pattern is not None:
+                        if nested_end_pattern.search(line):
+                            nested_end_pattern = None
+                        continue
+                    nested_end_pattern = unclosed_script_style_end_pattern(line.lstrip(' \t'))
+            else:
+                while not state.done and state.line.strip() != '':
+                    lines.append(state.line)
+                    state.advance()
             return self.html_node(''.join(lines))
 
         state.advance()
@@ -157,6 +188,20 @@ def html_end_pattern(line: str) -> re.Pattern[str] | None:
     if line.startswith('<![CDATA['):
         return re.compile(r']]>')
     return None
+
+
+def unclosed_script_style_end_pattern(line: str) -> re.Pattern[str] | None:
+    pattern = html_end_pattern(line.rstrip('\r\n'))
+    if pattern is None:
+        return None
+    if pattern.search(line):
+        return None
+    return pattern
+
+
+def preserves_nested_raw_html(line: str) -> bool:
+    tag = HTML_OPEN_TAG_RE.match(line)
+    return tag is not None and tag.group(1).lower() in PRESERVE_NESTED_RAW_TAGS
 
 
 def is_html_block_tag(line: str) -> bool:
