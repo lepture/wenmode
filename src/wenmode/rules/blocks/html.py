@@ -149,7 +149,7 @@ def html_end_pattern(line: str) -> re.Pattern[str] | None:
         if tag is not None:
             return re.compile(rf'(?i)</{tag.group(1)}\s*>')
     if line.startswith('<!--'):
-        return re.compile(r'-->')
+        return re.compile(r'--!?>')
     if line.startswith('<?'):
         return re.compile(r'\?>')
     if match_pattern(HTML_DECLARATION_RE, line):
