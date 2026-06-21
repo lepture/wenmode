@@ -41,6 +41,9 @@ Issues = "https://github.com/lepture/wenmode/issues"
 Documentation = "https://wenmode.lepture.com"
 Donate = "https://github.com/sponsors/lepture"
 
+[project.scripts]
+wenmode = "wenmode.cli:main"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

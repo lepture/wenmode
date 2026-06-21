@@ -24,6 +24,20 @@ Use Wenmode when you need one or more of these behaviors:
 pip install wenmode
 ```
 
+Run the CLI without installing it permanently:
+
+```bash
+uvx wenmode render --preset=github README.md
+uvx wenmode ast --preset=github README.md
+```
+
+After installation, use either the console script or Python module entry point:
+
+```bash
+wenmode render README.md --preset=github
+python -m wenmode ast README.md --positions
+```
+
 ## Quick start
 
 ```python
