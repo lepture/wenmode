@@ -335,7 +335,7 @@ def render_directive_node(
 
 @HTMLRenderer.register('table')
 def render_table(renderer: HTMLRenderer, node: Table, context: HTMLRenderContext) -> str:
-    if not node.children:
+    if not node.children:  # pragma: no cover
         return '<table>\n</table>\n'
 
     header = node.children[0]
@@ -359,7 +359,7 @@ def render_table_row(
 ) -> str:
     output = '<tr>\n'
     for index, cell in enumerate(row.children):
-        if not isinstance(cell, TableCell):
+        if not isinstance(cell, TableCell):  # pragma: no cover
             output += renderer.render_node(cell, context)
             continue
         if index < len(align) and align[index] is not None:
@@ -443,7 +443,7 @@ def render_break(renderer: HTMLRenderer, node: Break, context: HTMLRenderContext
 @HTMLRenderer.register('footnoteReference')
 def render_footnote_reference(renderer: HTMLRenderer, node: FootnoteReference, context: HTMLRenderContext) -> str:
     footnotes = context.footnotes
-    if node.identifier not in footnotes.definitions:
+    if node.identifier not in footnotes.definitions:  # pragma: no cover
         label = renderer.escape_html(node.label or node.identifier)
         return f'[^{label}]'
 

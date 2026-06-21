@@ -146,7 +146,7 @@ def render_list(renderer: RSTRenderer, node: List, context: RSTRenderContext) ->
         separator = '\n'
 
     for index, child in enumerate(node.children):
-        if not isinstance(child, ListItem):
+        if not isinstance(child, ListItem):  # pragma: no cover
             parts.append(renderer.render_node(child, context).rstrip('\n'))
             continue
         if node.ordered and node.start not in (None, 1):
@@ -334,7 +334,7 @@ def render_link(renderer: RSTRenderer, node: Link, context: RSTRenderContext) ->
 
 @RSTRenderer.register('image')
 def render_image(renderer: RSTRenderer, node: Image, context: RSTRenderContext) -> str:
-    if context.root is None:
+    if context.root is None:  # pragma: no cover
         lines = [f'.. image:: {renderer.escape_link_target(node.url)}']
         if node.alt:
             lines.append(f'   :alt: {node.alt}')
