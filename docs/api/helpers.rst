@@ -3,6 +3,12 @@
 Helper Modules
 ==============
 
+AST Helpers
+-----------
+
+.. automodule:: wenmode.ast
+   :members:
+
 Presets
 -------
 

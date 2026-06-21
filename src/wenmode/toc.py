@@ -3,7 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from html import escape
 
-from .headings import iter_headings, plain_text
+from .ast import plain_text
+from .headings import iter_headings
 from .nodes import Node
 
 

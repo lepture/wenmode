@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
-from wenmode.headings import plain_text
+from wenmode.ast import plain_text
 from wenmode.nodes import LeafDirective
 from wenmode.toc import collect_toc, render_toc_list
 

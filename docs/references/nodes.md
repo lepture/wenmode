@@ -29,6 +29,10 @@ Renderers dispatch on the string stored in each node's `type` field. When a
 custom renderer or plugin handler is not being called, check this value in the
 AST first.
 
+Use `wenmode.ast.walk()`, `wenmode.ast.find_all()`, and
+`wenmode.ast.plain_text()` when you want to inspect node objects directly
+instead of first converting the tree with `to_ast()`.
+
 ## Source positions
 
 Nodes omit source positions by default. Construct `Wenmode(..., positions=True)`

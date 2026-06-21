@@ -178,6 +178,36 @@ assert '"type": "root"' in payload
 assert '"url": "https://example.com"' in payload
 ```
 
+## Inspect AST nodes
+
+Use `wenmode.ast` helpers when you want to inspect parsed node objects directly
+instead of first converting them to dictionaries.
+
+```python
+from wenmode import Wenmode
+from wenmode.ast import find_all, plain_text, walk
+from wenmode.nodes import Heading
+from wenmode.presets import github
+
+text = '''
+# Title
+
+## Usage
+
+A [link](https://example.com).
+'''
+
+root = Wenmode(github).parse(text)
+
+headings = find_all(root, Heading)
+links = find_all(root, 'link')
+node_types = [node.type for node in walk(root)]
+
+assert [plain_text(heading) for heading in headings] == ['Title', 'Usage']
+assert links[0].url == 'https://example.com'
+assert node_types[:3] == ['root', 'heading', 'text']
+```
+
 ## Write a custom renderer
 
 Renderers inherit from `BaseRenderer` and register handlers by node type. This

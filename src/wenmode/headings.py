@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import re
 import string
+from typing import cast
 
-from .nodes import Heading, Image, Literal, Node, Parent
+from .ast import find_all, plain_text
+from .nodes import Heading, Node
 
 SLUG_PUNCTUATION = ''.join(char for char in string.punctuation if char not in '-_')
 SLUG_PUNCTUATION_RE = re.compile('[' + re.escape(SLUG_PUNCTUATION) + ']')
@@ -67,41 +69,7 @@ def add_heading_ids(
 
 def iter_headings(node: Node) -> list[Heading]:
     """Return all heading nodes under a node."""
-    headings: list[Heading] = []
-    collect_headings(node, headings)
-    return headings
-
-
-def collect_headings(node: Node, headings: list[Heading]) -> None:
-    """Append heading descendants of ``node`` to ``headings``."""
-    if isinstance(node, Heading):
-        headings.append(node)
-    children = getattr(node, 'children', None)
-    if isinstance(children, list):
-        for child in children:
-            collect_headings(child, headings)
-
-
-def plain_text(nodes: list[Node]) -> str:
-    """Return the plain text content of a node list."""
-    return ''.join(plain_text_node(node) for node in nodes)
-
-
-def plain_text_node(node: Node) -> str:
-    """Return the plain text content of one node."""
-    if isinstance(node, Image):
-        return node.alt
-    if isinstance(node, Literal):
-        return node.value
-    if isinstance(node, Parent):
-        return plain_text(node.children)
-    label = getattr(node, 'label', None)
-    if isinstance(label, str):
-        return label
-    identifier = getattr(node, 'identifier', None)
-    if isinstance(identifier, str):
-        return identifier
-    return ''
+    return [cast(Heading, heading) for heading in find_all(node, Heading)]
 
 
 def slugify(value: str) -> str:

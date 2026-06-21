@@ -15,6 +15,8 @@ here while preparing a release, then move them under the final version heading.
 
 - Add a `wenmode` command line interface, also available with
   `python -m wenmode`, for rendering Markdown and printing AST JSON.
+- Add `wenmode.ast` helpers for walking node trees, finding nodes by type or
+  predicate, and extracting plain text from nodes.
 
 ## 0.2.0
 
