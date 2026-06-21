@@ -77,7 +77,7 @@ streaming = [
 ]
 
 github = [
-    Table,
+    Table(require_body_pipe=False),
     ThematicBreak,
     FencedCode,
     IndentedCode,

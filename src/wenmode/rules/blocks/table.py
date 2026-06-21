@@ -30,8 +30,9 @@ class Table(BlockRule):
        | x | y |
     """
 
-    def __init__(self) -> None:
+    def __init__(self, require_body_pipe: bool = True) -> None:
         super().__init__('table', r'[ \t]{0,3}.*\|.*(?:\r?\n)?$')
+        self.require_body_pipe = require_body_pipe
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> TableNode | None:
         if not state.has(1):
@@ -54,7 +55,11 @@ class Table(BlockRule):
 
         while not state.done:
             line = state.line.rstrip('\r\n')
-            if line.strip() == '' or parser.is_paragraph_interrupt(line, state):
+            if (
+                line.strip() == ''
+                or parser.is_paragraph_interrupt(line, state)
+                or (self.require_body_pipe and not has_unescaped_pipe(line))
+            ):
                 break
             row_index = state.index
             cells = normalize_row(split_table_row_spans(line), len(align), len(line))
