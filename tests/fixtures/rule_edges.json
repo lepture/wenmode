@@ -1188,6 +1188,78 @@
     "html": "<p>[^&amp;nbsp;]: bad</p>\n"
   },
   {
+    "name": "reference label decodes hex numeric entity",
+    "rules": [
+      "link"
+    ],
+    "markdown": "[&#x41;]: /hex\n\n[A]\n",
+    "html": "<p><a href=\"/hex\">A</a></p>\n"
+  },
+  {
+    "name": "reference label decodes decimal numeric entity",
+    "rules": [
+      "link"
+    ],
+    "markdown": "[&#65;]: /decimal\n\n[A]\n",
+    "html": "<p><a href=\"/decimal\">A</a></p>\n"
+  },
+  {
+    "name": "reference label decodes zero numeric entity",
+    "rules": [
+      "link"
+    ],
+    "markdown": "[&#0;]: /zero\n\n[�]\n",
+    "html": "<p><a href=\"/zero\">�</a></p>\n"
+  },
+  {
+    "name": "reference label keeps invalid numeric entity literal",
+    "rules": [
+      "link"
+    ],
+    "markdown": "[&#99999999;]: /huge\n\n[&#99999999;]\n",
+    "html": "<p><a href=\"/huge\">&amp;#99999999;</a></p>\n"
+  },
+  {
+    "name": "reference label keeps unknown named entity literal",
+    "rules": [
+      "link"
+    ],
+    "markdown": "[&nosuch;]: /unknown\n\n[&nosuch;]\n",
+    "html": "<p><a href=\"/unknown\">&amp;nosuch;</a></p>\n"
+  },
+  {
+    "name": "blockquote expands tab from marker column",
+    "rules": [
+      "blockquote"
+    ],
+    "markdown": ">\ttabbed\n",
+    "html": "<blockquote>\n<p>tabbed</p>\n</blockquote>\n"
+  },
+  {
+    "name": "list counts tab indentation as nested item",
+    "rules": [
+      "list"
+    ],
+    "markdown": "- top\n\t- nested\n",
+    "html": "<ul>\n<li>top\n<ul>\n<li>nested</li>\n</ul>\n</li>\n</ul>\n"
+  },
+  {
+    "name": "html block disallowed tag is escaped during parsing",
+    "rules": [
+      "html_block_disallow_iframe"
+    ],
+    "markdown": "<iframe></iframe>\n",
+    "html": "&lt;iframe>&lt;/iframe>\n"
+  },
+  {
+    "name": "unclosed math block keeps non-closer lines",
+    "rules": [
+      "math_block"
+    ],
+    "markdown": "$$ x\nnot closer\n",
+    "html": "<div class=\"math math-display\">x\nnot closer\n</div>\n"
+  },
+  {
     "name": "table code span skips nested backtick run",
     "rules": [
       "table"

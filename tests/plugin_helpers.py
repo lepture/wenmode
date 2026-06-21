@@ -66,6 +66,7 @@ STANDARD_RULES: dict[str, RuleSpec] = {
     'hard_break': HardBreak,
     'heading_id_transform': AtxHeading(id_transform=True),
     'html_block': HtmlBlock,
+    'html_block_disallow_iframe': HtmlBlock(disallowed_tags=['iframe']),
     'image': Image,
     'indented_code': IndentedCode,
     'inline_code': InlineCode,

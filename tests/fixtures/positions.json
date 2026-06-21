@@ -1208,7 +1208,8 @@
   {
     "name": "html block source",
     "rules": [
-      "html_block"
+      "html_block",
+      "html_block_disallow_iframe"
     ],
     "markdown": "<div>\nHTML\n</div>\n",
     "ast": {
