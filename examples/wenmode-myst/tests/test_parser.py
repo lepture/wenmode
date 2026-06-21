@@ -1,12 +1,6 @@
 from __future__ import annotations
 
-import sys
-from pathlib import Path
-
-EXAMPLE_SRC = Path(__file__).resolve().parents[1] / 'examples' / 'wenmode-myst' / 'src'
-sys.path.insert(0, str(EXAMPLE_SRC))
-
-from wenmode_myst import markdown_to_rst  # noqa: E402
+from wenmode_myst import markdown_to_rst
 
 
 def test_wenmode_myst_bridge_renders_sphinx_rst() -> None:
