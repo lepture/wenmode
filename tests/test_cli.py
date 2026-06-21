@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from io import StringIO
@@ -166,3 +167,19 @@ def test_python_module_entrypoint() -> None:
     )
 
     assert completed.stdout == f'wenmode {__version__}\n'
+
+
+def test_python_module_entrypoint_writes_utf8_stdout_on_non_utf8_locale(tmp_path) -> None:
+    source = tmp_path / 'input.md'
+    source.write_text('# Title ★ star\n', encoding='utf-8')
+    env = {**os.environ, 'PYTHONIOENCODING': 'cp1251'}
+
+    completed = subprocess.run(
+        [sys.executable, '-m', 'wenmode', 'render', str(source)],
+        check=True,
+        capture_output=True,
+        env=env,
+    )
+
+    assert completed.stdout.decode('utf-8') == '<h1>Title ★ star</h1>\n'
+    assert completed.stderr == b''

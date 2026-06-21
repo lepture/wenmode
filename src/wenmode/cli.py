@@ -88,6 +88,18 @@ def write_output(text: str, output: str | None) -> None:
     Path(output).write_text(text, encoding='utf-8')
 
 
+def configure_standard_streams() -> None:
+    """Use UTF-8 for CLI stdio when the active streams support reconfiguration."""
+    for stream in (sys.stdin, sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, 'reconfigure', None)
+        if not callable(reconfigure):
+            continue
+        try:
+            reconfigure(encoding='utf-8')
+        except (OSError, ValueError):
+            continue
+
+
 def create_renderer(
     output_format: str,
     unsafe_html: bool = False,
@@ -127,6 +139,7 @@ def run_ast(args: argparse.Namespace) -> int:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    configure_standard_streams()
     parser = create_parser()
     args = parser.parse_args(argv)
 
