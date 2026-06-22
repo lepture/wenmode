@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from types import ModuleType
 from typing import TYPE_CHECKING, Any, Protocol, TypeAlias
 
 from wenmode.renderers.base import RenderHandler
@@ -19,6 +20,11 @@ class Plugin(Protocol):
     def setup(self, wenmode: Wenmode, **options: Any) -> None:
         """Install parser rules, renderer handlers, or other behavior."""
         pass
+
+
+PluginTarget: TypeAlias = Plugin | ModuleType
+PluginOptions: TypeAlias = Mapping[str, Any]
+PluginSpec: TypeAlias = PluginTarget | tuple[PluginTarget, PluginOptions]
 
 
 class _PluginSetup(Protocol):

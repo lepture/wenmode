@@ -224,7 +224,7 @@ extra inline formatting:
 from wenmode import Wenmode
 from wenmode.plugins import math
 
-wenmode = Wenmode().use(math)
+wenmode = Wenmode(plugins=[math])
 
 assert wenmode.render('Inline $x + y$.\n') == (
     '<p>Inline <span class="math math-inline">x + y</span>.</p>\n'

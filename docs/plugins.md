@@ -18,7 +18,7 @@ from wenmode import Wenmode
 from wenmode.presets import github
 from wenmode.plugins import math
 
-wenmode = Wenmode(github).use(math)
+wenmode = Wenmode(github, plugins=[math])
 ```
 
 Use a plugin when you want a complete feature. Use individual rules when you
@@ -27,40 +27,45 @@ behavior you need.
 
 ## Using Plugins
 
-Import a plugin module from `wenmode.plugins` and pass it to `Wenmode.use()`.
-The method calls the plugin's `setup(wenmode, **options)` function and returns
-the same `Wenmode` instance.
+Import a plugin module from `wenmode.plugins` and pass it to `Wenmode` with the
+`plugins` argument. During initialization, Wenmode calls each plugin's
+`setup(wenmode, **options)` function.
 
 ```python
 from wenmode import Wenmode
 from wenmode.plugins import math
 
-wenmode = Wenmode().use(math)
+wenmode = Wenmode(plugins=[math])
 
 assert wenmode.render('Inline $x + y$.\n') == (
     '<p>Inline <span class="math math-inline">x + y</span>.</p>\n'
 )
 ```
 
-Plugins can be chained:
+Install multiple plugins by listing them:
 
 ```python
 from wenmode import Wenmode
 from wenmode.plugins import mark, superscript
 
-wenmode = Wenmode().use(mark).use(superscript)
+wenmode = Wenmode(plugins=[mark, superscript])
 ```
 
 Some plugins accept setup options. For example, `math` can install only inline
-or block syntax:
+or block syntax. Pass a `(plugin, options)` tuple when using constructor-time
+plugin setup:
 
 ```python
 from wenmode import Wenmode
 from wenmode.plugins import math
 
-inline_math = Wenmode().use(math, block=False)
-block_math = Wenmode().use(math, inline=False)
+inline_math = Wenmode(plugins=[(math, {'block': False})])
+block_math = Wenmode(plugins=[(math, {'inline': False})])
 ```
+
+Use `Wenmode.use(plugin, **options)` when you need to install a plugin after the
+instance already exists. It returns the same `Wenmode` instance, so existing
+chain-style setup remains supported.
 
 ## Built-In Plugins
 
@@ -96,15 +101,15 @@ from wenmode.plugins import frontmatter
 
 source = '---\ntitle: Hello\n---\n\n# Hi\n'
 
-html = Wenmode().use(frontmatter)
+html = Wenmode(plugins=[frontmatter])
 root = html.parse(source)
 assert root.data == {'frontmatter': {'title': 'Hello'}}
 assert html.render_node(root) == '<h1>Hi</h1>\n'
 
-markdown = Wenmode(renderer=MarkdownRenderer()).use(frontmatter)
+markdown = Wenmode(renderer=MarkdownRenderer(), plugins=[frontmatter])
 assert markdown.render(source) == source
 
-rst = Wenmode(renderer=RSTRenderer()).use(frontmatter)
+rst = Wenmode(renderer=RSTRenderer(), plugins=[frontmatter])
 assert rst.render(source) == ':title: Hello\n\nHi\n==\n'
 ```
 
@@ -128,7 +133,11 @@ def dump_meta(value: object) -> str | None:
     return str(value['raw'])
 
 
-wenmode = Wenmode().use(frontmatter, load=load_meta, dump=dump_meta, data_key='meta')
+wenmode = Wenmode(
+    plugins=[
+        (frontmatter, {'load': load_meta, 'dump': dump_meta, 'data_key': 'meta'}),
+    ]
+)
 ```
 
 ## Fenced Directives And Roles
@@ -141,7 +150,7 @@ onto the same mdast directive nodes documented in {ref}`directives`.
 from wenmode import Wenmode
 from wenmode.plugins import fenced_directive, inline_role
 
-wenmode = Wenmode().use(fenced_directive).use(inline_role)
+wenmode = Wenmode(plugins=[fenced_directive, inline_role])
 ```
 
 Fenced directives use code-fence-style syntax:

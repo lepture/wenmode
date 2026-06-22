@@ -8,7 +8,7 @@ import pytest
 from wenmode import Parser, Wenmode
 from wenmode.directives import Admonition
 from wenmode.nodes import Literal
-from wenmode.plugins import ruby
+from wenmode.plugins import math, ruby
 from wenmode.renderers import HTMLRenderer, RenderContext
 from wenmode.rules import AtxHeading, ContainerDirective, Link
 
@@ -49,9 +49,27 @@ def test_wenmode_uses_plugins() -> None:
     assert wenmode.render('[漢字(kanji)]\n') == '<p><ruby>漢字<rt>kanji</rt></ruby></p>\n'
 
 
+def test_wenmode_accepts_plugins_during_initialization() -> None:
+    wenmode = Wenmode([], plugins=[ruby])
+
+    assert wenmode.render('[漢字(kanji)]\n') == '<p><ruby>漢字<rt>kanji</rt></ruby></p>\n'
+
+
+def test_wenmode_accepts_plugin_options_during_initialization() -> None:
+    wenmode = Wenmode(plugins=[(math, {'inline': False})])
+
+    assert wenmode.render('Inline $x$.\n') == '<p>Inline $x$.</p>\n'
+    assert wenmode.render('$$\nx\n$$\n') == '<div class="math math-display">x\n</div>\n'
+
+
 def test_wenmode_rejects_modules_without_setup() -> None:
     with pytest.raises(TypeError, match='plugins must define setup'):
         Wenmode().use(ModuleType('empty_plugin'))
+
+
+def test_wenmode_rejects_constructor_plugins_without_setup() -> None:
+    with pytest.raises(TypeError, match='plugins must define setup'):
+        Wenmode(plugins=[ModuleType('empty_plugin')])
 
 
 def test_wenmode_registers_renderer_handlers_for_current_renderer() -> None:
