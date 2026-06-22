@@ -50,6 +50,7 @@ uv run --locked --group docs sphinx-build -b linkcheck docs /tmp/wenmode-docs-li
 Run the local integration examples:
 
 ```bash
+uv run --directory examples/wenmode-fastapi --locked --group test pytest -q
 uv run --directory examples/wenmode-mkdocs --locked --group test pytest -q
 uv run --directory examples/wenmode-myst --locked --group test pytest -q
 ```

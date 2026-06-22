@@ -1,0 +1,28 @@
+[project]
+name = "wenmode-fastapi"
+version = "0.1.0"
+description = "Example FastAPI app that streams Wenmode-rendered Markdown previews."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi",
+    "python-multipart",
+    "uvicorn",
+    "wenmode",
+]
+
+[tool.uv.sources]
+wenmode = { path = "../..", editable = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+test = [
+    "httpx>=0.28.0",
+    "pytest>=8.4.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

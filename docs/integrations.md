@@ -18,9 +18,11 @@ rule sets.
 
 ## Repository examples
 
-The repository includes two local example packages that show Wenmode embedded in
-documentation frameworks:
+The repository includes local example packages that show Wenmode embedded in web
+and documentation frameworks:
 
+- `examples/wenmode-fastapi` is a FastAPI app that streams uploaded Markdown
+  files through `StreamingResponse`.
 - `examples/wenmode-mkdocs` is a MkDocs plugin that renders page Markdown
   through Wenmode before MkDocs finishes the page build.
 - `examples/wenmode-myst` is a Sphinx source parser that uses Wenmode instead
