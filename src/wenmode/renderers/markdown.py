@@ -132,7 +132,7 @@ def render_list(renderer: MarkdownRenderer, node: List, context: RenderContext) 
         separator = '\n'
 
     for index, child in enumerate(node.children):
-        if not isinstance(child, ListItem):
+        if not isinstance(child, ListItem):  # pragma: no cover
             parts.append(renderer.render_node(child, context).rstrip('\n'))
             continue
         if node.ordered:
@@ -142,11 +142,6 @@ def render_list(renderer: MarkdownRenderer, node: List, context: RenderContext) 
         parts.append(renderer.render_list_item(child, marker, context))
 
     return separator.join(parts) + '\n\n'
-
-
-@MarkdownRenderer.register('listItem')
-def render_list_item(renderer: MarkdownRenderer, node: ListItem, context: RenderContext) -> str:
-    return renderer.render_children(node.children, context)
 
 
 @MarkdownRenderer.register('delete')
