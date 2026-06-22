@@ -2,8 +2,8 @@
 # Usage
 
 ```{rst-class} lead
-Learn the main APIs for parsing Markdown, rendering output, and streaming HTML
-chunks.
+Learn the Python and command line APIs for parsing Markdown, rendering output,
+and streaming HTML chunks.
 ```
 
 ---
@@ -78,6 +78,62 @@ wenmode = Wenmode()
 
 with open('README.md', encoding='utf-8') as file:
     html = wenmode.render(file)
+```
+
+## Command line
+
+Installing Wenmode exposes the `wenmode` command. The same CLI is also available
+through `python -m wenmode`, and `uvx` can run it without adding Wenmode to the
+current project.
+
+Render a Markdown file to HTML:
+
+```bash
+wenmode render README.md --preset=github
+```
+
+Run the same command without a permanent install:
+
+```bash
+uvx wenmode render README.md --preset=github
+```
+
+Read from stdin by omitting the source path or passing `-`. CLI output goes to
+stdout unless you pass `-o`:
+
+```bash
+printf '# Hello\n' | wenmode render --preset=github
+wenmode render README.md --format=rst -o README.rst
+```
+
+Use `ast` when you want JSON output for tooling, tests, or editor integrations:
+
+```bash
+wenmode ast README.md --preset=github --positions
+python -m wenmode ast README.md --indent=2
+```
+
+The CLI supports the built-in presets: `commonmark`, `github`, and `streaming`.
+It defaults to `commonmark`.
+
+```bash
+wenmode render README.md --preset=commonmark
+wenmode render README.md --preset=github
+```
+
+Enable built-in plugins with `--plugin`. Repeat the option to enable multiple
+plugins.
+
+```bash
+wenmode render notes.md --plugin=frontmatter --plugin=math
+```
+
+HTML output uses the same safety defaults as `HTMLRenderer()`: raw HTML nodes are
+escaped, and unsafe link or image URLs are sanitized. Use `--unsafe-html` or
+`--unsafe-urls` only for trusted content or content sanitized by another layer.
+
+```bash
+wenmode render trusted.md --unsafe-html --unsafe-urls
 ```
 
 ## Parsing
