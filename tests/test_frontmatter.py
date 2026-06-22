@@ -59,6 +59,13 @@ def test_frontmatter_plugin_accepts_custom_load_and_data_key() -> None:
     assert root.data == {'meta': {'raw': 'title: Hello\n', 'lines': ['title: Hello']}}
 
 
+def test_frontmatter_default_load_skips_empty_keys() -> None:
+    app = Wenmode().use(frontmatter)
+    root = app.parse('---\n: ignored\n spaced : value\nplain\n---\n\nBody\n')
+
+    assert root.data == {'frontmatter': {'spaced': 'value'}}
+
+
 def test_frontmatter_plugin_does_not_change_unclosed_thematic_break() -> None:
     app = Wenmode().use(frontmatter)
 
@@ -94,6 +101,42 @@ def test_frontmatter_plugin_does_not_render_missing_frontmatter() -> None:
     assert rst.render('# Hi\n') == 'Hi\n==\n'
 
 
+def test_frontmatter_plugin_renders_empty_markdown_frontmatter() -> None:
+    app = Wenmode(renderer=MarkdownRenderer()).use(frontmatter)
+
+    assert app.render('---\n---\n\nBody\n') == '---\n---\n\nBody\n'
+
+
+def test_frontmatter_plugin_skips_markdown_frontmatter_without_dump_output() -> None:
+    app = Wenmode(renderer=MarkdownRenderer()).use(frontmatter, load=lambda source: ['not', 'a', 'mapping'])
+
+    assert app.render('---\ntitle: Hello\n---\n\n# Hi\n') == '# Hi\n'
+
+
+def test_frontmatter_plugin_dumps_simple_scalar_values() -> None:
+    def load_metadata(source: str) -> dict[str, object]:
+        return {
+            ' ': 'ignored',
+            'draft': True,
+            'published': False,
+            'empty': None,
+            'description': 'Line 1\nLine 2',
+        }
+
+    app = Wenmode(renderer=MarkdownRenderer()).use(frontmatter, load=load_metadata)
+
+    assert app.render('---\nignored: true\n---\n\nBody\n') == (
+        '---\n'
+        'draft: true\n'
+        'published: false\n'
+        'empty:\n'
+        'description: Line 1 Line 2\n'
+        '---\n'
+        '\n'
+        'Body\n'
+    )
+
+
 def test_frontmatter_plugin_renders_markdown_frontmatter_with_custom_dump() -> None:
     def load_metadata(source: str) -> dict[str, str]:
         return {'raw': source}
@@ -119,6 +162,29 @@ def test_frontmatter_plugin_renders_rst_docinfo() -> None:
     assert app.render('---\ntitle: Hello\nlayout: "landing"\n---\n\n# Hi\n') == (
         ':title: Hello\n'
         ':layout: landing\n'
+        '\n'
+        'Hi\n'
+        '==\n'
+    )
+
+
+def test_frontmatter_plugin_skips_rst_frontmatter_without_docinfo_fields() -> None:
+    non_mapping = Wenmode(renderer=RSTRenderer()).use(frontmatter, load=lambda source: ['not', 'a', 'mapping'])
+    invalid_fields = Wenmode(renderer=RSTRenderer()).use(frontmatter, load=lambda source: {'bad:name': 'value'})
+
+    assert non_mapping.render('---\ntitle: Hello\n---\n\n# Hi\n') == 'Hi\n==\n'
+    assert invalid_fields.render('---\ntitle: Hello\n---\n\n# Hi\n') == 'Hi\n==\n'
+
+
+def test_frontmatter_plugin_renders_rst_empty_docinfo_values() -> None:
+    app = Wenmode(renderer=RSTRenderer()).use(
+        frontmatter,
+        load=lambda source: {'bad:name': 'skip', ' ': 'skip', 'empty': None, 'ok': 'yes'},
+    )
+
+    assert app.render('---\ntitle: Hello\n---\n\n# Hi\n') == (
+        ':empty:\n'
+        ':ok: yes\n'
         '\n'
         'Hi\n'
         '==\n'
