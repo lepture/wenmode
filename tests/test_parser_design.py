@@ -370,11 +370,18 @@ def test_streaming_preset_disables_references() -> None:
 
 def test_wenmode_stream_matches_full_render_for_streaming_preset() -> None:
     wenmode = Wenmode(streaming)
-    markdown = '# Title\n\nA [link](/url).\n\n- one\n- two\n'
+    markdown = '# Title\n\nA [link](/url) and ~~old~~ text.\n\n| A | B |\n| --- | --- |\n| x | y |\n\n- one\n- two\n'
 
     assert ''.join(wenmode.stream(markdown)) == wenmode.render(markdown)
     assert ''.join(wenmode.stream(StringIO(markdown))) == wenmode.render(markdown)
     assert ''.join(wenmode.stream(lines(markdown))) == wenmode.render(markdown)
+
+
+def test_streaming_preset_supports_table_and_strikethrough() -> None:
+    html = Wenmode(streaming).render('| A | B |\n| --- | --- |\nx | ~~old~~\n')
+
+    assert '<table>' in html
+    assert '<td><del>old</del></td>' in html
 
 
 def test_wenmode_stream_does_not_read_entire_input_before_first_chunk() -> None:

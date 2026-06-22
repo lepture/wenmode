@@ -30,7 +30,7 @@ only for the syntax that preset does not cover.
 | --- | --- | --- | --- |
 | `commonmark` | You want the default Markdown behavior for articles, comments, or docs. | Core Markdown, reference links and images, inline HTML parsing. | No GFM tables, task list markers, footnotes, or bare URL autolinks. |
 | `github` | You want GitHub-flavored Markdown output. | `commonmark`-style behavior plus the GFM feature set and disallowed HTML tag handling. | Requires full-document parsing, so it is not compatible with streaming output. |
-| `streaming` | You need to emit HTML chunks as input arrives. | Most CommonMark-style rules, with direct links and images. | Reference-style links, reference-style images, footnotes, and other deferred transforms are disabled. |
+| `streaming` | You need to emit HTML chunks as input arrives. | Most CommonMark-style rules, plus tables, strikethrough, direct links, and direct images. | Reference-style links, reference-style images, footnotes, and other deferred transforms are disabled. |
 | Custom rule list | You are building a specific Markdown dialect or want to disable syntax. | Only the rules you pass. | You own the feature set and rule interactions. |
 
 ## CommonMark
@@ -86,10 +86,11 @@ A [link](/url).
 html = ''.join(wenmode.stream(text))
 ```
 
-It is close to the CommonMark-oriented rule set, but disables reference-style
-link and image transforms by using `Image(references=False)` and
-`Link(references=False)`. Direct links and images still work, while definitions
-and shortcut/reference links stay as text.
+It is close to the CommonMark-oriented rule set, with streaming-compatible GFM
+tables and strikethrough enabled. It disables reference-style link and image
+transforms by using `Image(references=False)` and `Link(references=False)`.
+Direct links and images still work, while definitions and shortcut/reference
+links stay as text.
 
 This tradeoff lets Wenmode emit blocks before the end of the document. Rules
 that need document-wide deferred inline transforms, such as reference links or

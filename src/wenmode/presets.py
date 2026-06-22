@@ -57,6 +57,7 @@ commonmark = [
 ]
 
 streaming = [
+    Table(require_body_pipe=False),
     ThematicBreak,
     FencedCode,
     IndentedCode,
@@ -73,6 +74,7 @@ streaming = [
     Image(references=False),
     Link(references=False),
     InlineCode,
+    Strikethrough,
     Emphasis,
 ]
 

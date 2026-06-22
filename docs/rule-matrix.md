@@ -34,9 +34,9 @@ rules to enable. For syntax examples and default HTML output, use the
 | `Link` | inline | yes | yes | configured | `link` | `references=True` |
 | `InlineCode` | inline | yes | yes | yes | `inlineCode` | none |
 | `Emphasis` | inline | yes | yes | yes | `emphasis`, `strong` | none |
-| `Table` | block | no | configured | no | `table`, `tableRow`, `tableCell` | `require_body_pipe=True` |
+| `Table` | block | no | configured | configured | `table`, `tableRow`, `tableCell` | `require_body_pipe=True` |
 | `Footnote` | inline + transform | no | yes | no | `footnoteReference`, `footnoteDefinition` | none |
-| `Strikethrough` | inline | no | yes | no | `delete` | none |
+| `Strikethrough` | inline | no | yes | yes | `delete` | none |
 | `ExtendedAutolink` | inline | no | yes | no | `link` | none |
 | `LeafDirective` | block | no | no | no | `leafDirective` | none |
 | `ContainerDirective` | block | no | no | no | `containerDirective` | none |
@@ -46,8 +46,9 @@ rules to enable. For syntax examples and default HTML output, use the
 and `RawHtml` with the GFM disallowed tag list, uses
 `RawHtml(comment_style="gfm")`, and configures `List(task=True)` so task list
 markers become `listItem.checked` values. `streaming` configures
-`Image(references=False)` and `Link(references=False)` to avoid document-wide
-reference resolution.
+`Table(require_body_pipe=False)`, `Image(references=False)`, and
+`Link(references=False)` to keep tables GFM-compatible while avoiding
+document-wide reference resolution.
 
 `ReferenceDefinition` is enabled automatically by `Link(references=True)` and
 `Image(references=True)`. `FootnoteDefinition` is enabled automatically by
@@ -90,8 +91,9 @@ resolution. Avoid these when using `Wenmode(streaming).stream(...)`:
 - `wenmode.plugins.abbr`, because matching text nodes are rewritten after abbreviation
   definitions are collected.
 
-Use the `streaming` preset when latency matters. It keeps direct links and
-images, but leaves shortcut and reference-style links as text.
+Use the `streaming` preset when latency matters. It keeps tables,
+strikethrough, direct links, and direct images, but leaves shortcut and
+reference-style links as text.
 
 If a custom rule set raises `StreamingUnsupportedError`, compare it with this
 section first. The issue is usually a rule or transform that waits for the full
