@@ -11,7 +11,7 @@ from sphinx.parsers import Parser as SphinxParser
 
 from wenmode import RSTRenderer, Wenmode
 from wenmode.nodes import ContainerDirective as ContainerDirectiveNode
-from wenmode.nodes import Node, Root
+from wenmode.nodes import Node
 from wenmode.plugins import definition_list, frontmatter, inline_role, math
 from wenmode.plugins.fenced_directive import (
     FENCED_DIRECTIVE_RE,
@@ -135,13 +135,7 @@ handlers: RendererHandlers = {
 
 def markdown_to_rst(source: str) -> str:
     """Convert Markdown source to reStructuredText through Wenmode."""
-    app = create_wenmode()
-    root = app.parse(source)
-    rst = app.render_node(root)
-    meta = render_frontmatter_metadata(root_frontmatter(root))
-    if meta and rst:
-        return f'{meta}\n{rst}'
-    return meta or rst
+    return create_wenmode().render(source)
 
 
 def create_wenmode() -> Wenmode:
@@ -163,27 +157,6 @@ def create_wenmode() -> Wenmode:
     app.use(math)
     app.register_renderer_handlers(handlers)
     return app
-
-
-def root_frontmatter(root: Root) -> dict[str, str]:
-    if root.data is None:
-        return {}
-    value = root.data.get('frontmatter')
-    if not isinstance(value, dict):
-        return {}
-    return {str(key): str(item) for key, item in value.items()}
-
-
-def render_frontmatter_metadata(frontmatter: dict[str, str]) -> str:
-    if not frontmatter:
-        return ''
-    lines: list[str] = []
-    for key, value in frontmatter.items():
-        if value:
-            lines.append(f':{key}: {value}')
-        else:
-            lines.append(f':{key}:')
-    return '\n'.join(lines) + '\n'
 
 
 class WenmodeMystParser(SphinxParser):

@@ -86,34 +86,49 @@ the feature has a standard representation in Wenmode's built-in renderers.
 
 The `frontmatter` plugin consumes top-level `---` front matter before normal
 Markdown block parsing and stores the parsed value on the root node. It does not
-emit a child node, so HTML, Markdown, and RST output ignore front matter by
-default.
+emit a child node. HTML output ignores front matter by default, Markdown output
+serializes it back to a `---` block, and RST output renders flat metadata as a
+docinfo field list.
 
 ```python
-from wenmode import Wenmode
+from wenmode import MarkdownRenderer, RSTRenderer, Wenmode
 from wenmode.plugins import frontmatter
 
-wenmode = Wenmode().use(frontmatter)
-root = wenmode.parse('---\ntitle: Hello\n---\n\n# Hi\n')
+source = '---\ntitle: Hello\n---\n\n# Hi\n'
 
+html = Wenmode().use(frontmatter)
+root = html.parse(source)
 assert root.data == {'frontmatter': {'title': 'Hello'}}
-assert wenmode.render_node(root) == '<h1>Hi</h1>\n'
+assert html.render_node(root) == '<h1>Hi</h1>\n'
+
+markdown = Wenmode(renderer=MarkdownRenderer()).use(frontmatter)
+assert markdown.render(source) == source
+
+rst = Wenmode(renderer=RSTRenderer()).use(frontmatter)
+assert rst.render(source) == ':title: Hello\n\nHi\n==\n'
 ```
 
-The default parser handles simple scalar `key: value` lines. Pass a custom
-parser when your application wants YAML or another metadata format. The callback
-receives only the text between the opening and closing fences:
+The default loader and dumper handle simple scalar `key: value` lines. Pass
+custom callbacks when your application wants YAML or another metadata format.
+The `load` callback receives only the text between the opening and closing
+fences:
 
 ```python
 from wenmode import Wenmode
 from wenmode.plugins import frontmatter
 
 
-def parse_meta(source: str) -> dict[str, str]:
+def load_meta(source: str) -> dict[str, str]:
     return {'raw': source}
 
 
-wenmode = Wenmode().use(frontmatter, parser=parse_meta, data_key='meta')
+def dump_meta(value: object) -> str | None:
+    if not isinstance(value, dict):
+        return None
+    return str(value['raw'])
+
+
+wenmode = Wenmode().use(frontmatter, load=load_meta, dump=dump_meta, data_key='meta')
 ```
 
 ## Fenced Directives And Roles

@@ -15,6 +15,9 @@ class RenderContext:
 
 
 RenderHandler = Callable[..., str]
+RootRenderHook = Callable[..., str]
+ROOT_PRE_HANDLER = 'root:pre'
+ROOT_POST_HANDLER = 'root:post'
 
 
 class BaseRenderer:
@@ -27,13 +30,19 @@ class BaseRenderer:
 
     name: ClassVar[str] = 'base'
     handlers: ClassVar[dict[str, RenderHandler]] = {}
+    root_pre_renderers: ClassVar[list[RootRenderHook]] = []
+    root_post_renderers: ClassVar[list[RootRenderHook]] = []
 
     def __init__(self) -> None:
         self._handlers: dict[str, RenderHandler] = dict(self.handlers)
+        self._root_pre_renderers = list(self.root_pre_renderers)
+        self._root_post_renderers = list(self.root_post_renderers)
 
     def __init_subclass__(cls) -> None:
         super().__init_subclass__()
         cls.handlers = dict(cls.handlers)
+        cls.root_pre_renderers = list(cls.root_pre_renderers)
+        cls.root_post_renderers = list(cls.root_post_renderers)
 
     def create_context(self, node: Node | None = None) -> RenderContext:
         """Create a render context for one render call.
@@ -53,7 +62,16 @@ class BaseRenderer:
         """
         if context is None:
             context = self.create_context(node)
+        if node.type == 'root':
+            return self.render_root(node, context)
         return self.render_node(node, context)
+
+    def render_root(self, node: Node, context: RenderContext) -> str:
+        """Render a root node with registered root pre/post render hooks."""
+        parts = [hook(self, node, context) for hook in self._root_pre_renderers]
+        parts.append(self.render_node(node, context))
+        parts.extend(hook(self, node, context) for hook in self._root_post_renderers)
+        return ''.join(parts)
 
     def render_iter(self, nodes: Iterable[Node]) -> Iterator[str]:
         """Render an iterable of nodes with one shared context.
@@ -81,18 +99,30 @@ class BaseRenderer:
         """Register a render handler for a node type.
 
         :param node_type: Value of ``node.type`` handled by the decorated
-            function.
+            function. Use ``root:pre`` or ``root:post`` for root-level hooks.
         :returns: Decorator that stores the handler on the renderer class.
         """
 
         def decorator(handler: RenderHandler) -> RenderHandler:
+            if node_type == ROOT_PRE_HANDLER:
+                cls.root_pre_renderers.append(handler)
+                return handler
+            if node_type == ROOT_POST_HANDLER:
+                cls.root_post_renderers.append(handler)
+                return handler
             cls.handlers[node_type] = handler
             return handler
 
         return decorator
 
     def register_handler(self, node_type: str, handler: RenderHandler) -> None:
-        """Register a render handler on this renderer instance."""
+        """Register a render handler or root-level hook on this renderer instance."""
+        if node_type == ROOT_PRE_HANDLER:
+            self._root_pre_renderers.append(handler)
+            return
+        if node_type == ROOT_POST_HANDLER:
+            self._root_post_renderers.append(handler)
+            return
         self._handlers[node_type] = handler
 
     def render_unknown(self, node: Node, context: RenderContext) -> str:

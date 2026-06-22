@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from wenmode import Wenmode
+from wenmode import MarkdownRenderer, RSTRenderer, Wenmode
 from wenmode.plugins import frontmatter
+from wenmode.presets import github
 
 
 def test_frontmatter_plugin_stores_metadata_on_root_data() -> None:
@@ -48,11 +49,11 @@ def test_frontmatter_plugin_preserves_child_source_positions() -> None:
     }
 
 
-def test_frontmatter_plugin_accepts_custom_parser_and_data_key() -> None:
-    def parse_metadata(source: str) -> dict[str, Any]:
+def test_frontmatter_plugin_accepts_custom_load_and_data_key() -> None:
+    def load_metadata(source: str) -> dict[str, Any]:
         return {'raw': source, 'lines': source.splitlines()}
 
-    app = Wenmode().use(frontmatter, parser=parse_metadata, data_key='meta')
+    app = Wenmode().use(frontmatter, load=load_metadata, data_key='meta')
     root = app.parse('---\ntitle: Hello\n---\n\nBody\n')
 
     assert root.data == {'meta': {'raw': 'title: Hello\n', 'lines': ['title: Hello']}}
@@ -69,4 +70,82 @@ def test_frontmatter_plugin_only_consumes_top_level_fence() -> None:
 
     assert app.render('> ---\n> title: Hello\n> ---\n') == (
         '<blockquote>\n<hr />\n<h2>title: Hello</h2>\n</blockquote>\n'
+    )
+
+
+def test_frontmatter_plugin_renders_markdown_frontmatter() -> None:
+    app = Wenmode(renderer=MarkdownRenderer()).use(frontmatter)
+
+    assert app.render('---\ntitle: Hello\nlayout: "landing"\n---\n\n# Hi\n') == (
+        '---\n'
+        'title: Hello\n'
+        'layout: landing\n'
+        '---\n'
+        '\n'
+        '# Hi\n'
+    )
+
+
+def test_frontmatter_plugin_does_not_render_missing_frontmatter() -> None:
+    markdown = Wenmode(renderer=MarkdownRenderer()).use(frontmatter)
+    rst = Wenmode(renderer=RSTRenderer()).use(frontmatter)
+
+    assert markdown.render('# Hi\n') == '# Hi\n'
+    assert rst.render('# Hi\n') == 'Hi\n==\n'
+
+
+def test_frontmatter_plugin_renders_markdown_frontmatter_with_custom_dump() -> None:
+    def load_metadata(source: str) -> dict[str, str]:
+        return {'raw': source}
+
+    def dump_metadata(value: Any) -> str | None:
+        if not isinstance(value, dict):
+            return None
+        return value['raw']
+
+    app = Wenmode(renderer=MarkdownRenderer()).use(
+        frontmatter,
+        load=load_metadata,
+        dump=dump_metadata,
+        data_key='meta',
+    )
+
+    assert app.render('---\ntitle: Hello\n---\n\nBody\n') == '---\ntitle: Hello\n---\n\nBody\n'
+
+
+def test_frontmatter_plugin_renders_rst_docinfo() -> None:
+    app = Wenmode(renderer=RSTRenderer()).use(frontmatter)
+
+    assert app.render('---\ntitle: Hello\nlayout: "landing"\n---\n\n# Hi\n') == (
+        ':title: Hello\n'
+        ':layout: landing\n'
+        '\n'
+        'Hi\n'
+        '==\n'
+    )
+
+
+def test_frontmatter_plugin_renders_before_markdown_footnotes() -> None:
+    app = Wenmode(github, renderer=MarkdownRenderer()).use(frontmatter)
+
+    assert app.render('---\ntitle: Hello\n---\n\nText[^a].\n\n[^a]: Note.\n') == (
+        '---\n'
+        'title: Hello\n'
+        '---\n'
+        '\n'
+        'Text[^a]\\.\n'
+        '\n'
+        '[^a]: Note\\.\n'
+    )
+
+
+def test_frontmatter_plugin_renders_before_rst_footnotes() -> None:
+    app = Wenmode(github, renderer=RSTRenderer()).use(frontmatter)
+
+    assert app.render('---\ntitle: Hello\n---\n\nText[^a].\n\n[^a]: Note.\n') == (
+        ':title: Hello\n'
+        '\n'
+        'Text[#a]_.\n'
+        '\n'
+        '.. [#a] Note.\n'
     )

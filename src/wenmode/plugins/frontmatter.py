@@ -1,20 +1,29 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, ClassVar
 
+from wenmode.renderers.base import RenderContext
+from wenmode.renderers.markdown import MarkdownRenderer
+from wenmode.renderers.rst import RSTRenderContext, RSTRenderer
 from wenmode.rules.base import BlockRule, Rule
 from wenmode.rules.transforms import RootTransform
 from wenmode.state import BlockState, StateKey
+
+from .types import RendererHandlers
 
 if TYPE_CHECKING:
     from wenmode import Wenmode
     from wenmode.nodes import Node, Root
     from wenmode.parser import Parser
 
-FrontmatterParser = Callable[[str], Any]
+FrontmatterLoad = Callable[[str], Any]
+FrontmatterDump = Callable[[Any], str | None]
 FRONTMATTER_FENCE_RE = re.compile(r'---[ \t]*(?:\r?\n)?$')
+RST_FIELD_NAME_RE = re.compile(r'^[^\r\n:]+$')
+MISSING = object()
 
 
 @dataclass
@@ -35,11 +44,11 @@ class FrontmatterRule(BlockRule):
 
     def __init__(
         self,
-        parser: FrontmatterParser | None = None,
+        load: FrontmatterLoad | None = None,
         data_key: str = 'frontmatter',
     ) -> None:
         super().__init__()
-        self.parser = parser or parse_simple_frontmatter
+        self.load = load or load_simple_frontmatter
         self.root_transforms = [FrontmatterTransform(data_key)]
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
@@ -53,7 +62,7 @@ class FrontmatterRule(BlockRule):
         body = ''.join(state.line_at(index) for index in range(state.index + 1, closing_index))
         frontmatter = state.store.get(FRONTMATTER_KEY)
         frontmatter.found = True
-        frontmatter.value = self.parser(body)
+        frontmatter.value = self.load(body)
         state.index = closing_index + 1
         return None
 
@@ -81,7 +90,7 @@ def find_closing_fence(state: BlockState, start_index: int) -> int | None:
     return None
 
 
-def parse_simple_frontmatter(source: str) -> dict[str, str]:
+def load_simple_frontmatter(source: str) -> dict[str, str]:
     data: dict[str, str] = {}
     for line in source.splitlines():
         stripped = line.strip()
@@ -94,10 +103,106 @@ def parse_simple_frontmatter(source: str) -> dict[str, str]:
     return data
 
 
+def dump_simple_frontmatter(value: Any) -> str | None:
+    if not isinstance(value, Mapping):
+        return None
+
+    lines: list[str] = []
+    for key, item in value.items():
+        name = str(key).strip()
+        if not name:
+            continue
+        text = dump_simple_scalar(item)
+        if text:
+            lines.append(f'{name}: {text}')
+        else:
+            lines.append(f'{name}:')
+    return '\n'.join(lines)
+
+
+def dump_simple_scalar(value: Any) -> str:
+    if value is None:
+        return ''
+    if isinstance(value, bool):
+        return 'true' if value else 'false'
+    return str(value).replace('\r', ' ').replace('\n', ' ').strip()
+
+
 def unquote_scalar(value: str) -> str:
     if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
         return value[1:-1]
     return value
+
+
+def root_frontmatter(root: Root, data_key: str) -> Any:
+    if root.data is None or data_key not in root.data:
+        return MISSING
+    return root.data[data_key]
+
+
+def render_markdown_frontmatter(value: Any, dump: FrontmatterDump) -> str:
+    body = dump(value)
+    if body is None:
+        return ''
+    body = body.rstrip('\n')
+    if body:
+        return f'---\n{body}\n---\n\n'
+    return '---\n---\n\n'
+
+
+def render_rst_frontmatter(value: Any) -> str:
+    if not isinstance(value, Mapping):
+        return ''
+
+    lines: list[str] = []
+    for key, item in value.items():
+        name = str(key).strip()
+        if not name or RST_FIELD_NAME_RE.fullmatch(name) is None:
+            continue
+        text = dump_simple_scalar(item)
+        if text:
+            lines.append(f':{name}: {text}')
+        else:
+            lines.append(f':{name}:')
+    if not lines:
+        return ''
+    return '\n'.join(lines) + '\n\n'
+
+
+def render_markdown_frontmatter_prelude(
+    data_key: str,
+    dump: FrontmatterDump,
+) -> Callable[[MarkdownRenderer, Root, RenderContext], str]:
+    def render_frontmatter(renderer: MarkdownRenderer, node: Root, context: RenderContext) -> str:
+        value = root_frontmatter(node, data_key)
+        if value is MISSING:
+            return ''
+        return render_markdown_frontmatter(value, dump)
+
+    return render_frontmatter
+
+
+def render_rst_frontmatter_prelude(
+    data_key: str,
+) -> Callable[[RSTRenderer, Root, RSTRenderContext], str]:
+    def render_frontmatter(renderer: RSTRenderer, node: Root, context: RSTRenderContext) -> str:
+        value = root_frontmatter(node, data_key)
+        if value is MISSING:
+            return ''
+        return render_rst_frontmatter(value)
+
+    return render_frontmatter
+
+
+def create_handlers(data_key: str, dump: FrontmatterDump) -> RendererHandlers:
+    return {
+        'markdown': {
+            'root:pre': render_markdown_frontmatter_prelude(data_key, dump),
+        },
+        'rst': {
+            'root:pre': render_rst_frontmatter_prelude(data_key),
+        },
+    }
 
 
 rules: list[type[Rule] | Rule] = [FrontmatterRule]
@@ -105,8 +210,11 @@ rules: list[type[Rule] | Rule] = [FrontmatterRule]
 
 def setup(
     wenmode: Wenmode,
-    parser: FrontmatterParser | None = None,
+    load: FrontmatterLoad | None = None,
+    dump: FrontmatterDump | None = None,
     data_key: str = 'frontmatter',
     **options: Any,
 ) -> None:
-    wenmode.register_rule(FrontmatterRule(parser=parser or parse_simple_frontmatter, data_key=data_key))
+    frontmatter_dump = dump or dump_simple_frontmatter
+    wenmode.register_rule(FrontmatterRule(load=load or load_simple_frontmatter, data_key=data_key))
+    wenmode.register_renderer_handlers(create_handlers(data_key, frontmatter_dump))

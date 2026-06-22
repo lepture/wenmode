@@ -166,6 +166,18 @@ def setup(wenmode: Wenmode, **options: Any) -> None:
 Use stable node `type` values. Renderer handlers are selected by `node.type`,
 not by the Python class name.
 
+When a plugin needs to add document-level output before or after the rendered
+root, prefer renderer root hooks over replacing the `root` handler. Use
+the pseudo handler names `root:pre` and `root:post` for prefixes such as
+metadata blocks and suffixes. This keeps the renderer's built-in root behavior,
+such as footnote sections or deferred image definitions, intact.
+
+```{code-block} python
+handlers = {
+    'markdown': {'root:pre': render_document_metadata},
+}
+```
+
 ## Setup Options
 
 Expose options on `setup()` when callers need to enable part of a plugin. This

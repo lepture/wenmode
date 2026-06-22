@@ -182,6 +182,6 @@ metadata, or generated attributes.
 ## Checklist
 
 - Replace `extras` with `github`, configured rules, or custom plugins.
-- Handle front matter or metadata with `wenmode.plugins.frontmatter` or an application-specific parser callback.
+- Handle front matter or metadata with `wenmode.plugins.frontmatter` or application-specific `load` and `dump` callbacks.
 - Rebuild heading IDs and TOC behavior with Wenmode helpers.
 - Compare HTML output for raw HTML, code blocks, tables, and footnotes.

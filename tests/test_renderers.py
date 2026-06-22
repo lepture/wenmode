@@ -9,7 +9,7 @@ from tests.helpers import load_fixture
 from tests.plugin_helpers import configured_app
 from wenmode import HTMLRenderer, MarkdownRenderer, RSTRenderer, Wenmode
 from wenmode.directives import Admonition, Details, Figure, TableOfContents
-from wenmode.nodes import Html, Image, Link, Literal, Paragraph, Parent, Text
+from wenmode.nodes import Html, Image, Link, Literal, Paragraph, Parent, Root, Text
 from wenmode.renderers import BaseRenderer, RenderContext
 from wenmode.rules import (
     Footnote,
@@ -138,6 +138,30 @@ def test_renderer_registers_custom_node_handler() -> None:
         return f'<custom>{node.value}</custom>'
 
     assert CustomRenderer().render(CustomLiteral(value='<x>')) == '<custom><x></custom>'
+
+
+def test_renderer_root_hooks_wrap_root_rendering() -> None:
+    renderer = CustomRenderer()
+
+    renderer.register_handler('root:pre', lambda renderer, node, context: 'before:')
+    renderer.register_handler('root:post', lambda renderer, node, context: ':after')
+
+    assert renderer.render(Root(children=[Text(value='body')])) == 'before:body:after'
+
+
+def test_renderer_class_root_hooks_wrap_root_rendering() -> None:
+    class LocalRenderer(BaseRenderer):
+        pass
+
+    @LocalRenderer.register('root:pre')
+    def render_before(renderer: LocalRenderer, node: Root, context: RenderContext) -> str:
+        return 'before:'
+
+    @LocalRenderer.register('root:post')
+    def render_after(renderer: LocalRenderer, node: Root, context: RenderContext) -> str:
+        return ':after'
+
+    assert LocalRenderer().render(Root(children=[Text(value='body')])) == 'before:body:after'
 
 
 def test_base_renderer_unknown_nodes_fall_back_to_children_or_value() -> None:

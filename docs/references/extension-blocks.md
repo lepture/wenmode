@@ -51,6 +51,10 @@ The plugin does not emit a front matter child node. The AST is:
 With source positions enabled, child node positions still refer to the original
 source document, including the consumed front matter lines.
 
+HTML output ignores front matter by default. Markdown output serializes it back
+to a top-level `---` block, and RST output renders flat metadata as docinfo
+fields before the document body.
+
 ## Abbreviation Plugin
 
 `wenmode.plugins.abbr` parses abbreviation definitions and rewrites matching
