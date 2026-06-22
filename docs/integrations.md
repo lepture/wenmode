@@ -16,6 +16,22 @@ configuration everywhere the same content type is rendered. Avoid letting the
 editor preview, API response, and background indexing job drift into different
 rule sets.
 
+## Repository examples
+
+The repository includes two local example packages that show Wenmode embedded in
+documentation frameworks:
+
+- `examples/wenmode-mkdocs` is a MkDocs plugin that renders page Markdown
+  through Wenmode before MkDocs finishes the page build.
+- `examples/wenmode-myst` is a Sphinx source parser that uses Wenmode instead
+  of `myst_parser` for Markdown input.
+
+The Wenmode documentation itself uses the `wenmode_myst` example. The Sphinx
+configuration adds `examples/wenmode-myst/src` to `sys.path` and enables the
+`wenmode_myst` extension, so these docs are built by parsing Markdown with
+Wenmode, rendering it to reStructuredText, and handing that generated text back
+to Sphinx.
+
 ## Reuse one configured instance
 
 Create a small service object around the rule set your product supports. A

@@ -8,22 +8,23 @@ tasks.
 
 ---
 
-Wenmode uses `uv` for local development tasks.
+Wenmode uses `uv` for local development tasks. The repository tracks
+`uv.lock`, so release and CI checks should use `uv run --locked ...`.
 
-Install dependencies on demand by running the task-specific `uv run --group ...`
-commands below from the repository root.
+Install dependencies on demand by running the task-specific commands below from
+the repository root.
 
 Run the test suite:
 
 ```bash
-uv run --group test pytest -q
+uv run --locked --group test pytest -q
 ```
 
 Run linting and type checks:
 
 ```bash
-uv run --group lint ruff check .
-uv run --group lint mypy
+uv run --locked --group lint ruff check .
+uv run --locked --group lint mypy
 ```
 
 Build the documentation:
@@ -31,22 +32,34 @@ Build the documentation:
 Documentation tooling currently requires Python 3.11+.
 
 ```bash
-uv run --group docs sphinx-build -b dirhtml docs docs/_build/html
+uv run --locked --group docs sphinx-build -b dirhtml docs docs/_build/html
 ```
 
 Build with warnings treated as errors when preparing documentation changes:
 
 ```bash
-uv run --group docs sphinx-build -b dirhtml docs /tmp/wenmode-docs-html -W --keep-going
+uv run --locked --group docs sphinx-build -b dirhtml docs /tmp/wenmode-docs-html -W --keep-going
 ```
 
 Check external documentation links:
 
 ```bash
-uv run --group docs sphinx-build -b linkcheck docs /tmp/wenmode-docs-linkcheck
+uv run --locked --group docs sphinx-build -b linkcheck docs /tmp/wenmode-docs-linkcheck
+```
+
+Run the local integration examples:
+
+```bash
+uv run --directory examples/wenmode-mkdocs --locked --group test pytest -q
+uv run --directory examples/wenmode-myst --locked --group test pytest -q
 ```
 
 ## Documentation workflow
+
+Wenmode's own documentation is built through the local `wenmode_myst` example
+instead of `myst_parser`. `docs/conf.py` imports
+`examples/wenmode-myst/src/wenmode_myst`, and the extension converts Markdown to
+reStructuredText with Wenmode before Sphinx parses it.
 
 When changing documented behavior, update the smallest set of docs that matches
 the user-facing surface:
