@@ -53,6 +53,7 @@ class RSTRenderContext(RenderContext):
     """Render context for :class:`RSTRenderer`."""
 
     root: Root | None = None
+    body_rendered: bool = False
     image_references: list[ImageReference] = field(default_factory=list)
 
 
@@ -108,13 +109,18 @@ class RSTRenderer(BaseRenderer):
 @RSTRenderer.register('root')
 def render_root(renderer: RSTRenderer, node: Root, context: RSTRenderContext) -> str:
     output = renderer.render_children(node.children, context).rstrip()
-    images = ''.join(renderer.render_image_definition(reference) for reference in context.image_references).rstrip()
-
-    if output and images:
-        return f'{output}\n\n{images}\n'
+    context.body_rendered = bool(output)
     if output:
         return output + '\n'
+    return ''
+
+
+@RSTRenderer.register('root:post')
+def render_root_image_references(renderer: RSTRenderer, node: Root, context: RSTRenderContext) -> str:
+    images = ''.join(renderer.render_image_definition(reference) for reference in context.image_references).rstrip()
     if images:
+        if context.body_rendered:
+            return '\n' + images + '\n'
         return images + '\n'
     return ''
 

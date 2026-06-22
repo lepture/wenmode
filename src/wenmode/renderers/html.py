@@ -225,10 +225,14 @@ class HTMLRenderer(BaseRenderer):
 
 @HTMLRenderer.register('root')
 def render_root(renderer: HTMLRenderer, node: Root, context: HTMLRenderContext) -> str:
-    out = renderer.render_children(node.children, context)
+    return renderer.render_children(node.children, context)
+
+
+@HTMLRenderer.register('root:post')
+def render_root_footnotes(renderer: HTMLRenderer, node: Root, context: HTMLRenderContext) -> str:
     if node.footnote_definitions:
-        out += renderer.render_footnote_section(context)
-    return out
+        return renderer.render_footnote_section(context)
+    return ''
 
 
 @HTMLRenderer.register('paragraph')
