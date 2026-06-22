@@ -11,6 +11,34 @@ releases.
 This page records notable changes for released versions. Add unreleased entries
 here while preparing a release, then move them under the final version heading.
 
+## 0.4.0
+
+Released **Jun 22, 2026**.
+
+- Add `wenmode.plugins.frontmatter` for top-level `---` front matter. The
+  plugin stores metadata on `root.data["frontmatter"]`, supports custom
+  `load` and `dump` callbacks, preserves source positions, keeps HTML output
+  metadata-free by default, serializes metadata back to Markdown, and renders
+  flat metadata as RST docinfo fields.
+- Add renderer root hook pseudo handlers: `root:pre` and `root:post`. Use these
+  through normal renderer handler registration when a plugin needs document
+  prefixes or suffixes without replacing the renderer's built-in `root`
+  handler.
+- Move HTML footnote sections and RST deferred image definitions to `root:post`
+  hooks, keeping root rendering composable for plugins such as front matter.
+- Add CLI `--plugin` support for built-in plugins on both `render` and `ast`.
+- Update rule base classes to prefer class attributes such as `name`, `pattern`,
+  and `trigger_chars`, while keeping configured rule instances supported.
+- Add CI coverage for local examples and use locked `uv` dependency resolution
+  for reproducible development and CI tasks.
+- Add PyPy test coverage and publish PyPy support in package metadata.
+- Update the MkDocs and Sphinx examples to use built-in plugins; Wenmode's own
+  documentation now builds through the local `wenmode_myst` example instead of
+  `myst_parser`.
+- Expand stability and security regression coverage for renderer isolation,
+  HTML attribute escaping, URL sanitization, streaming compatibility, and front
+  matter rendering.
+
 ## 0.3.1
 
 Released **Jun 21, 2026**.

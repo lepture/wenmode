@@ -261,8 +261,8 @@ Versions used in these snapshots:
 
 | Library | Version |
 | --- | ---: |
-| wenmode | 0.3.0 |
-| mistune | 3.2.1 |
+| wenmode | 0.4.0 |
+| mistune | 3.3.1 |
 | python-markdown | 3.10.2 |
 | markdown-it-py | 4.2.0 |
 | markdown2 | 2.5.5 |
@@ -273,30 +273,30 @@ Mean time from one local Python 3.12.9 `--case all` run:
 
 | Case | Bytes | Library | Mean | MB/s | vs core |
 | --- | ---: | --- | ---: | ---: | ---: |
-| docs | 94,647 | wenmode-core | 12.09ms | 8.10 | 1.00x |
-| docs | 94,647 | wenmode-all | 15.52ms | 6.31 | 0.78x |
-| docs | 94,647 | mistune | 16.52ms | 6.00 | 0.73x |
-| docs | 94,647 | python-markdown | 59.05ms | 1.67 | 0.20x |
-| docs | 94,647 | markdown-it-py | 29.51ms | 3.39 | 0.41x |
-| docs | 94,647 | markdown2 | 121.73ms | 0.99 | 0.10x |
-| docs | 94,647 | marko | 99.37ms | 0.98 | 0.12x |
-| docs | 94,647 | commonmark.py | 65.06ms | 1.51 | 0.19x |
-| rust-book | 1,225,464 | wenmode-core | 155.09ms | 8.21 | 1.00x |
-| rust-book | 1,225,464 | wenmode-all | 170.86ms | 7.45 | 0.91x |
-| rust-book | 1,225,464 | mistune | 196.98ms | 6.58 | 0.79x |
-| rust-book | 1,225,464 | python-markdown | 627.38ms | 1.99 | 0.25x |
-| rust-book | 1,225,464 | markdown-it-py | 373.19ms | 3.40 | 0.42x |
-| rust-book | 1,225,464 | markdown2 | 4.290s | 0.29 | 0.04x |
-| rust-book | 1,225,464 | marko | 1.174s | 1.06 | 0.13x |
-| rust-book | 1,225,464 | commonmark.py | 9.658s | 0.13 | 0.02x |
-| progit | 502,090 | wenmode-core | 27.27ms | 18.67 | 1.00x |
-| progit | 502,090 | wenmode-all | 31.56ms | 15.95 | 0.86x |
-| progit | 502,090 | mistune | 44.37ms | 12.30 | 0.61x |
-| progit | 502,090 | python-markdown | 151.36ms | 3.47 | 0.18x |
-| progit | 502,090 | markdown-it-py | 76.15ms | 7.31 | 0.36x |
-| progit | 502,090 | markdown2 | 1.462s | 0.36 | 0.02x |
-| progit | 502,090 | marko | 357.71ms | 1.44 | 0.08x |
-| progit | 502,090 | commonmark.py | 339.99ms | 1.56 | 0.08x |
+| docs | 99,098 | wenmode-core | 12.91ms | 8.16 | 1.00x |
+| docs | 99,098 | wenmode-all | 16.07ms | 6.48 | 0.80x |
+| docs | 99,098 | mistune | 18.19ms | 6.03 | 0.71x |
+| docs | 99,098 | python-markdown | 69.56ms | 1.68 | 0.19x |
+| docs | 99,098 | markdown-it-py | 29.83ms | 3.54 | 0.43x |
+| docs | 99,098 | markdown2 | 118.38ms | 0.99 | 0.11x |
+| docs | 99,098 | marko | 100.76ms | 1.00 | 0.13x |
+| docs | 99,098 | commonmark.py | 66.90ms | 1.52 | 0.19x |
+| rust-book | 1,225,464 | wenmode-core | 166.55ms | 7.98 | 1.00x |
+| rust-book | 1,225,464 | wenmode-all | 204.81ms | 6.35 | 0.81x |
+| rust-book | 1,225,464 | mistune | 236.23ms | 5.43 | 0.71x |
+| rust-book | 1,225,464 | python-markdown | 628.04ms | 1.98 | 0.27x |
+| rust-book | 1,225,464 | markdown-it-py | 354.12ms | 3.51 | 0.47x |
+| rust-book | 1,225,464 | markdown2 | 4.184s | 0.30 | 0.04x |
+| rust-book | 1,225,464 | marko | 1.151s | 1.08 | 0.14x |
+| rust-book | 1,225,464 | commonmark.py | 9.484s | 0.13 | 0.02x |
+| progit | 502,090 | wenmode-core | 27.28ms | 18.57 | 1.00x |
+| progit | 502,090 | wenmode-all | 40.08ms | 15.88 | 0.68x |
+| progit | 502,090 | mistune | 46.38ms | 11.73 | 0.59x |
+| progit | 502,090 | python-markdown | 149.56ms | 3.47 | 0.18x |
+| progit | 502,090 | markdown-it-py | 80.91ms | 7.16 | 0.34x |
+| progit | 502,090 | markdown2 | 1.445s | 0.35 | 0.02x |
+| progit | 502,090 | marko | 353.44ms | 1.44 | 0.08x |
+| progit | 502,090 | commonmark.py | 345.81ms | 1.61 | 0.08x |
 
 In this run, `wenmode-all` remains faster than the other parsers even after
 loading many extra rules that the benchmark inputs mostly do not use.

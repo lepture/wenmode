@@ -96,8 +96,9 @@ class PlusMarkNode(Parent):
 
 
 class PlusMarkRule(InlineRule):
-    def __init__(self) -> None:
-        super().__init__('plus_mark', r'\+\+', '+')
+    name = 'plus_mark'
+    pattern = r'\+\+'
+    trigger_chars = '+'
 
     def parse(
         self,
@@ -221,12 +222,19 @@ Rules also have an `order` class attribute. Block and inline rules default to
 
 ```{code-block} python
 class MyRule(InlineRule):
+    name = 'my_rule'
+    pattern = r'!!'
+    trigger_chars = '!'
     order = 90
 ```
 
 `Wenmode.register_rule()` and `Wenmode.register_rules()` accept rule classes or
 configured rule instances. Classes are instantiated automatically. Instances are
 useful when the rule itself has options.
+
+For stateless custom rules, prefer defining `name`, `pattern`, and
+`trigger_chars` as class attributes. Keep `__init__()` only when the rule needs
+caller-provided configuration.
 
 ## Parsing Nested Content
 
@@ -289,8 +297,9 @@ class MentionNode(Node):
 
 
 class MentionRule(InlineRule):
-    def __init__(self) -> None:
-        super().__init__('mention', r'@[A-Za-z][A-Za-z0-9_]*', '@')
+    name = 'mention'
+    pattern = r'@[A-Za-z][A-Za-z0-9_]*'
+    trigger_chars = '@'
 
     def parse(
         self,

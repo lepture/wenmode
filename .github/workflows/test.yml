@@ -57,6 +57,8 @@ jobs:
           - "3.12"
           - "3.13"
           - "3.14"
+          - "pypy3.10"
+          - "pypy3.11"
 
     steps:
       - uses: actions/checkout@v6
