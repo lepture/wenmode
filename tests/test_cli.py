@@ -52,9 +52,7 @@ def test_cli_render_enables_builtin_plugins(tmp_path, capsys) -> None:
     assert main(['render', '--plugin', 'math', '--plugin', 'mark', str(source)]) == 0
 
     captured = capsys.readouterr()
-    assert captured.out == (
-        '<p>Inline <span class="math math-inline">x + y</span> and <mark>marked</mark>.</p>\n'
-    )
+    assert captured.out == ('<p>Inline <span class="math math-inline">x + y</span> and <mark>marked</mark>.</p>\n')
 
 
 def test_cli_renders_rst_format(tmp_path, capsys) -> None:
@@ -177,6 +175,18 @@ def test_cli_ast_enables_builtin_plugins(tmp_path, capsys) -> None:
     ast = json.loads(captured.out)
     inline_math = ast['children'][0]['children'][1]
     assert inline_math == {'type': 'inlineMath', 'value': 'x + y'}
+
+
+def test_cli_ast_enables_frontmatter_plugin(tmp_path, capsys) -> None:
+    source = tmp_path / 'input.md'
+    source.write_text('---\ntitle: Hello\n---\n\n# Hi\n', encoding='utf-8')
+
+    assert main(['ast', '--plugin', 'frontmatter', str(source)]) == 0
+
+    captured = capsys.readouterr()
+    ast = json.loads(captured.out)
+    assert ast['data'] == {'frontmatter': {'title': 'Hello'}}
+    assert ast['children'][0]['type'] == 'heading'
 
 
 def test_cli_writes_output_file(tmp_path, capsys) -> None:

@@ -27,4 +27,4 @@ page Markdown rendering in a documentation build. It currently demonstrates:
 - mdast-style colon directives such as `:::note[Title]`.
 - MyST-style fenced directives such as ```` ```{note} Title ````.
 - Wenmode HTML directive renderers for admonitions, details, figures, and TOC.
-- Basic YAML front matter stripping before rendering.
+- Top-level front matter through Wenmode's `frontmatter` plugin.

@@ -37,7 +37,7 @@ reused across render calls.
 | Target | Configuration |
 | --- | --- |
 | `wenmode-core` | `Wenmode([Table, *commonmark], HTMLRenderer(escape=False, sanitize_urls=False))` |
-| `wenmode-all` | `github` plus directives, math, definition lists, abbreviations, spoilers, ruby, and extra formatting rules |
+| `wenmode-all` | `github` plus directives, front matter, math, definition lists, abbreviations, spoilers, ruby, and extra formatting rules |
 | `mistune` | `mistune.create_markdown(renderer='html', plugins=['table', 'speedup'])` |
 | `python-markdown` | one reusable `markdown.Markdown(extensions=['tables', 'sane_lists'])`, reset before each conversion |
 | `markdown-it-py` | `MarkdownIt('commonmark', {'html': True}).enable('table')` |

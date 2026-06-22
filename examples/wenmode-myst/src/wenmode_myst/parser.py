@@ -11,8 +11,8 @@ from sphinx.parsers import Parser as SphinxParser
 
 from wenmode import RSTRenderer, Wenmode
 from wenmode.nodes import ContainerDirective as ContainerDirectiveNode
-from wenmode.nodes import Node
-from wenmode.plugins import definition_list, inline_role, math
+from wenmode.nodes import Node, Root
+from wenmode.plugins import definition_list, frontmatter, inline_role, math
 from wenmode.plugins.fenced_directive import (
     FENCED_DIRECTIVE_RE,
     FencedDirectiveRule,
@@ -24,7 +24,6 @@ from wenmode.rules import ContainerDirective, LeafDirective, TextDirective
 from wenmode.rules.base import BlockRule
 from wenmode.state import BlockState
 
-FRONTMATTER_RE = re.compile(r'\A---[ \t]*(?:\r?\n)(?P<body>.*?)(?:\r?\n)---[ \t]*(?:\r?\n|\Z)', re.DOTALL)
 TARGET_RE = re.compile(r'[ \t]{0,3}\((?P<label>[^)\r\n]+)\)=[ \t]*(?:\r?\n)?$')
 COLON_FENCE_RE = re.compile(r'(?P<indent>[ \t]{0,3})(?P<fence>:{3,})\{(?P<name>[A-Za-z][A-Za-z0-9_-]*)}(?P<title>.*)$')
 LITERAL_BODY_DIRECTIVES = frozenset({'code-block', 'sourcecode'})
@@ -136,10 +135,10 @@ handlers: RendererHandlers = {
 
 def markdown_to_rst(source: str) -> str:
     """Convert Markdown source to reStructuredText through Wenmode."""
-    frontmatter, markdown = split_frontmatter(source)
     app = create_wenmode()
-    rst = app.render(markdown)
-    meta = render_frontmatter_metadata(frontmatter)
+    root = app.parse(source)
+    rst = app.render_node(root)
+    meta = render_frontmatter_metadata(root_frontmatter(root))
     if meta and rst:
         return f'{meta}\n{rst}'
     return meta or rst
@@ -159,30 +158,20 @@ def create_wenmode() -> Wenmode:
         renderer=RSTRenderer(),
     )
     app.use(definition_list)
+    app.use(frontmatter)
     app.use(inline_role)
     app.use(math)
     app.register_renderer_handlers(handlers)
     return app
 
 
-def split_frontmatter(source: str) -> tuple[dict[str, str], str]:
-    match = FRONTMATTER_RE.match(source)
-    if match is None:
-        return {}, source
-    return parse_simple_frontmatter(match.group('body')), source[match.end() :]
-
-
-def parse_simple_frontmatter(source: str) -> dict[str, str]:
-    data: dict[str, str] = {}
-    for line in source.splitlines():
-        if not line.strip() or line.lstrip().startswith('#') or ':' not in line:
-            continue
-        key, value = line.split(':', 1)
-        key = key.strip()
-        value = value.strip()
-        if key:
-            data[key] = value.strip('"\'')
-    return data
+def root_frontmatter(root: Root) -> dict[str, str]:
+    if root.data is None:
+        return {}
+    value = root.data.get('frontmatter')
+    if not isinstance(value, dict):
+        return {}
+    return {str(key): str(item) for key, item in value.items()}
 
 
 def render_frontmatter_metadata(frontmatter: dict[str, str]) -> str:

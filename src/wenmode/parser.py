@@ -94,6 +94,7 @@ class Parser:
         self._paragraph_continuations = [rule for rule in resolved_rules if isinstance(rule, ContinueRule)]
         self._emphasis_enabled = 'emphasis' in self.rules
         self._defer_inlines = any(transform.defer_inlines for transform in root_transforms)
+        self._block_rule_order = {rule.name: index for index, rule in enumerate(self.block_rules)}
         self._inline_rule_order = {rule.name: index for index, rule in enumerate(self.inline_rules)}
         self._triggered_inline_rules, self._search_inline_rules = prepare_inline_dispatch(self.inline_rules)
         self._inline_trigger_re = compile_inline_trigger_re(self._triggered_inline_rules)
@@ -220,15 +221,13 @@ class Parser:
                 match = self._block_openers.match(line)
             else:
                 match = None
-            if match is not None and not self._container_depth_exceeded(match, state):
-                rule = cast(BlockRule, self.rules.get(cast(str, match.lastgroup)))
-                previous_index = state.index
-                parsed_block = rule.parse(self, state, match)
+            if match is not None and not self._container_depth_exceeded(cast(str, match.lastgroup), state):
+                parsed_block, consumed = self._parse_matching_block_rule(state, match)
                 if parsed_block is not None:
                     if self.positions and parsed_block.position is None:
                         parsed_block.position = state.source.position_between(start_index, state.index)
                     return parsed_block
-                if state.index != previous_index:
+                if consumed:
                     continue
 
             parsed = self._parse_paragraph(state)
@@ -236,6 +235,22 @@ class Parser:
                 parsed.position = state.source.position_between(start_index, state.index)
             return parsed
         return None
+
+    def _parse_matching_block_rule(self, state: BlockState, match: re.Match[str]) -> tuple[Node | None, bool]:
+        line = state.line
+        first_rule_name = cast(str, match.lastgroup)
+        start = self._block_rule_order[first_rule_name]
+        for rule in self.block_rules[start:]:
+            rule_match = re.match(rule.pattern, line)
+            if rule_match is None or self._container_depth_exceeded(rule.name, state):
+                continue
+            previous_index = state.index
+            parsed = rule.parse(self, state, rule_match)
+            if parsed is not None:
+                return parsed, True
+            if state.index != previous_index:
+                return None, True
+        return None, False
 
     def _assert_streaming_supported(self) -> None:
         if not self._defer_inlines:
@@ -482,7 +497,7 @@ class Parser:
         match = self._block_openers.match(line)
         if match is None:
             return False
-        if self._container_depth_exceeded(match, state):
+        if self._container_depth_exceeded(cast(str, match.lastgroup), state):
             return False
         if match.lastgroup in {'reference_definition', 'table'}:
             return False
@@ -500,8 +515,8 @@ class Parser:
                 return False
         return match.lastgroup != 'indented_code'
 
-    def _container_depth_exceeded(self, match: re.Match[str], state: BlockState | None) -> bool:
-        if match.lastgroup not in {'blockquote', 'list'} or state is None:
+    def _container_depth_exceeded(self, name: str, state: BlockState | None) -> bool:
+        if name not in {'blockquote', 'list'} or state is None:
             return False
         return state.depth >= self.max_container_depth
 

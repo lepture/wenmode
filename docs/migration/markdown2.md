@@ -69,7 +69,7 @@ custom plugins or preprocessing.
 | `strike` | `github` preset or `Strikethrough` rule |
 | `code-friendly` | usually no direct migration; test the exact documents and adjust rule lists if needed |
 | `smarty-pants` | run a typography transform before or after Wenmode, or add a custom renderer transform |
-| `metadata` | parse front matter outside Wenmode before passing Markdown content to the parser |
+| `metadata` | `wenmode.plugins.frontmatter` for top-level front matter metadata |
 | `toc`-style workflows | heading helpers plus `collect_toc()` / `render_toc_html()` |
 
 ## Tables, footnotes, and strikethrough
@@ -182,6 +182,6 @@ metadata, or generated attributes.
 ## Checklist
 
 - Replace `extras` with `github`, configured rules, or custom plugins.
-- Handle front matter or metadata outside Wenmode unless you add a custom plugin.
+- Handle front matter or metadata with `wenmode.plugins.frontmatter` or an application-specific parser callback.
 - Rebuild heading IDs and TOC behavior with Wenmode helpers.
 - Compare HTML output for raw HTML, code blocks, tables, and footnotes.

@@ -216,8 +216,9 @@ from wenmode.presets import github
 wenmode = Wenmode(github)
 ```
 
-Use built-in plugins for non-standard syntax such as math, definition lists,
-abbreviations, spoilers, ruby text, and extra inline formatting:
+Use built-in plugins for non-standard syntax and document metadata such as
+front matter, math, definition lists, abbreviations, spoilers, ruby text, and
+extra inline formatting:
 
 ```python
 from wenmode import Wenmode
@@ -247,8 +248,8 @@ support; Marko uses its broader GFM helper; `commonmark.py` is included as a
 CommonMark-only baseline because it has no pipe table support.
 
 `wenmode-all` uses the `github` preset plus Wenmode's built-in plugins,
-including math, definition lists, abbreviations, spoilers, ruby text, and
-additional inline formatting. These extra rules are mostly unused by the
+including front matter, math, definition lists, abbreviations, spoilers, ruby
+text, and additional inline formatting. These extra rules are mostly unused by the
 benchmark corpora, so this target measures dispatch overhead rather than a
 syntax-equivalent comparison.
 

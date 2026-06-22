@@ -66,6 +66,7 @@ The plugin name in the first column is the module you import from
 | --- | --- | --- | --- | --- |
 | `abbr` | `AbbreviationRule` | transform | rewrites matching text to `abbreviation` | not streaming-compatible |
 | `definition_list` | `DefinitionListRule` | continuation | `definitionList`, `definitionTerm`, `definitionDescription` | compatible |
+| `frontmatter` | `FrontmatterRule` | block + transform | stores parsed data on `root.data["frontmatter"]` | compatible |
 | `math` | `MathBlockRule` | block | `math` | compatible |
 | `math` | `InlineMathRule` | inline | `inlineMath` | compatible |
 | `spoiler` | `BlockSpoilerRule` | block | `blockSpoiler` | compatible |

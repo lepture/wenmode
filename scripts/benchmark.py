@@ -24,6 +24,7 @@ from wenmode.plugins import (
     abbr,
     definition_list,
     fenced_directive,
+    frontmatter,
     inline_role,
     insert,
     mark,
@@ -237,6 +238,7 @@ def make_wenmode_all() -> Wenmode:
     )
     for plugin in [
         fenced_directive,
+        frontmatter,
         math,
         spoiler,
         definition_list,

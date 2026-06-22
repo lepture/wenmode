@@ -69,6 +69,7 @@ block_math = Wenmode().use(math, inline=False)
 | `wenmode.plugins.abbr` | Abbreviation definitions and `abbreviation` nodes |
 | `wenmode.plugins.definition_list` | Definition list syntax and nodes |
 | `wenmode.plugins.fenced_directive` | MyST-style fenced directives, rendered as `containerDirective` nodes |
+| `wenmode.plugins.frontmatter` | Top-level `---` front matter stored on `root.data["frontmatter"]` |
 | `wenmode.plugins.inline_role` | MyST-style inline roles, rendered as `textDirective` nodes |
 | `wenmode.plugins.insert` | `insert` inline nodes |
 | `wenmode.plugins.mark` | `mark` inline nodes |
@@ -80,6 +81,40 @@ block_math = Wenmode().use(math, inline=False)
 
 Each plugin also registers default HTML, Markdown, or RST renderer handlers when
 the feature has a standard representation in Wenmode's built-in renderers.
+
+## Front Matter
+
+The `frontmatter` plugin consumes top-level `---` front matter before normal
+Markdown block parsing and stores the parsed value on the root node. It does not
+emit a child node, so HTML, Markdown, and RST output ignore front matter by
+default.
+
+```python
+from wenmode import Wenmode
+from wenmode.plugins import frontmatter
+
+wenmode = Wenmode().use(frontmatter)
+root = wenmode.parse('---\ntitle: Hello\n---\n\n# Hi\n')
+
+assert root.data == {'frontmatter': {'title': 'Hello'}}
+assert wenmode.render_node(root) == '<h1>Hi</h1>\n'
+```
+
+The default parser handles simple scalar `key: value` lines. Pass a custom
+parser when your application wants YAML or another metadata format. The callback
+receives only the text between the opening and closing fences:
+
+```python
+from wenmode import Wenmode
+from wenmode.plugins import frontmatter
+
+
+def parse_meta(source: str) -> dict[str, str]:
+    return {'raw': source}
+
+
+wenmode = Wenmode().use(frontmatter, parser=parse_meta, data_key='meta')
+```
 
 ## Fenced Directives And Roles
 
