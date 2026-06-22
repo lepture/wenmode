@@ -27,7 +27,7 @@ def test_markdown_to_html_renders_fenced_directives() -> None:
     assert '<p>Body.</p>' in html
 
 
-def test_plugin_strips_frontmatter_before_rendering_html() -> None:
+def test_plugin_ignores_frontmatter_metadata_in_html() -> None:
     plugin = WenmodePlugin()
 
     html = plugin.on_page_markdown('---\ntitle: Example\nlayout: landing\n---\n\n# Example\n', None, None, None)

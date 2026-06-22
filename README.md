@@ -238,7 +238,7 @@ benchmark script compares Markdown-to-HTML throughput across Wenmode and the
 libraries covered by the migration guides:
 
 ```bash
-uv run --group benchmark python scripts/benchmark.py --case all
+uv run --locked --group benchmark python scripts/benchmark.py --case all
 ```
 
 `wenmode-core` uses CommonMark-style rules plus pipe tables, with raw HTML

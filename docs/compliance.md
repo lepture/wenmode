@@ -21,8 +21,8 @@ is trusted or sanitized elsewhere.
 
 | Suite | Fixture | Examples | Test command | Current status |
 | --- | --- | ---: | --- | --- |
-| CommonMark | `commonmark-0.31.2.json` | 652 | `uv run --group test pytest -q tests/test_commonmark_spec.py` | no skipped examples |
-| GFM | `gfm-0.29.json` | 677 | `uv run --group test pytest -q tests/test_gfm_spec.py` | no skipped examples |
+| CommonMark | `commonmark-0.31.2.json` | 652 | `uv run --locked --group test pytest -q tests/test_commonmark_spec.py` | no skipped examples |
+| GFM | `gfm-0.29.json` | 677 | `uv run --locked --group test pytest -q tests/test_gfm_spec.py` | no skipped examples |
 
 The fixture suites exercise the `commonmark` and `github` presets. See
 {ref}`presets` for feature membership; this page focuses on how those presets

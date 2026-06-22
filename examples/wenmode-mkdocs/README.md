@@ -7,7 +7,7 @@ published to PyPI.
 Install the package from this directory when trying it locally:
 
 ```bash
-uv run --directory examples/wenmode-mkdocs mkdocs build --strict
+uv run --directory examples/wenmode-mkdocs --locked mkdocs build --strict
 ```
 
 Enable the plugin in `mkdocs.yml`:

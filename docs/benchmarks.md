@@ -11,7 +11,7 @@ versions, and current Markdown-to-HTML results.
 Run the benchmark suite from the repository root:
 
 ```bash
-uv run --group benchmark python scripts/benchmark.py --case all
+uv run --locked --group benchmark python scripts/benchmark.py --case all
 ```
 
 The script compares Markdown-to-HTML throughput across Wenmode and the parser

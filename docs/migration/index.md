@@ -64,7 +64,7 @@ The benchmark script includes every library covered by these migration guides.
 The current snapshot uses all built-in benchmark cases:
 
 ```bash
-uv run --group benchmark python scripts/benchmark.py --case all
+uv run --locked --group benchmark python scripts/benchmark.py --case all
 ```
 
 Lower mean time is better. These summary rows show Wenmode beside the fastest
