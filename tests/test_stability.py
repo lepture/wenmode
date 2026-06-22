@@ -7,6 +7,7 @@ import pytest
 from wenmode import StreamingUnsupportedError, Wenmode
 from wenmode.plugins import abbr, math, spoiler
 from wenmode.presets import streaming
+from wenmode.rules import Footnote, Link
 
 
 def test_positions_survive_plugin_root_transforms() -> None:
@@ -66,6 +67,12 @@ def test_streaming_preset_supports_streaming_compatible_plugins() -> None:
 def test_streaming_rejects_plugins_with_deferred_transforms() -> None:
     with pytest.raises(StreamingUnsupportedError, match='deferred inline transforms'):
         next(Wenmode(streaming).use(abbr).stream('HTML\n\n*[HTML]: HyperText\n'))
+
+
+@pytest.mark.parametrize('rule', [Link, Footnote])
+def test_streaming_rejects_core_rules_with_deferred_transforms(rule) -> None:
+    with pytest.raises(StreamingUnsupportedError, match='deferred inline transforms'):
+        next(Wenmode([rule]).stream('text\n'))
 
 
 def test_streaming_positions_remain_offset_only_for_plugin_nodes() -> None:

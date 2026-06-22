@@ -9,7 +9,7 @@ from tests.helpers import load_fixture
 from tests.plugin_helpers import configured_app
 from wenmode import HTMLRenderer, MarkdownRenderer, RSTRenderer, Wenmode
 from wenmode.directives import Admonition, Details, Figure, TableOfContents
-from wenmode.nodes import Literal, Paragraph, Parent, Text
+from wenmode.nodes import Html, Image, Link, Literal, Paragraph, Parent, Text
 from wenmode.renderers import BaseRenderer, RenderContext
 from wenmode.rules import (
     Footnote,
@@ -160,6 +160,58 @@ def test_html_renderer_custom_elements_require_registered_handler() -> None:
     renderer.register_handler('customElement', render_custom_element)
 
     assert renderer.render(node) == '<p><mark data-custom="yes">marked</mark></p>\n'
+
+
+def test_html_renderer_escapes_attribute_values_and_drops_unsafe_names() -> None:
+    renderer = HTMLRenderer()
+
+    attrs = renderer.render_attrs(
+        {
+            'title': '"<x>&',
+            'onclick': 'alert(1)',
+            'style': 'position:fixed',
+            'bad name': 'bad',
+            'hidden': True,
+            'disabled': False,
+            'empty': None,
+            'data-count': 3,
+        }
+    )
+
+    assert attrs == ' title="&quot;&lt;x&gt;&amp;" hidden data-count="3"'
+
+
+def test_html_renderer_sanitizes_obfuscated_unsafe_link_and_image_urls() -> None:
+    node = Paragraph(
+        children=[
+            Link(url='java\nscript:alert(1)', children=[Text(value='bad')]),
+            Text(value=' '),
+            Image(url='vbscript:alert(1)', alt='"alt"'),
+        ]
+    )
+
+    assert HTMLRenderer().render(node) == '<p><a>bad</a> <img alt="&quot;alt&quot;" /></p>\n'
+
+
+def test_html_renderer_can_disable_url_sanitization_for_trusted_content() -> None:
+    node = Paragraph(
+        children=[
+            Link(url='javascript:alert(1)', children=[Text(value='bad')]),
+            Text(value=' '),
+            Image(url='javascript:alert(2)', alt='bad'),
+        ]
+    )
+
+    assert HTMLRenderer(sanitize_urls=False).render(node) == (
+        '<p><a href="javascript:alert(1)">bad</a> <img src="javascript:alert(2)" alt="bad" /></p>\n'
+    )
+
+
+def test_html_renderer_escapes_raw_html_by_default_and_can_pass_it_through() -> None:
+    node = Html(value='<script>alert("x")</script>')
+
+    assert HTMLRenderer().render(node) == '&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;'
+    assert HTMLRenderer(escape=False).render(node) == '<script>alert("x")</script>'
 
 
 def test_html_renderer_reuses_instance_without_leaking_footnote_state() -> None:
