@@ -11,6 +11,18 @@ releases.
 This page records notable changes for released versions. Add unreleased entries
 here while preparing a release, then move them under the final version heading.
 
+## Unreleased
+
+- Refactor parser internals into private `_parser` modules for rule-set
+  compilation, block parsing, inline parsing, and paragraph-interruption
+  decisions. Public parser entry points remain on `Parser`.
+- Change `Parser.parse_inlines()` to require an explicit `BlockState`, and change
+  `Parser.inline_source()` to receive that state when mapping nested inline
+  source ranges.
+- Store active inline source maps on `BlockState` instead of the reusable
+  `Parser` instance so nested inline source lookup is scoped to the active parse
+  state.
+
 ## 0.5.0
 
 Released **Jun 23, 2026**.
