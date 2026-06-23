@@ -1,4 +1,17 @@
-# Wenmode
+<div align="center">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/_static/dark-logo.svg" />
+  <img alt="Wenmode" src="docs/_static/light-logo.svg" height="68" />
+</picture>
+
+[![Build Status](https://github.com/lepture/wenmode/actions/workflows/test.yml/badge.svg)](https://github.com/lepture/wenmode/actions)
+[![PyPI version](https://img.shields.io/pypi/v/wenmode)](https://pypi.org/project/wenmode)
+[![Code Coverage](https://img.shields.io/codecov/c/github/lepture/wenmode)](https://codecov.io/gh/lepture/wenmode)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=lepture_wenmode&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=lepture_wenmode)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=lepture_wenmode&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=lepture_wenmode)
+
+</div>
 
 Wenmode is a composable Markdown toolkit for Python by the same author as
 [Mistune](https://mistune.lepture.com/). It is a rewrite informed by Mistune's
