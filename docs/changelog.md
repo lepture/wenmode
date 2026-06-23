@@ -11,21 +11,19 @@ releases.
 This page records notable changes for released versions. Add unreleased entries
 here while preparing a release, then move them under the final version heading.
 
-## Unreleased
+## 0.5.0
 
-- Add `plugins=` to `Wenmode` so applications can install plugins during
-  construction. The existing `Wenmode.use(plugin, **options)` API remains
-  supported for adding plugins after an instance exists or passing setup
-  options.
+Released **Jun 23, 2026**.
+
+- Add `plugins` parameter to `Wenmode` so applications can install plugins
+  during construction. The existing `Wenmode.use(plugin, **options)` API
+  remains supported for adding plugins after an instance exists or passing
+  setup options.
 - Update the CLI and local integration examples to use constructor-time plugin
   setup internally.
-- Document the product dialect factory pattern for keeping rule lists, plugin
-  lists, renderers, and parser options consistent across services.
 - Add documentation entry points for the FastAPI streaming file-upload example
   and clarify which syntax the `streaming` preset supports or deliberately
   disables.
-- Clarify the beta-period stable API list for plugin setup and constructor-time
-  plugin installation.
 
 ## 0.4.0
 

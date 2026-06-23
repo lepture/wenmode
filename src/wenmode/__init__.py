@@ -3,7 +3,7 @@ from .plugins import Plugin, PluginTarget
 from .renderers import HTMLRenderer, MarkdownRenderer, RSTRenderer
 from .wenmode import Wenmode
 
-__version__ = '0.4.0'
+__version__ = '0.5.0'
 __homepage__ = 'https://wenmode.lepture.com/'
 __author__ = 'Hsiaoming Yang <me@lepture.com>'
 __license__ = 'BSD-3-Clause'
