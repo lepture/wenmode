@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-import re
 from collections.abc import Iterable, Iterator
 from typing import cast
 
-from ._parser import interrupts
+from ._parser.blocks import BlockParser
 from ._parser.inlines import InlineParser
 from ._parser.ruleset import RuleSet, resolve_rule
-from .nodes import Node, Paragraph, Root
+from .nodes import Node, Root
 from .rules.base import BlockRule, InlineRule, Rule
 from .rules.transforms import RootTransform
 from .state import (
@@ -15,7 +14,6 @@ from .state import (
     LineSource,
     NullSourceTracker,
     PositionSourceTracker,
-    SourceCollector,
     SourceMap,
     StreamBlockState,
     StreamLineBuffer,
@@ -44,6 +42,7 @@ class Parser:
         self._registered_rules: list[Rule] = []
         self._ruleset = RuleSet.from_rules([])
         self._inline_parser = InlineParser(self, self._ruleset)
+        self._block_parser = BlockParser(self, self._ruleset)
         self.register_rules(rules)
 
     @property
@@ -89,6 +88,7 @@ class Parser:
     def _rebuild_rules(self) -> None:
         self._ruleset = RuleSet.from_rules(self._registered_rules)
         self._inline_parser.update_rule_set(self._ruleset)
+        self._block_parser.update_rule_set(self._ruleset)
 
     def parse(self, source: LineSource) -> Root:
         """Parse Markdown into a root node.
@@ -97,13 +97,13 @@ class Parser:
         :returns: Parsed document root.
         """
         state = self._create_block_state(source, defer_inlines=self._ruleset.defer_inlines)
-        root = Root(children=self._parse_block_nodes(state))
+        root = Root(children=self._block_parser.parse_nodes(state))
         if self.positions:
             root._line_starts = create_line_starts(state.lines)
             root.position = state.source.position_between(0, len(state.lines))
         for transform in self.root_transforms:
             transform.prepare(self, root, state)
-        self._resolve_pending_inlines(state)
+        self._inline_parser.resolve_pending(state)
         for transform in self.root_transforms:
             transform.transform(self, root, state)
         return root
@@ -124,7 +124,7 @@ class Parser:
         self._assert_streaming_supported()
         state = self._create_block_state(source, defer_inlines=False)
         while not state.done:
-            node = self._parse_next_block_node(state)
+            node = self._block_parser.parse_next_node(state)
             if node is not None:
                 yield node
 
@@ -141,23 +141,7 @@ class Parser:
             enabled.
         :returns: Parsed child nodes.
         """
-        lines = text.splitlines(keepends=True)
-        source_tracker: NullSourceTracker
-        if self.positions and source is not None:
-            source_tracker = PositionSourceTracker(source.line_offsets(lines))
-        else:
-            source_tracker = NullSourceTracker()
-        state = BlockState(
-            lines,
-            source=source_tracker,
-            store=parent_state.store,
-            depth=parent_state.depth + 1,
-            pending_inlines=parent_state.pending_inlines,
-            pending_inline_callbacks=parent_state.pending_inline_callbacks,
-            defer_inlines=parent_state.defer_inlines,
-            inline_sources=parent_state.inline_sources,
-        )
-        return self._parse_block_nodes(state)
+        return self._block_parser.parse_blocks(text, parent_state, source)
 
     def _create_block_state(self, source: LineSource, defer_inlines: bool) -> BlockState:
         source_tracker: NullSourceTracker
@@ -184,65 +168,6 @@ class Parser:
             defer_inlines=defer_inlines,
         )
 
-    def _parse_block_nodes(self, state: BlockState) -> list[Node]:
-        children: list[Node] = []
-
-        while not state.done:
-            node = self._parse_next_block_node(state)
-            if node is not None:
-                children.append(node)
-
-        return children
-
-    def _parse_next_block_node(self, state: BlockState) -> Node | None:
-        while not state.done:
-            line = state.line
-            if line.strip() == '':
-                state.advance()
-                continue
-
-            start_index = state.index
-            if self._is_plain_paragraph_start(line):
-                parsed = self._parse_paragraph(state)
-                if self.positions and parsed.position is None:
-                    parsed.position = state.source.position_between(start_index, state.index)
-                return parsed
-
-            if self._ruleset.block_openers:
-                match = self._ruleset.block_openers.match(line)
-            else:
-                match = None
-            if match is not None and not self._container_depth_exceeded(cast(str, match.lastgroup), state):
-                parsed_block, consumed = self._parse_matching_block_rule(state, match)
-                if parsed_block is not None:
-                    if self.positions and parsed_block.position is None:
-                        parsed_block.position = state.source.position_between(start_index, state.index)
-                    return parsed_block
-                if consumed:
-                    continue
-
-            parsed = self._parse_paragraph(state)
-            if self.positions and parsed.position is None:
-                parsed.position = state.source.position_between(start_index, state.index)
-            return parsed
-        return None
-
-    def _parse_matching_block_rule(self, state: BlockState, match: re.Match[str]) -> tuple[Node | None, bool]:
-        line = state.line
-        first_rule_name = cast(str, match.lastgroup)
-        start = self._ruleset.block_rule_order[first_rule_name]
-        for rule in self._ruleset.block_rules[start:]:
-            rule_match = re.match(rule.pattern, line)
-            if rule_match is None or self._container_depth_exceeded(rule.name, state):
-                continue
-            previous_index = state.index
-            parsed = rule.parse(self, state, rule_match)
-            if parsed is not None:
-                return parsed, True
-            if state.index != previous_index:
-                return None, True
-        return None, False
-
     def _assert_streaming_supported(self) -> None:
         if not self._ruleset.defer_inlines:
             return
@@ -265,65 +190,6 @@ class Parser:
         """
         return self._inline_parser.parse(text, state, source)
 
-    def _parse_paragraph(self, state: BlockState) -> Node:
-        if self.positions:
-            return self._parse_positioned_paragraph(state)
-        return self._parse_plain_paragraph(state)
-
-    def _parse_plain_paragraph(self, state: BlockState) -> Node:
-        lines, parsed = self._read_paragraph_lines(state)
-        if parsed is not None:
-            return parsed
-        text = ''.join(lines).strip()
-        return Paragraph(children=self.parse_inlines(text, state))
-
-    def _parse_positioned_paragraph(self, state: BlockState) -> Node:
-        source = state.source.collect()
-        lines, parsed = self._read_paragraph_lines(state, source)
-        if parsed is not None:
-            return parsed
-        inline_source = source.map()
-        if inline_source is None:
-            text = ''.join(lines).strip()
-            return Paragraph(children=self.parse_inlines(text, state))
-
-        raw_text = inline_source.text
-        start = len(raw_text) - len(raw_text.lstrip())
-        end = len(raw_text.rstrip())
-        inline_source = inline_source.slice(start, end)
-        text = inline_source.text
-        return Paragraph(children=self.parse_inlines(text, state, source=inline_source))
-
-    def _read_paragraph_lines(
-        self, state: BlockState, source: SourceCollector | None = None
-    ) -> tuple[list[str], Node | None]:
-        lines: list[str] = []
-        while not state.done:
-            line = state.line
-            if line.strip() == '':
-                break
-            if lines:
-                for continuation in self._ruleset.paragraph_continuations:
-                    if not continuation.matches(line):
-                        continue
-                    parsed = continuation.parse_paragraph_continuation(self, state, lines)
-                    if parsed is not None:
-                        return lines, parsed
-            if lines and self.is_paragraph_interrupt(line, state):
-                break
-            if lines:
-                text = line.lstrip(' \t')
-            else:
-                text = line
-            if source is not None:
-                source.add(state.index, len(line) - len(text), text)
-            lines.append(text)
-            state.advance()
-        return lines, None
-
-    def _resolve_pending_inlines(self, state: BlockState) -> None:
-        self._inline_parser.resolve_pending(state)
-
     def is_paragraph_interrupt(self, line: str, state: BlockState | None = None) -> bool:
         """Return whether a line would interrupt a paragraph.
 
@@ -334,13 +200,7 @@ class Parser:
         :param state: Current block state, if available.
         :returns: ``True`` if the line starts an interrupting block.
         """
-        return interrupts.is_paragraph_interrupt(self._ruleset, self.max_container_depth, line, state)
-
-    def _container_depth_exceeded(self, name: str, state: BlockState | None) -> bool:
-        return interrupts.container_depth_exceeded(name, state, self.max_container_depth)
-
-    def _is_plain_paragraph_start(self, line: str) -> bool:
-        return interrupts.is_plain_paragraph_start(self._ruleset, line)
+        return self._block_parser.is_paragraph_interrupt(line, state)
 
     def inline_source(self, text: str, state: BlockState, start: int, end: int) -> SourceMap | None:
         """Return a source map for a slice of the state's active inline source."""
