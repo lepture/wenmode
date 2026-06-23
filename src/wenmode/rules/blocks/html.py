@@ -81,7 +81,7 @@ BLOCK_TAGS = (
 BLOCK_TAGS_PATTERN = '|'.join(BLOCK_TAGS)
 HTML_BLOCK_TAG_RE = re.compile(rf'(?i)^</?(?:{BLOCK_TAGS_PATTERN})(?:\s|/?>|$)')
 HTML_SCRIPT_STYLE_RE = re.compile(r'(?i)^<(script|pre|style|textarea)(?:\s|>|$)')
-HTML_OPEN_TAG_RE = re.compile(r'(?i)^<([A-Za-z][A-Za-z0-9-]*)')
+HTML_OPEN_TAG_RE = re.compile(r'(?i)^<([a-z][a-z0-9-]*)')
 HTML_DECLARATION_RE = re.compile(r'^<![A-Z]')
 HTML_BLOCK_SCRIPT_STYLE_PATTERN = r'(?i:script(?:\s|>|$)|pre(?:\s|>|$)|style(?:\s|>|$))'
 HTML_BLOCK_TAG_PATTERN = rf'(?i:/?(?:{BLOCK_TAGS_PATTERN})(?:\s|/?>|$))'
@@ -90,7 +90,7 @@ HTML_BLOCK_COMPLETE_OPEN_TAG_PATTERN = (
 )
 HTML_BLOCK_COMPLETE_CLOSE_TAG_PATTERN = r'(?i:/[a-z][a-z0-9-]*\s*>[ \t]*$)'
 COMPLETE_HTML_TAG_RE = re.compile(
-    r'(?i)</?[A-Za-z][A-Za-z0-9-]*(?:\s+[A-Za-z_:][A-Za-z0-9_.:-]*(?:\s*=\s*(?:[^\s"\'=<>`]+|\'[^\']*\'|"[^"]*"))?)*\s*/?>[ \t]*'
+    r'(?i)</?[a-z][a-z0-9-]*(?:\s+[a-z_:][a-z0-9_.:-]*(?:\s*=\s*(?:[^\s"\'=<>`]+|\'[^\']*\'|"[^"]*"))?)*\s*/?>[ \t]*'
 )
 PRESERVE_NESTED_RAW_TAGS = frozenset(
     {
