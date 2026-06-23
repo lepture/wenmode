@@ -2,15 +2,15 @@
 # Custom Plugins
 
 ```{rst-class} lead
-Create plugins for `Wenmode.use()` that package syntax rules, nodes, renderer
-handlers, and setup options.
+Create plugins for `Wenmode(..., plugins=[...])` that package syntax rules,
+nodes, renderer handlers, and setup options.
 ```
 
 ---
 
 Create a plugin when you want to add syntax or output behavior that is not part
 of the CommonMark, GFM, mdast directive, or built-in plugin surface. A plugin is
-the unit your application installs with `Wenmode.use(plugin)`.
+the unit your application installs with `Wenmode(..., plugins=[plugin])`.
 
 Before writing a custom plugin, check whether the feature can be expressed as:
 
@@ -29,8 +29,10 @@ Plugins usually keep these pieces together:
 
 ## Plugin Shape
 
-A plugin can be a module or an object. `Wenmode.use()` looks for a callable
-`setup()` function and passes the `Wenmode` instance plus any options.
+A plugin can be a module or an object. During construction, `Wenmode` looks for
+a callable `setup()` function on each plugin in `plugins=[...]` and passes the
+`Wenmode` instance. Use `Wenmode.use(plugin, **options)` when a plugin needs
+setup options.
 
 ```python
 from typing import Any
@@ -44,7 +46,7 @@ class EmphasisOnlyPlugin:
         wenmode.register_rule(Emphasis)
 
 
-wenmode = Wenmode([]).use(EmphasisOnlyPlugin())
+wenmode = Wenmode([], plugins=[EmphasisOnlyPlugin()])
 
 assert wenmode.render('*emphasis*') == '<p><em>emphasis</em></p>\n'
 ```
@@ -64,13 +66,13 @@ def setup(wenmode: Wenmode, **options: Any) -> None:
     wenmode.register_renderer_handlers(handlers)
 ```
 
-Applications import the module and pass it to `use()`:
+Applications import the module and pass it to `plugins`:
 
 ```{code-block} python
 from wenmode import Wenmode
 from my_project.wenmode_plugins import plus_mark
 
-wenmode = Wenmode().use(plus_mark)
+wenmode = Wenmode(plugins=[plus_mark])
 ```
 
 ## Complete Inline Plugin
@@ -134,7 +136,7 @@ class PlusMarkPlugin:
         wenmode.register_renderer_handlers(handlers)
 
 
-wenmode = Wenmode().use(PlusMarkPlugin())
+wenmode = Wenmode(plugins=[PlusMarkPlugin()])
 expected = '''
 <p><mark>very <em>important</em></mark></p>
 '''
@@ -361,20 +363,20 @@ definitions. Rule sets with deferred inline parsing cannot be used with
 streaming output.
 
 If a plugin is intended for streaming output, test it through
-`Wenmode(streaming).use(plugin).stream(...)` or through an equivalent custom
-streaming rule list.
+`Wenmode(streaming, plugins=[plugin]).stream(...)` or through an equivalent
+custom streaming rule list.
 
 ## Testing Plugins
 
-Test the plugin through `Wenmode.use()`, because that is the API applications
-will call.
+Test the plugin through `Wenmode(..., plugins=[...])`, because that is the
+recommended API applications will call.
 
 ```{code-block} python
 from wenmode import HTMLRenderer, Wenmode
 
 
 def render(markdown: str) -> str:
-    return Wenmode(renderer=HTMLRenderer()).use(PlusMarkPlugin()).render(markdown)
+    return Wenmode(renderer=HTMLRenderer(), plugins=[PlusMarkPlugin()]).render(markdown)
 
 
 def test_plus_mark() -> None:

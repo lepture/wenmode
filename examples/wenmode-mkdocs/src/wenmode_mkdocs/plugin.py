@@ -38,11 +38,8 @@ def create_wenmode() -> Wenmode:
             SetextHeading(id_transform=True),
         ],
         renderer=HTMLRenderer(directives=[Admonition(names=ADMONITION_NAMES), Details(), Figure(), TableOfContents()]),
+        plugins=[definition_list, fenced_directive, frontmatter, math],
     )
-    app.use(definition_list)
-    app.use(fenced_directive)
-    app.use(frontmatter)
-    app.use(math)
     return app
 
 

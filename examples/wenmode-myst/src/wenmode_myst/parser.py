@@ -150,11 +150,8 @@ def create_wenmode() -> Wenmode:
             *github,
         ],
         renderer=RSTRenderer(),
+        plugins=[definition_list, frontmatter, inline_role, math],
     )
-    app.use(definition_list)
-    app.use(frontmatter)
-    app.use(inline_role)
-    app.use(math)
     app.register_renderer_handlers(handlers)
     return app
 

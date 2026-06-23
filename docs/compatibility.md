@@ -45,8 +45,11 @@ reference-style links, reference-style images, and footnotes.
 The high-level APIs documented in {ref}`usage`, {ref}`presets`, {ref}`plugins`,
 and {ref}`custom-plugins` are intended to be stable through the beta period:
 
-- `Wenmode`, `Parser`, and renderer construction.
-- Rule classes, configured rule instances, and `Wenmode.use(plugin)`.
+- `Wenmode`, `Parser`, and renderer construction, including
+  `Wenmode(..., plugins=[...])`.
+- Rule classes and configured rule instances.
+- Plugin modules or objects with `setup(wenmode, **options)`, whether installed
+  during `Wenmode` construction or later with `Wenmode.use(plugin, **options)`.
 - `Node.to_ast()` output for documented node types.
 - Custom plugin `setup()` functions, rules, renderer handlers, and root
   transform shapes.

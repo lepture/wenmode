@@ -57,8 +57,8 @@ adding those definition rules directly.
 
 ## Plugin rules
 
-These rules are not part of `wenmode.rules`. Enable them with `Wenmode.use()`
-from `wenmode.plugins` when your dialect needs the syntax.
+These rules are not part of `wenmode.rules`. Enable them with the `plugins`
+argument from `wenmode.plugins` when your dialect needs the syntax.
 
 The plugin name in the first column is the module you import from
 `wenmode.plugins`.

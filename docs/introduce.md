@@ -30,7 +30,7 @@ Wenmode is built around five practical needs:
 | Keep Markdown behavior explicit | Choose `commonmark`, `github`, `streaming`, or an exact rule list. |
 | Inspect or store parsed content | Parse to mdast-compatible node objects and `Node.to_ast()` dictionaries. |
 | Render user-authored content safely | Escape raw HTML and sanitize unsafe URLs by default. |
-| Add product-specific syntax | Package rules and renderer handlers with `Wenmode.use(plugin)`. |
+| Add product-specific syntax | Package rules and renderer handlers with `Wenmode(..., plugins=[plugin])`. |
 | Emit output incrementally | Use the `streaming` preset when deferred reference resolution is not needed. |
 
 The common case still stays small:

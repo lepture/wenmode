@@ -29,7 +29,7 @@ behavior you need.
 
 Import a plugin module from `wenmode.plugins` and pass it to `Wenmode` with the
 `plugins` argument. During initialization, Wenmode calls each plugin's
-`setup(wenmode, **options)` function.
+`setup(wenmode, **options)` function with no extra options.
 
 ```python
 from wenmode import Wenmode
@@ -52,15 +52,15 @@ wenmode = Wenmode(plugins=[mark, superscript])
 ```
 
 Some plugins accept setup options. For example, `math` can install only inline
-or block syntax. Pass a `(plugin, options)` tuple when using constructor-time
-plugin setup:
+or block syntax. Install those plugins with `use()` when you need to pass
+options:
 
 ```python
 from wenmode import Wenmode
 from wenmode.plugins import math
 
-inline_math = Wenmode(plugins=[(math, {'block': False})])
-block_math = Wenmode(plugins=[(math, {'inline': False})])
+inline_math = Wenmode().use(math, block=False)
+block_math = Wenmode().use(math, inline=False)
 ```
 
 Use `Wenmode.use(plugin, **options)` when you need to install a plugin after the
@@ -133,11 +133,7 @@ def dump_meta(value: object) -> str | None:
     return str(value['raw'])
 
 
-wenmode = Wenmode(
-    plugins=[
-        (frontmatter, {'load': load_meta, 'dump': dump_meta, 'data_key': 'meta'}),
-    ]
-)
+wenmode = Wenmode().use(frontmatter, load=load_meta, dump=dump_meta, data_key='meta')
 ```
 
 ## Fenced Directives And Roles
@@ -200,7 +196,7 @@ class MyPlugin:
         wenmode.register_rule(Emphasis)
 
 
-wenmode = Wenmode([]).use(MyPlugin())
+wenmode = Wenmode([], plugins=[MyPlugin()])
 ```
 
 For non-trivial syntax, define the node, rule, render handlers, and `setup()`

@@ -185,30 +185,45 @@ See {ref}`rule-matrix` for rules that are not compatible with streaming.
 
 ## Package a product dialect
 
-When multiple services need the same Markdown behavior, keep the rule list in
-one application module and import that module everywhere. This avoids subtle
-differences between the editor preview, API rendering, background jobs, and test
-fixtures.
+When multiple services need the same Markdown behavior, keep the rule list and
+plugin list in one application module and expose a small factory. Import that
+factory everywhere instead of rebuilding slightly different `Wenmode` instances
+in each service. This avoids subtle differences between the editor preview, API
+rendering, background jobs, and test fixtures.
 
 ```python
 from wenmode import Wenmode
+from wenmode.plugins import frontmatter, math
 from wenmode.presets import commonmark
 from wenmode.rules import HtmlBlock, RawHtml
 
 product_rules = [rule for rule in commonmark if rule not in {HtmlBlock, RawHtml}]
-product_markdown = Wenmode(product_rules)
+product_plugins = [frontmatter, math]
 
-text = '<span>plain text in our dialect</span>'
+
+def create_product_markdown(**options):
+    return Wenmode(product_rules, plugins=product_plugins, **options)
+
+text = '''---
+title: Preview
+---
+
+<span>plain text in our dialect</span>
+
+Inline $x + y$.
+'''
 expected = '''
 <p>&lt;span&gt;plain text in our dialect&lt;/span&gt;</p>
+<p>Inline <span class="math math-inline">x + y</span>.</p>
 '''
 
-html = product_markdown.render(text)
+html = create_product_markdown().render(text)
 
 assert html == expected.lstrip()
 ```
 
-For new syntax, create a plugin that registers parser rules and renderer
-handlers together. See {ref}`custom-plugins` for an RST-inspired example that
-creates a new node type and registers HTML, Markdown, and RST rendering
-behavior.
+Pass renderer or parsing options through the same factory when another layer
+needs a different output format or source positions. For new syntax, create a
+plugin that registers parser rules and renderer handlers together. See
+{ref}`custom-plugins` for an RST-inspired example that creates a new node type
+and registers HTML, Markdown, and RST rendering behavior.
