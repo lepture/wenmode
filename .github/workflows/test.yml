@@ -74,16 +74,12 @@ jobs:
         run: python -m pip install --upgrade uv
 
       - name: Report coverage
-        run: uv run --locked --group test pytest --cov=wenmode --cov-report=xml
+        run: uv run --locked --group test pytest --cov=wenmode --cov-branch --cov-report=xml
 
-      - name: Upload coverage to GitHub
-        if: ${{ matrix.python-version == '3.14' }}
-        uses: actions/upload-code-coverage@v1
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v7
         with:
-          file: coverage.xml
-          language: Python
-          label: code-coverage/pytest
-          fail-on-error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   examples:
     needs: lint
