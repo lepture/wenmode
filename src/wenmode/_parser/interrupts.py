@@ -7,9 +7,9 @@ from wenmode.state import BlockState
 
 from .ruleset import RuleSet
 
-LIST_MARKER_RE = re.compile(
-    r'^[ \t]{0,3}(?:(?P<bullet>[*+-])|(?P<ordered>\d{1,9})[.)])(?P<spaces>[ \t]+|$)(?P<rest>.*)$'
-)
+ListMarker = tuple[str | None, str]
+
+LIST_MARKER_RE = re.compile(r'^[ \t]{0,3}(?:(?P<bullet>[*+-])|(?P<ordered>\d{1,9})[.)])(?:[ \t]+|$)')
 HTML_TAG_START_RE = re.compile(r'</?[A-Za-z]')
 HTML_PARAGRAPH_INTERRUPT_RE = re.compile(r'(?i)<(?:script|pre|style|textarea)(?:\s|>|$)')
 PUNCTUATION = set(string.punctuation)
@@ -40,12 +40,23 @@ def block_opener_interrupts_paragraph(rule_name: str, line: str) -> bool:
 
 
 def list_interrupts_paragraph(line: str) -> bool:
-    marker = LIST_MARKER_RE.match(line.rstrip('\r\n'))
-    if marker is not None and marker.group('rest').strip() == '':
+    marker = parse_list_marker(line.rstrip('\r\n'))
+    if marker is None:
+        return True
+
+    ordered, rest = marker
+    if rest.strip() == '':
         return False
-    if marker is not None and marker.group('ordered') is not None and marker.group('ordered') != '1':
+    if ordered is not None and ordered != '1':
         return False
     return True
+
+
+def parse_list_marker(line: str) -> ListMarker | None:
+    marker = LIST_MARKER_RE.match(line)
+    if marker is None:
+        return None
+    return marker.group('ordered'), line[marker.end() :]
 
 
 def html_block_interrupts_paragraph(line: str) -> bool:
@@ -70,4 +81,3 @@ def is_plain_paragraph_start(rule_set: RuleSet, line: str) -> bool:
         return False
     char = line[0]
     return not char.isspace() and not char.isdigit() and char not in PUNCTUATION
-

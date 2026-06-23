@@ -20,8 +20,10 @@ if TYPE_CHECKING:
     from wenmode.nodes import Root
     from wenmode.parser import Parser
 
-ABBREVIATION_START_RE = re.compile(r'^[ \t]{0,3}\*\[(?P<label>[^\]\n]+)\]:[ \t]*(?P<title>.*)$')
-ABBREVIATION_CONTINUATION_RE = re.compile(r'^(?: {3,}|\t)(?P<title>.*)$')
+AbbreviationStart = tuple[str, str]
+
+ABBREVIATION_START_RE = re.compile(r'^[ \t]{0,3}\*\[(?P<label>[^\]\n]+)\]:[ \t]*')
+ABBREVIATION_CONTINUATION_RE = re.compile(r'^(?: {3,}|\t)')
 
 
 @dataclass
@@ -85,22 +87,38 @@ class AbbreviationTransform(RootTransform):
 
 
 def parse_abbreviation_definition(state: BlockState, index: int) -> tuple[int, str, str] | None:
-    match = ABBREVIATION_START_RE.match(state.line_at(index).rstrip('\r\n'))
-    if match is None:
+    parsed = parse_abbreviation_start(state.line_at(index))
+    if parsed is None:
         return None
 
-    label = match.group('label')
-    title_lines = [match.group('title')]
+    label, title = parsed
+    title_lines = [title]
     index += 1
     if title_lines[0] == '':
         while state.has_index(index):
-            continuation = ABBREVIATION_CONTINUATION_RE.match(state.line_at(index).rstrip('\r\n'))
+            continuation = parse_abbreviation_continuation(state.line_at(index))
             if continuation is None:
                 break
-            title_lines.append(continuation.group('title'))
+            title_lines.append(continuation)
             index += 1
 
     return index, label, '\n'.join(title_lines).strip()
+
+
+def parse_abbreviation_start(line: str) -> AbbreviationStart | None:
+    text = line.rstrip('\r\n')
+    match = ABBREVIATION_START_RE.match(text)
+    if match is None:
+        return None
+    return match.group('label'), text[match.end() :]
+
+
+def parse_abbreviation_continuation(line: str) -> str | None:
+    text = line.rstrip('\r\n')
+    match = ABBREVIATION_CONTINUATION_RE.match(text)
+    if match is None:
+        return None
+    return text[match.end() :]
 
 
 def transform_abbreviations(node: Parent, definitions: dict[str, AbbreviationState], pattern: re.Pattern[str]) -> None:

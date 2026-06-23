@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 from wenmode.nodes import Literal, Node
 from wenmode.renderers import MarkdownRenderer, RenderContext
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from wenmode import Wenmode
     from wenmode.parser import Parser
 
-MATH_OPENER_RE = re.compile(r'^[ \t]{0,3}\$\$[ \t]*(?P<rest>.*?)(?:\r?\n)?$')
+MATH_OPENER_RE = re.compile(r'^[ \t]{0,3}\$\$[ \t]*')
 MATH_CLOSER_RE = re.compile(r'^[ \t]{0,3}\$\$[ \t]*(?:\r?\n)?$')
 
 
@@ -44,9 +44,10 @@ class MathBlockRule(BlockRule):
     pattern = r'[ \t]{0,3}\$\$'
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node:
-        opener = cast(re.Match[str], MATH_OPENER_RE.match(state.line))
+        rest = parse_math_opener(state.line)
+        if rest is None:  # pragma: no cover - block opener already matched
+            rest = ''
         lines: list[str] = []
-        rest = opener.group('rest')
         if rest:
             lines.append(rest + '\n')
         state.advance()
@@ -89,6 +90,19 @@ def find_closing_dollar(text: str, start: int) -> int | None:
             return index
         index += 1
     return None
+
+
+def parse_math_opener(line: str) -> str | None:
+    text = line
+    if text.endswith('\n'):
+        text = text[:-1]
+        if text.endswith('\r'):
+            text = text[:-1]
+
+    match = MATH_OPENER_RE.match(text)
+    if match is None:
+        return None
+    return text[match.end() :]
 
 
 def is_opening_space(text: str, index: int) -> bool:

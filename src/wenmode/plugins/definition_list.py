@@ -11,15 +11,16 @@ from wenmode.renderers.rst import RSTRenderContext, RSTRenderer, indent_block
 from wenmode.rules.base import ContinueRule, Rule
 from wenmode.state import BlockState, SourceCollector
 
-from ..utils import match_pattern
 from .types import RendererHandlers
 
 if TYPE_CHECKING:
     from wenmode import Wenmode
     from wenmode.parser import Parser
 
-DESCRIPTION_RE = re.compile(r'^[ \t]{0,3}:[ \t]+(?P<text>.*)$')
-INDENTED_RE = re.compile(r'^(?: {4}|\t)(?P<text>.*)$')
+ParsedLine = tuple[int, str]
+
+DESCRIPTION_RE = re.compile(r'^[ \t]{0,3}:[ \t]+')
+INDENTED_RE = re.compile(r'^(?: {4}|\t)')
 
 
 @dataclass
@@ -55,7 +56,7 @@ class DefinitionListRule(ContinueRule):
     def parse_paragraph_continuation(
         self, parser: Parser, state: BlockState, lines: list[str]
     ) -> DefinitionListNode | None:
-        if DESCRIPTION_RE.match(state.line) is None:
+        if parse_description_line(state.line) is None:
             return None
 
         term_start_index = state.index - len(lines)
@@ -85,14 +86,15 @@ def create_terms(parser: Parser, lines: list[str], state: BlockState, start_inde
 def parse_descriptions(parser: Parser, state: BlockState) -> list[DefinitionDescriptionNode]:
     descriptions: list[DefinitionDescriptionNode] = []
     while not state.done:
-        match = DESCRIPTION_RE.match(state.line)
-        if match is None:
+        parsed = parse_description_line(state.line)
+        if parsed is None:
             break
+        text_start, parsed_text = parsed
         start_index = state.index
-        text = match.group('text') + line_ending(state.line)
+        text = parsed_text + line_ending(state.line)
         lines = [text]
         source = state.source.collect()
-        source.add(state.index, match.start('text'), text)
+        source.add(state.index, text_start, text)
         state.advance()
         spread = collect_description_continuation(state, lines, source)
         children = parser.parse_blocks(
@@ -110,19 +112,20 @@ def collect_description_continuation(state: BlockState, lines: list[str], source
     spread = False
     while not state.done:
         if state.line.strip() == '':
-            if not state.has(1) or INDENTED_RE.match(state.peek(1)) is None:
+            if not state.has(1) or parse_indented_line(state.peek(1)) is None:
                 break
             spread = True
             lines.append(state.line)
             source.add(state.index, 0, state.line)
             state.advance()
             continue
-        indented = INDENTED_RE.match(state.line)
+        indented = parse_indented_line(state.line)
         if indented is None:
             break
-        text = indented.group('text') + line_ending(state.line)
+        text_start, parsed_text = indented
+        text = parsed_text + line_ending(state.line)
         lines.append(text)
-        source.add(state.index, indented.start('text'), text)
+        source.add(state.index, text_start, text)
         state.advance()
     return spread
 
@@ -148,7 +151,7 @@ def parse_following_terms(state: BlockState) -> tuple[list[str], int, int] | Non
         line = state.line_at(index)
         if line.strip() == '':
             return None
-        if match_pattern(DESCRIPTION_RE, line):
+        if parse_description_line(line) is not None:
             if terms:
                 return terms, start_index, index
             return None
@@ -163,6 +166,28 @@ def line_ending(line: str) -> str:
     if line.endswith('\n'):
         return '\n'
     return ''
+
+
+def line_without_lf(line: str) -> str:
+    if line.endswith('\n'):
+        return line[:-1]
+    return line
+
+
+def parse_description_line(line: str) -> ParsedLine | None:
+    text = line_without_lf(line)
+    match = DESCRIPTION_RE.match(text)
+    if match is None:
+        return None
+    return match.end(), text[match.end() :]
+
+
+def parse_indented_line(line: str) -> ParsedLine | None:
+    text = line_without_lf(line)
+    match = INDENTED_RE.match(text)
+    if match is None:
+        return None
+    return match.end(), text[match.end() :]
 
 
 def render_html_list(renderer: HTMLRenderer, node: DefinitionListNode, context: HTMLRenderContext) -> str:

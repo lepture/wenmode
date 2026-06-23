@@ -5,7 +5,7 @@ from collections.abc import Callable, Iterable
 from typing import Any
 
 from wenmode import Wenmode
-from wenmode.plugins import spoiler
+from wenmode.plugins import abbr, definition_list, fenced_directive, math, spoiler
 from wenmode.presets import commonmark, github
 from wenmode.rules import AtxHeading, ExtendedAutolink, Footnote, LeafDirective, Link, List, Rule, TextDirective
 
@@ -89,3 +89,35 @@ def test_footnote_blank_continuations_scale_nearly_linearly() -> None:
 
 def test_list_blank_continuations_scale_nearly_linearly() -> None:
     assert_scales_nearly_linearly(lambda size: '- a\n' + '\n' * size + '  b\n', [List], 1000, 2000)
+
+
+def test_list_marker_interrupt_candidates_scale_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(lambda size: 'paragraph\n1. ' + ' ' * size + '\n', [List], 8000, 16000)
+
+
+def test_abbreviation_definition_candidates_scale_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(lambda size: '*[' + 'A' * size + '\n', [], 8000, 16000, plugins=[abbr])
+
+
+def test_definition_description_candidates_scale_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(
+        lambda size: 'Term\n: ' + ' ' * size + '\n',
+        [],
+        8000,
+        16000,
+        plugins=[definition_list],
+    )
+
+
+def test_fenced_directive_attribute_candidates_scale_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(
+        lambda size: '```{note}\n:class:' + ' ' * size + '\n```\n',
+        [],
+        8000,
+        16000,
+        plugins=[fenced_directive],
+    )
+
+
+def test_math_block_opener_candidates_scale_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(lambda size: '$$ ' + ' ' * size + '\n$$\n', [], 8000, 16000, plugins=[math])
