@@ -9,7 +9,7 @@ from urllib.parse import quote
 ESCAPABLE = r'!"#$%&\'()*+,\-./:;<=>?@\[\\\]^_`{|}~'
 BACKSLASH_ESCAPE_RE = re.compile(rf'\\([{ESCAPABLE}])')
 WHITESPACE_RE = re.compile(r'\s+')
-CHARACTER_REFERENCE_RE = re.compile(r'&(?:#[xX][0-9A-Fa-f]+|#[0-9]+|[A-Za-z][A-Za-z0-9]{1,31});')
+CHARACTER_REFERENCE_RE = re.compile(r'&(?:#[xX][0-9A-Fa-f]+|#\d+|[A-Za-z][A-Za-z0-9]{1,31});')
 
 
 def normalize_label_text(value: str) -> str:

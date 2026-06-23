@@ -83,6 +83,12 @@ HTML_BLOCK_TAG_RE = re.compile(rf'(?i)^</?(?:{BLOCK_TAGS_PATTERN})(?:\s|/?>|$)')
 HTML_SCRIPT_STYLE_RE = re.compile(r'(?i)^<(script|pre|style|textarea)(?:\s|>|$)')
 HTML_OPEN_TAG_RE = re.compile(r'(?i)^<([A-Za-z][A-Za-z0-9-]*)')
 HTML_DECLARATION_RE = re.compile(r'^<![A-Z]')
+HTML_BLOCK_SCRIPT_STYLE_PATTERN = r'(?i:script(?:\s|>|$)|pre(?:\s|>|$)|style(?:\s|>|$))'
+HTML_BLOCK_TAG_PATTERN = rf'(?i:/?(?:{BLOCK_TAGS_PATTERN})(?:\s|/?>|$))'
+HTML_BLOCK_COMPLETE_OPEN_TAG_PATTERN = (
+    r'(?i:[a-z][a-z0-9-]*(?:\s+[a-z_:][a-z0-9_.:-]*(?:\s*=\s*(?:[^\s"\'=<>`]+|\'[^\']*\'|"[^"]*"))?)*\s*/?>[ \t]*$)'
+)
+HTML_BLOCK_COMPLETE_CLOSE_TAG_PATTERN = r'(?i:/[a-z][a-z0-9-]*\s*>[ \t]*$)'
 COMPLETE_HTML_TAG_RE = re.compile(
     r'(?i)</?[A-Za-z][A-Za-z0-9-]*(?:\s+[A-Za-z_:][A-Za-z0-9_.:-]*(?:\s*=\s*(?:[^\s"\'=<>`]+|\'[^\']*\'|"[^"]*"))?)*\s*/?>[ \t]*'
 )
@@ -119,7 +125,15 @@ class HtmlBlock(BlockRule):
     """
 
     name = 'html_block'
-    pattern = rf'(?i:[ \t]{{0,3}}<(?:script(?:\s|>|$)|pre(?:\s|>|$)|style(?:\s|>|$)|!--|\?|![A-Z]|\!\[CDATA\[|/?(?:{BLOCK_TAGS_PATTERN})(?:\s|/?>|$)|[A-Za-z][A-Za-z0-9-]*(?:\s+[A-Za-z_:][A-Za-z0-9_.:-]*(?:\s*=\s*(?:[^\s"\'=<>`]+|\'[^\']*\'|"[^"]*"))?)*\s*/?>[ \t]*$|/[A-Za-z][A-Za-z0-9-]*\s*>[ \t]*$))'
+    pattern = (
+        rf'[ \t]{{0,3}}<(?:'
+        rf'{HTML_BLOCK_SCRIPT_STYLE_PATTERN}'
+        rf'|!--|\?|![A-Za-z]|\!\[CDATA\['
+        rf'|{HTML_BLOCK_TAG_PATTERN}'
+        rf'|{HTML_BLOCK_COMPLETE_OPEN_TAG_PATTERN}'
+        rf'|{HTML_BLOCK_COMPLETE_CLOSE_TAG_PATTERN}'
+        rf')'
+    )
 
     def __init__(self, disallowed_tags: Sequence[str] = ()) -> None:
         super().__init__()
