@@ -25,7 +25,7 @@ from wenmode.rules.base import BlockRule
 from wenmode.state import BlockState
 
 TARGET_RE = re.compile(r'[ \t]{0,3}\((?P<label>[^)\r\n]+)\)=[ \t]*(?:\r?\n)?$')
-COLON_FENCE_RE = re.compile(r'(?P<indent>[ \t]{0,3})(?P<fence>:{3,})\{(?P<name>[A-Za-z][A-Za-z0-9_-]*)}(?P<title>.*)$')
+COLON_FENCE_RE = re.compile(r'(?P<indent>[ \t]{0,3})(?P<fence>:{3,})\{(?P<name>[A-Za-z][A-Za-z0-9_-]*)}')
 LITERAL_BODY_DIRECTIVES = frozenset({'code-block', 'sourcecode'})
 
 

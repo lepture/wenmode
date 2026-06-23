@@ -608,11 +608,32 @@ wheels = [
 
 [[package]]
 name = "wenmode"
-version = "0.3.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/13/3c/c426d3c689ef039f4ca98b7ab98e8f9c079e51e05d6585114feb7f6bdd1e/wenmode-0.3.1.tar.gz", hash = "sha256:8defb195dfd3ab1ba1594612148d6f5a0f582deb8b40feeca3f0d17bf9758961", size = 184361 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/84/43/df05e96d1dabe5411099a27a339170e2fe7863bb589df3c46d5d356cf676/wenmode-0.3.1-py3-none-any.whl", hash = "sha256:4784060b8e952bc535a6d32d4c25ecd6fea7c00620666a5ab0c3532bd7c002e0", size = 97330 },
+source = { editable = "../../" }
+
+[package.metadata]
+
+[package.metadata.requires-dev]
+benchmark = [
+    { name = "commonmark", specifier = ">=0.9.1" },
+    { name = "markdown", specifier = ">=3.10" },
+    { name = "markdown-it-py", specifier = ">=4.0.0" },
+    { name = "markdown2", specifier = ">=2.5.0" },
+    { name = "marko", specifier = ">=2.2.0" },
+    { name = "mistune", specifier = ">=3.1.4" },
+]
+docs = [
+    { name = "shibuya", marker = "python_full_version >= '3.11'" },
+    { name = "sphinx", marker = "python_full_version >= '3.11'" },
+    { name = "sphinx-design", marker = "python_full_version >= '3.11'" },
+    { name = "sphinx-iconify", marker = "python_full_version >= '3.11'" },
+]
+lint = [
+    { name = "mypy", specifier = ">=2.1.0" },
+    { name = "ruff", specifier = ">=0.15.17" },
+]
+test = [
+    { name = "pytest", specifier = ">=8.4.0" },
+    { name = "pytest-cov", specifier = ">=7.1.0" },
 ]
 
 [[package]]
@@ -637,7 +658,7 @@ test = [
 requires-dist = [
     { name = "docutils" },
     { name = "sphinx" },
-    { name = "wenmode" },
+    { name = "wenmode", editable = "../../" },
 ]
 
 [package.metadata.requires-dev]
