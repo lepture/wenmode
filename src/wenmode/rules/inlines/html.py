@@ -50,14 +50,14 @@ class Autolink(InlineRule):
         uri = match.groupdict().get('uri')
         if uri is not None:
             text_node = Text(value=uri)
-            source = parser.inline_source(text, match.start('uri'), match.end('uri'))
+            source = parser.inline_source(text, state, match.start('uri'), match.end('uri'))
             if source is not None:
                 text_node.position = source.position(0, len(uri))
             return Link(url=normalize_uri(uri), children=[text_node]), match.end()
 
         email = match.group('email')
         text_node = Text(value=email)
-        source = parser.inline_source(text, match.start('email'), match.end('email'))
+        source = parser.inline_source(text, state, match.start('email'), match.end('email'))
         if source is not None:
             text_node.position = source.position(0, len(email))
         return Link(url='mailto:' + normalize_uri(email), children=[text_node]), match.end()

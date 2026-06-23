@@ -349,6 +349,7 @@ class BlockState:
     :param pending_inline_callbacks: Callbacks to run after deferred inline
         parsing is resolved.
     :param defer_inlines: Whether inline parsing is currently deferred.
+    :param inline_sources: Active inline source stack for nested inline parsing.
     """
 
     lines: list[str]
@@ -359,6 +360,7 @@ class BlockState:
     pending_inlines: list[tuple[list[Node], str, SourceMap | None]] = field(default_factory=list)
     pending_inline_callbacks: list[Callable[[], None]] = field(default_factory=list)
     defer_inlines: bool = False
+    inline_sources: list[SourceMap] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         self.source.bind(self)
@@ -410,6 +412,7 @@ class StreamBlockState(BlockState):
         pending_inlines: list[tuple[list[Node], str, SourceMap | None]] | None = None,
         pending_inline_callbacks: list[Callable[[], None]] | None = None,
         defer_inlines: bool = False,
+        inline_sources: list[SourceMap] | None = None,
     ) -> None:
         self.line_buffer = line_buffer
         if source is None:
@@ -420,6 +423,8 @@ class StreamBlockState(BlockState):
             pending_inlines = []
         if pending_inline_callbacks is None:
             pending_inline_callbacks = []
+        if inline_sources is None:
+            inline_sources = []
         super().__init__(
             line_buffer.lines,
             index=index,
@@ -429,6 +434,7 @@ class StreamBlockState(BlockState):
             pending_inlines=pending_inlines,
             pending_inline_callbacks=pending_inline_callbacks,
             defer_inlines=defer_inlines,
+            inline_sources=inline_sources,
         )
 
     @property

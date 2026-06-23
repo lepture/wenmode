@@ -41,7 +41,7 @@ def test_wenmode_myst_bridge_keeps_code_block_body_literal() -> None:
     rst = markdown_to_rst(
         """```{code-block} python
 value = node.value[start:end]
-children = parser.parse_inlines(text[value_start:value_end])
+children = parser.parse_inlines(text[value_start:value_end], state)
 ```
 """
     )

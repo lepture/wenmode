@@ -47,7 +47,7 @@ class RubyRule(InlineRule):
 
     def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
         ruby = RubyNode(segments=parse_ruby_segments(match.group(0)))
-        source = parser.inline_source(text, match.start(), match.end())
+        source = parser.inline_source(text, state, match.start(), match.end())
         if source is not None:
             ruby.position = source.position(0, match.end() - match.start())
         end = match.end()

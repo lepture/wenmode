@@ -30,7 +30,7 @@ class RoleRule(InlineRule):
         return (
             TextDirectiveNode(
                 name=name,
-                children=parser.parse_inlines(label, state, source=parser.inline_source(text, label_start, label_end)),
+                children=parser.parse_inlines(label, state, source=parser.inline_source(text, state, label_start, label_end)),
             ),
             end,
         )

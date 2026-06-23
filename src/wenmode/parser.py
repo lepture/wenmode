@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import re
-import string
-from collections.abc import Callable, Iterable, Iterator
-from typing import TypeVar, cast
+from collections.abc import Iterable, Iterator
+from typing import cast
 
-from .nodes import Node, Paragraph, Root, Text
-from .rules.base import BlockRule, ContinueRule, InlineRule, Rule
-from .rules.blocks.html import is_html_block_tag
-from .rules.inlines.emphasis import parse_emphasis_sequence
+from ._parser import interrupts
+from ._parser.inlines import InlineParser
+from ._parser.ruleset import RuleSet, resolve_rule
+from .nodes import Node, Paragraph, Root
+from .rules.base import BlockRule, InlineRule, Rule
 from .rules.transforms import RootTransform
 from .state import (
     BlockState,
@@ -20,15 +20,6 @@ from .state import (
     StreamBlockState,
     StreamLineBuffer,
 )
-
-LIST_MARKER_RE = re.compile(
-    r'^[ \t]{0,3}(?:(?P<bullet>[*+-])|(?P<ordered>\d{1,9})[.)])(?P<spaces>[ \t]+|$)(?P<rest>.*)$'
-)
-HTML_TAG_START_RE = re.compile(r'</?[A-Za-z]')
-HTML_PARAGRAPH_INTERRUPT_RE = re.compile(r'(?i)<(?:script|pre|style|textarea)(?:\s|>|$)')
-PUNCTUATION = set(string.punctuation)
-T = TypeVar('T', bound=Rule)
-InlineSearchCache = dict[str, object]
 
 
 class StreamingUnsupportedError(ValueError):
@@ -51,8 +42,25 @@ class Parser:
     def __init__(self, rules: Iterable[type[Rule] | Rule], positions: bool = False) -> None:
         self.positions = positions
         self._registered_rules: list[Rule] = []
-        self._inline_sources: list[SourceMap] = []
+        self._ruleset = RuleSet.from_rules([])
+        self._inline_parser = InlineParser(self, self._ruleset)
         self.register_rules(rules)
+
+    @property
+    def rules(self) -> dict[str, Rule]:
+        return self._ruleset.rules
+
+    @property
+    def block_rules(self) -> list[BlockRule]:
+        return self._ruleset.block_rules
+
+    @property
+    def inline_rules(self) -> list[InlineRule]:
+        return self._ruleset.inline_rules
+
+    @property
+    def root_transforms(self) -> list[RootTransform]:
+        return self._ruleset.root_transforms
 
     def register_rule(self, rule: type[Rule] | Rule) -> None:
         """Register or replace one rule by name.
@@ -79,26 +87,8 @@ class Parser:
         self._registered_rules.append(rule)
 
     def _rebuild_rules(self) -> None:
-        resolved_rules = list(self._registered_rules)
-        root_transforms = collect_root_transforms(resolved_rules)
-        for transform in root_transforms:
-            for required in transform.required_rules:
-                rule = resolve_rule(required)
-                if all(registered.name != rule.name for registered in resolved_rules):
-                    resolved_rules.append(rule)
-
-        self.rules = {rule.name: rule for rule in resolved_rules}
-        self.block_rules = sorted_by_order([rule for rule in resolved_rules if isinstance(rule, BlockRule)])
-        self.inline_rules = sorted_by_order([rule for rule in resolved_rules if isinstance(rule, InlineRule)])
-        self.root_transforms = root_transforms
-        self._paragraph_continuations = [rule for rule in resolved_rules if isinstance(rule, ContinueRule)]
-        self._emphasis_enabled = 'emphasis' in self.rules
-        self._defer_inlines = any(transform.defer_inlines for transform in root_transforms)
-        self._block_rule_order = {rule.name: index for index, rule in enumerate(self.block_rules)}
-        self._inline_rule_order = {rule.name: index for index, rule in enumerate(self.inline_rules)}
-        self._triggered_inline_rules, self._search_inline_rules = prepare_inline_dispatch(self.inline_rules)
-        self._inline_trigger_re = compile_inline_trigger_re(self._triggered_inline_rules)
-        self._block_openers = compile_block_openers(self.block_rules)
+        self._ruleset = RuleSet.from_rules(self._registered_rules)
+        self._inline_parser.update_rule_set(self._ruleset)
 
     def parse(self, source: LineSource) -> Root:
         """Parse Markdown into a root node.
@@ -106,7 +96,7 @@ class Parser:
         :param source: Markdown source as a string or an iterable of lines.
         :returns: Parsed document root.
         """
-        state = self._create_block_state(source, defer_inlines=self._defer_inlines)
+        state = self._create_block_state(source, defer_inlines=self._ruleset.defer_inlines)
         root = Root(children=self._parse_block_nodes(state))
         if self.positions:
             root._line_starts = create_line_starts(state.lines)
@@ -165,6 +155,7 @@ class Parser:
             pending_inlines=parent_state.pending_inlines,
             pending_inline_callbacks=parent_state.pending_inline_callbacks,
             defer_inlines=parent_state.defer_inlines,
+            inline_sources=parent_state.inline_sources,
         )
         return self._parse_block_nodes(state)
 
@@ -217,8 +208,8 @@ class Parser:
                     parsed.position = state.source.position_between(start_index, state.index)
                 return parsed
 
-            if self._block_openers:
-                match = self._block_openers.match(line)
+            if self._ruleset.block_openers:
+                match = self._ruleset.block_openers.match(line)
             else:
                 match = None
             if match is not None and not self._container_depth_exceeded(cast(str, match.lastgroup), state):
@@ -239,8 +230,8 @@ class Parser:
     def _parse_matching_block_rule(self, state: BlockState, match: re.Match[str]) -> tuple[Node | None, bool]:
         line = state.line
         first_rule_name = cast(str, match.lastgroup)
-        start = self._block_rule_order[first_rule_name]
-        for rule in self.block_rules[start:]:
+        start = self._ruleset.block_rule_order[first_rule_name]
+        for rule in self._ruleset.block_rules[start:]:
             rule_match = re.match(rule.pattern, line)
             if rule_match is None or self._container_depth_exceeded(rule.name, state):
                 continue
@@ -253,167 +244,26 @@ class Parser:
         return None, False
 
     def _assert_streaming_supported(self) -> None:
-        if not self._defer_inlines:
+        if not self._ruleset.defer_inlines:
             return
         raise StreamingUnsupportedError(
             'streaming output requires rules without deferred inline transforms; use the streaming preset'
         )
 
-    def parse_inlines(self, text: str, state: BlockState | None = None, source: SourceMap | None = None) -> list[Node]:
+    def parse_inlines(self, text: str, state: BlockState, source: SourceMap | None = None) -> list[Node]:
         """Parse inline Markdown into child nodes.
 
         Custom inline, block, and continuation rules can call this method when
         they need nested inline parsing.
 
         :param text: Inline Markdown source.
-        :param state: Current block state, if parsing happens inside a document
-            parse.
+        :param state: Current block state used for extension state, deferred
+            inline queues, and active inline source maps.
         :param source: Optional source map for ``text`` when positions are
             enabled.
         :returns: Parsed inline nodes.
         """
-        if state is not None and state.defer_inlines:
-            return self._defer_inline_parse(text, state, source)
-
-        if state is None:
-            state = BlockState([])
-
-        if not self.positions:
-            return self._parse_inline_nodes(text, state)
-        return self._parse_inline_nodes_with_positions(text, state, source)
-
-    def _defer_inline_parse(self, text: str, state: BlockState, source: SourceMap | None) -> list[Node]:
-        pending_nodes: list[Node] = []
-        if self.positions:
-            pending_source = source
-        else:
-            pending_source = None
-        state.pending_inlines.append((pending_nodes, text, pending_source))
-        return pending_nodes
-
-    def _parse_inline_nodes(self, text: str, state: BlockState) -> list[Node]:
-        nodes: list[Node] = []
-        search_cache: InlineSearchCache = {}
-        pos = 0
-
-        while pos < len(text):
-            found = self._find_inline_match(text, pos, search_cache)
-
-            if found is None:
-                nodes.append(Text(value=text[pos:]))
-                break
-
-            start, rule, match = found
-            if start > pos:
-                nodes.append(Text(value=text[pos:start]))
-
-            node, end = rule.parse(self, text, match, state)
-            if node is None or end <= start:
-                nodes.append(Text(value=text[start : start + 1]))
-                pos = start + 1
-            else:
-                nodes.append(node)
-                pos = end
-
-        return self._finalize_inline_nodes(nodes)
-
-    def _parse_inline_nodes_with_positions(self, text: str, state: BlockState, source: SourceMap | None) -> list[Node]:
-        nodes: list[Node] = []
-        search_cache: InlineSearchCache = {}
-        pos = 0
-
-        if source is not None:
-            self._inline_sources.append(source)
-        try:
-            while pos < len(text):
-                found = self._find_inline_match(text, pos, search_cache)
-
-                if found is None:
-                    nodes.append(self._text_node(text, pos, len(text), source))
-                    break
-
-                start, rule, match = found
-                if start > pos:
-                    nodes.append(self._text_node(text, pos, start, source))
-
-                node, end = rule.parse(self, text, match, state)
-                if node is None or end <= start:
-                    nodes.append(self._text_node(text, start, start + 1, source))
-                    pos = start + 1
-                else:
-                    if source is not None and node.position is None:
-                        node.position = source.position(start, end)
-                    nodes.append(node)
-                    pos = end
-            return self._finalize_inline_nodes(nodes)
-        finally:
-            if source is not None:
-                self._inline_sources.pop()
-
-    def _finalize_inline_nodes(self, nodes: list[Node]) -> list[Node]:
-        nodes = merge_text(nodes)
-        if self._emphasis_enabled and contains_emphasis_marker(nodes):
-            nodes = parse_emphasis_sequence(nodes)
-        else:
-            return nodes
-        return merge_text(nodes)
-
-    def _find_inline_match(
-        self, text: str, pos: int, search_cache: InlineSearchCache
-    ) -> tuple[int, InlineRule, re.Match[str]] | None:
-        found = self._search_inline_match(text, pos, search_cache)
-        if found is not None:
-            limit = found[0]
-        else:
-            limit = len(text)
-        if self._inline_trigger_re is None:
-            return found
-
-        trigger_match = self._inline_trigger_re.search(text, pos)
-        while trigger_match is not None and trigger_match.start() <= limit:
-            start = trigger_match.start()
-            for rule in self._triggered_inline_rules[text[start]]:
-                match = rule.compiled.match(text, start)
-                if match is None:
-                    continue
-                candidate = (start, rule, match)
-                if found is None or self._inline_candidate_before(candidate, found):
-                    return candidate
-            trigger_match = self._inline_trigger_re.search(text, start + 1)
-        return found
-
-    def _search_inline_match(
-        self, text: str, pos: int, search_cache: InlineSearchCache
-    ) -> tuple[int, InlineRule, re.Match[str]] | None:
-        cached_text = search_cache.get('text')
-        cached_pos = search_cache.get('pos')
-        cached_found = search_cache.get('found')
-        if cached_text is text and isinstance(cached_pos, int) and cached_pos <= pos:
-            if cached_found is None:
-                return None
-            cached_match = cast(tuple[int, InlineRule, re.Match[str]], cached_found)
-            if pos <= cached_match[0]:
-                return cached_match
-
-        found: tuple[int, InlineRule, re.Match[str]] | None = None
-        for rule in self._search_inline_rules:
-            match = rule.search(text, pos)
-            if match is None:
-                continue
-            candidate = (match.start(), rule, match)
-            if found is None or self._inline_candidate_before(candidate, found):
-                found = candidate
-        search_cache['text'] = text
-        search_cache['pos'] = pos
-        search_cache['found'] = found
-        return found
-
-    def _inline_candidate_before(
-        self, candidate: tuple[int, InlineRule, re.Match[str]], current: tuple[int, InlineRule, re.Match[str]]
-    ) -> bool:
-        if candidate[0] != current[0]:
-            return candidate[0] < current[0]
-        return self._inline_rule_order[candidate[1].name] < self._inline_rule_order[current[1].name]
+        return self._inline_parser.parse(text, state, source)
 
     def _parse_paragraph(self, state: BlockState) -> Node:
         if self.positions:
@@ -453,7 +303,7 @@ class Parser:
             if line.strip() == '':
                 break
             if lines:
-                for continuation in self._paragraph_continuations:
+                for continuation in self._ruleset.paragraph_continuations:
                     if not continuation.matches(line):
                         continue
                     parsed = continuation.parse_paragraph_continuation(self, state, lines)
@@ -472,15 +322,7 @@ class Parser:
         return lines, None
 
     def _resolve_pending_inlines(self, state: BlockState) -> None:
-        state.defer_inlines = False
-        pending = list(state.pending_inlines)
-        state.pending_inlines.clear()
-        for nodes, text, source in pending:
-            nodes[:] = self.parse_inlines(text, state, source=source)
-        callbacks = list(state.pending_inline_callbacks)
-        state.pending_inline_callbacks.clear()
-        for callback in callbacks:
-            callback()
+        self._inline_parser.resolve_pending(state)
 
     def is_paragraph_interrupt(self, line: str, state: BlockState | None = None) -> bool:
         """Return whether a line would interrupt a paragraph.
@@ -492,103 +334,17 @@ class Parser:
         :param state: Current block state, if available.
         :returns: ``True`` if the line starts an interrupting block.
         """
-        if self._block_openers is None:
-            return False
-        match = self._block_openers.match(line)
-        if match is None:
-            return False
-        if self._container_depth_exceeded(cast(str, match.lastgroup), state):
-            return False
-        if match.lastgroup in {'reference_definition', 'table'}:
-            return False
-        if match.lastgroup == 'list':
-            marker = LIST_MARKER_RE.match(line.rstrip('\r\n'))
-            if marker is not None and marker.group('rest').strip() == '':
-                return False
-            if marker is not None and marker.group('ordered') is not None and marker.group('ordered') != '1':
-                return False
-        if match.lastgroup == 'html_block':
-            stripped = line.lstrip(' \t')
-            if is_html_block_tag(stripped):
-                return True
-            if HTML_TAG_START_RE.match(stripped) and not HTML_PARAGRAPH_INTERRUPT_RE.match(stripped):
-                return False
-        return match.lastgroup != 'indented_code'
+        return interrupts.is_paragraph_interrupt(self._ruleset, self.max_container_depth, line, state)
 
     def _container_depth_exceeded(self, name: str, state: BlockState | None) -> bool:
-        if name not in {'blockquote', 'list'} or state is None:
-            return False
-        return state.depth >= self.max_container_depth
+        return interrupts.container_depth_exceeded(name, state, self.max_container_depth)
 
     def _is_plain_paragraph_start(self, line: str) -> bool:
-        if 'table' in self.rules and '|' in line:
-            return False
-        char = line[0]
-        return not char.isspace() and not char.isdigit() and char not in PUNCTUATION
+        return interrupts.is_plain_paragraph_start(self._ruleset, line)
 
-    def inline_source(self, text: str, start: int, end: int) -> SourceMap | None:
-        """Return a source map for a slice of the active inline source."""
-        if not self.positions:
-            return None
-        for source in reversed(self._inline_sources):
-            if source.text == text:
-                return source.slice(start, end)
-        return None
-
-    def _text_node(self, text: str, start: int, end: int, source: SourceMap | None) -> Text:
-        node = Text(value=text[start:end])
-        if source is not None:
-            node.position = source.position(start, end)
-        return node
-
-
-def merge_text(nodes: list[Node]) -> list[Node]:
-    merged: list[Node] = []
-    text_node: Text | None = None
-    text_parts: list[str] = []
-
-    def flush_text() -> None:
-        nonlocal text_node, text_parts
-        if text_node is None:
-            return
-        text_node.value = ''.join(text_parts)
-        merged.append(text_node)
-        text_node = None
-        text_parts = []
-
-    for node in nodes:
-        if isinstance(node, Text):
-            if text_node is not None and node._parse_emphasis == text_node._parse_emphasis:
-                if text_node.position is not None and node.position is not None:
-                    text_node.position = type(text_node.position)(start=text_node.position.start, end=node.position.end)
-                text_parts.append(node.value)
-                continue
-            flush_text()
-            text_node = node
-            text_parts = [node.value]
-            continue
-
-        flush_text()
-        merged.append(node)
-    flush_text()
-    return merged
-
-
-def contains_emphasis_marker(nodes: list[Node]) -> bool:
-    for node in nodes:
-        if isinstance(node, Text) and node._parse_emphasis and ('*' in node.value or '_' in node.value):
-            return True
-    return False
-
-
-def resolve_rule(rule: type[Rule] | Rule) -> Rule:
-    if isinstance(rule, type):
-        return cast(Callable[[], Rule], rule)()
-    return rule
-
-
-def sorted_by_order(rules: list[T]) -> list[T]:
-    return [rule for _, rule in sorted(enumerate(rules), key=lambda item: (item[1].order, item[0]))]
+    def inline_source(self, text: str, state: BlockState, start: int, end: int) -> SourceMap | None:
+        """Return a source map for a slice of the state's active inline source."""
+        return self._inline_parser.source_for(text, state, start, end)
 
 
 def create_line_starts(lines: list[str]) -> list[int]:
@@ -600,42 +356,3 @@ def create_line_starts(lines: list[str]) -> list[int]:
         if length > 0 and line[length - 1] == '\n':
             starts.append(offset)
     return starts
-
-
-def collect_root_transforms(rules: list[Rule]) -> list[RootTransform]:
-    transforms: list[RootTransform] = []
-    seen: set[str] = set()
-    for rule in rules:
-        for transform in rule.root_transforms:
-            if transform.name in seen:
-                continue
-            seen.add(transform.name)
-            transforms.append(transform)
-    return transforms
-
-
-def compile_block_openers(rules: list[BlockRule]) -> re.Pattern[str] | None:
-    patterns = [f'(?P<{rule.name}>{rule.pattern})' for rule in rules]
-    if patterns:
-        return re.compile('|'.join(patterns))
-    return None
-
-
-def prepare_inline_dispatch(rules: list[InlineRule]) -> tuple[dict[str, list[InlineRule]], list[InlineRule]]:
-    triggered: dict[str, list[InlineRule]] = {}
-    search: list[InlineRule] = []
-    for rule in rules:
-        if rule.name == 'emphasis':
-            continue
-        if not rule.trigger_chars:
-            search.append(rule)
-            continue
-        for char in rule.trigger_chars:
-            triggered.setdefault(char, []).append(rule)
-    return triggered, search
-
-
-def compile_inline_trigger_re(rules: dict[str, list[InlineRule]]) -> re.Pattern[str] | None:
-    if not rules:
-        return None
-    return re.compile(f'[{re.escape("".join(rules))}]')

@@ -45,7 +45,7 @@ class MarkRule(InlineRule):
         value_start = match.end()
         value = text[value_start:close]
         return MarkNode(
-            children=parser.parse_inlines(value, state, source=parser.inline_source(text, value_start, close))
+            children=parser.parse_inlines(value, state, source=parser.inline_source(text, state, value_start, close))
         ), close + 2
 
 

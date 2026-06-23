@@ -52,7 +52,7 @@ class Image(InlineRule):
             return None, match.start()
 
         label, url, title, end, label_start, label_end = parsed
-        label_source = parser.inline_source(text, label_start, label_end)
+        label_source = parser.inline_source(text, state, label_start, label_end)
         return ImageNode(
             url=url, alt=plain_text(parser.parse_inlines(label, state, source=label_source)), title=title
         ), end
@@ -90,7 +90,7 @@ class Link(InlineRule):
             return None, match.start()
 
         label, url, title, end, label_start, label_end = parsed
-        label_source = parser.inline_source(text, label_start, label_end)
+        label_source = parser.inline_source(text, state, label_start, label_end)
         return LinkNode(url=url, title=title, children=parser.parse_inlines(label, state, source=label_source)), end
 
 

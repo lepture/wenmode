@@ -85,7 +85,7 @@ class InlineSpoilerRule(InlineRule):
                 children=parser.parse_inlines(
                     spoiler_text,
                     state,
-                    source=parser.inline_source(text, content_start, content_end),
+                    source=parser.inline_source(text, state, content_start, content_end),
                 )
             ),
             end,

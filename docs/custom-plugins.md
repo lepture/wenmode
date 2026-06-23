@@ -117,7 +117,7 @@ class PlusMarkRule(InlineRule):
         children = parser.parse_inlines(
             text[value_start:end],
             state,
-            source=parser.inline_source(text, value_start, end),
+            source=parser.inline_source(text, state, value_start, end),
         )
         return PlusMarkNode(children=children), end + 2
 
@@ -253,7 +253,7 @@ value_end = text.find('++', value_start)
 children = parser.parse_inlines(
     text[value_start:value_end],
     state,
-    source=parser.inline_source(text, value_start, value_end),
+    source=parser.inline_source(text, state, value_start, value_end),
 )
 ```
 

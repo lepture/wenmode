@@ -40,7 +40,7 @@ class TextDirective(InlineRule):
 
         name, label, attributes, end, label_start, label_end = parsed
         if label is not None and label_start is not None and label_end is not None:
-            children = parser.parse_inlines(label, state, source=parser.inline_source(text, label_start, label_end))
+            children = parser.parse_inlines(label, state, source=parser.inline_source(text, state, label_start, label_end))
         else:
             children = []
         return TextDirectiveNode(name=name, attributes=attributes, children=children), end

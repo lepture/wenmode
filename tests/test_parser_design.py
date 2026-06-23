@@ -26,7 +26,7 @@ from wenmode.rules import (
     Table,
     ThematicBreak,
 )
-from wenmode.state import BlockState, StateKey
+from wenmode.state import BlockState, SourceMap, StateKey
 
 TERMS = StateKey('tests.terms', lambda: {})
 TERM_RE = re.compile(r'^[ \t]{0,3}@term\[(?P<label>[^\]]+)]:[ \t]*(?P<title>.*)$')
@@ -66,6 +66,10 @@ def render(parser: Parser, markdown: str) -> str:
 
 def lines(markdown: str):
     yield from markdown.splitlines(keepends=True)
+
+
+def parse_inlines(parser: Parser, markdown: str) -> list[Node]:
+    return parser.parse_inlines(markdown, BlockState([]))
 
 
 def test_rule_base_state_is_instance_local() -> None:
@@ -316,15 +320,15 @@ def test_link_and_image_can_disable_references() -> None:
     assert 'reference_definition' not in app.parser.rules
 
 
-def test_parse_inlines_without_document_state_handles_link_brackets() -> None:
-    assert [node.to_ast() for node in Parser([Link]).parse_inlines('[a \\] b](/url)')] == [
+def test_parse_inlines_with_explicit_state_handles_link_brackets() -> None:
+    assert [node.to_ast() for node in parse_inlines(Parser([Link]), '[a \\] b](/url)')] == [
         {
             'type': 'link',
             'children': [{'type': 'text', 'value': 'a \\] b'}],
             'url': '/url',
         }
     ]
-    assert [node.to_ast() for node in Parser([Link, InlineCode]).parse_inlines('[a `[b]` c](/url)')] == [
+    assert [node.to_ast() for node in parse_inlines(Parser([Link, InlineCode]), '[a `[b]` c](/url)')] == [
         {
             'type': 'link',
             'children': [
@@ -335,27 +339,61 @@ def test_parse_inlines_without_document_state_handles_link_brackets() -> None:
             'url': '/url',
         }
     ]
-    assert [node.to_ast() for node in Parser([Link]).parse_inlines('[a <https://e.test/[x]> c](/url)')] == [
+    assert [node.to_ast() for node in parse_inlines(Parser([Link]), '[a <https://e.test/[x]> c](/url)')] == [
         {
             'type': 'link',
             'children': [{'type': 'text', 'value': 'a <https://e.test/[x]> c'}],
             'url': '/url',
         }
     ]
-    assert [node.to_ast() for node in Parser([Link]).parse_inlines('[a [b]](/url)')] == [
+    assert [node.to_ast() for node in parse_inlines(Parser([Link]), '[a [b]](/url)')] == [
         {
             'type': 'link',
             'children': [{'type': 'text', 'value': 'a [b]'}],
             'url': '/url',
         }
     ]
-    assert [node.to_ast() for node in Parser([Link]).parse_inlines('[a [b](/url')] == [
+    assert [node.to_ast() for node in parse_inlines(Parser([Link]), '[a [b](/url')] == [
         {'type': 'text', 'value': '[a [b](/url'}
     ]
 
 
-def test_parse_inlines_without_document_state_leaves_footnote_reference_text() -> None:
-    assert [node.to_ast() for node in Parser([Footnote]).parse_inlines('[^x]')] == [{'type': 'text', 'value': '[^x]'}]
+def test_parse_inlines_with_fresh_state_leaves_footnote_reference_text() -> None:
+    assert [node.to_ast() for node in parse_inlines(Parser([Footnote]), '[^x]')] == [{'type': 'text', 'value': '[^x]'}]
+
+
+def test_inline_sources_are_state_local() -> None:
+    other_state = BlockState([])
+    observations: list[tuple[int, int, bool]] = []
+
+    class ProbeSource(InlineRule):
+        name = 'probe_source'
+        pattern = r'!'
+        trigger_chars = '!'
+
+        def parse(
+            self, parser: Parser, text: str, match: re.Match[str], state: BlockState
+        ) -> tuple[Node | None, int]:
+            current_source = parser.inline_source(text, state, match.start(), match.end())
+            other_source = parser.inline_source(text, other_state, match.start(), match.end())
+            assert current_source is not None
+            observations.append(
+                (
+                    current_source.source_offset(0),
+                    current_source.source_offset(1),
+                    other_source is None,
+                )
+            )
+            return Text(value='!'), match.end()
+
+    parser = Parser([ProbeSource], positions=True)
+    state = BlockState([])
+
+    parser.parse_inlines('!', state, source=SourceMap.contiguous('!', 42))
+
+    assert observations == [(42, 43, True)]
+    assert state.inline_sources == []
+    assert other_state.inline_sources == []
 
 
 def test_streaming_preset_disables_references() -> None:

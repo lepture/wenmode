@@ -42,7 +42,7 @@ class Strikethrough(InlineRule):
         if value == '':
             return None, start
         return Delete(
-            children=parser.parse_inlines(value, state, source=parser.inline_source(text, value_start, close))
+            children=parser.parse_inlines(value, state, source=parser.inline_source(text, state, value_start, close))
         ), close + len(marker)
 
 
