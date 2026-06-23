@@ -20,7 +20,6 @@ from wenmode.plugins.fenced_directive import (
 from wenmode.plugins.types import RendererHandlers
 from wenmode.presets import github
 from wenmode.renderers.rst import indent_block, render_directive_options
-from wenmode.rules import ContainerDirective, LeafDirective, TextDirective
 from wenmode.rules.base import BlockRule
 from wenmode.state import BlockState
 
@@ -144,9 +143,6 @@ def create_wenmode() -> Wenmode:
             TargetRule,
             RSTFencedDirectiveRule,
             ColonFenceDirectiveRule,
-            TextDirective,
-            LeafDirective,
-            ContainerDirective,
             *github,
         ],
         renderer=RSTRenderer(),

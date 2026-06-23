@@ -73,6 +73,16 @@ Body with {doc}`Usage <usage>`.
     assert rst == '.. note:: Important\n\n   Body with :doc:`Usage <usage>`.\n'
 
 
+def test_wenmode_myst_bridge_keeps_role_content_literal() -> None:
+    rst = markdown_to_rst(
+        """:::{tab-item} {iconify}`devicon:pypi` pip
+:::
+"""
+    )
+
+    assert rst == '.. tab-item:: :iconify:`devicon:pypi` pip\n'
+
+
 def test_wenmode_myst_bridge_handles_inline_code_in_rst() -> None:
     rst = markdown_to_rst(
         'A [`mdast-util-directive`](https://example.com).\n\nUse `` ```{name}`` or `` {name}`content` ``.\n'
