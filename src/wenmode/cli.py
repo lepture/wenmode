@@ -159,10 +159,8 @@ def create_renderer(
     raise ValueError(f'unsupported output format: {output_format}')
 
 
-def configure_plugins(wenmode: Wenmode, names: Sequence[str] | None) -> Wenmode:
-    for name in names or ():
-        wenmode.use(BUILTIN_PLUGINS[name])
-    return wenmode
+def resolve_builtin_plugins(names: Sequence[str] | None) -> list[ModuleType]:
+    return [BUILTIN_PLUGINS[name] for name in names or ()]
 
 
 def run_render(args: argparse.Namespace) -> int:
@@ -172,9 +170,10 @@ def run_render(args: argparse.Namespace) -> int:
         unsafe_html=bool(args.unsafe_html),
         unsafe_urls=bool(args.unsafe_urls),
     )
-    wenmode = configure_plugins(
-        Wenmode(PRESETS[str(args.preset)], renderer=renderer),
-        cast(Sequence[str] | None, args.plugin),
+    wenmode = Wenmode(
+        PRESETS[str(args.preset)],
+        renderer=renderer,
+        plugins=resolve_builtin_plugins(cast(Sequence[str] | None, args.plugin)),
     )
     output = wenmode.render(source)
     write_output(output, args.output)
@@ -183,9 +182,10 @@ def run_render(args: argparse.Namespace) -> int:
 
 def run_ast(args: argparse.Namespace) -> int:
     source = read_source(str(args.source))
-    wenmode = configure_plugins(
-        Wenmode(PRESETS[str(args.preset)], positions=bool(args.positions)),
-        cast(Sequence[str] | None, args.plugin),
+    wenmode = Wenmode(
+        PRESETS[str(args.preset)],
+        plugins=resolve_builtin_plugins(cast(Sequence[str] | None, args.plugin)),
+        positions=bool(args.positions),
     )
     root = wenmode.parse(source)
     output = json.dumps(root.to_ast(), ensure_ascii=False, indent=int(args.indent)) + '\n'

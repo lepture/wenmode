@@ -6,7 +6,7 @@ from typing import Any, cast
 
 from .nodes import Node, Root
 from .parser import Parser
-from .plugins import Plugin, PluginSpec, RendererHandlers
+from .plugins import Plugin, PluginTarget, RendererHandlers
 from .plugins.types import _PluginSetup
 from .presets import commonmark
 from .renderers import BaseRenderer, DirectiveHtmlRenderer, HTMLRenderer
@@ -28,8 +28,8 @@ class Wenmode:
         used.
     :param directives: HTML directive renderers to register on the default or
         supplied HTML renderer.
-    :param plugins: Plugin modules, plugin objects, or ``(plugin, options)``
-        tuples to install during initialization.
+    :param plugins: Plugin modules or plugin objects to install during
+        initialization.
     :param positions: Attach source positions to parsed nodes when ``True``.
     """
 
@@ -38,7 +38,7 @@ class Wenmode:
         rules: Iterable[type[Rule] | Rule] | None = None,
         renderer: BaseRenderer | None = None,
         directives: Iterable[DirectiveHtmlRenderer] = (),
-        plugins: Iterable[PluginSpec] = (),
+        plugins: Iterable[PluginTarget] = (),
         positions: bool = False,
     ) -> None:
         parser_rules: Iterable[type[Rule] | Rule]
@@ -55,7 +55,7 @@ class Wenmode:
             for directive in directives:
                 self.register_directive_renderer(directive)
         for plugin in plugins:
-            self._use_plugin_spec(plugin)
+            self.use(plugin)
 
     def parse(self, source: LineSource) -> Root:
         """Parse Markdown into a root node.
@@ -139,10 +139,3 @@ class Wenmode:
             raise TypeError('plugins must define setup(wenmode, **options)')
         cast(_PluginSetup, setup)(self, **options)
         return self
-
-    def _use_plugin_spec(self, plugin: PluginSpec) -> None:
-        if isinstance(plugin, tuple):
-            target, options = plugin
-            self.use(target, **dict(options))
-            return
-        self.use(plugin)

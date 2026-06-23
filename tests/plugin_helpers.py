@@ -85,9 +85,9 @@ STANDARD_RULES: dict[str, RuleSpec] = {
     'thematic_break': ThematicBreak,
 }
 
-PluginSpec = tuple[Any, dict[str, object]]
+PluginConfig = tuple[Any, dict[str, object]]
 
-PLUGIN_RULES: dict[str, PluginSpec] = {
+PLUGIN_RULES: dict[str, PluginConfig] = {
     'abbreviation': (abbr, {}),
     'block_spoiler': (spoiler, {'inline': False}),
     'definition_list': (definition_list, {}),

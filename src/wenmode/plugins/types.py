@@ -15,7 +15,7 @@ RendererHandlers: TypeAlias = Mapping[str, Mapping[str, RenderHandler]]
 
 
 class Plugin(Protocol):
-    """Protocol for objects installable with :meth:`wenmode.Wenmode.use`."""
+    """Protocol for objects installable through ``Wenmode`` plugins."""
 
     def setup(self, wenmode: Wenmode, **options: Any) -> None:
         """Install parser rules, renderer handlers, or other behavior."""
@@ -23,10 +23,6 @@ class Plugin(Protocol):
 
 
 PluginTarget: TypeAlias = Plugin | ModuleType
-PluginOptions: TypeAlias = Mapping[str, Any]
-PluginSpec: TypeAlias = PluginTarget | tuple[PluginTarget, PluginOptions]
-
-
 class _PluginSetup(Protocol):
     """Callable shape of a plugin ``setup`` function."""
 
