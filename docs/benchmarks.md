@@ -74,30 +74,30 @@ time is better. `vs core` is relative to `wenmode-core`.
 
 | Case | Bytes | Library | Mean | MB/s | vs core |
 | --- | ---: | --- | ---: | ---: | ---: |
-| docs | 106,912 | wenmode-core | 14.24ms | 7.84 | 1.00x |
-| docs | 106,912 | wenmode-all | 17.20ms | 6.26 | 0.83x |
-| docs | 106,912 | mistune | 20.74ms | 5.93 | 0.69x |
-| docs | 106,912 | python-markdown | 64.04ms | 1.69 | 0.22x |
-| docs | 106,912 | markdown-it-py | 32.50ms | 3.52 | 0.44x |
-| docs | 106,912 | markdown2 | 112.57ms | 0.95 | 0.13x |
-| docs | 106,912 | marko | 109.75ms | 0.99 | 0.13x |
-| docs | 106,912 | commonmark.py | 79.13ms | 1.40 | 0.18x |
-| rust-book | 1,225,464 | wenmode-core | 157.29ms | 8.03 | 1.00x |
-| rust-book | 1,225,464 | wenmode-all | 174.84ms | 7.16 | 0.90x |
-| rust-book | 1,225,464 | mistune | 226.90ms | 5.61 | 0.69x |
-| rust-book | 1,225,464 | python-markdown | 623.67ms | 1.99 | 0.25x |
-| rust-book | 1,225,464 | markdown-it-py | 353.84ms | 3.51 | 0.44x |
-| rust-book | 1,225,464 | markdown2 | 4.149s | 0.30 | 0.04x |
-| rust-book | 1,225,464 | marko | 1.161s | 1.06 | 0.14x |
-| rust-book | 1,225,464 | commonmark.py | 9.710s | 0.13 | 0.02x |
-| progit | 502,090 | wenmode-core | 27.33ms | 18.51 | 1.00x |
-| progit | 502,090 | wenmode-all | 39.81ms | 14.88 | 0.69x |
-| progit | 502,090 | mistune | 48.33ms | 11.29 | 0.57x |
-| progit | 502,090 | python-markdown | 149.27ms | 3.47 | 0.18x |
-| progit | 502,090 | markdown-it-py | 75.82ms | 7.40 | 0.36x |
-| progit | 502,090 | markdown2 | 1.457s | 0.35 | 0.02x |
-| progit | 502,090 | marko | 355.28ms | 1.45 | 0.08x |
-| progit | 502,090 | commonmark.py | 354.44ms | 1.53 | 0.08x |
+| docs | 109,547 | wenmode-core | 15.59ms | 7.48 | 1.00x |
+| docs | 109,547 | wenmode-all | 17.75ms | 6.35 | 0.88x |
+| docs | 109,547 | mistune | 19.69ms | 5.98 | 0.79x |
+| docs | 109,547 | python-markdown | 65.10ms | 1.69 | 0.24x |
+| docs | 109,547 | markdown-it-py | 32.75ms | 3.49 | 0.48x |
+| docs | 109,547 | markdown2 | 115.76ms | 0.95 | 0.13x |
+| docs | 109,547 | marko | 111.86ms | 0.99 | 0.14x |
+| docs | 109,547 | commonmark.py | 78.77ms | 1.47 | 0.20x |
+| rust-book | 1,225,464 | wenmode-core | 161.52ms | 7.80 | 1.00x |
+| rust-book | 1,225,464 | wenmode-all | 179.90ms | 6.96 | 0.90x |
+| rust-book | 1,225,464 | mistune | 219.93ms | 5.67 | 0.73x |
+| rust-book | 1,225,464 | python-markdown | 617.35ms | 2.01 | 0.26x |
+| rust-book | 1,225,464 | markdown-it-py | 348.20ms | 3.59 | 0.46x |
+| rust-book | 1,225,464 | markdown2 | 4.070s | 0.30 | 0.04x |
+| rust-book | 1,225,464 | marko | 1.154s | 1.06 | 0.14x |
+| rust-book | 1,225,464 | commonmark.py | 9.086s | 0.14 | 0.02x |
+| progit | 502,090 | wenmode-core | 27.82ms | 18.21 | 1.00x |
+| progit | 502,090 | wenmode-all | 32.07ms | 15.72 | 0.87x |
+| progit | 502,090 | mistune | 45.91ms | 11.93 | 0.61x |
+| progit | 502,090 | python-markdown | 148.01ms | 3.47 | 0.19x |
+| progit | 502,090 | markdown-it-py | 75.63ms | 7.35 | 0.37x |
+| progit | 502,090 | markdown2 | 1.446s | 0.35 | 0.02x |
+| progit | 502,090 | marko | 354.47ms | 1.44 | 0.08x |
+| progit | 502,090 | commonmark.py | 326.07ms | 1.61 | 0.09x |
 
 Benchmark numbers are hardware- and corpus-dependent. Use the command above in
 your own environment before making performance-sensitive migration decisions.

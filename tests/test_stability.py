@@ -6,7 +6,7 @@ import pytest
 
 from wenmode import StreamingUnsupportedError, Wenmode
 from wenmode.plugins import abbr, math, spoiler
-from wenmode.presets import streaming
+from wenmode.presets import github, streaming
 from wenmode.rules import Footnote, Link
 
 
@@ -73,6 +73,15 @@ def test_streaming_rejects_plugins_with_deferred_transforms() -> None:
 def test_streaming_rejects_core_rules_with_deferred_transforms(rule) -> None:
     with pytest.raises(StreamingUnsupportedError, match='deferred inline transforms'):
         next(Wenmode([rule]).stream('text\n'))
+
+
+def test_github_nested_disallowed_html_is_escaped_once() -> None:
+    html = Wenmode(github).render('<div>\n<script>alert(1)</script>\n</div>\n')
+
+    assert '<script>' not in html
+    assert '</script>' not in html
+    assert '&lt;script>alert(1)&lt;/script>' in html
+    assert '&amp;lt;script' not in html
 
 
 def test_streaming_positions_remain_offset_only_for_plugin_nodes() -> None:

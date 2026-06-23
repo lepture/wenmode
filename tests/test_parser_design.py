@@ -6,7 +6,7 @@ from io import StringIO
 import pytest
 
 from wenmode import HTMLRenderer, Parser, StreamingUnsupportedError, Wenmode
-from wenmode.nodes import Node, Paragraph, Root, Text
+from wenmode.nodes import Node, Paragraph, Parent, Root, Text
 from wenmode.presets import commonmark, github, streaming
 from wenmode.rules import (
     AtxHeading,
@@ -58,6 +58,11 @@ class GlossaryTransform(RootTransform):
 
     def transform(self, parser: Parser, root: Root, state: BlockState) -> None:
         root.data = {'terms': dict(state.store.get(TERMS))}
+
+
+class BoxNode(Parent):
+    def __init__(self, children: list[Node]) -> None:
+        super().__init__('box', children=children)
 
 
 def render(parser: Parser, markdown: str) -> str:
@@ -136,6 +141,33 @@ def test_parser_dynamic_rule_registration_updates_rule_dependencies() -> None:
     assert render(parser, '[x]: /url\n\n[x]\n') == '<p><a href="/url">x</a></p>\n'
 
 
+def test_parser_rebuilds_inline_dispatch_when_rule_is_replaced() -> None:
+    class AtToken(InlineRule):
+        name = 'token'
+        pattern = r'@a'
+        trigger_chars = '@'
+
+        def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
+            return Text(value='at'), match.end()
+
+    class BangToken(InlineRule):
+        name = 'token'
+        pattern = r'!b'
+        trigger_chars = '!'
+
+        def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
+            return Text(value='bang'), match.end()
+
+    parser = Parser([AtToken])
+
+    assert render(parser, '@a !b\n') == '<p>at !b</p>\n'
+
+    parser.register_rule(BangToken)
+
+    assert [rule.name for rule in parser.inline_rules] == ['token']
+    assert render(parser, '@a !b\n') == '<p>@a bang</p>\n'
+
+
 def test_custom_extension_state_uses_state_store() -> None:
     app = Wenmode([Glossary, Blockquote])
 
@@ -148,6 +180,93 @@ def test_custom_extension_state_uses_state_store() -> None:
     assert not hasattr(BlockState([]), 'abbreviations')
 
     assert app.parse('text\n').data == {'terms': {}}
+
+
+def test_deferred_inline_callbacks_and_state_store_are_per_parse() -> None:
+    values = StateKey('tests.deferred_values', lambda: [])
+
+    class DeferredRule(Rule):
+        def __init__(self) -> None:
+            super().__init__('deferred_rule')
+            self.root_transforms = [DeferredTransform()]
+
+    class DeferredTransform(RootTransform):
+        name = 'deferred_transform'
+        defer_inlines = True
+
+        def prepare(self, parser: Parser, root: Root, state: BlockState) -> None:
+            def record_resolved_text() -> None:
+                paragraph = root.children[0]
+                first_child = getattr(paragraph, 'children', [])[0]
+                state.store.get(values).append(getattr(first_child, 'value', ''))
+
+            state.pending_inline_callbacks.append(record_resolved_text)
+
+        def transform(self, parser: Parser, root: Root, state: BlockState) -> None:
+            root.data = {
+                'values': list(state.store.get(values)),
+                'pending_inlines': len(state.pending_inlines),
+                'pending_callbacks': len(state.pending_inline_callbacks),
+            }
+
+    app = Wenmode([DeferredRule])
+
+    assert app.parse('first\n').data == {
+        'values': ['first'],
+        'pending_inlines': 0,
+        'pending_callbacks': 0,
+    }
+    assert app.parse('second\n').data == {
+        'values': ['second'],
+        'pending_inlines': 0,
+        'pending_callbacks': 0,
+    }
+
+
+def test_nested_block_and_inline_source_maps_share_parent_state() -> None:
+    class BoxRule(BlockRule):
+        name = 'box'
+        pattern = r'[ \t]{0,3}::box[ \t]*$'
+
+        def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
+            state.advance()
+            lines: list[str] = []
+            source = state.source.collect()
+            while not state.done:
+                if re.match(r'[ \t]{0,3}::[ \t]*$', state.line):
+                    state.advance()
+                    break
+                source.add(state.index, 0, state.line)
+                lines.append(state.line)
+                state.advance()
+            return BoxNode(parser.parse_blocks(''.join(lines), state, source=source.map()))
+
+    app = Wenmode([BoxRule, AtxHeading, InlineCode], positions=True)
+    root = app.parse('lead\n\n::box\n# Title\n\nText `code`.\n::\n')
+
+    box = root.to_ast()['children'][1]
+
+    assert box['type'] == 'box'
+    assert box['position'] == {
+        'start': {'line': 3, 'column': 1, 'offset': 6},
+        'end': {'line': 8, 'column': 1, 'offset': 37},
+    }
+    assert box['children'][0]['position'] == {
+        'start': {'line': 4, 'column': 1, 'offset': 12},
+        'end': {'line': 5, 'column': 1, 'offset': 20},
+    }
+    assert box['children'][0]['children'][0]['position'] == {
+        'start': {'line': 4, 'column': 3, 'offset': 14},
+        'end': {'line': 4, 'column': 8, 'offset': 19},
+    }
+    assert box['children'][1]['children'][1] == {
+        'type': 'inlineCode',
+        'position': {
+            'start': {'line': 6, 'column': 6, 'offset': 26},
+            'end': {'line': 6, 'column': 12, 'offset': 32},
+        },
+        'value': 'code',
+    }
 
 
 def test_parser_replaces_dynamic_rules_by_name() -> None:

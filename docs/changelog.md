@@ -22,6 +22,12 @@ here while preparing a release, then move them under the final version heading.
 - Store active inline source maps on `BlockState` instead of the reusable
   `Parser` instance so nested inline source lookup is scoped to the active parse
   state.
+- Clarify public extension API boundaries for parser helpers, `BlockState`,
+  `StateKey`, `SourceMap`, renderer hooks, rules, nodes, and plugins. Modules
+  under `wenmode._parser` are private implementation details.
+- Add regression coverage for parser rule-set rebuilds, nested source maps,
+  deferred inline queues, streaming compatibility, HTML block performance, and
+  nested disallowed HTML escaping.
 
 ## 0.5.0
 

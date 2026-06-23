@@ -118,6 +118,14 @@ they are parsed. It rejects rule sets that require deferred inline transforms.
 Because it does not build a root node, position-aware `parse_iter()` output
 keeps offset-only position data unless a caller supplies its own line mapping.
 
+`Parser` delegates most parsing work to private modules under `wenmode._parser`.
+Those modules compile rule sets, dispatch block and inline rules, and decide
+paragraph interruptions. They are intentionally private so the implementation
+can change without creating a migration requirement for applications. Custom
+rules should use `Parser.parse_blocks()`, `Parser.parse_inlines()`,
+`Parser.inline_source()`, and `Parser.is_paragraph_interrupt()` rather than
+importing `_parser` classes directly.
+
 ## Rules
 
 All rules inherit from `Rule` and have a stable `name`. Enabled rules are

@@ -7,7 +7,17 @@ from typing import Any
 from wenmode import Wenmode
 from wenmode.plugins import abbr, definition_list, fenced_directive, math, spoiler
 from wenmode.presets import commonmark, github
-from wenmode.rules import AtxHeading, ExtendedAutolink, Footnote, LeafDirective, Link, List, Rule, TextDirective
+from wenmode.rules import (
+    AtxHeading,
+    ExtendedAutolink,
+    Footnote,
+    HtmlBlock,
+    LeafDirective,
+    Link,
+    List,
+    Rule,
+    TextDirective,
+)
 
 
 def parse_time(markdown: str, rules: list[type[Rule] | Rule], plugins: Iterable[Any] = ()) -> float:
@@ -44,6 +54,10 @@ def test_dense_emphasis_delimiters_scale_nearly_linearly() -> None:
     assert_scales_nearly_linearly(lambda size: '*a' * size + '\n', commonmark)
 
 
+def test_plain_text_inline_dispatch_scales_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(lambda size: 'a' * size + '\n', commonmark, 8000, 16000)
+
+
 def test_leaf_directive_candidates_scale_nearly_linearly() -> None:
     assert_scales_nearly_linearly(lambda size: '::a' + ' ' * size + 'x\n', [LeafDirective], 8000, 16000)
 
@@ -55,6 +69,14 @@ def test_atx_heading_closing_candidates_scale_nearly_linearly() -> None:
         2000,
         4000,
     )
+
+
+def test_complete_html_tag_attributes_scale_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(lambda size: '<custom data-x="' + 'x' * size + '">\n\n', [HtmlBlock], 8000, 16000)
+
+
+def test_nested_html_block_raw_tags_scale_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(lambda size: '<div>\n<pre>\n' + 'a\n' * size + '</pre>\n</div>\n', [HtmlBlock])
 
 
 def test_inline_spoiler_candidates_scale_nearly_linearly() -> None:

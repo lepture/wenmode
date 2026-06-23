@@ -53,11 +53,38 @@ and {ref}`custom-plugins` are intended to be stable through the beta period:
 - `Node.to_ast()` output for documented node types.
 - Custom plugin `setup()` functions, rules, renderer handlers, and root
   transform shapes.
-- `StateKey` and `BlockState.store` for per-parse extension state.
+- `Parser.parse_blocks()`, `Parser.parse_inlines()`,
+  `Parser.is_paragraph_interrupt()`, and `Parser.inline_source()` for custom
+  rules that need nested parsing or paragraph-interruption checks.
+- `BlockState`, `StateKey`, `StateStore`, `SourceMap`, and source trackers from
+  `wenmode.state` for custom rules that need per-parse extension state or
+  source-position mapping.
+- Public helper modules such as `wenmode.ast`, `wenmode.headings`, and
+  `wenmode.toc`.
 
 The project may still adjust undocumented helper functions, renderer formatting
 details for non-HTML output, and edge-case parsing behavior where the current
 implementation conflicts with CommonMark, GFM, or documented Wenmode semantics.
+
+## Public and private modules
+
+Prefer importing public extension APIs from these modules:
+
+- `wenmode` for `Wenmode`, `Parser`, built-in renderers, and plugin protocol
+  types.
+- `wenmode.rules` for rule base classes and built-in rule classes.
+- `wenmode.plugins` for built-in plugin modules and plugin protocol types.
+- `wenmode.renderers` for renderer base classes, built-in renderers, contexts,
+  and renderer handler hooks.
+- `wenmode.nodes` for documented node dataclasses.
+- `wenmode.state` for `BlockState`, `StateKey`, `SourceMap`, and related source
+  tracking helpers used by custom rules.
+
+Modules under `wenmode._parser` are private implementation details. They hold
+the compiled rule-set, block parser, inline parser, and paragraph-interruption
+logic used by `Parser`, but their classes, attributes, and helper functions are
+not part of the supported extension API. Custom rules should call the public
+`Parser` methods listed above instead of importing from `wenmode._parser`.
 
 ## Migration notes
 
