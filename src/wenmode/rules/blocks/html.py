@@ -128,38 +128,16 @@ class HtmlBlock(BlockRule):
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Html:
         first = state.line
         stripped = first.rstrip('\r\n').lstrip(' \t')
-        lines: list[str] = []
 
         end_pattern = html_end_pattern(stripped)
         if end_pattern is not None:
-            while not state.done:
-                lines.append(state.line)
-                if end_pattern.search(state.line):
-                    state.advance()
-                    break
-                state.advance()
+            lines = collect_until_html_end(state, end_pattern)
             if HTML_SCRIPT_STYLE_RE.match(stripped):
                 return Html(value=''.join(lines))
             return self.html_node(''.join(lines))
 
         if is_html_block_tag(stripped) or is_complete_html_tag(stripped):
-            if preserves_nested_raw_html(stripped):
-                nested_end_pattern: re.Pattern[str] | None = None
-                while not state.done:
-                    if nested_end_pattern is None and state.line.strip() == '':
-                        break
-                    line = state.line
-                    lines.append(line)
-                    state.advance()
-                    if nested_end_pattern is not None:
-                        if nested_end_pattern.search(line):
-                            nested_end_pattern = None
-                        continue
-                    nested_end_pattern = unclosed_script_style_end_pattern(line.lstrip(' \t'))
-            else:
-                while not state.done and state.line.strip() != '':
-                    lines.append(state.line)
-                    state.advance()
+            lines = collect_tag_html_block(state, stripped)
             return self.html_node(''.join(lines))
 
         state.advance()
@@ -188,6 +166,48 @@ def html_end_pattern(line: str) -> re.Pattern[str] | None:
     if line.startswith('<![CDATA['):
         return re.compile(r']]>')
     return None
+
+
+def collect_until_html_end(state: BlockState, end_pattern: re.Pattern[str]) -> list[str]:
+    lines: list[str] = []
+    while not state.done:
+        line = state.line
+        lines.append(line)
+        state.advance()
+        if end_pattern.search(line):
+            break
+    return lines
+
+
+def collect_tag_html_block(state: BlockState, stripped: str) -> list[str]:
+    if preserves_nested_raw_html(stripped):
+        return collect_nested_raw_html(state)
+    return collect_until_blank_line(state)
+
+
+def collect_until_blank_line(state: BlockState) -> list[str]:
+    lines: list[str] = []
+    while not state.done and state.line.strip() != '':
+        lines.append(state.line)
+        state.advance()
+    return lines
+
+
+def collect_nested_raw_html(state: BlockState) -> list[str]:
+    lines: list[str] = []
+    nested_end_pattern: re.Pattern[str] | None = None
+    while not state.done:
+        if nested_end_pattern is None and state.line.strip() == '':
+            break
+        line = state.line
+        lines.append(line)
+        state.advance()
+        if nested_end_pattern is not None:
+            if nested_end_pattern.search(line):
+                nested_end_pattern = None
+            continue
+        nested_end_pattern = unclosed_script_style_end_pattern(line.lstrip(' \t'))
+    return lines
 
 
 def unclosed_script_style_end_pattern(line: str) -> re.Pattern[str] | None:

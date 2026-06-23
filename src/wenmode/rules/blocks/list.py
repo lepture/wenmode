@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, cast
 
 from wenmode.nodes import List as ListNode
 from wenmode.nodes import ListItem, Node, Paragraph, Position, Text
-from wenmode.state import BlockState
+from wenmode.state import BlockState, SourceCollector, SourceMap
 from wenmode.utils import count_indent, count_indent_from, expand_leading_tabs
 
-from ..base import BlockRule
+from ..base import BlockRule, Rule
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
@@ -18,6 +19,14 @@ MARKER_RE = re.compile(
     r'^(?P<indent>[ \t]{0,3})(?P<marker>(?P<bullet>[*+-])|(?P<ordered>\d{1,9})(?P<delimiter>[.)]))(?P<spaces>[ \t]+|$)(?P<rest>.*)$'
 )
 TASK_MARKER_RE = re.compile(r'^\[([ xX])][ \t]+')
+
+
+@dataclass(frozen=True, slots=True)
+class ListMarkerStyle:
+    ordered: bool
+    start: int | None
+    delimiter: str | None
+    bullet: str | None
 
 
 class List(BlockRule):
@@ -44,13 +53,7 @@ class List(BlockRule):
         if state.depth >= parser.max_container_depth - 1:
             return parse_shallow_list(parser, state, first, task=self.task)
 
-        ordered = first.group('ordered') is not None
-        if ordered:
-            start = int(first.group('ordered'))
-        else:
-            start = None
-        delimiter = first.group('delimiter')
-        bullet = first.group('bullet')
+        style = list_marker_style(first)
         items: list[Node] = []
         spread = False
 
@@ -60,96 +63,16 @@ class List(BlockRule):
         while not state.done:
             item_start_index = state.index
             line = state.line.rstrip('\r\n')
-            marker = MARKER_RE.match(line)
+            marker = parse_list_item_marker(line, style, bool(items), thematic_break)
             if marker is None:
                 break
-            if items and isinstance(thematic_break, BlockRule) and re.match(thematic_break.pattern, line):
-                break
-            if ordered != (marker.group('ordered') is not None):
-                break
-            if bullet is not None and marker.group('bullet') != bullet:
-                break
-            if delimiter is not None and marker.group('delimiter') != delimiter:
-                break
-
-            marker_indent = count_indent(marker.group('indent'))
-            marker_width = len(marker.group('marker'))
-            spaces = marker.group('spaces')
-            rest = marker.group('rest')
-            content_indent = marker_indent + marker_width + 1
-            if rest.strip() == '':
-                content_indent = marker_indent + 2
-            if spaces:
-                space_width = count_indent_from(spaces, marker_indent + marker_width) - (marker_indent + marker_width)
-                if rest.strip() == '':
-                    content_indent = marker_indent + 2
-                elif 1 <= space_width <= 4:
-                    content_indent = marker_indent + marker_width + space_width
-                else:
-                    rest_column = marker_indent + marker_width + space_width
-                    rest = ' ' * (rest_column - content_indent) + rest
-
-            first_item_line = rest + '\n'
-            item_lines = [first_item_line]
-            source = state.source.collect()
-            source.add(state.index, marker.start('rest'), first_item_line)
-            state.advance()
-            item_spread = False
-            item_has_nested_marker = line_has_list_marker(first_item_line)
-            fence_char, fence_size = update_open_fence(first_item_line, '', 0)
-
-            while not state.done:
-                next_line = state.line
-                next_marker = MARKER_RE.match(next_line.rstrip('\r\n'))
-                if next_marker is not None and count_indent(next_marker.group('indent')) == marker_indent:
-                    break
-                if next_line.strip() == '':
-                    blank_index = state.index
-                    state.advance()
-                    if state.done:
-                        next_marker_after_blank = None
-                    else:
-                        next_marker_after_blank = MARKER_RE.match(state.line.rstrip('\r\n'))
-                    if next_marker_after_blank is not None:
-                        item_spread = True
-                        spread = True
-                    if item_has_content(item_lines) and should_keep_blank_in_item(state, content_indent, marker_indent):
-                        if not fence_char and blank_belongs_to_item(
-                            state,
-                            content_indent,
-                            marker_indent,
-                            item_has_nested_marker,
-                            first_nonblank_cache,
-                        ):
-                            item_spread = True
-                            spread = True
-                        item_lines.append('\n')
-                        source.add(blank_index, 0, '\n')
-                        continue
-                    break
-                if has_continuation_indent(next_line, content_indent):
-                    text = strip_continuation_indent(next_line, content_indent)
-                    item_lines.append(text)
-                    source.add(state.index, continuation_source_offset(next_line, content_indent), text)
-                    item_has_nested_marker = item_has_nested_marker or line_has_list_marker(text)
-                    fence_char, fence_size = update_open_fence(text, fence_char, fence_size)
-                    state.advance()
-                    continue
-                if item_lines and item_lines[-1].strip() != '' and not parser.is_paragraph_interrupt(next_line, state):
-                    item_lines.append(next_line)
-                    source.add(state.index, 0, next_line)
-                    item_has_nested_marker = item_has_nested_marker or line_has_list_marker(next_line)
-                    fence_char, fence_size = update_open_fence(next_line, fence_char, fence_size)
-                    state.advance()
-                    continue
-                break
-
-            item_text = ''.join(item_lines)
+            item_text, source, item_spread = collect_list_item(parser, state, marker, first_nonblank_cache)
+            spread = spread or item_spread
             item = ListItem(
                 children=parser.parse_blocks(
                     item_text,
                     parent_state=state,
-                    source=source.map(),
+                    source=source,
                 ),
                 spread=item_spread,
             )
@@ -158,55 +81,206 @@ class List(BlockRule):
                 schedule_task_list_marker(state, item)
             items.append(item)
 
-        return ListNode(children=items, ordered=ordered, start=start, spread=spread)
+        return ListNode(children=items, ordered=style.ordered, start=style.start, spread=spread)
 
 
 def parse_shallow_list(parser: Parser, state: BlockState, first: re.Match[str], task: bool = False) -> ListNode:
-    ordered = first.group('ordered') is not None
-    if ordered:
-        start = int(first.group('ordered'))
-    else:
-        start = None
-    delimiter = first.group('delimiter')
-    bullet = first.group('bullet')
+    style = list_marker_style(first)
     items: list[Node] = []
 
     while not state.done:
         item_start_index = state.index
-        marker = MARKER_RE.match(state.line.rstrip('\r\n'))
-        if marker is None:
-            break
-        if ordered != (marker.group('ordered') is not None):
-            break
-        if bullet is not None and marker.group('bullet') != bullet:
-            break
-        if delimiter is not None and marker.group('delimiter') != delimiter:
+        marker = current_list_marker(state)
+        if marker is None or not marker_matches_style(marker, style):
             break
 
-        text_lines = [marker.group('rest')]
-        state.advance()
-        while not state.done:
-            line = state.line
-            next_marker = MARKER_RE.match(line.rstrip('\r\n'))
-            marker_indent = marker.group('indent')
-            if next_marker is not None and count_indent(next_marker.group('indent')) == count_indent(marker_indent):
-                break
-            if line.strip():
-                text_lines.append(line.strip())
-            state.advance()
-
-        text = '\n'.join(part for part in text_lines if part).strip()
-        if text:
-            children: list[Node] = [Paragraph(children=parser.parse_inlines(text, state))]
-        else:
-            children = []
-        item = ListItem(children=children)
+        text = collect_shallow_item_text(state, marker)
+        item = shallow_list_item(parser, state, text)
         item.position = state.source.position_between(item_start_index, state.index)
         if task:
             schedule_task_list_marker(state, item)
         items.append(item)
 
-    return ListNode(children=items, ordered=ordered, start=start)
+    return ListNode(children=items, ordered=style.ordered, start=style.start)
+
+
+def list_marker_style(marker: re.Match[str]) -> ListMarkerStyle:
+    ordered = marker.group('ordered') is not None
+    start = int(marker.group('ordered')) if ordered else None
+    return ListMarkerStyle(
+        ordered=ordered,
+        start=start,
+        delimiter=marker.group('delimiter'),
+        bullet=marker.group('bullet'),
+    )
+
+
+def parse_list_item_marker(
+    line: str,
+    style: ListMarkerStyle,
+    has_items: bool,
+    thematic_break: Rule | None,
+) -> re.Match[str] | None:
+    marker = MARKER_RE.match(line)
+    if marker is None:
+        return None
+    if has_items and isinstance(thematic_break, BlockRule) and re.match(thematic_break.pattern, line):
+        return None
+    if not marker_matches_style(marker, style):
+        return None
+    return marker
+
+
+def marker_matches_style(marker: re.Match[str], style: ListMarkerStyle) -> bool:
+    if style.ordered != (marker.group('ordered') is not None):
+        return False
+    if style.bullet is not None and marker.group('bullet') != style.bullet:
+        return False
+    if style.delimiter is not None and marker.group('delimiter') != style.delimiter:
+        return False
+    return True
+
+
+def collect_list_item(
+    parser: Parser,
+    state: BlockState,
+    marker: re.Match[str],
+    first_nonblank_cache: dict[int, str | None],
+) -> tuple[str, SourceMap | None, bool]:
+    marker_indent, content_indent, first_line = first_list_item_line(marker)
+    lines = [first_line]
+    source = state.source.collect()
+    source.add(state.index, marker.start('rest'), first_line)
+    state.advance()
+    item_spread = False
+    item_has_nested_marker = line_has_list_marker(first_line)
+    fence_char, fence_size = update_open_fence(first_line, '', 0)
+
+    while not state.done:
+        line = state.line
+        next_marker = MARKER_RE.match(line.rstrip('\r\n'))
+        if next_marker is not None and count_indent(next_marker.group('indent')) == marker_indent:
+            break
+        if line.strip() == '':
+            item_spread, consumed = consume_blank_list_line(
+                state,
+                source,
+                lines,
+                content_indent,
+                marker_indent,
+                item_has_nested_marker,
+                first_nonblank_cache,
+                fence_char,
+                item_spread,
+            )
+            if consumed:
+                continue
+            break
+        if has_continuation_indent(line, content_indent):
+            text = strip_continuation_indent(line, content_indent)
+            source.add(state.index, continuation_source_offset(line, content_indent), text)
+            lines.append(text)
+            item_has_nested_marker = item_has_nested_marker or line_has_list_marker(text)
+            fence_char, fence_size = update_open_fence(text, fence_char, fence_size)
+            state.advance()
+            continue
+        if is_lazy_list_continuation(parser, state, lines):
+            source.add(state.index, 0, line)
+            lines.append(line)
+            item_has_nested_marker = item_has_nested_marker or line_has_list_marker(line)
+            fence_char, fence_size = update_open_fence(line, fence_char, fence_size)
+            state.advance()
+            continue
+        break
+
+    return ''.join(lines), source.map(), item_spread
+
+
+def is_lazy_list_continuation(parser: Parser, state: BlockState, lines: list[str]) -> bool:
+    return lines[-1].strip() != '' and not parser.is_paragraph_interrupt(state.line, state)
+
+
+def consume_blank_list_line(
+    state: BlockState,
+    source: SourceCollector,
+    lines: list[str],
+    content_indent: int,
+    marker_indent: int,
+    item_has_nested_marker: bool,
+    first_nonblank_cache: dict[int, str | None],
+    fence_char: str,
+    item_spread: bool,
+) -> tuple[bool, bool]:
+    blank_index = state.index
+    state.advance()
+    if current_list_marker(state) is not None:
+        item_spread = True
+    if not item_has_content(lines):
+        return item_spread, False
+    if not should_keep_blank_in_item(state, content_indent, marker_indent):
+        return item_spread, False
+    if not fence_char and blank_belongs_to_item(
+        state,
+        content_indent,
+        marker_indent,
+        item_has_nested_marker,
+        first_nonblank_cache,
+    ):
+        item_spread = True
+    lines.append('\n')
+    source.add(blank_index, 0, '\n')
+    return item_spread, True
+
+
+def first_list_item_line(marker: re.Match[str]) -> tuple[int, int, str]:
+    marker_indent = count_indent(marker.group('indent'))
+    marker_width = len(marker.group('marker'))
+    content_indent = marker_indent + marker_width + 1
+    rest = marker.group('rest')
+    if rest.strip() == '':
+        return marker_indent, marker_indent + 2, rest + '\n'
+
+    spaces = marker.group('spaces')
+    if not spaces:
+        return marker_indent, content_indent, rest + '\n'
+
+    space_width = count_indent_from(spaces, marker_indent + marker_width) - (marker_indent + marker_width)
+    if 1 <= space_width <= 4:
+        return marker_indent, marker_indent + marker_width + space_width, rest + '\n'
+
+    rest_column = marker_indent + marker_width + space_width
+    rest = ' ' * (rest_column - content_indent) + rest
+    return marker_indent, content_indent, rest + '\n'
+
+
+def collect_shallow_item_text(state: BlockState, marker: re.Match[str]) -> str:
+    text_lines = [marker.group('rest')]
+    marker_indent = count_indent(marker.group('indent'))
+    state.advance()
+    while not state.done and not is_same_indent_list_marker(state.line, marker_indent):
+        if state.line.strip():
+            text_lines.append(state.line.strip())
+        state.advance()
+    return '\n'.join(part for part in text_lines if part).strip()
+
+
+def shallow_list_item(parser: Parser, state: BlockState, text: str) -> ListItem:
+    if text:
+        children: list[Node] = [Paragraph(children=parser.parse_inlines(text, state))]
+    else:
+        children = []
+    return ListItem(children=children)
+
+
+def current_list_marker(state: BlockState) -> re.Match[str] | None:
+    if state.done:
+        return None
+    return MARKER_RE.match(state.line.rstrip('\r\n'))
+
+
+def is_same_indent_list_marker(line: str, marker_indent: int) -> bool:
+    marker = MARKER_RE.match(line.rstrip('\r\n'))
+    return marker is not None and count_indent(marker.group('indent')) == marker_indent
 
 
 def schedule_task_list_marker(state: BlockState, item: ListItem) -> None:

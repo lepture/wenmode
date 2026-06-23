@@ -59,43 +59,53 @@ class BlockParser:
         return children
 
     def parse_next_node(self, state: BlockState) -> Node | None:
-        while not state.done:
-            line = state.line
-            if line.strip() == '':
+        while True:
+            while not state.done and state.line.strip() == '':
                 state.advance()
-                continue
+            if state.done:
+                return None
 
             start_index = state.index
+            line = state.line
             if interrupts.is_plain_paragraph_start(self._rule_set, line):
                 parsed = self._parse_paragraph(state)
-                if self._parser.positions and parsed.position is None:
-                    parsed.position = state.source.position_between(start_index, state.index)
-                return parsed
+                return self._with_position(parsed, state, start_index) if self._parser.positions else parsed
 
-            if self._rule_set.block_openers:
-                match = self._rule_set.block_openers.match(line)
-            else:
-                match = None
-            if match is not None and not self.container_depth_exceeded(cast(str, match.lastgroup), state):
-                parsed_block, consumed = self._parse_matching_block_rule(state, match)
-                if parsed_block is not None:
-                    if self._parser.positions and parsed_block.position is None:
-                        parsed_block.position = state.source.position_between(start_index, state.index)
-                    return parsed_block
-                if consumed:
-                    continue
+            parsed_block, consumed = self._try_parse_block(state, line)
+            if parsed_block is not None:
+                return self._with_position(parsed_block, state, start_index) if self._parser.positions else parsed_block
+            if consumed:
+                continue
 
             parsed = self._parse_paragraph(state)
-            if self._parser.positions and parsed.position is None:
-                parsed.position = state.source.position_between(start_index, state.index)
-            return parsed
-        return None
+            return self._with_position(parsed, state, start_index) if self._parser.positions else parsed
 
     def is_paragraph_interrupt(self, line: str, state: BlockState | None = None) -> bool:
         return interrupts.is_paragraph_interrupt(self._rule_set, self._parser.max_container_depth, line, state)
 
     def container_depth_exceeded(self, name: str, state: BlockState | None) -> bool:
         return interrupts.container_depth_exceeded(name, state, self._parser.max_container_depth)
+
+    def _with_position(self, node: Node, state: BlockState, start_index: int) -> Node:
+        if node.position is None:
+            node.position = state.source.position_between(start_index, state.index)
+        return node
+
+    def _try_parse_block(self, state: BlockState, line: str) -> tuple[Node | None, bool]:
+        match = self._block_opener_match(line, state)
+        if match is None:
+            return None, False
+        return self._parse_matching_block_rule(state, match)
+
+    def _block_opener_match(self, line: str, state: BlockState) -> re.Match[str] | None:
+        if self._rule_set.block_openers is None:
+            return None
+        match = self._rule_set.block_openers.match(line)
+        if match is None:
+            return None
+        if self.container_depth_exceeded(cast(str, match.lastgroup), state):
+            return None
+        return match
 
     def _parse_matching_block_rule(self, state: BlockState, match: re.Match[str]) -> tuple[Node | None, bool]:
         line = state.line
@@ -151,20 +161,35 @@ class BlockParser:
             if line.strip() == '':
                 break
             if lines:
-                for continuation in self._rule_set.paragraph_continuations:
-                    if not continuation.matches(line):
-                        continue
-                    parsed = continuation.parse_paragraph_continuation(self._parser, state, lines)
-                    if parsed is not None:
-                        return lines, parsed
+                parsed = self._parse_paragraph_continuation(state, lines, line)
+                if parsed is not None:
+                    return lines, parsed
             if lines and self.is_paragraph_interrupt(line, state):
                 break
-            if lines:
-                text = line.lstrip(' \t')
-            else:
-                text = line
-            if source is not None:
-                source.add(state.index, len(line) - len(text), text)
-            lines.append(text)
-            state.advance()
+            _append_paragraph_line(state, source, lines, line)
         return lines, None
+
+    def _parse_paragraph_continuation(self, state: BlockState, lines: list[str], line: str) -> Node | None:
+        for continuation in self._rule_set.paragraph_continuations:
+            if not continuation.matches(line):
+                continue
+            parsed = continuation.parse_paragraph_continuation(self._parser, state, lines)
+            if parsed is not None:
+                return parsed
+        return None
+
+
+def _append_paragraph_line(
+    state: BlockState,
+    source: SourceCollector | None,
+    lines: list[str],
+    line: str,
+) -> None:
+    if lines:
+        text = line.lstrip(' \t')
+    else:
+        text = line
+    if source is not None:
+        source.add(state.index, len(line) - len(text), text)
+    lines.append(text)
+    state.advance()
