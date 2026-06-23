@@ -327,7 +327,10 @@ for chunk in wenmode.stream(text):
 ```
 
 The returned iterator can be passed to streaming responses in frameworks such
-as Django, Flask, and FastAPI.
+as Django, Flask, and FastAPI. The `streaming` preset keeps tables,
+strikethrough, direct links, and direct images enabled, while reference-style
+links, footnotes, and other deferred document-wide transforms stay out of the
+streaming path.
 
 ## Learn more
 

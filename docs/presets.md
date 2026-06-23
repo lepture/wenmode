@@ -30,7 +30,7 @@ only for the syntax that preset does not cover.
 | --- | --- | --- | --- |
 | `commonmark` | You want the default Markdown behavior for articles, comments, or docs. | Core Markdown, reference links and images, inline HTML parsing. | No GFM tables, task list markers, footnotes, or bare URL autolinks. |
 | `github` | You want GitHub-flavored Markdown output. | `commonmark`-style behavior plus the GFM feature set and disallowed HTML tag handling. | Requires full-document parsing, so it is not compatible with streaming output. |
-| `streaming` | You need to emit HTML chunks as input arrives. | Most CommonMark-style rules, plus tables, strikethrough, direct links, and direct images. | Reference-style links, reference-style images, footnotes, and other deferred transforms are disabled. |
+| `streaming` | You need to emit HTML chunks as input arrives. | Most CommonMark-style rules, plus tables, strikethrough, direct links, and direct images. | Reference-style links, reference-style images, footnotes, and other deferred document-wide transforms are disabled. |
 | Custom rule list | You are building a specific Markdown dialect or want to disable syntax. | Only the rules you pass. | You own the feature set and rule interactions. |
 
 ## CommonMark
@@ -87,14 +87,20 @@ html = ''.join(wenmode.stream(text))
 ```
 
 It is close to the CommonMark-oriented rule set, with streaming-compatible GFM
-tables and strikethrough enabled. It disables reference-style link and image
-transforms by using `Image(references=False)` and `Link(references=False)`.
-Direct links and images still work, while definitions and shortcut/reference
-links stay as text.
+tables and strikethrough enabled. Direct links and images still work:
+`[label](/url)` and `![alt](/image.png)` are parsed normally.
 
-This tradeoff lets Wenmode emit blocks before the end of the document. Rules
-that need document-wide deferred inline transforms, such as reference links or
-footnotes, are not compatible with streaming output.
+The preset disables reference-style link and image transforms by using
+`Image(references=False)` and `Link(references=False)`. Definitions,
+shortcut/reference links, and shortcut/reference images stay as text.
+Footnotes are not enabled. Other features that need deferred document-wide
+transforms, such as abbreviation rewriting, are not compatible with streaming
+output.
+
+This tradeoff lets Wenmode emit blocks before the end of the document. If a
+custom streaming configuration enables a deferred rule or plugin, `stream()`
+raises `StreamingUnsupportedError` instead of emitting partial output with
+missing document-wide context.
 
 ## Custom preset
 

@@ -310,9 +310,11 @@ expected = '''
 assert ''.join(sent_chunks) == expected.lstrip()
 ```
 
-The streaming API yields rendered block output as parsing progresses. It only
-works with rules that do not require deferred document-wide inline resolution.
-If unsupported rules are enabled, `stream()` raises `StreamingUnsupportedError`.
+The streaming API yields rendered block output as parsing progresses. The
+`streaming` preset keeps streaming-compatible tables, strikethrough, direct
+links, and direct images enabled. It disables reference-style links and images,
+footnotes, and other deferred document-wide transforms. If unsupported rules are
+enabled, `stream()` raises `StreamingUnsupportedError`.
 
 `Wenmode.stream()` returns a synchronous iterator of HTML chunks. Web frameworks
 that accept iterable response bodies can send those chunks directly.
@@ -323,19 +325,41 @@ See {ref}`choosing a rule preset <presets>`, {ref}`security`, and
 ### FastAPI
 
 ```python
+from collections.abc import Iterator
+from typing import BinaryIO
+
+from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import StreamingResponse
 from wenmode import Wenmode
 from wenmode.presets import streaming
 
 wenmode = Wenmode(streaming)
+app = FastAPI()
 
 
-async def preview(markdown: str):
+def iter_upload_lines(file: BinaryIO, encoding: str = 'utf-8') -> Iterator[str]:
+    for line in file:
+        yield line.decode(encoding)
+
+
+def stream_uploaded_markdown(upload: UploadFile) -> Iterator[str]:
+    try:
+        upload.file.seek(0)
+        yield from wenmode.stream(iter_upload_lines(upload.file))
+    finally:
+        upload.file.close()
+
+
+@app.post('/streaming')
+async def preview(file: UploadFile = File(...)):
     return StreamingResponse(
-        wenmode.stream(markdown),
+        stream_uploaded_markdown(file),
         media_type='text/html; charset=utf-8',
     )
 ```
+
+The repository also includes a runnable FastAPI file-upload example in
+`examples/wenmode-fastapi`.
 
 ### Flask
 

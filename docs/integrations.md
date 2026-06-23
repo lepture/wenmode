@@ -149,6 +149,8 @@ assert '"type": "root"' in page.ast_json
 Use the `streaming` preset for live previews, chat responses, or other views
 that should emit HTML chunks before the whole document is available. Keep
 reference-style links, footnotes, and other deferred features out of this path.
+The preset still supports streaming-compatible tables, strikethrough, direct
+links, and direct images.
 
 ```python
 from collections.abc import Iterable
@@ -170,6 +172,10 @@ chunks = list(
         [
             '# Preview\n',
             '\n',
+            '| A | B |\n',
+            '| --- | --- |\n',
+            '| ~~old~~ | [link](https://example.com) |\n',
+            '\n',
             'A [link](https://example.com).\n',
         ]
     )
@@ -178,10 +184,34 @@ html = ''.join(chunks)
 
 assert html.startswith('<article class="preview">')
 assert '<h1>Preview</h1>' in html
+assert '<del>old</del>' in html
 assert '<a href="https://example.com">link</a>' in html
 ```
 
-See {ref}`rule-matrix` for rules that are not compatible with streaming.
+Reference-style links and images stay as text in this preset, and footnotes are
+not enabled. See {ref}`rule-matrix` for rules and plugins that are not
+compatible with streaming.
+
+### FastAPI file uploads
+
+Use `StreamingResponse` when clients upload Markdown files and should receive
+HTML as Wenmode parses top-level blocks. The full runnable example lives in
+`examples/wenmode-fastapi`.
+
+```bash
+uv run --directory examples/wenmode-fastapi --locked uvicorn wenmode_fastapi:app --reload
+```
+
+```bash
+curl -N \
+  -F 'file=@README.md;type=text/markdown' \
+  http://127.0.0.1:8000/streaming
+```
+
+The example uses the same streaming boundary as `Wenmode(streaming)`: tables,
+strikethrough, direct links, and direct images render incrementally; reference
+definitions, footnotes, and deferred transforms are not part of the streaming
+path.
 
 ## Package a product dialect
 

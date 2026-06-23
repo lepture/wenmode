@@ -21,6 +21,9 @@ here while preparing a release, then move them under the final version heading.
   setup internally.
 - Document the product dialect factory pattern for keeping rule lists, plugin
   lists, renderers, and parser options consistent across services.
+- Add documentation entry points for the FastAPI streaming file-upload example
+  and clarify which syntax the `streaming` preset supports or deliberately
+  disables.
 - Clarify the beta-period stable API list for plugin setup and constructor-time
   plugin installation.
 
