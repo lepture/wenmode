@@ -344,7 +344,7 @@ def render_literal_directive(renderer: HTMLRenderer, node: LiteralDirective, con
     if rendered is not None:
         return rendered
     if node.name == 'code-block':
-        return render_code(renderer, Code(value=node.value, lang=node.argument), context)
+        return renderer.render_node(Code(value=node.value, lang=node.argument), context)
     return renderer.escape_html(node.value)
 
 
