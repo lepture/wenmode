@@ -177,13 +177,19 @@ print("*not emphasis*")
 ```
 ````
 
-Pass `literal_names` to `use()` when your application needs a different set:
+Pass `literal_names` to `use()` when your application needs a different set.
+Pass `fence` when your dialect also accepts other repeated fence characters,
+such as MyST colon fences:
 
 ```python
 from wenmode import Wenmode
 from wenmode.plugins import fenced_directive
 
-wenmode = Wenmode().use(fenced_directive, literal_names={'code-block', 'raw'})
+wenmode = Wenmode().use(
+    fenced_directive,
+    literal_names={'code-block', 'raw'},
+    fence=('`', '~', ':'),
+)
 ```
 
 Inline roles use MyST-style role syntax:

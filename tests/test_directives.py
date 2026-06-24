@@ -198,6 +198,21 @@ def test_fenced_directive_literal_names_are_configurable() -> None:
     }
 
 
+def test_fenced_directive_fence_chars_are_configurable() -> None:
+    default_app = Wenmode([]).use(fenced_directive)
+    custom_app = Wenmode([], renderer=RSTRenderer()).use(
+        fenced_directive,
+        literal_names={'sourcecode'},
+        fence=('`', '~', ':'),
+    )
+
+    assert default_app.render(':::{note} Title\nBody.\n:::\n') == '<p>:::{note} Title\nBody.\n:::</p>\n'
+    assert custom_app.render(':::{note} Title\nBody.\n:::\n') == '.. note:: Title\n\n   Body.\n'
+    assert custom_app.render(':::{sourcecode} python\nvalue = node.value[start:end]\n:::\n') == (
+        '.. sourcecode:: python\n\n   value = node.value[start:end]\n'
+    )
+
+
 def test_toc_leaf_directive_renders_heading_links() -> None:
     app = Wenmode(
         [AtxHeading(id_transform=True), LeafDirective, ContainerDirective, Emphasis],

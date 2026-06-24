@@ -18,8 +18,8 @@ from wenmode.rules.base import BlockRule
 from wenmode.state import BlockState
 
 TARGET_RE = re.compile(r'[ \t]{0,3}\((?P<label>[^)\r\n]+)\)=[ \t]*(?:\r?\n)?$')
-COLON_FENCE_RE = re.compile(r'(?P<indent>[ \t]{0,3})(?P<fence>:{3,})\{(?P<name>[A-Za-z][A-Za-z0-9_-]*)}')
 LITERAL_BODY_DIRECTIVES = frozenset({'code-block', 'sourcecode'})
+DIRECTIVE_FENCES = ('`', '~', ':')
 
 
 @dataclass
@@ -46,14 +46,6 @@ class TargetRule(BlockRule):
         return TargetNode(label=target.group('label').strip())
 
 
-class ColonFenceDirectiveRule(FencedDirectiveRule):
-    """Parse MyST ``colon_fence`` directives such as ``:::{note} Title``."""
-
-    name = 'myst_colon_fence'
-    pattern = r'[ \t]{0,3}:{3,}\{[A-Za-z][A-Za-z0-9_-]*}'
-    head_pattern = COLON_FENCE_RE
-
-
 def render_target(renderer: RSTRenderer, node: TargetNode, context: Any) -> str:
     return f'.. _{node.label}:\n\n'
 
@@ -70,8 +62,7 @@ def create_wenmode() -> Wenmode:
     app = Wenmode(
         [
             TargetRule,
-            FencedDirectiveRule(literal_names=LITERAL_BODY_DIRECTIVES),
-            ColonFenceDirectiveRule(literal_names=LITERAL_BODY_DIRECTIVES),
+            FencedDirectiveRule(literal_names=LITERAL_BODY_DIRECTIVES, fence=DIRECTIVE_FENCES),
             *github,
         ],
         renderer=RSTRenderer(),

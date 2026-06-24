@@ -35,6 +35,9 @@ here while preparing a release, then move them under the final version heading.
 - Update the local `wenmode-myst` example to use `LiteralDirective` for
   `code-block` and `sourcecode` bodies instead of carrying a local raw-body
   directive node.
+- Add configurable fence characters to `FencedDirectiveRule` and the
+  `fenced_directive` plugin. The local `wenmode-myst` example now enables
+  colon fences through the shared rule instead of a custom subclass.
 
 ## 0.5.0
 

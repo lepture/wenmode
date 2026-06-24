@@ -308,3 +308,7 @@ print("*not emphasis*")
   ]
 }
 ```
+
+Configure ``FencedDirectiveRule(fence=("`", "~", ":"))``, or pass
+``fence=("`", "~", ":")`` to `wenmode.use(fenced_directive, ...)`, when your
+dialect accepts MyST colon fences such as `:::{note}`.
