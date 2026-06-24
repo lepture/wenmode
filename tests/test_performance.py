@@ -79,6 +79,15 @@ def test_nested_html_block_raw_tags_scale_nearly_linearly() -> None:
     assert_scales_nearly_linearly(lambda size: '<div>\n<pre>\n' + 'a\n' * size + '</pre>\n</div>\n', [HtmlBlock])
 
 
+def test_disallowed_nested_html_filter_scales_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(
+        lambda size: '<div>\n<script>\n' + 'alert(1)\n' * size + '</script>\n</div>\n',
+        [HtmlBlock(disallowed_tags=['script'])],
+        1000,
+        2000,
+    )
+
+
 def test_inline_spoiler_candidates_scale_nearly_linearly() -> None:
     assert_scales_nearly_linearly(lambda size: '>!x' + ' ' * size + 'y\n', [], 8000, 16000, plugins=[spoiler])
 

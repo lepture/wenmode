@@ -35,6 +35,15 @@ class DirectiveHtmlExample(DirectiveHtmlExampleBase, total=False):
     admonition_names: list[str]
 
 
+class CodeBlockHtmlOverride:
+    node_type = 'literalDirective'
+    names = frozenset({'code-block'})
+
+    def render(self, renderer: HTMLRenderer, node: Any, context: Any) -> str:
+        attrs = renderer.render_attrs({'data-language': node.argument})
+        return f'<figure class="highlight"{attrs}><pre>{renderer.escape_html(node.value)}</pre></figure>\n'
+
+
 @pytest.mark.parametrize(
     'example',
     load_fixture('directives_ast.json'),
@@ -162,6 +171,25 @@ def test_fenced_literal_directive_preserves_code_block_body() -> None:
         ],
     }
     assert app.render_node(root) == '<pre><code class="language-python">print(&quot;*not emphasis*&quot;)\n</code></pre>\n'
+
+
+def test_unknown_literal_directive_escapes_html_by_default() -> None:
+    app = Wenmode([]).use(fenced_directive, literal_names={'raw'})
+
+    assert app.render('```{raw} html\n<script>alert("x")</script>\n```\n') == (
+        '&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;\n'
+    )
+
+
+def test_literal_directive_renderer_can_override_code_block_html() -> None:
+    app = Wenmode(
+        [],
+        renderer=HTMLRenderer(directives=[CodeBlockHtmlOverride()]),
+    ).use(fenced_directive)
+
+    assert app.render('```{code-block} python\nprint("<x>")\n```\n') == (
+        '<figure class="highlight" data-language="python"><pre>print(&quot;&lt;x&gt;&quot;)\n</pre></figure>\n'
+    )
 
 
 def test_literal_directive_renderers_preserve_fenced_and_rst_forms() -> None:

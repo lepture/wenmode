@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from io import StringIO
+from pathlib import Path
 
 import pytest
 
@@ -8,6 +9,9 @@ from wenmode import StreamingUnsupportedError, Wenmode
 from wenmode.plugins import abbr, math, spoiler
 from wenmode.presets import github, streaming
 from wenmode.rules import Footnote, Link
+
+ROOT = Path(__file__).resolve().parents[1]
+PRIVATE_IMPORT_MARKERS = ('from wenmode._', 'import wenmode._')
 
 
 def test_positions_survive_plugin_root_transforms() -> None:
@@ -73,6 +77,53 @@ def test_streaming_rejects_plugins_with_deferred_transforms() -> None:
 def test_streaming_rejects_core_rules_with_deferred_transforms(rule) -> None:
     with pytest.raises(StreamingUnsupportedError, match='deferred inline transforms'):
         next(Wenmode([rule]).stream('text\n'))
+
+
+def test_documented_public_extension_imports_resolve() -> None:
+    import wenmode
+    from wenmode import HTMLRenderer, MarkdownRenderer, Parser, Plugin, PluginTarget, RSTRenderer
+    from wenmode.ast import BUILTIN_NODE_REGISTRY, find_all, from_ast, plain_text, walk
+    from wenmode.nodes import LiteralDirective, Root, Text
+    from wenmode.renderers import BaseRenderer, DirectiveHtmlRenderer, RenderContext
+    from wenmode.rules import BlockRule, ContinueRule, InlineRule, Rule
+    from wenmode.state import BlockState, SourceMap, StateKey, StateStore
+
+    assert wenmode.HTMLRenderer is HTMLRenderer
+    assert wenmode.MarkdownRenderer is MarkdownRenderer
+    assert wenmode.RSTRenderer is RSTRenderer
+    assert wenmode.Parser is Parser
+    assert wenmode.Plugin is Plugin
+    assert wenmode.PluginTarget is PluginTarget
+    assert all('_parser' not in name for name in wenmode.__all__)
+    assert BUILTIN_NODE_REGISTRY['literalDirective'] is LiteralDirective
+    assert isinstance(from_ast({'type': 'literalDirective', 'name': 'code-block', 'value': 'x'}), LiteralDirective)
+    assert plain_text(Root(children=[Text(value='text')])) == 'text'
+    assert list(find_all(Root(children=[Text(value='text')]), Text))
+    assert [node.type for node in walk(Root(children=[Text(value='text')]))] == ['root', 'text']
+    assert BaseRenderer and DirectiveHtmlRenderer and RenderContext
+    assert BlockRule and ContinueRule and InlineRule and Rule
+    assert BlockState and SourceMap and StateKey and StateStore
+
+
+def test_public_docs_and_examples_do_not_import_private_parser_modules() -> None:
+    paths = [
+        ROOT / 'README.md',
+        *sorted(path for path in (ROOT / 'docs').rglob('*') if path.suffix in {'.md', '.rst'}),
+        *sorted(path for path in (ROOT / 'examples').rglob('*') if path.suffix in {'.md', '.rst', '.py'}),
+    ]
+    offenders = []
+    for path in paths:
+        text = path.read_text(encoding='utf-8')
+        if any(marker in text for marker in PRIVATE_IMPORT_MARKERS):
+            offenders.append(str(path.relative_to(ROOT)))
+
+    assert offenders == []
+
+
+def test_default_html_policy_escapes_raw_html_and_sanitizes_urls_after_parse() -> None:
+    html = Wenmode().render('<script>alert(1)</script>\n\n[x](javascript:alert(1)) ![a](javascript:img)\n')
+
+    assert html == '&lt;script&gt;alert(1)&lt;/script&gt;\n<p><a>x</a> <img alt="a" /></p>\n'
 
 
 def test_github_nested_disallowed_html_is_escaped_once() -> None:
