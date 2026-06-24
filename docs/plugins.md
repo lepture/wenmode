@@ -139,10 +139,10 @@ wenmode = Wenmode().use(frontmatter, load=load_meta, dump=dump_meta, data_key='m
 ## Fenced Directives And Roles
 
 The `fenced_directive` and `inline_role` plugins provide MyST-style directive
-syntax. Inline roles map onto the same mdast directive nodes documented in
-{ref}`directives`. Fenced directives usually create `containerDirective` nodes,
-and literal-body directives such as `code-block` create `literalDirective`
-nodes.
+syntax. Inline roles map onto `textDirective`, one of the mdast-compatible
+directive nodes documented in {ref}`directives`. Fenced directives usually
+create `containerDirective` nodes, and literal-body directives such as
+`code-block` create `literalDirective` nodes.
 
 ```python
 from wenmode import Wenmode
@@ -187,7 +187,7 @@ from wenmode.plugins import fenced_directive
 
 wenmode = Wenmode().use(
     fenced_directive,
-    literal_names={'code-block', 'raw'},
+    literal_names={'code-block', 'sourcecode'},
     fence=('`', '~', ':'),
 )
 ```
@@ -201,9 +201,11 @@ Inline roles use MyST-style role syntax:
 The inline role plugin creates a `textDirective` node. The role name becomes the
 directive `name`, and the backtick content becomes children.
 
-After these plugins create directive nodes, HTML output still depends on
-directive renderers. Register directive renderers the same way you would for
-mdast-style directives.
+After these plugins create directive nodes, custom HTML output is still handled
+through directive renderers registered by node type and directive name. Without
+a matching renderer, text, leaf, and container directives fall back to their
+child content. Literal directives fall back to escaped literal text, and
+`code-block` has default code-block output in the HTML renderer.
 
 Use these plugins when you want MyST-style syntax. Use the core
 `TextDirective`, `LeafDirective`, and `ContainerDirective` rules when you want

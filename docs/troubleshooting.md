@@ -59,8 +59,10 @@ from wenmode.rules import ContainerDirective
 wenmode = Wenmode([ContainerDirective], directives=[Admonition()])
 ```
 
-Without a matching directive renderer, Wenmode falls back to rendering directive
-children.
+Without a matching directive renderer, Wenmode falls back to rendering
+directive children. `literalDirective` nodes fall back to escaped literal text,
+and `code-block` literal directives have default code-block output in the HTML
+renderer.
 
 ## A custom renderer handler is not called
 

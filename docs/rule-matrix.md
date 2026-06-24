@@ -80,6 +80,10 @@ The plugin name in the first column is the module you import from
 | `subscript` | `SubscriptRule` | inline | `subscript` | compatible |
 | `ruby` | `RubyRule` | inline | `ruby` | compatible |
 
+`fenced_directive` defaults to backtick and tilde fences and
+`literal_names={"code-block"}`. Pass a custom `fence` tuple when a dialect also
+accepts colon fences.
+
 ## Streaming compatibility
 
 Streaming works only when enabled rules do not need deferred document-wide inline

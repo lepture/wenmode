@@ -28,7 +28,10 @@ when the syntax should create a new Wenmode-specific node type such as `math`,
 
 MyST-style fenced directives and inline roles are plugins. See {ref}`plugins`
 when you want code-fence-style `` ```{name} `` directives or
-`` {name}`content` `` roles.
+`` {name}`content` `` roles. The fenced directive plugin can also emit
+`literalDirective` nodes for literal-body names such as `code-block`; the core
+colon directive rules remain limited to `textDirective`, `leafDirective`, and
+`containerDirective`.
 
 ## Enable Directives
 

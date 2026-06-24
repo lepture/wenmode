@@ -33,11 +33,14 @@ here while preparing a release, then move them under the final version heading.
   `literalDirective` for `code-block` by default, with configurable
   `literal_names`.
 - Update the local `wenmode-myst` example to use `LiteralDirective` for
-  `code-block` and `sourcecode` bodies instead of carrying a local raw-body
+  `code-block` and `sourcecode` bodies instead of carrying a local custom
   directive node.
 - Add configurable fence characters to `FencedDirectiveRule` and the
   `fenced_directive` plugin. The local `wenmode-myst` example now enables
   colon fences through the shared rule instead of a custom subclass.
+- Move MyST `(label)=` target support in the local `wenmode-myst` example into
+  the `wenmode_myst.target` plugin module so it can be passed directly to
+  `Wenmode(..., plugins=[target])`.
 
 ## 0.5.0
 
