@@ -13,6 +13,10 @@ here while preparing a release, then move them under the final version heading.
 
 ## Unreleased
 
+## 0.6.0
+
+Released **Jun 24, 2026**.
+
 - Refactor parser internals into private `_parser` modules for rule-set
   compilation, block parsing, inline parsing, and paragraph-interruption
   decisions. Public parser entry points remain on `Parser`.

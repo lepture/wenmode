@@ -1,5 +1,6 @@
 # Editor
 .idea/
+*.swp
 
 # Python-generated files
 __pycache__/

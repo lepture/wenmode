@@ -2,7 +2,7 @@
 name = "wenmode"
 dynamic = ["version"]
 description = "A fast, composable Markdown parser and renderer toolkit."
-readme = "README.md"
+readme = { file = "README.rst", content-type = "text/x-rst" }
 authors = [
     { name = "Hsiaoming Yang", email = "me@lepture.com" }
 ]
@@ -52,6 +52,8 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.sdist]
 exclude = [
+    "/.*.swp",
+    "/*.swp",
     "/.coverage",
     "/.idea",
     "/.mypy_cache",
