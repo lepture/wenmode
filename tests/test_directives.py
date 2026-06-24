@@ -213,6 +213,24 @@ def test_fenced_directive_fence_chars_are_configurable() -> None:
     )
 
 
+def test_fenced_directive_rejects_invalid_fence_config() -> None:
+    with pytest.raises(ValueError, match='at least one character'):
+        Wenmode([]).use(fenced_directive, fence=())
+
+    with pytest.raises(ValueError, match='single characters'):
+        Wenmode([]).use(fenced_directive, fence=('::',))
+
+
+def test_fenced_directive_handles_empty_and_unclosed_bodies() -> None:
+    app = Wenmode([], renderer=RSTRenderer()).use(fenced_directive)
+
+    assert app.render('```{note}\n```\n') == '.. note::\n'
+    assert app.render('```{note}') == '.. note::\n'
+    assert app.render('```{code-block} python\n') == '.. code-block:: python\n'
+    assert app.render('```{note}\n:class: warning\n') == '.. note::\n   :class: warning\n'
+    assert app.render('```{note}\nBody without closer.\n') == '.. note::\n\n   Body without closer.\n'
+
+
 def test_toc_leaf_directive_renders_heading_links() -> None:
     app = Wenmode(
         [AtxHeading(id_transform=True), LeafDirective, ContainerDirective, Emphasis],
