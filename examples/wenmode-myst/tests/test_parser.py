@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from wenmode_myst import markdown_to_rst
+from wenmode_myst import markdown_to_rst, target
+
+from wenmode import RSTRenderer, Wenmode
 
 
 def test_wenmode_myst_bridge_renders_sphinx_rst() -> None:
@@ -35,6 +37,12 @@ Body.
     assert '.. rst-class:: lead\n\n   Lead with :doc:`Usage <usage>`.' in rst
     assert '.. grid:: 1 1 2 2\n   :gutter: 2' in rst
     assert '.. grid-item-card:: Card\n      :link: usage\n      :link-type: doc' in rst
+
+
+def test_target_support_is_installable_as_plugin() -> None:
+    app = Wenmode([], renderer=RSTRenderer(), plugins=[target])
+
+    assert app.render('(example)=\n') == '.. _example:\n'
 
 
 def test_wenmode_myst_bridge_keeps_code_block_body_literal() -> None:

@@ -19,6 +19,8 @@ Wenmode `literalDirective` nodes, so their body is passed through to
 reStructuredText without Markdown inline parsing.
 Colon fences are handled by the same configurable `FencedDirectiveRule` used for
 backtick and tilde fences.
+MyST-style `(label)=` targets live in `wenmode_myst.target`, which is a normal
+Wenmode plugin module and can be passed to `Wenmode(..., plugins=[target])`.
 
 Use it from a Sphinx `conf.py` by adding `examples/wenmode-myst/src` to
 `sys.path` and replacing `myst_parser` with `wenmode_myst`.
