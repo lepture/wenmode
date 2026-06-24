@@ -73,7 +73,7 @@ chain-style setup remains supported.
 | --- | --- |
 | `wenmode.plugins.abbr` | Abbreviation definitions and `abbreviation` nodes |
 | `wenmode.plugins.definition_list` | Definition list syntax and nodes |
-| `wenmode.plugins.fenced_directive` | MyST-style fenced directives, rendered as `containerDirective` nodes |
+| `wenmode.plugins.fenced_directive` | MyST-style fenced directives, rendered as `containerDirective` or `literalDirective` nodes |
 | `wenmode.plugins.frontmatter` | Top-level `---` front matter stored on `root.data["frontmatter"]` |
 | `wenmode.plugins.inline_role` | MyST-style inline roles, rendered as `textDirective` nodes |
 | `wenmode.plugins.insert` | `insert` inline nodes |
@@ -139,8 +139,10 @@ wenmode = Wenmode().use(frontmatter, load=load_meta, dump=dump_meta, data_key='m
 ## Fenced Directives And Roles
 
 The `fenced_directive` and `inline_role` plugins provide MyST-style directive
-syntax. They do not create new plugin-specific node types. Instead, they map
-onto the same mdast directive nodes documented in {ref}`directives`.
+syntax. Inline roles map onto the same mdast directive nodes documented in
+{ref}`directives`. Fenced directives usually create `containerDirective` nodes,
+and literal-body directives such as `code-block` create `literalDirective`
+nodes.
 
 ```python
 from wenmode import Wenmode
@@ -159,9 +161,30 @@ Read this first.
 ```
 ````
 
-The fenced directive plugin creates a `containerDirective` node. Its first-line
-argument becomes the directive label, `:key: value` option lines become
-attributes, and body content is parsed as Markdown.
+The fenced directive plugin creates a `containerDirective` node by default. Its
+first-line argument becomes the directive label, `:key: value` option lines
+become attributes, and body content is parsed as Markdown.
+
+Literal-body directives create `literalDirective` nodes so their body is kept as
+source text instead of being parsed as Markdown. By default this applies to
+`code-block`:
+
+````markdown
+```{code-block} python
+:caption: example.py
+
+print("*not emphasis*")
+```
+````
+
+Pass `literal_names` to `use()` when your application needs a different set:
+
+```python
+from wenmode import Wenmode
+from wenmode.plugins import fenced_directive
+
+wenmode = Wenmode().use(fenced_directive, literal_names={'code-block', 'raw'})
+```
 
 Inline roles use MyST-style role syntax:
 

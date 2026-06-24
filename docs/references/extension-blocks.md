@@ -231,7 +231,7 @@ Output node is `BlockSpoilerNode`, and its AST is:
 ```
 ````
 
-Output node is `ContainerDirective`, and its AST is:
+Output node is usually `ContainerDirective`, and its AST is:
 
 ```json
 {
@@ -274,6 +274,35 @@ Output node is `ContainerDirective`, and its AST is:
       "name": "note",
       "attributes": {
         "class": "wide"
+      }
+    }
+  ]
+}
+```
+
+Literal-body directive names create `LiteralDirective` nodes instead. The
+default literal set includes `code-block`, so its body is kept as source text
+instead of being parsed as Markdown:
+
+````markdown
+```{code-block} python
+:caption: example.py
+
+print("*not emphasis*")
+```
+````
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "literalDirective",
+      "value": "print(\"*not emphasis*\")\n",
+      "name": "code-block",
+      "argument": "python",
+      "attributes": {
+        "caption": "example.py"
       }
     }
   ]

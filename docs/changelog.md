@@ -28,6 +28,13 @@ here while preparing a release, then move them under the final version heading.
 - Add regression coverage for parser rule-set rebuilds, nested source maps,
   deferred inline queues, streaming compatibility, HTML block performance, and
   nested disallowed HTML escaping.
+- Add `LiteralDirective` nodes for MyST-style fenced directives whose body
+  should remain literal text. The `fenced_directive` plugin now emits
+  `literalDirective` for `code-block` by default, with configurable
+  `literal_names`.
+- Update the local `wenmode-myst` example to use `LiteralDirective` for
+  `code-block` and `sourcecode` bodies instead of carrying a local raw-body
+  directive node.
 
 ## 0.5.0
 

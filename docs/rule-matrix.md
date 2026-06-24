@@ -72,7 +72,7 @@ The plugin name in the first column is the module you import from
 | `math` | `InlineMathRule` | inline | `inlineMath` | compatible |
 | `spoiler` | `BlockSpoilerRule` | block | `blockSpoiler` | compatible |
 | `spoiler` | `InlineSpoilerRule` | inline | `inlineSpoiler` | compatible |
-| `fenced_directive` | `FencedDirectiveRule` | block | `containerDirective` | compatible |
+| `fenced_directive` | `FencedDirectiveRule` | block | `containerDirective`, or `literalDirective` for configured literal-body names such as `code-block` | compatible |
 | `inline_role` | `RoleRule` | inline | `textDirective` | compatible |
 | `mark` | `MarkRule` | inline | `mark` | compatible |
 | `insert` | `InsertRule` | inline | `insert` | compatible |

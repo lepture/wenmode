@@ -21,9 +21,9 @@ Directive HTML can be replaced by registering directive renderers. Raw HTML is
 escaped by the default `HTMLRenderer` unless you construct it with
 `HTMLRenderer(escape=False)`.
 
-Wenmode nodes are mdast-compatible data objects. Core Markdown, GFM, and mdast
-directive nodes live in `wenmode.nodes`. Plugin nodes live in their plugin
-modules and follow the same `Node.to_ast()` conventions.
+Wenmode nodes are mdast-compatible data objects. Core Markdown, GFM, and shared
+directive nodes live in `wenmode.nodes`. Plugin-specific nodes live in their
+plugin modules and follow the same `Node.to_ast()` conventions.
 
 Renderers dispatch on the string stored in each node's `type` field. When a
 custom renderer or plugin handler is not being called, check this value in the
@@ -77,7 +77,7 @@ Internally, `Position.start` and `Position.end` store only 0-based offsets.
 | Formatting | `emphasis`, `strong`, `delete` |
 | Links and media | `link`, `image`, `break` |
 | GFM | `table`, `tableRow`, `tableCell`, `footnoteReference`, `footnoteDefinition` |
-| Directives | `textDirective`, `leafDirective`, `containerDirective` |
+| Directives | `textDirective`, `leafDirective`, `containerDirective`, `literalDirective` |
 | Plugin nodes | `abbreviation`, `definitionList`, `definitionTerm`, `definitionDescription`, `math`, `inlineMath`, `mark`, `insert`, `superscript`, `subscript`, `ruby`, `inlineSpoiler`, `blockSpoiler` |
 
 For the syntax that creates each node, continue with the block and inline rule

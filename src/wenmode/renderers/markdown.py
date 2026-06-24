@@ -19,6 +19,7 @@ from wenmode.nodes import (
     Link,
     List,
     ListItem,
+    LiteralDirective,
     Node,
     Paragraph,
     Parent,
@@ -178,6 +179,42 @@ def render_container_directive(renderer: MarkdownRenderer, node: ContainerDirect
     if body:
         return f'{head}\n{body}\n:::\n\n'
     return f'{head}\n:::\n\n'
+
+
+@MarkdownRenderer.register('literalDirective')
+def render_literal_directive(renderer: MarkdownRenderer, node: LiteralDirective, context: RenderContext) -> str:
+    fence = render_literal_directive_fence(node.value)
+    head = f'{fence}{{{node.name}}}'
+    if node.argument:
+        head += f' {node.argument}'
+
+    parts = [head + '\n']
+    options = render_fenced_directive_attributes(node.attributes)
+    if options:
+        parts.append(options)
+        if node.value:
+            parts.append('\n')
+    if node.value:
+        parts.append(node.value if node.value.endswith('\n') else node.value + '\n')
+    parts.append(fence + '\n\n')
+    return ''.join(parts)
+
+
+def render_literal_directive_fence(value: str) -> str:
+    longest_fence = max((len(match.group(0)) for match in re.finditer(r'`+', value)), default=2)
+    return '`' * max(3, longest_fence + 1)
+
+
+def render_fenced_directive_attributes(attributes: dict[str, str] | None) -> str:
+    if not attributes:
+        return ''
+    lines = []
+    for key, value in attributes.items():
+        if value == '':
+            lines.append(f':{key}:')
+        else:
+            lines.append(f':{key}: {value}')
+    return '\n'.join(lines) + '\n'
 
 
 def render_directive_label(renderer: MarkdownRenderer, node: Node, context: RenderContext) -> str:

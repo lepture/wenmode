@@ -6,8 +6,9 @@ import pytest
 
 from tests.helpers import load_fixture
 from tests.plugin_helpers import configured_app
-from wenmode import HTMLRenderer, MarkdownRenderer, Wenmode
+from wenmode import HTMLRenderer, MarkdownRenderer, RSTRenderer, Wenmode
 from wenmode.directives import Abbreviation, Admonition, Details, Figure, TableOfContents
+from wenmode.plugins import fenced_directive
 from wenmode.rules import (
     AtxHeading,
     ContainerDirective,
@@ -141,6 +142,60 @@ def test_fenced_directive_order_is_before_fenced_code() -> None:
     app = configured_app(['fenced_code', 'fenced_directive'], renderer=MarkdownRenderer())
 
     assert app.render('```{note} Important\nBody.\n```\n') == (':::note[Important]\nBody\\.\n:::\n')
+
+
+def test_fenced_literal_directive_preserves_code_block_body() -> None:
+    markdown = '```{code-block} python\n:caption: example.py\n\nprint("*not emphasis*")\n```\n'
+    app = configured_app(['fenced_directive', 'emphasis'])
+    root = app.parse(markdown)
+
+    assert root.to_ast() == {
+        'type': 'root',
+        'children': [
+            {
+                'type': 'literalDirective',
+                'value': 'print("*not emphasis*")\n',
+                'name': 'code-block',
+                'argument': 'python',
+                'attributes': {'caption': 'example.py'},
+            }
+        ],
+    }
+    assert app.render_node(root) == '<pre><code class="language-python">print(&quot;*not emphasis*&quot;)\n</code></pre>\n'
+
+
+def test_literal_directive_renderers_preserve_fenced_and_rst_forms() -> None:
+    markdown = '```{code-block} python\n:caption: example.py\n\nprint("*not emphasis*")\n```\n'
+
+    assert configured_app(['fenced_directive'], renderer=MarkdownRenderer()).render(markdown) == markdown
+    assert configured_app(['fenced_directive'], renderer=RSTRenderer()).render(markdown) == (
+        '.. code-block:: python\n'
+        '   :caption: example.py\n'
+        '\n'
+        '   print("*not emphasis*")\n'
+    )
+
+
+def test_fenced_directive_literal_names_are_configurable() -> None:
+    app = Wenmode([]).use(fenced_directive, literal_names=())
+
+    assert app.parse('```{code-block} python\n*body*\n```\n').to_ast() == {
+        'type': 'root',
+        'children': [
+            {
+                'type': 'containerDirective',
+                'children': [
+                    {
+                        'type': 'paragraph',
+                        'data': {'directiveLabel': True},
+                        'children': [{'type': 'text', 'value': 'python'}],
+                    },
+                    {'type': 'paragraph', 'children': [{'type': 'text', 'value': '*body*'}]},
+                ],
+                'name': 'code-block',
+            }
+        ],
+    }
 
 
 def test_toc_leaf_directive_renders_heading_links() -> None:

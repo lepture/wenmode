@@ -23,6 +23,7 @@ from wenmode.nodes import (
     Link,
     List,
     ListItem,
+    LiteralDirective,
     Node,
     Paragraph,
     Root,
@@ -207,7 +208,7 @@ class HTMLRenderer(BaseRenderer):
         return content + backrefs + '\n'
 
     def render_directive(
-        self, node: TextDirective | LeafDirective | ContainerDirective, context: HTMLRenderContext
+        self, node: TextDirective | LeafDirective | ContainerDirective | LiteralDirective, context: HTMLRenderContext
     ) -> str | None:
         directive = self.directives.get((node.type, node.name))
         if directive is None:
@@ -335,6 +336,16 @@ def render_directive_node(
     renderer: HTMLRenderer, node: TextDirective | LeafDirective | ContainerDirective, context: HTMLRenderContext
 ) -> str:
     return renderer.render_directive_or_children(node, context)
+
+
+@HTMLRenderer.register('literalDirective')
+def render_literal_directive(renderer: HTMLRenderer, node: LiteralDirective, context: HTMLRenderContext) -> str:
+    rendered = renderer.render_directive(node, context)
+    if rendered is not None:
+        return rendered
+    if node.name == 'code-block':
+        return render_code(renderer, Code(value=node.value, lang=node.argument), context)
+    return renderer.escape_html(node.value)
 
 
 @HTMLRenderer.register('table')

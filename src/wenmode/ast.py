@@ -22,6 +22,7 @@ from .nodes import (
     List,
     ListItem,
     Literal,
+    LiteralDirective,
     Node,
     Paragraph,
     Parent,
@@ -65,6 +66,7 @@ BUILTIN_NODE_REGISTRY: dict[str, type[Node]] = {
     'textDirective': TextDirective,
     'leafDirective': LeafDirective,
     'containerDirective': ContainerDirective,
+    'literalDirective': LiteralDirective,
 }
 __all__ = [
     'BUILTIN_NODE_REGISTRY',

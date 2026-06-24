@@ -21,6 +21,7 @@ from wenmode.nodes import (
     Link,
     List,
     ListItem,
+    LiteralDirective,
     Node,
     Paragraph,
     Parent,
@@ -223,6 +224,23 @@ def render_container_directive(renderer: RSTRenderer, node: ContainerDirective, 
         head += f' {argument}'
     options = render_directive_options(node.attributes)
     body = renderer.render_children(children, context).rstrip('\n')
+
+    if not body:
+        if options:
+            return '\n'.join([head, *options]) + '\n\n'
+        return head + '\n\n'
+
+    lines = [head, *options, '', indent_block(body, '   ')]
+    return '\n'.join(lines) + '\n\n'
+
+
+@RSTRenderer.register('literalDirective')
+def render_literal_directive(renderer: RSTRenderer, node: LiteralDirective, context: RSTRenderContext) -> str:
+    head = f'.. {node.name}::'
+    if node.argument:
+        head += f' {node.argument}'
+    options = render_directive_options(node.attributes)
+    body = node.value.rstrip('\n')
 
     if not body:
         if options:

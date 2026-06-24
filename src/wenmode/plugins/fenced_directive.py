@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 from wenmode.nodes import ContainerDirective as ContainerDirectiveNode
+from wenmode.nodes import LiteralDirective as LiteralDirectiveNode
 from wenmode.nodes import Node
 from wenmode.rules.base import BlockRule
 from wenmode.rules.blocks.directive import collect_until_with_source, directive_label_children
@@ -15,6 +17,7 @@ if TYPE_CHECKING:
 
 FENCED_DIRECTIVE_RE = re.compile(r'(?P<indent>[ \t]{0,3})(?P<fence>`{3,}|~{3,})\{(?P<name>[A-Za-z][A-Za-z0-9_-]*)}')
 ATTRIBUTE_RE = re.compile(r'[ \t]*:(?P<name>[A-Za-z][A-Za-z0-9_-]*):[ \t]*')
+DEFAULT_LITERAL_DIRECTIVE_NAMES = frozenset({'code-block'})
 
 
 class FencedDirectiveRule(BlockRule):
@@ -24,6 +27,10 @@ class FencedDirectiveRule(BlockRule):
     order: ClassVar[int] = 60
     pattern: str = r'[ \t]{0,3}(?:`{3,}|~{3,})\{[A-Za-z][A-Za-z0-9_-]*}'
     head_pattern: ClassVar[re.Pattern[str]] = FENCED_DIRECTIVE_RE
+
+    def __init__(self, literal_names: Iterable[str] = DEFAULT_LITERAL_DIRECTIVE_NAMES) -> None:
+        super().__init__()
+        self.literal_names = frozenset(literal_names)
 
     @staticmethod
     def parse_directive_head(state: BlockState, pattern: re.Pattern[str]) -> tuple[str, str | None, re.Pattern[str]]:
@@ -68,10 +75,30 @@ class FencedDirectiveRule(BlockRule):
         )
         return children
 
+    @staticmethod
+    def parse_literal_directive_body(state: BlockState, closer: re.Pattern[str]) -> str:
+        lines: list[str] = []
+        while not state.done:
+            line = state.line
+            if closer.match(line.rstrip('\r\n')) is not None:
+                state.advance()
+                break
+            lines.append(line)
+            state.advance()
+        return ''.join(lines)
+
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
-        name, title, closer = self.parse_directive_head(state, self.head_pattern)
+        name, argument, closer = self.parse_directive_head(state, self.head_pattern)
         attributes = self.parse_directive_attributes(state)
-        children = self.parse_directive_body(parser, state, title, closer)
+        if name in self.literal_names:
+            value = self.parse_literal_directive_body(state, closer)
+            return LiteralDirectiveNode(
+                name=name,
+                argument=argument,
+                attributes=attributes or None,
+                value=value,
+            )
+        children = self.parse_directive_body(parser, state, argument, closer)
         return ContainerDirectiveNode(name=name, attributes=attributes or None, children=children)
 
 
@@ -83,5 +110,9 @@ def parse_attribute_line(line: str) -> tuple[str, str] | None:
     return match.group('name'), text[match.end() :]
 
 
-def setup(wenmode: Wenmode, **options: Any) -> None:
-    wenmode.register_rule(FencedDirectiveRule)
+def setup(
+    wenmode: Wenmode,
+    literal_names: Iterable[str] = DEFAULT_LITERAL_DIRECTIVE_NAMES,
+    **options: Any,
+) -> None:
+    wenmode.register_rule(FencedDirectiveRule(literal_names=literal_names))

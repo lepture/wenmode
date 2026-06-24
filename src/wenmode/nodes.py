@@ -342,4 +342,14 @@ class ContainerDirective(Parent):
     type: str = 'containerDirective'
 
 
-DirectiveNode = TextDirective | LeafDirective | ContainerDirective
+@dataclass
+class LiteralDirective(Literal):
+    """Literal block directive node."""
+
+    name: str = ''
+    argument: str | None = None
+    attributes: dict[str, str] | None = None
+    type: str = 'literalDirective'
+
+
+DirectiveNode = TextDirective | LeafDirective | ContainerDirective | LiteralDirective

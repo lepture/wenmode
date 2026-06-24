@@ -4,7 +4,18 @@ from dataclasses import dataclass
 
 from wenmode import Wenmode
 from wenmode.ast import find, find_all, from_ast, iter_children, plain_text, walk
-from wenmode.nodes import FootnoteReference, Heading, Image, Link, Node, Paragraph, Parent, Position, Text
+from wenmode.nodes import (
+    FootnoteReference,
+    Heading,
+    Image,
+    Link,
+    LiteralDirective,
+    Node,
+    Paragraph,
+    Parent,
+    Position,
+    Text,
+)
 from wenmode.presets import github
 
 
@@ -94,6 +105,27 @@ def test_from_ast_round_trips_builtin_nodes() -> None:
     assert restored.to_ast() == ast
     assert isinstance(find(restored, Heading), Heading)
     assert isinstance(find(restored, 'image'), Image)
+
+
+def test_from_ast_restores_literal_directive_node() -> None:
+    node = from_ast(
+        {
+            'type': 'literalDirective',
+            'value': 'print("x")\n',
+            'name': 'code-block',
+            'argument': 'python',
+            'attributes': {'caption': 'example.py'},
+        }
+    )
+
+    assert isinstance(node, LiteralDirective)
+    assert node.to_ast() == {
+        'type': 'literalDirective',
+        'value': 'print("x")\n',
+        'name': 'code-block',
+        'argument': 'python',
+        'attributes': {'caption': 'example.py'},
+    }
 
 
 def test_from_ast_restores_offset_positions() -> None:
