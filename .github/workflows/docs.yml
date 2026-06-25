@@ -11,6 +11,13 @@ on:
       - main
     paths-ignore:
       - "tests/**"
+  pull_request:
+    paths:
+      - "docs/**"
+      - "README.md"
+      - "README.rst"
+      - "pyproject.toml"
+      - "examples/wenmode-myst/**"
   workflow_dispatch:
 
 jobs:
@@ -28,6 +35,9 @@ jobs:
       - name: install dependencies
         run: python -m pip install --upgrade uv
 
+      - name: docs examples
+        run: uv run --locked --group test pytest -q tests/test_docs_examples.py
+
       - name: sphinx build
         run: uv run --group docs sphinx-build -b dirhtml docs public -W --keep-going
 
@@ -37,6 +47,7 @@ jobs:
           path: public
 
   deploy:
+    if: github.event_name != 'pull_request'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
