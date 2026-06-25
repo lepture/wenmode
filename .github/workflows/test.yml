@@ -80,6 +80,28 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
+  sonar:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade uv
+
+      - name: Generate coverage
+        run: uv run --locked --group test pytest --cov=wenmode --cov-branch --cov-report=xml
+
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@v8
         continue-on-error: true
