@@ -90,6 +90,9 @@ lint = [
     "mypy>=2.1.0",
     "ruff>=0.15.17",
 ]
+release = [
+    "twine>=6.0.0",
+]
 test = [
     "pytest>=8.4.0",
     "pytest-cov>=7.1.0",

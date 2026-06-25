@@ -27,7 +27,7 @@ jobs:
       run: uv build
 
     - name: check dist metadata
-      run: uv run --with twine twine check dist/*
+      run: uv run --locked --group release twine check dist/*
 
     - uses: actions/upload-artifact@v7
       with:
@@ -68,7 +68,7 @@ jobs:
     - uses: actions/setup-node@v6
       with:
         node-version: 24
-    - run: npx changelogithub --no-group
+    - run: npx --yes changelogithub@14.0.0 --no-group
       continue-on-error: true
       env:
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}

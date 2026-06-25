@@ -39,7 +39,7 @@ jobs:
         run: uv run --locked --group test pytest -q tests/test_docs_examples.py
 
       - name: sphinx build
-        run: uv run --group docs sphinx-build -b dirhtml docs public -W --keep-going
+        run: uv run --locked --group docs sphinx-build -b dirhtml docs public -W --keep-going
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
