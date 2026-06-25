@@ -631,6 +631,7 @@ lint = [
     { name = "mypy", specifier = ">=2.1.0" },
     { name = "ruff", specifier = ">=0.15.17" },
 ]
+release = [{ name = "twine", specifier = ">=6.0.0" }]
 test = [
     { name = "pytest", specifier = ">=8.4.0" },
     { name = "pytest-cov", specifier = ">=7.1.0" },
