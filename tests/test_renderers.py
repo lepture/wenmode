@@ -10,6 +10,7 @@ from tests.plugin_helpers import configured_app
 from wenmode import HTMLRenderer, MarkdownRenderer, RSTRenderer, Wenmode
 from wenmode.directives import Admonition, Details, Figure, TableOfContents
 from wenmode.nodes import Html, Image, Link, Literal, Paragraph, Parent, Root, Text
+from wenmode.plugins import math
 from wenmode.renderers import BaseRenderer, RenderContext
 from wenmode.rules import (
     Footnote,
@@ -262,6 +263,24 @@ def test_rst_renderer_uses_plain_text_for_link_labels() -> None:
     assert app.render('[`mdast-util-directive`](https://example.com)\n') == (
         '`mdast-util-directive <https://example.com>`__\n'
     )
+
+
+def test_rst_renderer_normalizes_multiline_image_options() -> None:
+    app = Wenmode(renderer=RSTRenderer())
+
+    assert app.render('![line1\nline2](https://example.com/img.png "title1\ntitle2")\n') == (
+        '|image-1|\n'
+        '\n'
+        '.. |image-1| image:: https://example.com/img.png\n'
+        '   :alt: line1 line2\n'
+        '   :title: title1 title2\n'
+    )
+
+
+def test_rst_renderer_escapes_backticks_in_inline_math() -> None:
+    app = Wenmode(renderer=RSTRenderer(), plugins=[math])
+
+    assert app.render('$x` y$\n') == ':math:`x\\` y`\n'
 
 
 @pytest.mark.parametrize(

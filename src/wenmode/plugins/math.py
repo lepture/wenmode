@@ -158,7 +158,7 @@ def render_rst_math(renderer: RSTRenderer, node: MathNode, context: RSTRenderCon
 
 
 def render_rst_inline_math(renderer: RSTRenderer, node: InlineMathNode, context: RSTRenderContext) -> str:
-    return f':math:`{renderer.escape_inline_literal(node.value)}`'
+    return f':math:`{renderer.escape_interpreted_text(node.value)}`'
 
 
 rules: list[type[Rule] | Rule] = [MathBlockRule, InlineMathRule]

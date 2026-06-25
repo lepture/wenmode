@@ -97,13 +97,17 @@ class RSTRenderer(BaseRenderer):
         """Escape a link or image target."""
         return value.replace('\n', ' ').replace('`', '\\`').replace('>', '\\>')
 
+    def escape_directive_option(self, value: str) -> str:
+        """Escape text inside a one-line reStructuredText directive option."""
+        return value.replace('\r\n', ' ').replace('\r', ' ').replace('\n', ' ')
+
     def render_image_definition(self, reference: ImageReference) -> str:
         node = reference.node
         lines = [f'.. |{reference.name}| image:: {self.escape_link_target(node.url)}']
         if node.alt:
-            lines.append(f'   :alt: {node.alt}')
+            lines.append(f'   :alt: {self.escape_directive_option(node.alt)}')
         if node.title:
-            lines.append(f'   :title: {node.title}')
+            lines.append(f'   :title: {self.escape_directive_option(node.title)}')
         return '\n'.join(lines) + '\n\n'
 
 
