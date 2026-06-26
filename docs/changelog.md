@@ -13,6 +13,17 @@ here while preparing a release, then move them under the final version heading.
 
 ## Unreleased
 
+## 0.6.1
+
+Released **Jun 26, 2026**.
+
+- Fix emphasis parsing for CommonMark's multiple-of-3 delimiter rule when a
+  delimiter run has already been partially consumed. Inputs such as `*a***a*`
+  now render as `<em>a</em>*<em>a</em>` instead of leaving the second emphasis
+  span unparsed.
+- Fix reStructuredText rendering so image directive `alt` and `title` options
+  cannot emit embedded newlines, and inline math escapes backticks correctly.
+
 ## 0.6.0
 
 Released **Jun 24, 2026**.
