@@ -10,6 +10,79 @@ Block-level and document-wide syntax provided by built-in plugins.
 Enable these features with `Wenmode(..., plugins=[...])` from `wenmode.plugins`. For
 setup options and renderer behavior, see {ref}`plugins`.
 
+## HtmlContainer Plugin
+
+`wenmode.plugins.html_container` replaces the CommonMark HTML block rule with a
+non-standard container rule. When an opening HTML tag and its matching closing
+tag each appear on their own line, the plugin parses the body as Markdown block
+content.
+
+```markdown
+<div>
+- one
+- two
+</div>
+```
+
+Output node is `HtmlContainerNode`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "htmlContainer",
+      "children": [
+        {
+          "type": "list",
+          "children": [
+            {
+              "type": "listItem",
+              "children": [
+                {
+                  "type": "paragraph",
+                  "children": [
+                    {
+                      "type": "text",
+                      "value": "one"
+                    }
+                  ]
+                }
+              ],
+              "spread": false
+            },
+            {
+              "type": "listItem",
+              "children": [
+                {
+                  "type": "paragraph",
+                  "children": [
+                    {
+                      "type": "text",
+                      "value": "two"
+                    }
+                  ]
+                }
+              ],
+              "spread": false
+            }
+          ],
+          "ordered": false,
+          "spread": false
+        }
+      ],
+      "name": "div",
+      "opening": "<div>",
+      "closing": "</div>"
+    }
+  ]
+}
+```
+
+Raw-text tags such as `script`, `style`, `pre`, and `textarea` stay literal
+`html` nodes. Self-closing tags, void tags, inline HTML, and unclosed tag pairs
+also use the raw HTML fallback behavior.
+
 ## Frontmatter Plugin
 
 `wenmode.plugins.frontmatter` consumes top-level `---` front matter and stores

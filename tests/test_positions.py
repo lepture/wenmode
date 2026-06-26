@@ -15,6 +15,7 @@ POSITION_RULE_NAMES = {
     'block_spoiler',
     'definition_list',
     'fenced_directive',
+    'html_container',
     'inline_math',
     'inline_spoiler',
     'insert',

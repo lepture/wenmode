@@ -356,5 +356,33 @@
     ],
     "markdown": "$a $ and $b$\n",
     "html": "<p><span class=\"math math-inline\">a $ and $b</span></p>\n"
+  },
+  {
+    "name": "html container parses markdown children",
+    "rules": [
+      "html_container",
+      "list"
+    ],
+    "markdown": "<div>\n- step 1\n- step 2\n</div>\n",
+    "html": "&lt;div&gt;\n<ul>\n<li>step 1</li>\n<li>step 2</li>\n</ul>\n&lt;/div&gt;\n",
+    "markdown_output": "<div>\n- step 1\n- step 2\n</div>\n"
+  },
+  {
+    "name": "html container keeps raw text tags literal",
+    "rules": [
+      "html_container",
+      "emphasis"
+    ],
+    "markdown": "<script>\n*not emphasis*\n</script>\n",
+    "html": "&lt;script&gt;\n*not emphasis*\n&lt;/script&gt;\n"
+  },
+  {
+    "name": "html container falls back for unclosed tags",
+    "rules": [
+      "html_container",
+      "list"
+    ],
+    "markdown": "<div>\n- item\n",
+    "html": "&lt;div&gt;\n- item\n"
   }
 ]

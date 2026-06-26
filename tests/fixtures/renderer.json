@@ -391,5 +391,19 @@
     "html": "&lt;div&gt;one\n<p>two&lt;/div&gt;</p>\n",
     "markdown": "<div>one\n\ntwo\\</div\\>\n",
     "rst": ".. raw:: html\n\n   <div>one\n\ntwo</div>\n"
+  },
+  {
+    "name": "html container renderers",
+    "input": "<section>\n# Title\n</section>\n",
+    "rules": [
+      "html_container",
+      "atx_heading"
+    ],
+    "html_options": {
+      "escape": false
+    },
+    "html": "<section>\n<h1>Title</h1>\n</section>\n",
+    "markdown": "<section>\n# Title\n</section>\n",
+    "rst": ".. raw:: html\n\n   <section>\n\nTitle\n=====\n\n.. raw:: html\n\n   </section>\n"
   }
 ]

@@ -75,6 +75,7 @@ chain-style setup remains supported.
 | `wenmode.plugins.definition_list` | Definition list syntax and nodes |
 | `wenmode.plugins.fenced_directive` | MyST-style fenced directives, rendered as `containerDirective` or `literalDirective` nodes |
 | `wenmode.plugins.frontmatter` | Top-level `---` front matter stored on `root.data["frontmatter"]` |
+| `wenmode.plugins.html_container` | Standalone HTML tag pairs whose body is parsed as Markdown blocks |
 | `wenmode.plugins.inline_role` | MyST-style inline roles, rendered as `textDirective` nodes |
 | `wenmode.plugins.insert` | `insert` inline nodes |
 | `wenmode.plugins.mark` | `mark` inline nodes |
@@ -86,6 +87,32 @@ chain-style setup remains supported.
 
 Each plugin also registers default HTML, Markdown, or RST renderer handlers when
 the feature has a standard representation in Wenmode's built-in renderers.
+
+## HTML Containers
+
+The `html_container` plugin replaces the CommonMark `HtmlBlock` rule with a
+non-standard `HtmlContainer` rule. Standalone HTML tag pairs become
+`htmlContainer` parent nodes, and the content between the tags is parsed as
+Markdown block content.
+
+```python
+from wenmode import HTMLRenderer, Wenmode
+from wenmode.plugins import html_container
+
+wenmode = Wenmode(renderer=HTMLRenderer(escape=False), plugins=[html_container])
+
+assert wenmode.render('<div>\n- one\n</div>\n') == (
+    '<div>\n<ul>\n<li>one</li>\n</ul>\n</div>\n'
+)
+```
+
+The plugin keeps raw-text tags such as `script`, `style`, `pre`, and
+`textarea` as literal `html` nodes. Self-closing tags, void tags, inline HTML,
+and unclosed tag pairs also fall back to the normal raw HTML block behavior.
+
+HTML renderer escaping still applies to the container boundaries by default.
+Use `HTMLRenderer(escape=False)` only for trusted or separately sanitized
+content, the same as raw HTML nodes.
 
 ## Front Matter
 

@@ -1,0 +1,202 @@
+from __future__ import annotations
+
+import re
+from collections.abc import Sequence
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any
+
+from wenmode.nodes import Node, Parent
+from wenmode.renderers import MarkdownRenderer, RenderContext
+from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
+from wenmode.renderers.rst import RSTRenderContext, RSTRenderer, indent_block
+from wenmode.rules.base import BlockRule, Rule
+from wenmode.rules.blocks.html import (
+    HTML_SCRIPT_STYLE_RE,
+    HtmlBlock,
+)
+from wenmode.state import BlockState, SourceCollector
+from wenmode.utils import compile_disallowed_html_filter, filter_disallowed_html
+
+from .types import RendererHandlers
+
+if TYPE_CHECKING:
+    from wenmode import Wenmode
+    from wenmode.parser import Parser
+
+
+HTML_CONTAINER_OPENER_RE = re.compile(
+    r'(?i)^[ \t]{0,3}<'
+    r'(?P<name>[a-z][a-z0-9-]*)'
+    r'(?:\s+[a-z_:][a-z0-9_.:-]*(?:\s*=\s*(?:[^\s"\'=<>`]+|\'[^\']*\'|"[^"]*"))?)*'
+    r'\s*>[ \t]*(?:\r?\n)?$'
+)
+VOID_TAGS = frozenset(
+    {
+        'area',
+        'base',
+        'br',
+        'col',
+        'embed',
+        'hr',
+        'img',
+        'input',
+        'link',
+        'meta',
+        'param',
+        'source',
+        'track',
+        'wbr',
+    }
+)
+
+
+@dataclass
+class HtmlContainerNode(Parent):
+    """HTML block container whose body is parsed as Markdown blocks."""
+
+    name: str = ''
+    opening: str = ''
+    closing: str = ''
+    type: str = 'htmlContainer'
+
+
+class HtmlContainer(BlockRule):
+    """Parse standalone HTML tag pairs as containers with Markdown children.
+
+    This rule is intended as a non-CommonMark replacement for ``HtmlBlock``.
+    It uses the same ``html_block`` rule name so installing the plugin replaces
+    the default rule instead of adding a second competing HTML block opener.
+    """
+
+    name = 'html_block'
+    pattern = HtmlBlock.pattern
+
+    def __init__(self, disallowed_tags: Sequence[str] = ()) -> None:
+        super().__init__()
+        self.disallowed_html_filter = compile_disallowed_html_filter(disallowed_tags)
+        self.fallback = HtmlBlock(disallowed_tags=disallowed_tags)
+
+    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node:
+        parsed = parse_html_container(parser, state, self.disallowed_html_filter)
+        if parsed is not None:
+            return parsed
+        return self.fallback.parse(parser, state, match)
+
+
+def parse_html_container(
+    parser: Parser,
+    state: BlockState,
+    disallowed_html_filter: re.Pattern[str] | None,
+) -> HtmlContainerNode | None:
+    opener = parse_container_opener(state.line)
+    if opener is None:
+        return None
+
+    name, opening = opener
+    if name in VOID_TAGS or HTML_SCRIPT_STYLE_RE.match(opening.lstrip(' \t')):
+        return None
+
+    close_index = find_matching_close_index(state, name)
+    if close_index is None:
+        return None
+
+    source = state.source.collect()
+    body = collect_container_body(state, source, close_index)
+    closing = state.line.rstrip('\r\n')
+    state.advance()
+
+    original_opening = opening
+    original_closing = closing
+    opening = filter_disallowed_html(original_opening, disallowed_html_filter)
+    closing = filter_disallowed_html(original_closing, disallowed_html_filter)
+    if opening != original_opening or closing != original_closing:
+        data = {'escaped': True}
+    else:
+        data = None
+    return HtmlContainerNode(
+        name=name,
+        opening=opening,
+        closing=closing,
+        children=parser.parse_blocks(body, parent_state=state, source=source.map()),
+        data=data,
+    )
+
+
+def parse_container_opener(line: str) -> tuple[str, str] | None:
+    opening = line.rstrip('\r\n')
+    match = HTML_CONTAINER_OPENER_RE.match(line)
+    if match is None:
+        return None
+    return match.group('name').lower(), opening
+
+
+def find_matching_close_index(state: BlockState, name: str) -> int | None:
+    depth = 0
+    index = state.index + 1
+    while state.has_index(index):
+        line = state.line_at(index)
+        opener = parse_container_opener(line)
+        if opener is not None and opener[0] == name:
+            depth += 1
+            index += 1
+            continue
+        if is_container_closer(line, name):
+            if depth == 0:
+                return index
+            depth -= 1
+        index += 1
+    return None
+
+
+def is_container_closer(line: str, name: str) -> bool:
+    return re.match(rf'(?i)^[ \t]{{0,3}}</{re.escape(name)}\s*>[ \t]*(?:\r?\n)?$', line) is not None
+
+
+def collect_container_body(state: BlockState, source: SourceCollector, close_index: int) -> str:
+    lines: list[str] = []
+    state.advance()
+    while state.index < close_index:
+        line = state.line
+        lines.append(line)
+        source.add(state.index, 0, line)
+        state.advance()
+    return ''.join(lines)
+
+
+def render_html_container(renderer: HTMLRenderer, node: HtmlContainerNode, context: HTMLRenderContext) -> str:
+    opening = render_html_boundary(renderer, node, node.opening)
+    closing = render_html_boundary(renderer, node, node.closing)
+    return opening + '\n' + renderer.render_children(node.children, context) + closing + '\n'
+
+
+def render_html_boundary(renderer: HTMLRenderer, node: HtmlContainerNode, value: str) -> str:
+    if node.data and node.data.get('escaped'):
+        return value
+    return renderer.escape(value)
+
+
+def render_markdown_container(renderer: MarkdownRenderer, node: HtmlContainerNode, context: RenderContext) -> str:
+    body = renderer.render_children(node.children, context).rstrip('\n')
+    if body:
+        return f'{node.opening}\n{body}\n{node.closing}\n\n'
+    return f'{node.opening}\n{node.closing}\n\n'
+
+
+def render_rst_container(renderer: RSTRenderer, node: HtmlContainerNode, context: RSTRenderContext) -> str:
+    opening = '.. raw:: html\n\n' + indent_block(node.opening, '   ') + '\n\n'
+    closing = '.. raw:: html\n\n' + indent_block(node.closing, '   ') + '\n\n'
+    return opening + renderer.render_children(node.children, context) + closing
+
+
+rules: list[type[Rule] | Rule] = [HtmlContainer]
+nodes = {'htmlContainer': HtmlContainerNode}
+handlers: RendererHandlers = {
+    'html': {'htmlContainer': render_html_container},
+    'markdown': {'htmlContainer': render_markdown_container},
+    'rst': {'htmlContainer': render_rst_container},
+}
+
+
+def setup(wenmode: Wenmode, **options: Any) -> None:
+    wenmode.register_rule(HtmlContainer(**options))
+    wenmode.register_renderer_handlers(handlers)
