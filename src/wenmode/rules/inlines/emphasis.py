@@ -40,6 +40,7 @@ class Delimiter:
     length: int
     can_open: bool
     can_close: bool
+    orig_length: int
 
 
 def parse_emphasis_sequence(nodes: list[Node]) -> list[Node]:
@@ -116,7 +117,7 @@ def split_text_node(
             position = Position(start=node.position.start + pos, end=node.position.start + end)
         parts.append(TextNode(value=text[pos:end], position=position))
         if opener or closer:
-            delimiters.append(Delimiter(part_index, marker, delimiter_length, opener, closer))
+            delimiters.append(Delimiter(part_index, marker, delimiter_length, opener, closer, delimiter_length))
         pos = end
 
 
@@ -296,7 +297,9 @@ def emphasis_position(opener: TextNode, closer: TextNode, size: int) -> Position
 
 def can_match_delimiters(opener: Delimiter, closer: Delimiter) -> bool:
     if opener.can_close or closer.can_open:
-        return (opener.length + closer.length) % 3 != 0 or opener.length % 3 == 0 and closer.length % 3 == 0
+        open_length = opener.orig_length
+        close_length = closer.orig_length
+        return (open_length + close_length) % 3 != 0 or open_length % 3 == 0 and close_length % 3 == 0
     return True
 
 

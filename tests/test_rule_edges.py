@@ -101,5 +101,16 @@ def test_raw_html_comment_styles() -> None:
     assert gfm.render('foo <!--> foo -->\n') == '<p>foo &lt;!--&gt; foo --&gt;</p>\n'
 
 
+@pytest.mark.parametrize(
+    ('markdown', 'html'),
+    [
+        ('*a***a*\n', '<p><em>a</em>*<em>a</em></p>\n'),
+        ('*foo***bar*\n', '<p><em>foo</em>*<em>bar</em></p>\n'),
+    ],
+)
+def test_emphasis_multiple_of_three_uses_original_delimiter_length(markdown: str, html: str) -> None:
+    assert Wenmode().render(markdown) == html
+
+
 def test_parser_uses_first_inline_match_for_same_position() -> None:
     assert Wenmode([SearchInline, LaterSearchInline, TriggerInline]).render('x\n') == '<p>search</p>\n'
