@@ -13,12 +13,18 @@ here while preparing a release, then move them under the final version heading.
 
 ## Unreleased
 
+## 0.7.0
+
+Released **Jun 27, 2026**.
+
 - Add `wenmode.plugins.html_container`, a non-CommonMark replacement for
   `HtmlBlock` that parses standalone HTML tag pairs as `htmlContainer` nodes
   with Markdown block children while preserving raw HTML fallback behavior for
   raw-text tags, void/self-closing tags, inline HTML, and unclosed tag pairs.
 - Add structured `attributes` data to `htmlContainer` nodes and document AST
   interoperability for plugin node registries and unknown node fallback.
+- Fix emphasis flanking around Unicode combining marks and format characters,
+  including NFD-decomposed accents and zero-width joiner cases.
 
 ## 0.6.1
 
