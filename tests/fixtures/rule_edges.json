@@ -464,6 +464,38 @@
     "html": "<p><img src=\"/img.png\" alt=\"a\nb\" /></p>\n"
   },
   {
+    "name": "emphasis flanking treats combining mark as ordinary after strong close",
+    "rules": [
+      "emphasis"
+    ],
+    "markdown": "**cafe\u0301**s\n",
+    "html": "<p><strong>cafe\u0301</strong>s</p>\n"
+  },
+  {
+    "name": "emphasis flanking opens before combining mark",
+    "rules": [
+      "emphasis"
+    ],
+    "markdown": "a*\u0301foo*\n",
+    "html": "<p>a<em>\u0301foo</em></p>\n"
+  },
+  {
+    "name": "emphasis flanking treats zero-width joiner as ordinary",
+    "rules": [
+      "emphasis"
+    ],
+    "markdown": "*foo\u200d*bar\n",
+    "html": "<p><em>foo\u200d</em>bar</p>\n"
+  },
+  {
+    "name": "emphasis flanking keeps intraword underscore before combining mark",
+    "rules": [
+      "emphasis"
+    ],
+    "markdown": "a_\u0301foo_\n",
+    "html": "<p>a_\u0301foo_</p>\n"
+  },
+  {
     "name": "shortcut reference ignored when references disabled",
     "rules": [
       "link_no_references"
