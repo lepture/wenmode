@@ -13,6 +13,16 @@ here while preparing a release, then move them under the final version heading.
 
 ## Unreleased
 
+- Add constructor-time plugin setup options with `wenmode.plugins.plugin()`, so
+  configured plugins can be passed directly to `Wenmode(..., plugins=[...])`.
+- Add `wenmode.ast.registry_from_plugins()` and expose `nodes` registries on
+  built-in plugins so stored AST JSON can be restored with plugin node classes.
+- Add `wenmode.presets.create_preset()` for deriving custom rule lists from
+  existing presets by rule name.
+- Add `Parser.supports_streaming`, `Parser.streaming_blockers()`, and matching
+  `Wenmode` proxies to inspect custom streaming configurations before calling
+  `stream()`.
+
 ## 0.7.0
 
 Released **Jun 27, 2026**.
