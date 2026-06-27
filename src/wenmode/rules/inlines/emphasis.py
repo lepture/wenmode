@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -303,41 +304,43 @@ def can_match_delimiters(opener: Delimiter, closer: Delimiter) -> bool:
     return True
 
 
-def can_open(text: str, start: int, size: int, marker: str) -> bool:
-    if start > 0:
-        previous = text[start - 1]
-    else:
-        previous = '\n'
-    if start + size < len(text):
-        next_char = text[start + size]
-    else:
-        next_char = '\n'
-    if marker == '_' and previous.isalnum() and next_char.isalnum():
-        return False
-    if next_char.isspace():
-        return False
-    if is_punctuation(next_char) and not previous.isspace() and not is_punctuation(previous):
-        return False
-    return True
-
-
-def can_close(text: str, start: int, size: int, marker: str) -> bool:
-    if start > 0:
-        previous = text[start - 1]
-    else:
-        previous = '\n'
-    if start + size < len(text):
-        next_char = text[start + size]
-    else:
-        next_char = '\n'
-    if marker == '_' and previous.isalnum() and next_char.isalnum():
-        return False
-    if previous.isspace():
-        return False
-    if is_punctuation(previous) and not next_char.isspace() and not is_punctuation(next_char):
-        return False
-    return True
+_ASCII_PUNCTUATION = frozenset('!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~')
 
 
 def is_punctuation(char: str) -> bool:
-    return not char.isspace() and not char.isalnum()
+    # CommonMark 0.31.2: a Unicode punctuation character is in the P or S general category.
+    # ASCII fast path (the common case) avoids the unicodedata lookup; it is exactly
+    # equivalent to the P/S test for ASCII, where the only such characters are these.
+    if char.isascii():
+        return char in _ASCII_PUNCTUATION
+    return unicodedata.category(char)[0] in ('P', 'S')
+
+
+def _neighbors(text: str, start: int, size: int) -> tuple[str, str]:
+    previous = text[start - 1] if start > 0 else '\n'
+    next_char = text[start + size] if start + size < len(text) else '\n'
+    return previous, next_char
+
+
+def _flanking(previous: str, next_char: str) -> tuple[bool, bool]:
+    prev_ws, next_ws = previous.isspace(), next_char.isspace()
+    prev_p, next_p = is_punctuation(previous), is_punctuation(next_char)
+    left = (not next_ws) and (not next_p or prev_ws or prev_p)
+    right = (not prev_ws) and (not prev_p or next_ws or next_p)
+    return left, right
+
+
+def can_open(text: str, start: int, size: int, marker: str) -> bool:
+    previous, next_char = _neighbors(text, start, size)
+    left, right = _flanking(previous, next_char)
+    if marker == '_':
+        return left and (not right or is_punctuation(previous))
+    return left
+
+
+def can_close(text: str, start: int, size: int, marker: str) -> bool:
+    previous, next_char = _neighbors(text, start, size)
+    left, right = _flanking(previous, next_char)
+    if marker == '_':
+        return right and (not left or is_punctuation(next_char))
+    return right
