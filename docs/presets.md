@@ -125,14 +125,14 @@ product_preset.extend([
     Link(references=False),
 ])
 
-product_markdown = Wenmode(product_preset)
+wen = Wenmode(product_preset)
 text = '''
 <span>plain</span>
 
 A [direct](/url) and [reference][id].
 '''
 
-html = product_markdown.render(text)
+html = wen.render(text)
 
 assert '&lt;span&gt;plain&lt;/span&gt;' in html
 assert '<a href="/url">direct</a>' in html
@@ -143,6 +143,34 @@ This example starts from `commonmark`, removes raw HTML parsing, and replaces
 reference-style image and link rules with direct-only variants. Export
 `product_preset` from your own package when multiple services need the same
 syntax rules.
+
+Use `create_preset()` when you want that derivation to match rules by their
+stable names:
+
+```python
+from wenmode import Wenmode
+from wenmode.presets import commonmark, create_preset
+from wenmode.rules import HtmlBlock, Image, Link, RawHtml, Strikethrough
+
+product_preset = create_preset(
+    commonmark,
+    remove=[HtmlBlock, RawHtml],
+    replace=[Image(references=False), Link(references=False)],
+    append=[Strikethrough],
+)
+
+wen = Wenmode(product_preset)
+
+assert wen.render('<span>plain</span>\n') == (
+    '<p>&lt;span&gt;plain&lt;/span&gt;</p>\n'
+)
+assert wen.render('[x]: /url\n\n[x]\n') == '<p>[x]: /url</p>\n<p>[x]</p>\n'
+assert '<del>old</del>' in wen.render('~~old~~\n')
+```
+
+`replace` keeps each configured rule in the same position as the rule it
+replaces. Use `prepend` or `append` for rules that are not already present in
+the base preset.
 
 When a feature needs a new node type or renderer behavior, prefer a plugin over
 a long shared rule list. See {ref}`plugins` and {ref}`custom-plugins`.

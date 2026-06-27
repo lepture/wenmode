@@ -158,12 +158,12 @@ from collections.abc import Iterable
 from wenmode import Wenmode
 from wenmode.presets import streaming
 
-preview = Wenmode(streaming)
+wen = Wenmode(streaming)
 
 
 def render_preview(lines: Iterable[str]) -> Iterable[str]:
     yield '<article class="preview">\n'
-    yield from preview.stream(lines)
+    yield from wen.stream(lines)
     yield '</article>\n'
 
 
@@ -224,10 +224,10 @@ rendering, background jobs, and test fixtures.
 ```python
 from wenmode import Wenmode
 from wenmode.plugins import frontmatter, math
-from wenmode.presets import commonmark
+from wenmode.presets import commonmark, create_preset
 from wenmode.rules import HtmlBlock, RawHtml
 
-product_rules = [rule for rule in commonmark if rule not in {HtmlBlock, RawHtml}]
+product_rules = create_preset(commonmark, remove=[HtmlBlock, RawHtml])
 product_plugins = [frontmatter, math]
 
 
