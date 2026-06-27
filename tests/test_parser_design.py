@@ -557,14 +557,29 @@ def test_wenmode_stream_does_not_read_entire_input_before_first_chunk() -> None:
 
 
 def test_wenmode_stream_rejects_unsupported_rules() -> None:
-    with pytest.raises(StreamingUnsupportedError):
+    with pytest.raises(StreamingUnsupportedError, match='reference'):
         next(Wenmode(commonmark).stream('[x]\n\n[x]: /url\n'))
 
-    with pytest.raises(StreamingUnsupportedError):
+    with pytest.raises(StreamingUnsupportedError, match='footnote, reference'):
         next(Wenmode(github).stream('a[^one]\n\n[^one]: note\n'))
 
-    with pytest.raises(StreamingUnsupportedError):
+    with pytest.raises(StreamingUnsupportedError, match='footnote'):
         next(Wenmode([Footnote]).stream('a[^one]\n\n[^one]: note\n'))
+
+
+def test_parser_and_wenmode_report_streaming_support() -> None:
+    streamable = Wenmode(streaming)
+    full_document = Wenmode(github)
+
+    assert streamable.supports_streaming is True
+    assert streamable.parser.supports_streaming is True
+    assert streamable.streaming_blockers() == []
+    assert streamable.parser.streaming_blockers() == []
+
+    assert full_document.supports_streaming is False
+    assert full_document.parser.supports_streaming is False
+    assert full_document.streaming_blockers() == ['footnote', 'reference']
+    assert full_document.parser.streaming_blockers() == ['footnote', 'reference']
 
 
 def test_parser_reuses_footnote_state_per_parse() -> None:

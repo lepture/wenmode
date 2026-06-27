@@ -316,6 +316,23 @@ links, and direct images enabled. It disables reference-style links and images,
 footnotes, and other deferred document-wide transforms. If unsupported rules are
 enabled, `stream()` raises `StreamingUnsupportedError`.
 
+Check custom configurations before streaming:
+
+```python
+from wenmode import Wenmode
+from wenmode.presets import commonmark, streaming
+
+wen = Wenmode(streaming)
+
+assert wen.supports_streaming is True
+assert wen.streaming_blockers() == []
+
+wen = Wenmode(commonmark)
+
+assert wen.supports_streaming is False
+assert wen.streaming_blockers() == ['reference']
+```
+
 `Wenmode.stream()` returns a synchronous iterator of HTML chunks. Web frameworks
 that accept iterable response bodies can send those chunks directly.
 

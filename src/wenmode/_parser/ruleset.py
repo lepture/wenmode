@@ -22,6 +22,7 @@ class RuleSet:
     paragraph_continuations: list[ContinueRule]
     emphasis_enabled: bool
     defer_inlines: bool
+    streaming_blockers: tuple[str, ...]
     block_rule_order: dict[str, int]
     inline_rule_order: dict[str, int]
     triggered_inline_rules: dict[str, list[InlineRule]]
@@ -43,6 +44,7 @@ class RuleSet:
         block_rules = sorted_by_order([rule for rule in resolved_rules if isinstance(rule, BlockRule)])
         inline_rules = sorted_by_order([rule for rule in resolved_rules if isinstance(rule, InlineRule)])
         triggered_inline_rules, search_inline_rules = prepare_inline_dispatch(inline_rules)
+        streaming_blockers = tuple(transform.name for transform in root_transforms if transform.defer_inlines)
         return cls(
             rules=rules,
             block_rules=block_rules,
@@ -50,7 +52,8 @@ class RuleSet:
             root_transforms=root_transforms,
             paragraph_continuations=[rule for rule in resolved_rules if isinstance(rule, ContinueRule)],
             emphasis_enabled='emphasis' in rules,
-            defer_inlines=any(transform.defer_inlines for transform in root_transforms),
+            defer_inlines=bool(streaming_blockers),
+            streaming_blockers=streaming_blockers,
             block_rule_order={rule.name: index for index, rule in enumerate(block_rules)},
             inline_rule_order={rule.name: index for index, rule in enumerate(inline_rules)},
             triggered_inline_rules=triggered_inline_rules,
@@ -107,4 +110,3 @@ def compile_inline_trigger_re(rules: dict[str, list[InlineRule]]) -> re.Pattern[
     if not rules:
         return None
     return re.compile(f'[{re.escape("".join(rules))}]')
-

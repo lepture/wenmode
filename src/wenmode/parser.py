@@ -61,6 +61,15 @@ class Parser:
     def root_transforms(self) -> list[RootTransform]:
         return self._ruleset.root_transforms
 
+    @property
+    def supports_streaming(self) -> bool:
+        """Return whether this parser can yield nodes incrementally."""
+        return not self._ruleset.defer_inlines
+
+    def streaming_blockers(self) -> list[str]:
+        """Return deferred transform names that prevent streaming output."""
+        return list(self._ruleset.streaming_blockers)
+
     def register_rule(self, rule: type[Rule] | Rule) -> None:
         """Register or replace one rule by name.
 
@@ -169,10 +178,12 @@ class Parser:
         )
 
     def _assert_streaming_supported(self) -> None:
-        if not self._ruleset.defer_inlines:
+        blockers = self.streaming_blockers()
+        if not blockers:
             return
+        names = ', '.join(blockers)
         raise StreamingUnsupportedError(
-            'streaming output requires rules without deferred inline transforms; use the streaming preset'
+            f'streaming output is blocked by deferred inline transforms: {names}; use the streaming preset'
         )
 
     def parse_inlines(self, text: str, state: BlockState, source: SourceMap | None = None) -> list[Node]:

@@ -131,6 +131,15 @@ class Wenmode:
             raise TypeError('directive renderers require an HTMLRenderer')
         self.renderer.register_directive_renderer(directive)
 
+    @property
+    def supports_streaming(self) -> bool:
+        """Return whether the configured parser can produce streaming output."""
+        return self.parser.supports_streaming
+
+    def streaming_blockers(self) -> list[str]:
+        """Return deferred transform names that prevent streaming output."""
+        return self.parser.streaming_blockers()
+
     def use(self, plugin: PluginTarget, **options: Any) -> Wenmode:
         """Install a plugin module or plugin object on this parser and renderer."""
         target: PluginLike

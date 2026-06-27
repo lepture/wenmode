@@ -95,6 +95,18 @@ If you build a custom streaming rule list, avoid `Footnote`,
 `wenmode.plugins.abbr`, `Link(references=True)`, and `Image(references=True)`.
 See {ref}`rule-matrix`.
 
+Inspect the configured parser when the blocker is not obvious:
+
+```python
+from wenmode import Wenmode
+from wenmode.presets import github
+
+wen = Wenmode(github)
+
+assert wen.supports_streaming is False
+assert wen.streaming_blockers() == ['footnote', 'reference']
+```
+
 ## GFM syntax is not recognized
 
 `Wenmode()` uses the `commonmark` preset. Switch to `github` for the full GFM
