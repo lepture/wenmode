@@ -19,7 +19,7 @@ bare URL autolinks, footnotes, and GFM disallowed HTML handling.
 from wenmode import Wenmode
 from wenmode.presets import github
 
-wenmode = Wenmode(github)
+wen = Wenmode(github)
 text = '''
 - [x] done
 
@@ -28,7 +28,7 @@ text = '''
 | **x** | https://example.com |
 '''
 
-html = wenmode.render(text)
+html = wen.render(text)
 
 assert '<input checked="" disabled="" type="checkbox">' in html
 assert '<table>' in html
@@ -45,7 +45,7 @@ from wenmode import Wenmode
 from wenmode.directives import TableOfContents
 from wenmode.rules import AtxHeading, LeafDirective
 
-wenmode = Wenmode(
+wen = Wenmode(
     [AtxHeading(id_transform=True), LeafDirective],
     directives=[TableOfContents()],
 )
@@ -57,7 +57,7 @@ text = '''
 ## Usage
 '''
 
-html = wenmode.render(text)
+html = wen.render(text)
 
 assert '<nav aria-label="Table of contents" class="toc">' in html
 assert '<a href="#usage">Usage</a>' in html
@@ -72,14 +72,14 @@ from wenmode import HTMLRenderer, Wenmode
 from wenmode.headings import Slugger, add_heading_ids
 from wenmode.toc import collect_toc, render_toc_html
 
-wenmode = Wenmode()
+wen = Wenmode()
 text = '''
 # Title
 
 ## Usage
 '''
 
-root = wenmode.parse(text)
+root = wen.parse(text)
 add_heading_ids(root, slugger=Slugger(), min_depth=2)
 
 toc = collect_toc(root, min_depth=2, max_depth=3)
@@ -100,14 +100,14 @@ from wenmode.presets import commonmark
 from wenmode.rules import HtmlBlock, RawHtml
 
 rules = [rule for rule in commonmark if rule not in {HtmlBlock, RawHtml}]
-wenmode = Wenmode(rules)
+wen = Wenmode(rules)
 text = '<span>text</span>'
 expected = '''
 <p>&lt;span&gt;text&lt;/span&gt;</p>
 '''
 
-root = wenmode.parse(text)
-html = wenmode.render_node(root)
+root = wen.parse(text)
+html = wen.render_node(root)
 
 assert root.to_ast()['children'][0]['children'][0] == {
     'type': 'text',
@@ -128,13 +128,13 @@ heading IDs during parsing.
 from wenmode import Wenmode
 from wenmode.rules import AtxHeading
 
-wenmode = Wenmode([AtxHeading(id_transform=True)])
+wen = Wenmode([AtxHeading(id_transform=True)])
 text = '# Hello World'
 expected = '''
 <h1 id="hello-world">Hello World</h1>
 '''
 
-html = wenmode.render(text)
+html = wen.render(text)
 
 assert html == expected.lstrip()
 ```
@@ -232,10 +232,10 @@ def render_text(renderer: UpperRenderer, node: Text, context: RenderContext) -> 
     return node.value.upper()
 
 
-wenmode = Wenmode(renderer=UpperRenderer())
+wen = Wenmode(renderer=UpperRenderer())
 source = 'Hello *there*'
 
-text = wenmode.render(source)
+text = wen.render(source)
 
 assert text == 'HELLO THERE'
 ```

@@ -46,9 +46,9 @@ class EmphasisOnlyPlugin:
         wenmode.register_rule(Emphasis)
 
 
-wenmode = Wenmode([], plugins=[EmphasisOnlyPlugin()])
+wen = Wenmode([], plugins=[EmphasisOnlyPlugin()])
 
-assert wenmode.render('*emphasis*') == '<p><em>emphasis</em></p>\n'
+assert wen.render('*emphasis*') == '<p><em>emphasis</em></p>\n'
 ```
 
 Module plugins use the same shape. This is the pattern used by built-in plugins:
@@ -72,7 +72,7 @@ Applications import the module and pass it to `plugins`:
 from wenmode import Wenmode
 from my_project.wenmode_plugins import plus_mark
 
-wenmode = Wenmode(plugins=[plus_mark])
+wen = Wenmode(plugins=[plus_mark])
 ```
 
 ## Complete Inline Plugin
@@ -136,12 +136,12 @@ class PlusMarkPlugin:
         wenmode.register_renderer_handlers(handlers)
 
 
-wenmode = Wenmode(plugins=[PlusMarkPlugin()])
+wen = Wenmode(plugins=[PlusMarkPlugin()])
 expected = '''
 <p><mark>very <em>important</em></mark></p>
 '''
 
-assert wenmode.render('++very *important*++') == expected.lstrip()
+assert wen.render('++very *important*++') == expected.lstrip()
 ```
 
 The parser creates the node. Renderer handlers decide how each output format

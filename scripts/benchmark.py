@@ -227,7 +227,7 @@ def make_targets() -> list[Target]:
 
 
 def make_wenmode_all() -> Wenmode:
-    wenmode = Wenmode(
+    wen = Wenmode(
         [
             *github,
             LeafDirective,
@@ -250,8 +250,8 @@ def make_wenmode_all() -> Wenmode:
         superscript,
         subscript,
     ]:
-        wenmode.use(plugin)
-    return wenmode
+        wen.use(plugin)
+    return wen
 
 
 def benchmark(target: Target, case: Case, iterations: int, warmup: int) -> Result:

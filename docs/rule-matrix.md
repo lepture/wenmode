@@ -112,7 +112,7 @@ Generate heading IDs while keeping a small dialect:
 from wenmode import Wenmode
 from wenmode.rules import AtxHeading, SetextHeading
 
-wenmode = Wenmode([
+wen = Wenmode([
     AtxHeading(id_transform=True),
     SetextHeading(id_transform=True),
 ])
@@ -125,7 +125,7 @@ streaming preset:
 from wenmode import Wenmode
 from wenmode.rules import Image, Link
 
-wenmode = Wenmode([
+wen = Wenmode([
     Link(references=False),
     Image(references=False),
 ])

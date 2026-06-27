@@ -126,8 +126,8 @@ In Wenmode, package parser rules and renderer handlers in a plugin:
 from wenmode import Wenmode
 from my_package.wenmode_plugins import my_plugin
 
-wenmode = Wenmode(plugins=[my_plugin])
-html = wenmode.render(text)
+wen = Wenmode(plugins=[my_plugin])
+html = wen.render(text)
 ```
 
 See {ref}`custom-plugins` for custom plugin creation.

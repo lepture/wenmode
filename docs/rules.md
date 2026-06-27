@@ -18,7 +18,7 @@ with renderer behavior, start with {ref}`plugins`.
 from wenmode import Wenmode
 from wenmode.rules import AtxHeading, Emphasis, InlineCode
 
-wenmode = Wenmode([AtxHeading, InlineCode, Emphasis])
+wen = Wenmode([AtxHeading, InlineCode, Emphasis])
 ```
 
 With this rule list, ATX headings, inline code, and emphasis are parsed. Other
@@ -31,10 +31,10 @@ Pass an empty list when you want no Markdown rules enabled.
 ```python
 from wenmode import Wenmode
 
-wenmode = Wenmode([])
+wen = Wenmode([])
 text = '# not a heading'
 
-html = wenmode.render(text)
+html = wen.render(text)
 ```
 
 Pass classes or configured rule instances. Classes are instantiated
@@ -44,7 +44,7 @@ automatically, while instances let you choose rule options.
 from wenmode import Wenmode
 from wenmode.rules import Image, Link
 
-wenmode = Wenmode([
+wen = Wenmode([
     Image(references=False),
     Link(references=False),
 ])
@@ -61,8 +61,8 @@ Rules can be registered after construction.
 from wenmode import Wenmode
 from wenmode.rules import AtxHeading
 
-wenmode = Wenmode([])
-wenmode.register_rule(AtxHeading)
+wen = Wenmode([])
+wen.register_rule(AtxHeading)
 ```
 
 `register_rules()` accepts multiple rules:
@@ -71,8 +71,8 @@ wenmode.register_rule(AtxHeading)
 from wenmode import Wenmode
 from wenmode.rules import AtxHeading, Emphasis, InlineCode
 
-wenmode = Wenmode([])
-wenmode.register_rules([AtxHeading, InlineCode, Emphasis])
+wen = Wenmode([])
+wen.register_rules([AtxHeading, InlineCode, Emphasis])
 ```
 
 Rules are stored by name. Registering another rule with the same `name` replaces

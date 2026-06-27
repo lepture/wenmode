@@ -42,7 +42,7 @@ HTML nodes before writing HTML output.
 ```python
 from wenmode import Wenmode
 
-wenmode = Wenmode()
+wen = Wenmode()
 text = '''
 <script>alert(1)</script>
 '''
@@ -50,7 +50,7 @@ expected = '''
 &lt;script&gt;alert(1)&lt;/script&gt;
 '''
 
-html = wenmode.render(text)
+html = wen.render(text)
 
 assert html == expected.lstrip()
 ```
@@ -66,13 +66,13 @@ trusted or sanitized elsewhere.
 ```python
 from wenmode import HTMLRenderer, Wenmode
 
-wenmode = Wenmode(renderer=HTMLRenderer(escape=False))
+wen = Wenmode(renderer=HTMLRenderer(escape=False))
 text = '<span>trusted</span>'
 expected = '''
 <p><span>trusted</span></p>
 '''
 
-html = wenmode.render(text)
+html = wen.render(text)
 
 assert html == expected.lstrip()
 ```
@@ -88,13 +88,13 @@ scheme are rendered without `href` or `src`.
 ```python
 from wenmode import Wenmode
 
-wenmode = Wenmode()
+wen = Wenmode()
 text = '[click](javascript:alert(1))'
 expected = '''
 <p><a>click</a></p>
 '''
 
-html = wenmode.render(text)
+html = wen.render(text)
 
 assert html == expected.lstrip()
 ```
@@ -141,7 +141,7 @@ reach the renderer.
 from wenmode import Wenmode
 from wenmode.presets import github
 
-wenmode = Wenmode(github)
+wen = Wenmode(github)
 text = '''
 <script>alert(1)</script>
 '''
@@ -149,7 +149,7 @@ expected = '''
 &lt;script&gt;alert(1)&lt;/script&gt;
 '''
 
-html = wenmode.render(text)
+html = wen.render(text)
 
 assert html == expected.lstrip()
 ```
@@ -169,13 +169,13 @@ from wenmode.presets import commonmark
 from wenmode.rules import HtmlBlock, RawHtml
 
 rules = [rule for rule in commonmark if rule not in {HtmlBlock, RawHtml}]
-wenmode = Wenmode(rules)
+wen = Wenmode(rules)
 text = '<span>text</span>'
 expected = '''
 <p>&lt;span&gt;text&lt;/span&gt;</p>
 '''
 
-html = wenmode.render(text)
+html = wen.render(text)
 assert html == expected.lstrip()
 ```
 

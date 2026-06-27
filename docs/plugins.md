@@ -18,7 +18,7 @@ from wenmode import Wenmode
 from wenmode.presets import github
 from wenmode.plugins import math
 
-wenmode = Wenmode(github, plugins=[math])
+wen = Wenmode(github, plugins=[math])
 ```
 
 Use a plugin when you want a complete feature. Use individual rules when you
@@ -35,9 +35,9 @@ Import a plugin module from `wenmode.plugins` and pass it to `Wenmode` with the
 from wenmode import Wenmode
 from wenmode.plugins import math
 
-wenmode = Wenmode(plugins=[math])
+wen = Wenmode(plugins=[math])
 
-assert wenmode.render('Inline $x + y$.\n') == (
+assert wen.render('Inline $x + y$.\n') == (
     '<p>Inline <span class="math math-inline">x + y</span>.</p>\n'
 )
 ```
@@ -48,7 +48,7 @@ Install multiple plugins by listing them:
 from wenmode import Wenmode
 from wenmode.plugins import mark, superscript
 
-wenmode = Wenmode(plugins=[mark, superscript])
+wen = Wenmode(plugins=[mark, superscript])
 ```
 
 Some plugins accept setup options. For example, `math` can install only inline
@@ -99,9 +99,9 @@ Markdown block content.
 from wenmode import HTMLRenderer, Wenmode
 from wenmode.plugins import html_container
 
-wenmode = Wenmode(renderer=HTMLRenderer(escape=False), plugins=[html_container])
+wen = Wenmode(renderer=HTMLRenderer(escape=False), plugins=[html_container])
 
-assert wenmode.render('<div>\n- one\n</div>\n') == (
+assert wen.render('<div>\n- one\n</div>\n') == (
     '<div>\n<ul>\n<li>one</li>\n</ul>\n</div>\n'
 )
 ```
@@ -162,7 +162,7 @@ def dump_meta(value: object) -> str | None:
     return str(value['raw'])
 
 
-wenmode = Wenmode().use(frontmatter, load=load_meta, dump=dump_meta, data_key='meta')
+wen = Wenmode().use(frontmatter, load=load_meta, dump=dump_meta, data_key='meta')
 ```
 
 ## Fenced Directives And Roles
@@ -177,7 +177,7 @@ create `containerDirective` nodes, and literal-body directives such as
 from wenmode import Wenmode
 from wenmode.plugins import fenced_directive, inline_role
 
-wenmode = Wenmode(plugins=[fenced_directive, inline_role])
+wen = Wenmode(plugins=[fenced_directive, inline_role])
 ```
 
 Fenced directives use code-fence-style syntax:
@@ -214,7 +214,7 @@ such as MyST colon fences:
 from wenmode import Wenmode
 from wenmode.plugins import fenced_directive
 
-wenmode = Wenmode().use(
+wen = Wenmode().use(
     fenced_directive,
     literal_names={'code-block', 'sourcecode'},
     fence=('`', '~', ':'),
@@ -256,7 +256,7 @@ class MyPlugin:
         wenmode.register_rule(Emphasis)
 
 
-wenmode = Wenmode([], plugins=[MyPlugin()])
+wen = Wenmode([], plugins=[MyPlugin()])
 ```
 
 For non-trivial syntax, define the node, rule, render handlers, and `setup()`

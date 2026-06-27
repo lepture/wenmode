@@ -40,7 +40,7 @@ from wenmode import Wenmode
 from wenmode.presets import commonmark
 from wenmode.rules import ContainerDirective, LeafDirective, TextDirective
 
-wenmode = Wenmode([
+wen = Wenmode([
     *commonmark,
     TextDirective,
     LeafDirective,
@@ -55,8 +55,8 @@ incrementally:
 from wenmode import Wenmode
 from wenmode.rules import ContainerDirective, LeafDirective, TextDirective
 
-wenmode = Wenmode()
-wenmode.register_rules([
+wen = Wenmode()
+wen.register_rules([
     TextDirective,
     LeafDirective,
     ContainerDirective,
@@ -114,15 +114,15 @@ from wenmode.directives import Admonition
 from wenmode.presets import commonmark
 from wenmode.rules import ContainerDirective
 
-wenmode = Wenmode([*commonmark, ContainerDirective])
-wenmode.register_directive_renderer(Admonition())
+wen = Wenmode([*commonmark, ContainerDirective])
+wen.register_directive_renderer(Admonition())
 text = '''
 :::note[Title]
 Body.
 :::
 '''
 
-html = wenmode.render(text)
+html = wen.render(text)
 ```
 
 `register_directive_renderer()` requires an `HTMLRenderer`, because directive
@@ -136,7 +136,7 @@ from wenmode.directives import Abbreviation, Admonition, Details, Figure, TableO
 from wenmode.presets import commonmark
 from wenmode.rules import AtxHeading, ContainerDirective, LeafDirective
 
-wenmode = Wenmode(
+wen = Wenmode(
     [*commonmark, AtxHeading(id_transform=True), LeafDirective, ContainerDirective],
     directives=[Abbreviation(), Admonition(), Details(), Figure(), TableOfContents()],
 )

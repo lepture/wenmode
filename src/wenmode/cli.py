@@ -172,24 +172,24 @@ def run_render(args: argparse.Namespace) -> int:
         unsafe_html=bool(args.unsafe_html),
         unsafe_urls=bool(args.unsafe_urls),
     )
-    wenmode = Wenmode(
+    wen = Wenmode(
         PRESETS[str(args.preset)],
         renderer=renderer,
         plugins=resolve_builtin_plugins(cast(Sequence[str] | None, args.plugin)),
     )
-    output = wenmode.render(source)
+    output = wen.render(source)
     write_output(output, args.output)
     return 0
 
 
 def run_ast(args: argparse.Namespace) -> int:
     source = read_source(str(args.source))
-    wenmode = Wenmode(
+    wen = Wenmode(
         PRESETS[str(args.preset)],
         plugins=resolve_builtin_plugins(cast(Sequence[str] | None, args.plugin)),
         positions=bool(args.positions),
     )
-    root = wenmode.parse(source)
+    root = wen.parse(source)
     output = json.dumps(root.to_ast(), ensure_ascii=False, indent=int(args.indent)) + '\n'
     write_output(output, args.output)
     return 0

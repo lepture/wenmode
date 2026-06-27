@@ -22,7 +22,7 @@ Use raw HTML passthrough only for trusted or separately sanitized content:
 ```python
 from wenmode import HTMLRenderer, Wenmode
 
-wenmode = Wenmode(renderer=HTMLRenderer(escape=False))
+wen = Wenmode(renderer=HTMLRenderer(escape=False))
 ```
 
 If you do not want raw HTML syntax to become `html` nodes at all, remove
@@ -56,7 +56,7 @@ from wenmode import Wenmode
 from wenmode.directives import Admonition
 from wenmode.rules import ContainerDirective
 
-wenmode = Wenmode([ContainerDirective], directives=[Admonition()])
+wen = Wenmode([ContainerDirective], directives=[Admonition()])
 ```
 
 Without a matching directive renderer, Wenmode falls back to rendering
@@ -88,7 +88,7 @@ has been parsed. Use the `streaming` preset:
 from wenmode import Wenmode
 from wenmode.presets import streaming
 
-wenmode = Wenmode(streaming)
+wen = Wenmode(streaming)
 ```
 
 If you build a custom streaming rule list, avoid `Footnote`,
@@ -104,7 +104,7 @@ set, or enable the individual standard rules listed in {ref}`rule-matrix`.
 from wenmode import Wenmode
 from wenmode.presets import github
 
-wenmode = Wenmode(github)
+wen = Wenmode(github)
 ```
 
 ## Reference-style links stay as text

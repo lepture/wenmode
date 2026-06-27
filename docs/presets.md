@@ -15,7 +15,7 @@ Markdown dialect.
 from wenmode import Wenmode
 from wenmode.presets import github
 
-wenmode = Wenmode(github)
+wen = Wenmode(github)
 ```
 
 Use {ref}`plugins` for non-standard syntax that needs its own nodes and renderer
@@ -41,7 +41,7 @@ only for the syntax that preset does not cover.
 from wenmode import Wenmode
 from wenmode.presets import commonmark
 
-wenmode = Wenmode(commonmark)
+wen = Wenmode(commonmark)
 ```
 
 It enables the core Markdown features expected from a CommonMark-oriented
@@ -60,7 +60,7 @@ features.
 from wenmode import Wenmode
 from wenmode.presets import github
 
-wenmode = Wenmode(github)
+wen = Wenmode(github)
 ```
 
 It adds tables, strikethrough, task list items, extended autolinks, and
@@ -76,14 +76,14 @@ handling with the GFM disallowed HTML tag list.
 from wenmode import Wenmode
 from wenmode.presets import streaming
 
-wenmode = Wenmode(streaming)
+wen = Wenmode(streaming)
 text = '''
 # Title
 
 A [link](/url).
 '''
 
-html = ''.join(wenmode.stream(text))
+html = ''.join(wen.stream(text))
 ```
 
 It is close to the CommonMark-oriented rule set, with streaming-compatible GFM

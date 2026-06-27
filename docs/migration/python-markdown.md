@@ -53,8 +53,8 @@ Use a reusable Wenmode instance instead:
 from wenmode import Wenmode
 from wenmode.presets import github
 
-wenmode = Wenmode(github)
-html = wenmode.render(text)
+wen = Wenmode(github)
+html = wen.render(text)
 ```
 
 ## Extension mapping
@@ -84,8 +84,8 @@ for features not covered by that preset:
 from wenmode import Wenmode
 from wenmode.presets import github
 
-wenmode = Wenmode(github)
-html = wenmode.render(text)
+wen = Wenmode(github)
+html = wen.render(text)
 ```
 
 | Python-Markdown extension | Wenmode replacement |

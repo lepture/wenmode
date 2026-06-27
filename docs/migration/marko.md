@@ -53,8 +53,8 @@ Use a configured Wenmode instance:
 from wenmode import Wenmode
 from wenmode.presets import github
 
-wenmode = Wenmode(github)
-html = wenmode.render(text)
+wen = Wenmode(github)
+html = wen.render(text)
 ```
 
 ## AST migration

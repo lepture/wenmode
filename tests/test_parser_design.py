@@ -526,12 +526,12 @@ def test_streaming_preset_disables_references() -> None:
 
 
 def test_wenmode_stream_matches_full_render_for_streaming_preset() -> None:
-    wenmode = Wenmode(streaming)
+    wen = Wenmode(streaming)
     markdown = '# Title\n\nA [link](/url) and ~~old~~ text.\n\n| A | B |\n| --- | --- |\n| x | y |\n\n- one\n- two\n'
 
-    assert ''.join(wenmode.stream(markdown)) == wenmode.render(markdown)
-    assert ''.join(wenmode.stream(StringIO(markdown))) == wenmode.render(markdown)
-    assert ''.join(wenmode.stream(lines(markdown))) == wenmode.render(markdown)
+    assert ''.join(wen.stream(markdown)) == wen.render(markdown)
+    assert ''.join(wen.stream(StringIO(markdown))) == wen.render(markdown)
+    assert ''.join(wen.stream(lines(markdown))) == wen.render(markdown)
 
 
 def test_streaming_preset_supports_table_and_strikethrough() -> None:

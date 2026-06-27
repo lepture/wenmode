@@ -56,8 +56,8 @@ In Wenmode, keep a reusable `Wenmode` object:
 from wenmode import Wenmode
 from wenmode.presets import github
 
-wenmode = Wenmode(github)
-html = wenmode.render(text)
+wen = Wenmode(github)
+html = wen.render(text)
 ```
 
 Parser state is created per parse, so definitions, footnotes, abbreviations,
@@ -85,8 +85,8 @@ html = markdown(text)
 from wenmode import Wenmode
 from wenmode.presets import github
 
-wenmode = Wenmode(github)
-html = wenmode.render(text)
+wen = Wenmode(github)
+html = wen.render(text)
 ```
 
 For a smaller dialect, start from `commonmark` and add only the Wenmode rules
@@ -116,8 +116,8 @@ Use Wenmode raw HTML passthrough only for trusted or separately sanitized input:
 
 from wenmode import HTMLRenderer, Wenmode
 
-wenmode = Wenmode(renderer=HTMLRenderer(escape=False))
-html = wenmode.render(text)
+wen = Wenmode(renderer=HTMLRenderer(escape=False))
+html = wen.render(text)
 ```
 
 Wenmode's default `HTMLRenderer()` escapes raw HTML and sanitizes unsafe URLs, so

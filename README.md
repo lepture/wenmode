@@ -56,7 +56,7 @@ python -m wenmode ast README.md --positions
 ```python
 from wenmode import Wenmode
 
-wenmode = Wenmode()
+wen = Wenmode()
 
 text = '''
 # Hello
@@ -68,7 +68,7 @@ expected = '''
 <p>This is <strong>wenmode</strong>.</p>
 '''
 
-html = wenmode.render(text)
+html = wen.render(text)
 assert html == expected.lstrip()
 ```
 
@@ -77,10 +77,10 @@ Use `parse()` when you need the mdast-compatible syntax tree:
 ```python
 from wenmode import Wenmode
 
-wenmode = Wenmode()
+wen = Wenmode()
 text = 'A [link](https://example.com).'
 
-tree = wenmode.parse(text)
+tree = wen.parse(text)
 ast = tree.to_ast()
 
 assert ast == {
@@ -108,8 +108,8 @@ tooling:
 ```python
 from wenmode import Wenmode
 
-wenmode = Wenmode(positions=True)
-ast = wenmode.parse('A **bold**.\n').to_ast()
+wen = Wenmode(positions=True)
+ast = wen.parse('A **bold**.\n').to_ast()
 
 assert ast['children'][0] == {
     'type': 'paragraph',
@@ -160,7 +160,7 @@ Pass a different renderer when you want another output format:
 ```python
 from wenmode import RSTRenderer, Wenmode
 
-wenmode = Wenmode(renderer=RSTRenderer())
+wen = Wenmode(renderer=RSTRenderer())
 
 text = '# Hello'
 expected = '''
@@ -168,7 +168,7 @@ Hello
 =====
 '''
 
-rst = wenmode.render(text)
+rst = wen.render(text)
 assert rst == expected.lstrip()
 ```
 
@@ -188,7 +188,7 @@ default; pass an explicit rule list when you want a custom Markdown dialect.
 from wenmode import Wenmode
 from wenmode.rules import AtxHeading, FencedCode, Image, InlineCode, Link
 
-wenmode = Wenmode([AtxHeading, FencedCode, Link, Image, InlineCode])
+wen = Wenmode([AtxHeading, FencedCode, Link, Image, InlineCode])
 text = '''
 # h1
 
@@ -199,7 +199,7 @@ expected = '''
 <p>hi <code>code</code> **strong**</p>
 '''
 
-assert wenmode.render(text) == expected.lstrip()
+assert wen.render(text) == expected.lstrip()
 ```
 
 Because `Emphasis` is not enabled above, `**strong**` stays as text.
@@ -226,7 +226,7 @@ task lists, strikethrough, extended autolinks, and footnotes:
 from wenmode import Wenmode
 from wenmode.presets import github
 
-wenmode = Wenmode(github)
+wen = Wenmode(github)
 ```
 
 Use built-in plugins for non-standard syntax and document metadata such as
@@ -237,9 +237,9 @@ extra inline formatting:
 from wenmode import Wenmode
 from wenmode.plugins import math
 
-wenmode = Wenmode(plugins=[math])
+wen = Wenmode(plugins=[math])
 
-assert wenmode.render('Inline $x + y$.\n') == (
+assert wen.render('Inline $x + y$.\n') == (
     '<p>Inline <span class="math math-inline">x + y</span>.</p>\n'
 )
 ```
@@ -327,7 +327,7 @@ for the entire document to be parsed and rendered:
 from wenmode import Wenmode
 from wenmode.presets import streaming
 
-wenmode = Wenmode(streaming)
+wen = Wenmode(streaming)
 
 text = '''
 # Hello
@@ -335,7 +335,7 @@ text = '''
 A [link](/url).
 '''
 
-for chunk in wenmode.stream(text):
+for chunk in wen.stream(text):
     send(chunk)
 ```
 

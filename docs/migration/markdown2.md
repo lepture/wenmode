@@ -51,8 +51,8 @@ html = converter.convert(text)
 from wenmode import Wenmode
 from wenmode.presets import github
 
-wenmode = Wenmode(github)
-html = wenmode.render(text)
+wen = Wenmode(github)
+html = wen.render(text)
 ```
 
 ## Extras mapping
@@ -113,11 +113,11 @@ html = markdown2.markdown(text, extras=['header-ids'])
 from wenmode import Wenmode
 from wenmode.rules import AtxHeading, SetextHeading
 
-wenmode = Wenmode([
+wen = Wenmode([
     AtxHeading(id_transform=True),
     SetextHeading(id_transform=True),
 ])
-html = wenmode.render(text)
+html = wen.render(text)
 ```
 
 For a fuller CommonMark-like dialect with heading IDs, start from

@@ -19,47 +19,47 @@ class CustomLiteral(Literal):
 
 
 def test_wenmode_contains_parser_and_renderer() -> None:
-    wenmode = Wenmode()
+    wen = Wenmode()
 
-    assert isinstance(wenmode.parser, Parser)
-    assert isinstance(wenmode.renderer, HTMLRenderer)
-    assert wenmode.render('# Title\n') == '<h1>Title</h1>\n'
+    assert isinstance(wen.parser, Parser)
+    assert isinstance(wen.renderer, HTMLRenderer)
+    assert wen.render('# Title\n') == '<h1>Title</h1>\n'
 
 
 def test_wenmode_accepts_explicit_empty_rules() -> None:
-    wenmode = Wenmode([])
+    wen = Wenmode([])
 
-    assert wenmode.render('# Title\n') == '<p># Title</p>\n'
+    assert wen.render('# Title\n') == '<p># Title</p>\n'
 
 
 def test_wenmode_registers_rules_dynamically() -> None:
-    wenmode = Wenmode([Link])
+    wen = Wenmode([Link])
 
-    assert wenmode.render('# Title\n') == '<p># Title</p>\n'
+    assert wen.render('# Title\n') == '<p># Title</p>\n'
 
-    wenmode.register_rule(AtxHeading)
+    wen.register_rule(AtxHeading)
 
-    assert wenmode.render('# Title\n') == '<h1>Title</h1>\n'
+    assert wen.render('# Title\n') == '<h1>Title</h1>\n'
 
 
 def test_wenmode_uses_plugins() -> None:
-    wenmode = Wenmode([])
+    wen = Wenmode([])
 
-    assert wenmode.use(ruby) is wenmode
-    assert wenmode.render('[漢字(kanji)]\n') == '<p><ruby>漢字<rt>kanji</rt></ruby></p>\n'
+    assert wen.use(ruby) is wen
+    assert wen.render('[漢字(kanji)]\n') == '<p><ruby>漢字<rt>kanji</rt></ruby></p>\n'
 
 
 def test_wenmode_accepts_plugins_during_initialization() -> None:
-    wenmode = Wenmode([], plugins=[ruby])
+    wen = Wenmode([], plugins=[ruby])
 
-    assert wenmode.render('[漢字(kanji)]\n') == '<p><ruby>漢字<rt>kanji</rt></ruby></p>\n'
+    assert wen.render('[漢字(kanji)]\n') == '<p><ruby>漢字<rt>kanji</rt></ruby></p>\n'
 
 
 def test_wenmode_uses_plugin_options() -> None:
-    wenmode = Wenmode().use(math, inline=False)
+    wen = Wenmode().use(math, inline=False)
 
-    assert wenmode.render('Inline $x$.\n') == '<p>Inline $x$.</p>\n'
-    assert wenmode.render('$$\nx\n$$\n') == '<div class="math math-display">x\n</div>\n'
+    assert wen.render('Inline $x$.\n') == '<p>Inline $x$.</p>\n'
+    assert wen.render('$$\nx\n$$\n') == '<div class="math math-display">x\n</div>\n'
 
 
 def test_wenmode_rejects_modules_without_setup() -> None:
@@ -78,7 +78,7 @@ def test_wenmode_rejects_constructor_plugin_option_tuples() -> None:
 
 
 def test_wenmode_registers_renderer_handlers_for_current_renderer() -> None:
-    wenmode = Wenmode([])
+    wen = Wenmode([])
 
     def render_custom_literal(renderer: HTMLRenderer, node: CustomLiteral, context: RenderContext) -> str:
         return f'<custom>{renderer.escape_html(node.value)}</custom>'
@@ -86,14 +86,14 @@ def test_wenmode_registers_renderer_handlers_for_current_renderer() -> None:
     def render_other(renderer: HTMLRenderer, node: CustomLiteral, context: RenderContext) -> str:
         return 'other'
 
-    wenmode.register_renderer_handlers(
+    wen.register_renderer_handlers(
         {
             'html': {'customLiteral': render_custom_literal},
             'markdown': {'customLiteral': render_other},
         }
     )
 
-    assert wenmode.render_node(CustomLiteral(value='<x>')) == '<custom>&lt;x&gt;</custom>'
+    assert wen.render_node(CustomLiteral(value='<x>')) == '<custom>&lt;x&gt;</custom>'
 
 
 def test_wenmode_renderer_handlers_are_instance_local() -> None:
@@ -110,13 +110,13 @@ def test_wenmode_renderer_handlers_are_instance_local() -> None:
 
 
 def test_wenmode_registers_directive_renderers_dynamically() -> None:
-    wenmode = Wenmode([ContainerDirective])
+    wen = Wenmode([ContainerDirective])
     markdown = ':::note[Title]\nBody.\n:::\n'
 
-    assert wenmode.render(markdown) == '<p>Title</p>\n<p>Body.</p>\n'
+    assert wen.render(markdown) == '<p>Title</p>\n<p>Body.</p>\n'
 
-    wenmode.register_directive_renderer(Admonition())
+    wen.register_directive_renderer(Admonition())
 
-    assert wenmode.render(markdown) == (
+    assert wen.render(markdown) == (
         '<aside class="admonition admonition-note">\n<p class="admonition-title">Title</p>\n<p>Body.</p>\n</aside>\n'
     )

@@ -52,7 +52,7 @@ uses the `commonmark` preset with `HTMLRenderer` when no options are provided.
 ```python
 from wenmode import Wenmode
 
-wenmode = Wenmode()
+wen = Wenmode()
 text = '''
 # Hello
 
@@ -63,7 +63,7 @@ expected = '''
 <p>This is <strong>wenmode</strong>.</p>
 '''
 
-html = wenmode.render(text)
+html = wen.render(text)
 
 assert html == expected.lstrip()
 ```
@@ -74,10 +74,10 @@ can be a string, a synchronous text stream, or another iterable of lines.
 ```python
 from wenmode import Wenmode
 
-wenmode = Wenmode()
+wen = Wenmode()
 
 with open('README.md', encoding='utf-8') as file:
-    html = wenmode.render(file)
+    html = wen.render(file)
 ```
 
 ## Command line
@@ -143,10 +143,10 @@ Use `parse()` when you want the AST instead of rendered output.
 ```python
 from wenmode import Wenmode
 
-wenmode = Wenmode()
+wen = Wenmode()
 text = 'A [link](https://example.com).'
 
-tree = wenmode.parse(text)
+tree = wen.parse(text)
 ast = tree.to_ast()
 
 assert ast == {
@@ -180,8 +180,8 @@ and parser overhead stay small.
 ```python
 from wenmode import Wenmode
 
-wenmode = Wenmode(positions=True)
-ast = wenmode.parse('A **bold**.\n').to_ast()
+wen = Wenmode(positions=True)
+ast = wen.parse('A **bold**.\n').to_ast()
 
 assert ast['children'][0]['children'][1] == {
     'type': 'strong',
@@ -222,14 +222,14 @@ want another output format.
 ```python
 from wenmode import RSTRenderer, Wenmode
 
-wenmode = Wenmode(renderer=RSTRenderer())
+wen = Wenmode(renderer=RSTRenderer())
 text = '# Hello'
 expected = '''
 Hello
 =====
 '''
 
-rst = wenmode.render(text)
+rst = wen.render(text)
 
 assert rst == expected.lstrip()
 ```
@@ -250,11 +250,11 @@ If you already have a node, use `render_node()` to render it directly.
 ```python
 from wenmode import Wenmode
 
-wenmode = Wenmode()
+wen = Wenmode()
 text = '# Hello'
 
-root = wenmode.parse(text)
-html = wenmode.render_node(root)
+root = wen.parse(text)
+html = wen.render_node(root)
 ```
 
 ## Parser and renderer separately
@@ -289,7 +289,7 @@ whole document to be parsed and rendered.
 from wenmode import Wenmode
 from wenmode.presets import streaming
 
-wenmode = Wenmode(streaming)
+wen = Wenmode(streaming)
 
 text = '''
 # Hello
@@ -299,7 +299,7 @@ A [link](/url).
 
 sent_chunks: list[str] = []
 
-for chunk in wenmode.stream(text):
+for chunk in wen.stream(text):
     sent_chunks.append(chunk)
 
 expected = '''
@@ -333,7 +333,7 @@ from fastapi.responses import StreamingResponse
 from wenmode import Wenmode
 from wenmode.presets import streaming
 
-wenmode = Wenmode(streaming)
+wen = Wenmode(streaming)
 app = FastAPI()
 
 
@@ -345,7 +345,7 @@ def iter_upload_lines(file: BinaryIO, encoding: str = 'utf-8') -> Iterator[str]:
 def stream_uploaded_markdown(upload: UploadFile) -> Iterator[str]:
     try:
         upload.file.seek(0)
-        yield from wenmode.stream(iter_upload_lines(upload.file))
+        yield from wen.stream(iter_upload_lines(upload.file))
     finally:
         upload.file.close()
 
@@ -368,12 +368,12 @@ from flask import Response
 from wenmode import Wenmode
 from wenmode.presets import streaming
 
-wenmode = Wenmode(streaming)
+wen = Wenmode(streaming)
 
 
 def preview(markdown: str):
     return Response(
-        wenmode.stream(markdown),
+        wen.stream(markdown),
         mimetype='text/html',
     )
 ```
@@ -385,13 +385,13 @@ from django.http import StreamingHttpResponse
 from wenmode import Wenmode
 from wenmode.presets import streaming
 
-wenmode = Wenmode(streaming)
+wen = Wenmode(streaming)
 
 
 def preview(request):
     markdown = request.POST['markdown']
     return StreamingHttpResponse(
-        wenmode.stream(markdown),
+        wen.stream(markdown),
         content_type='text/html; charset=utf-8',
     )
 ```

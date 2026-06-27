@@ -46,11 +46,11 @@ from wenmode.presets import github
 
 
 class MarkdownService:
-    def __init__(self, wenmode: Wenmode | None = None) -> None:
-        self.wenmode = wenmode if wenmode is not None else Wenmode(github)
+    def __init__(self, wen: Wenmode | None = None) -> None:
+        self.wen = wen if wen is not None else Wenmode(github)
 
     def render_comment(self, text: str) -> str:
-        return self.wenmode.render(text)
+        return self.wen.render(text)
 
 
 service = MarkdownService()
@@ -76,14 +76,14 @@ link targets.
 from wenmode import Wenmode
 from wenmode.presets import github
 
-wenmode = Wenmode(github)
+wen = Wenmode(github)
 text = '''
 Hello <script>alert(1)</script>.
 
 [bad](javascript:alert(1))
 '''
 
-html = wenmode.render(text)
+html = wen.render(text)
 
 assert '&lt;script>alert(1)&lt;/script>' in html
 assert '<a>bad</a>' in html
