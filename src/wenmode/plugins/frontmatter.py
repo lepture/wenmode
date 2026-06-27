@@ -205,6 +205,7 @@ def create_handlers(data_key: str, dump: FrontmatterDump) -> RendererHandlers:
     }
 
 
+nodes: dict[str, type[Node]] = {}
 rules: list[type[Rule] | Rule] = [FrontmatterRule]
 
 

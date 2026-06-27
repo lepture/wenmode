@@ -79,6 +79,7 @@ __all__ = [
     'iter_children',
     'node_from_ast',
     'plain_text',
+    'registry_from_plugins',
     'walk',
 ]
 
@@ -118,6 +119,29 @@ def node_from_ast(
     if registry is not None:
         node_registry.update(registry)
     return _node_from_ast(data, node_registry, unknown)
+
+
+def registry_from_plugins(plugins: Iterable[object]) -> dict[str, type[Node]]:
+    """Return a node registry collected from plugin ``nodes`` mappings.
+
+    The returned mapping is intended for :func:`from_ast`, which already merges
+    custom registries with Wenmode's built-in node registry.
+    """
+    registry: dict[str, type[Node]] = {}
+    for plugin in plugins:
+        target = getattr(plugin, 'target', plugin)
+        nodes = getattr(target, 'nodes', None)
+        if nodes is None:
+            continue
+        if not isinstance(nodes, Mapping):
+            raise TypeError('plugin nodes registry must be a mapping')
+        for node_type, node_class in nodes.items():
+            if not isinstance(node_type, str) or not node_type:
+                raise TypeError('plugin node registry keys must be non-empty strings')
+            if not isinstance(node_class, type) or not issubclass(node_class, Node):
+                raise TypeError('plugin node registry values must be Node classes')
+            registry[node_type] = node_class
+    return registry
 
 
 def iter_children(node: Node) -> Iterator[Node]:

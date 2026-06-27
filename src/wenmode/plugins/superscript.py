@@ -49,11 +49,12 @@ def render_rst(renderer: RSTRenderer, node: SuperscriptNode, context: RSTRenderC
     return f':sup:`{renderer.render_children(node.children, context)}`'
 
 
+nodes = {SuperscriptNode.type: SuperscriptNode}
 rules: list[type[Rule] | Rule] = [SuperscriptRule]
 handlers: RendererHandlers = {
-    'html': {'superscript': render_html},
-    'markdown': {'superscript': render_markdown},
-    'rst': {'superscript': render_rst},
+    'html': {SuperscriptNode.type: render_html},
+    'markdown': {SuperscriptNode.type: render_markdown},
+    'rst': {SuperscriptNode.type: render_rst},
 }
 
 

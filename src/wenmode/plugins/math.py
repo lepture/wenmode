@@ -161,11 +161,12 @@ def render_rst_inline_math(renderer: RSTRenderer, node: InlineMathNode, context:
     return f':math:`{renderer.escape_interpreted_text(node.value)}`'
 
 
+nodes = {MathNode.type: MathNode, InlineMathNode.type: InlineMathNode}
 rules: list[type[Rule] | Rule] = [MathBlockRule, InlineMathRule]
 handlers: RendererHandlers = {
-    'html': {'math': render_html_math, 'inlineMath': render_html_inline_math},
-    'markdown': {'math': render_markdown_math, 'inlineMath': render_markdown_inline_math},
-    'rst': {'math': render_rst_math, 'inlineMath': render_rst_inline_math},
+    'html': {MathNode.type: render_html_math, InlineMathNode.type: render_html_inline_math},
+    'markdown': {MathNode.type: render_markdown_math, InlineMathNode.type: render_markdown_inline_math},
+    'rst': {MathNode.type: render_rst_math, InlineMathNode.type: render_rst_inline_math},
 }
 
 

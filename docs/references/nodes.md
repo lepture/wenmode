@@ -48,24 +48,25 @@ node = from_ast({
 ```
 
 Plugin nodes live in their plugin modules. When you need concrete plugin node
-classes after loading serialized AST data, pass the plugin's node registry:
+classes after loading serialized AST data, collect registries from the plugins
+used by that Markdown dialect:
 
 ```python
-from wenmode.ast import from_ast
-from wenmode.plugins import html_container
+from wenmode.ast import from_ast, registry_from_plugins
+from wenmode.plugins import html_container, math, plugin
 
-node = from_ast(
-    {
-        'type': 'htmlContainer',
-        'name': 'div',
-        'attributes': {'class': 'note'},
-        'opening': '<div class="note">',
-        'closing': '</div>',
-        'children': [{'type': 'paragraph', 'children': [{'type': 'text', 'value': 'Hi'}]}],
-    },
-    registry=html_container.nodes,
-)
+registry = registry_from_plugins([html_container, plugin(math, inline=False)])
+node = from_ast({
+    'type': 'math',
+    'value': 'x + y\n',
+}, registry=registry)
+
+assert type(node).__name__ == 'MathNode'
 ```
+
+Each built-in plugin exposes a `nodes` mapping. Plugins that only reuse core
+node types expose an empty mapping, so they can still be passed to
+`registry_from_plugins()`.
 
 Unknown node types are preserved as generic `Parent`, `Literal`, or `Node`
 instances by default so tools can round-trip data they do not understand. Pass

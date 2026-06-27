@@ -209,11 +209,12 @@ def render_rst(renderer: RSTRenderer, node: AbbreviationNode, context: RSTRender
     return f':abbr:`{content} ({renderer.escape_text(node.title)})`'
 
 
+nodes = {AbbreviationNode.type: AbbreviationNode}
 rules: list[type[Rule] | Rule] = [AbbreviationRule]
 handlers: RendererHandlers = {
-    'html': {'abbreviation': render_html},
-    'markdown': {'abbreviation': render_markdown},
-    'rst': {'abbreviation': render_rst},
+    'html': {AbbreviationNode.type: render_html},
+    'markdown': {AbbreviationNode.type: render_markdown},
+    'rst': {AbbreviationNode.type: render_rst},
 }
 
 

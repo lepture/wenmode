@@ -220,11 +220,11 @@ def render_rst_container(renderer: RSTRenderer, node: HtmlContainerNode, context
 
 
 rules: list[type[Rule] | Rule] = [HtmlContainer]
-nodes = {'htmlContainer': HtmlContainerNode}
+nodes = {HtmlContainerNode.type: HtmlContainerNode}
 handlers: RendererHandlers = {
-    'html': {'htmlContainer': render_html_container},
-    'markdown': {'htmlContainer': render_markdown_container},
-    'rst': {'htmlContainer': render_rst_container},
+    'html': {HtmlContainerNode.type: render_html_container},
+    'markdown': {HtmlContainerNode.type: render_markdown_container},
+    'rst': {HtmlContainerNode.type: render_rst_container},
 }
 
 

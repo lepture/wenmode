@@ -141,6 +141,9 @@ def parse_attribute_line(line: str) -> tuple[str, str] | None:
     return match.group('name'), text[match.end() :]
 
 
+nodes: dict[str, type[Node]] = {}
+
+
 def setup(
     wenmode: Wenmode,
     literal_names: Iterable[str] = DEFAULT_LITERAL_DIRECTIVE_NAMES,

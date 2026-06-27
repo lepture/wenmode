@@ -61,11 +61,12 @@ def render_rst(renderer: RSTRenderer, node: InsertNode, context: RSTRenderContex
     return renderer.render_children(node.children, context)
 
 
+nodes = {InsertNode.type: InsertNode}
 rules: list[type[Rule] | Rule] = [InsertRule]
 handlers: RendererHandlers = {
-    'html': {'insert': render_html},
-    'markdown': {'insert': render_markdown},
-    'rst': {'insert': render_rst},
+    'html': {InsertNode.type: render_html},
+    'markdown': {InsertNode.type: render_markdown},
+    'rst': {InsertNode.type: render_rst},
 }
 
 

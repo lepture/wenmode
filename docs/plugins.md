@@ -52,8 +52,20 @@ wen = Wenmode(plugins=[mark, superscript])
 ```
 
 Some plugins accept setup options. For example, `math` can install only inline
-or block syntax. Install those plugins with `use()` when you need to pass
-options:
+or block syntax. Use `wenmode.plugins.plugin()` when those options are part of
+constructor-time setup:
+
+```python
+from wenmode import Wenmode
+from wenmode.plugins import math, plugin
+
+wen = Wenmode(plugins=[plugin(math, inline=False)])
+
+assert wen.render('Inline $x$.\n') == '<p>Inline $x$.</p>\n'
+assert wen.render('$$\nx\n$$\n') == '<div class="math math-display">x\n</div>\n'
+```
+
+Use `use()` when you need to pass options after an instance already exists:
 
 ```python
 from wenmode import Wenmode
@@ -87,6 +99,8 @@ chain-style setup remains supported.
 
 Each plugin also registers default HTML, Markdown, or RST renderer handlers when
 the feature has a standard representation in Wenmode's built-in renderers.
+Plugins that introduce custom node types expose a `nodes` registry for
+`wenmode.ast.from_ast()`; see {ref}`reference-nodes`.
 
 ## HTML Containers
 

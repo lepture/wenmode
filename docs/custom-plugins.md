@@ -93,8 +93,10 @@ from wenmode.state import BlockState
 
 
 class PlusMarkNode(Parent):
+    type = 'plusMark'
+
     def __init__(self, children: list[Node]) -> None:
-        super().__init__('plusMark', children=children)
+        super().__init__(self.type, children=children)
 
 
 class PlusMarkRule(InlineRule):
@@ -126,8 +128,9 @@ def render_plus_mark(renderer: HTMLRenderer, node: PlusMarkNode, context: Render
     return f'<mark>{renderer.render_children(node.children, context)}</mark>'
 
 
+nodes = {PlusMarkNode.type: PlusMarkNode}
 rules: list[type[Rule] | Rule] = [PlusMarkRule]
-handlers = {'html': {'plusMark': render_plus_mark}}
+handlers = {'html': {PlusMarkNode.type: render_plus_mark}}
 
 
 class PlusMarkPlugin:
@@ -147,6 +150,8 @@ assert wen.render('++very *important*++') == expected.lstrip()
 The parser creates the node. Renderer handlers decide how each output format
 serializes that node. If a renderer has no handler for a node type,
 `BaseRenderer` falls back to rendering child nodes or a literal `value`.
+The `nodes` mapping is optional for rendering, but expose it when callers may
+restore serialized AST data with `wenmode.ast.from_ast()`.
 
 ## Renderer Handlers
 

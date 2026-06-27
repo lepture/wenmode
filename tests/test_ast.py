@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from wenmode import Wenmode
-from wenmode.ast import find, find_all, from_ast, iter_children, plain_text, walk
+from wenmode.ast import find, find_all, from_ast, iter_children, plain_text, registry_from_plugins, walk
 from wenmode.nodes import (
     FootnoteReference,
     Heading,
@@ -16,6 +16,7 @@ from wenmode.nodes import (
     Position,
     Text,
 )
+from wenmode.plugins import definition_list, math, plugin
 from wenmode.presets import github
 
 
@@ -203,6 +204,33 @@ def test_from_ast_uses_custom_registry() -> None:
         'children': [{'type': 'text', 'value': 'Careful'}],
         'kind': 'warning',
     }
+
+
+def test_registry_from_plugins_restores_builtin_plugin_nodes() -> None:
+    ast = {
+        'type': 'root',
+        'children': [
+            {'type': 'math', 'value': 'x + y\n'},
+            {
+                'type': 'definitionList',
+                'children': [
+                    {'type': 'definitionTerm', 'children': [{'type': 'text', 'value': 'Term'}]},
+                    {
+                        'type': 'definitionDescription',
+                        'children': [{'type': 'paragraph', 'children': [{'type': 'text', 'value': 'Definition'}]}],
+                        'spread': False,
+                    },
+                ],
+            },
+        ],
+    }
+
+    registry = registry_from_plugins([plugin(math, inline=False), definition_list])
+    node = from_ast(ast, registry=registry)
+
+    assert type(node.children[0]).__name__ == 'MathNode'
+    assert type(node.children[1]).__name__ == 'DefinitionListNode'
+    assert node.to_ast() == ast
 
 
 def test_from_ast_can_reject_unknown_nodes() -> None:

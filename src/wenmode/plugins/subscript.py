@@ -50,11 +50,12 @@ def render_rst(renderer: RSTRenderer, node: SubscriptNode, context: RSTRenderCon
     return f':sub:`{renderer.render_children(node.children, context)}`'
 
 
+nodes = {SubscriptNode.type: SubscriptNode}
 rules: list[type[Rule] | Rule] = [SubscriptRule]
 handlers: RendererHandlers = {
-    'html': {'subscript': render_html},
-    'markdown': {'subscript': render_markdown},
-    'rst': {'subscript': render_rst},
+    'html': {SubscriptNode.type: render_html},
+    'markdown': {SubscriptNode.type: render_markdown},
+    'rst': {SubscriptNode.type: render_rst},
 }
 
 

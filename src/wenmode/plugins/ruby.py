@@ -111,11 +111,12 @@ def render_rst(renderer: RSTRenderer, node: RubyNode, context: RSTRenderContext)
     )
 
 
+nodes = {RubyNode.type: RubyNode}
 rules: list[type[Rule] | Rule] = [RubyRule]
 handlers: RendererHandlers = {
-    'html': {'ruby': render_html},
-    'markdown': {'ruby': render_markdown},
-    'rst': {'ruby': render_rst},
+    'html': {RubyNode.type: render_html},
+    'markdown': {RubyNode.type: render_markdown},
+    'rst': {RubyNode.type: render_rst},
 }
 
 

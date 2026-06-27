@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from dataclasses import dataclass
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Protocol, TypeAlias
 
@@ -22,7 +23,25 @@ class Plugin(Protocol):
         pass
 
 
-PluginTarget: TypeAlias = Plugin | ModuleType
+PluginLike: TypeAlias = Plugin | ModuleType
+
+
+@dataclass(frozen=True)
+class PluginSpec:
+    """Plugin plus setup options for constructor-time installation."""
+
+    target: PluginLike
+    options: Mapping[str, Any]
+
+
+PluginTarget: TypeAlias = PluginLike | PluginSpec
+
+
+def plugin(target: PluginLike, **options: Any) -> PluginSpec:
+    """Return a plugin specification that carries setup options."""
+    return PluginSpec(target=target, options=dict(options))
+
+
 class _PluginSetup(Protocol):
     """Callable shape of a plugin ``setup`` function."""
 

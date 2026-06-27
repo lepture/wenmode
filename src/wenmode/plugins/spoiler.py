@@ -152,11 +152,12 @@ def render_rst_inline(renderer: RSTRenderer, node: InlineSpoilerNode, context: R
     return renderer.render_children(node.children, context)
 
 
+nodes = {BlockSpoilerNode.type: BlockSpoilerNode, InlineSpoilerNode.type: InlineSpoilerNode}
 rules: list[type[Rule] | Rule] = [BlockSpoilerRule, InlineSpoilerRule]
 handlers: RendererHandlers = {
-    'html': {'blockSpoiler': render_html_block, 'inlineSpoiler': render_html_inline},
-    'markdown': {'blockSpoiler': render_markdown_block, 'inlineSpoiler': render_markdown_inline},
-    'rst': {'blockSpoiler': render_rst_block, 'inlineSpoiler': render_rst_inline},
+    'html': {BlockSpoilerNode.type: render_html_block, InlineSpoilerNode.type: render_html_inline},
+    'markdown': {BlockSpoilerNode.type: render_markdown_block, InlineSpoilerNode.type: render_markdown_inline},
+    'rst': {BlockSpoilerNode.type: render_rst_block, InlineSpoilerNode.type: render_rst_inline},
 }
 
 

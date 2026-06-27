@@ -247,22 +247,27 @@ def render_definition_body(renderer: RSTRenderer, children: list[Node], context:
     return renderer.render_children(children, context).rstrip('\n')
 
 
+nodes = {
+    DefinitionListNode.type: DefinitionListNode,
+    DefinitionTermNode.type: DefinitionTermNode,
+    DefinitionDescriptionNode.type: DefinitionDescriptionNode,
+}
 rules: list[type[Rule] | Rule] = [DefinitionListRule]
 handlers: RendererHandlers = {
     'html': {
-        'definitionList': render_html_list,
-        'definitionTerm': render_html_term,
-        'definitionDescription': render_html_description,
+        DefinitionListNode.type: render_html_list,
+        DefinitionTermNode.type: render_html_term,
+        DefinitionDescriptionNode.type: render_html_description,
     },
     'markdown': {
-        'definitionList': render_markdown_list,
-        'definitionTerm': render_markdown_term,
-        'definitionDescription': render_markdown_description,
+        DefinitionListNode.type: render_markdown_list,
+        DefinitionTermNode.type: render_markdown_term,
+        DefinitionDescriptionNode.type: render_markdown_description,
     },
     'rst': {
-        'definitionList': render_rst_list,
-        'definitionTerm': render_rst_term,
-        'definitionDescription': render_rst_description,
+        DefinitionListNode.type: render_rst_list,
+        DefinitionTermNode.type: render_rst_term,
+        DefinitionDescriptionNode.type: render_rst_description,
     },
 }
 

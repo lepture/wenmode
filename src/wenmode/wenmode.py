@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Iterator
-from types import ModuleType
 from typing import Any, cast
 
 from .nodes import Node, Root
 from .parser import Parser
-from .plugins import Plugin, PluginTarget, RendererHandlers
-from .plugins.types import _PluginSetup
+from .plugins import PluginTarget, RendererHandlers
+from .plugins.types import PluginLike, PluginSpec, _PluginSetup
 from .presets import commonmark
 from .renderers import BaseRenderer, DirectiveHtmlRenderer, HTMLRenderer
 from .rules.base import Rule
@@ -132,9 +131,18 @@ class Wenmode:
             raise TypeError('directive renderers require an HTMLRenderer')
         self.renderer.register_directive_renderer(directive)
 
-    def use(self, plugin: Plugin | ModuleType, **options: Any) -> Wenmode:
+    def use(self, plugin: PluginTarget, **options: Any) -> Wenmode:
         """Install a plugin module or plugin object on this parser and renderer."""
-        setup = getattr(plugin, 'setup', None)
+        target: PluginLike
+        if isinstance(plugin, PluginSpec):
+            if options:
+                raise TypeError('plugin specs cannot be combined with extra options')
+            target = plugin.target
+            options = dict(plugin.options)
+        else:
+            target = plugin
+
+        setup = getattr(target, 'setup', None)
         if not callable(setup):
             raise TypeError('plugins must define setup(wenmode, **options)')
         cast(_PluginSetup, setup)(self, **options)

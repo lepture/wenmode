@@ -62,5 +62,8 @@ def parse_role(text: str, start: int = 0) -> tuple[str, str, int, int, int] | No
     return name, text[tick_end:closing], closing + len(fence), tick_end, closing
 
 
+nodes: dict[str, type[Node]] = {}
+
+
 def setup(wenmode: Wenmode, **options: Any) -> None:
     wenmode.register_rule(RoleRule)
