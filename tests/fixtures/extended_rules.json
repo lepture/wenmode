@@ -363,9 +363,9 @@
       "html_container",
       "list"
     ],
-    "markdown": "<div>\n- step 1\n- step 2\n</div>\n",
-    "html": "&lt;div&gt;\n<ul>\n<li>step 1</li>\n<li>step 2</li>\n</ul>\n&lt;/div&gt;\n",
-    "markdown_output": "<div>\n- step 1\n- step 2\n</div>\n"
+    "markdown": "<div id=\"steps\" hidden>\n- step 1\n- step 2\n</div>\n",
+    "html": "&lt;div id=&quot;steps&quot; hidden&gt;\n<ul>\n<li>step 1</li>\n<li>step 2</li>\n</ul>\n&lt;/div&gt;\n",
+    "markdown_output": "<div id=\"steps\" hidden>\n- step 1\n- step 2\n</div>\n"
   },
   {
     "name": "html container keeps raw text tags literal",

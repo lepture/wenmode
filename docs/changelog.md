@@ -17,6 +17,8 @@ here while preparing a release, then move them under the final version heading.
   `HtmlBlock` that parses standalone HTML tag pairs as `htmlContainer` nodes
   with Markdown block children while preserving raw HTML fallback behavior for
   raw-text tags, void/self-closing tags, inline HTML, and unclosed tag pairs.
+- Add structured `attributes` data to `htmlContainer` nodes and document AST
+  interoperability for plugin node registries and unknown node fallback.
 
 ## 0.6.1
 

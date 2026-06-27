@@ -3955,7 +3955,7 @@
       "html_container",
       "list"
     ],
-    "markdown": "<div>\n\n- step\n\n</div>\n",
+    "markdown": "<div id=\"main\" class=wide hidden data-title='a b'>\n\n- step\n\n</div>\n",
     "ast": {
       "type": "root",
       "position": {
@@ -3967,7 +3967,7 @@
         "end": {
           "line": 6,
           "column": 1,
-          "offset": 22
+          "offset": 67
         }
       },
       "children": [
@@ -3982,7 +3982,7 @@
             "end": {
               "line": 6,
               "column": 1,
-              "offset": 22
+              "offset": 67
             }
           },
           "children": [
@@ -3992,12 +3992,12 @@
                 "start": {
                   "line": 3,
                   "column": 1,
-                  "offset": 7
+                  "offset": 52
                 },
                 "end": {
                   "line": 5,
                   "column": 1,
-                  "offset": 15
+                  "offset": 60
                 }
               },
               "children": [
@@ -4007,12 +4007,12 @@
                     "start": {
                       "line": 3,
                       "column": 1,
-                      "offset": 7
+                      "offset": 52
                     },
                     "end": {
                       "line": 5,
                       "column": 1,
-                      "offset": 15
+                      "offset": 60
                     }
                   },
                   "children": [
@@ -4022,12 +4022,12 @@
                         "start": {
                           "line": 3,
                           "column": 3,
-                          "offset": 9
+                          "offset": 54
                         },
                         "end": {
                           "line": 4,
                           "column": 1,
-                          "offset": 14
+                          "offset": 59
                         }
                       },
                       "children": [
@@ -4037,12 +4037,12 @@
                             "start": {
                               "line": 3,
                               "column": 3,
-                              "offset": 9
+                              "offset": 54
                             },
                             "end": {
                               "line": 3,
                               "column": 7,
-                              "offset": 13
+                              "offset": 58
                             }
                           },
                           "value": "step"
@@ -4058,7 +4058,13 @@
             }
           ],
           "name": "div",
-          "opening": "<div>",
+          "attributes": {
+            "id": "main",
+            "class": "wide",
+            "hidden": true,
+            "data-title": "a b"
+          },
+          "opening": "<div id=\"main\" class=wide hidden data-title='a b'>",
           "closing": "</div>"
         }
       ]

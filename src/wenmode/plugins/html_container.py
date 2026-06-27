@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeAlias
 
 from wenmode.nodes import Node, Parent
 from wenmode.renderers import MarkdownRenderer, RenderContext
@@ -24,11 +24,18 @@ if TYPE_CHECKING:
     from wenmode.parser import Parser
 
 
+HtmlContainerAttributeValue: TypeAlias = str | bool
+
 HTML_CONTAINER_OPENER_RE = re.compile(
     r'(?i)^[ \t]{0,3}<'
     r'(?P<name>[a-z][a-z0-9-]*)'
-    r'(?:\s+[a-z_:][a-z0-9_.:-]*(?:\s*=\s*(?:[^\s"\'=<>`]+|\'[^\']*\'|"[^"]*"))?)*'
+    r'(?P<attrs>(?:\s+[a-z_:][a-z0-9_.:-]*(?:\s*=\s*(?:[^\s"\'=<>`]+|\'[^\']*\'|"[^"]*"))?)*)'
     r'\s*>[ \t]*(?:\r?\n)?$'
+)
+HTML_ATTRIBUTE_RE = re.compile(
+    r'(?i)\s+'
+    r'(?P<name>[a-z_:][a-z0-9_.:-]*)'
+    r'(?:\s*=\s*(?P<value>[^\s"\'=<>`]+|\'[^\']*\'|"[^"]*"))?'
 )
 VOID_TAGS = frozenset(
     {
@@ -55,6 +62,7 @@ class HtmlContainerNode(Parent):
     """HTML block container whose body is parsed as Markdown blocks."""
 
     name: str = ''
+    attributes: dict[str, HtmlContainerAttributeValue] | None = None
     opening: str = ''
     closing: str = ''
     type: str = 'htmlContainer'
@@ -92,7 +100,7 @@ def parse_html_container(
     if opener is None:
         return None
 
-    name, opening = opener
+    name, attributes, opening = opener
     if name in VOID_TAGS or HTML_SCRIPT_STYLE_RE.match(opening.lstrip(' \t')):
         return None
 
@@ -115,6 +123,7 @@ def parse_html_container(
         data = None
     return HtmlContainerNode(
         name=name,
+        attributes=attributes,
         opening=opening,
         closing=closing,
         children=parser.parse_blocks(body, parent_state=state, source=source.map()),
@@ -122,12 +131,34 @@ def parse_html_container(
     )
 
 
-def parse_container_opener(line: str) -> tuple[str, str] | None:
+def parse_container_opener(line: str) -> tuple[str, dict[str, HtmlContainerAttributeValue] | None, str] | None:
     opening = line.rstrip('\r\n')
     match = HTML_CONTAINER_OPENER_RE.match(line)
     if match is None:
         return None
-    return match.group('name').lower(), opening
+    return match.group('name').lower(), parse_html_attributes(match.group('attrs')), opening
+
+
+def parse_html_attributes(text: str) -> dict[str, HtmlContainerAttributeValue] | None:
+    attributes: dict[str, HtmlContainerAttributeValue] = {}
+    index = 0
+    while index < len(text):
+        match = HTML_ATTRIBUTE_RE.match(text, index)
+        if match is None:  # pragma: no cover - opener regex validates attribute text first
+            return None
+        value = match.group('value')
+        if value is None:
+            attributes[match.group('name')] = True
+        else:
+            attributes[match.group('name')] = unquote_html_attribute_value(value)
+        index = match.end()
+    return attributes or None
+
+
+def unquote_html_attribute_value(value: str) -> str:
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
+        return value[1:-1].replace('\\' + value[0], value[0]).replace('\\\\', '\\')
+    return value
 
 
 def find_matching_close_index(state: BlockState, name: str) -> int | None:

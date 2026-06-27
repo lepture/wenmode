@@ -5,7 +5,7 @@ from collections.abc import Callable, Iterable
 from typing import Any
 
 from wenmode import Wenmode
-from wenmode.plugins import abbr, definition_list, fenced_directive, math, spoiler
+from wenmode.plugins import abbr, definition_list, fenced_directive, html_container, math, spoiler
 from wenmode.presets import commonmark, github
 from wenmode.rules import (
     AtxHeading,
@@ -152,3 +152,27 @@ def test_fenced_directive_attribute_candidates_scale_nearly_linearly() -> None:
 
 def test_math_block_opener_candidates_scale_nearly_linearly() -> None:
     assert_scales_nearly_linearly(lambda size: '$$ ' + ' ' * size + '\n$$\n', [], 8000, 16000, plugins=[math])
+
+
+def test_html_container_long_attributes_scale_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(
+        lambda size: '<div data-x="' + 'x' * size + '">\n</div>\n',
+        [],
+        8000,
+        16000,
+        plugins=[html_container],
+    )
+
+
+def test_html_container_unclosed_candidates_scale_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(lambda size: '<div>\n' + 'a\n' * size, [], plugins=[html_container])
+
+
+def test_html_container_nested_same_name_tags_scale_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(
+        lambda size: '<div>\n' * size + '</div>\n' * size,
+        [],
+        16,
+        32,
+        plugins=[html_container],
+    )

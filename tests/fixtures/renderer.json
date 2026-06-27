@@ -394,7 +394,7 @@
   },
   {
     "name": "html container renderers",
-    "input": "<section>\n# Title\n</section>\n",
+    "input": "<section class=\"hero\" hidden>\n# Title\n</section>\n",
     "rules": [
       "html_container",
       "atx_heading"
@@ -402,8 +402,8 @@
     "html_options": {
       "escape": false
     },
-    "html": "<section>\n<h1>Title</h1>\n</section>\n",
-    "markdown": "<section>\n# Title\n</section>\n",
-    "rst": ".. raw:: html\n\n   <section>\n\nTitle\n=====\n\n.. raw:: html\n\n   </section>\n"
+    "html": "<section class=\"hero\" hidden>\n<h1>Title</h1>\n</section>\n",
+    "markdown": "<section class=\"hero\" hidden>\n# Title\n</section>\n",
+    "rst": ".. raw:: html\n\n   <section class=\"hero\" hidden>\n\nTitle\n=====\n\n.. raw:: html\n\n   </section>\n"
   }
 ]
