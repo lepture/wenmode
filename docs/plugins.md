@@ -109,6 +109,8 @@ assert wenmode.render('<div>\n- one\n</div>\n') == (
 The plugin keeps raw-text tags such as `script`, `style`, `pre`, and
 `textarea` as literal `html` nodes. Self-closing tags, void tags, inline HTML,
 and unclosed tag pairs also fall back to the normal raw HTML block behavior.
+`htmlContainer` nodes keep the original opening and closing tag text and expose
+parsed attributes for AST consumers.
 
 HTML renderer escaping still applies to the container boundaries by default.
 Use `HTMLRenderer(escape=False)` only for trusted or separately sanitized

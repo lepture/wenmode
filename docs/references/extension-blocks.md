@@ -18,7 +18,7 @@ tag each appear on their own line, the plugin parses the body as Markdown block
 content.
 
 ```markdown
-<div>
+<div id="steps" hidden>
 - one
 - two
 </div>
@@ -72,12 +72,23 @@ Output node is `HtmlContainerNode`, and its AST is:
         }
       ],
       "name": "div",
-      "opening": "<div>",
+      "attributes": {
+        "id": "steps",
+        "hidden": true
+      },
+      "opening": "<div id=\"steps\" hidden>",
       "closing": "</div>"
     }
   ]
 }
 ```
+
+The `opening` and `closing` fields preserve the original tag text for
+round-tripping. The `attributes` field is a structured view for AST consumers:
+quoted and unquoted values become strings, and boolean attributes become
+`true`. Attribute names keep their source spelling, and attribute values are not
+HTML entity decoded. If the same attribute name appears more than once, the last
+parsed value is kept.
 
 Raw-text tags such as `script`, `style`, `pre`, and `textarea` stay literal
 `html` nodes. Self-closing tags, void tags, inline HTML, and unclosed tag pairs
