@@ -13,6 +13,10 @@ here while preparing a release, then move them under the final version heading.
 
 ## Unreleased
 
+## 0.8.0
+
+Released **Jun 29, 2026**.
+
 - Add constructor-time plugin setup options with `wenmode.plugins.plugin()`, so
   configured plugins can be passed directly to `Wenmode(..., plugins=[...])`.
 - Add `wenmode.ast.registry_from_plugins()` and expose `nodes` registries on
