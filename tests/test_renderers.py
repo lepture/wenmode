@@ -5,7 +5,7 @@ from typing import TypedDict
 
 import pytest
 
-from tests.helpers import load_fixture
+from tests.helpers import load_text_fixture, parse_text_fixture
 from tests.plugin_helpers import configured_app
 from wenmode import HTMLRenderer, MarkdownRenderer, RSTRenderer, Wenmode
 from wenmode.directives import Admonition, Details, Figure, TableOfContents
@@ -96,7 +96,55 @@ class RendererExample(TypedDict, total=False):
 
 
 def load_renderer_examples() -> list[RendererExample]:
-    return load_fixture('renderer.json')
+    return load_text_fixture('renderer.md')
+
+
+def test_text_fixture_parser_rejects_unclosed_case() -> None:
+    text = '## broken\n\n````````fixture\n.input\nx\n'
+
+    with pytest.raises(ValueError, match='missing a closing fence'):
+        parse_text_fixture(text)
+
+
+def test_text_fixture_parser_rejects_case_closed_after_next_case_start() -> None:
+    text = (
+        '## first\n\n'
+        '````````fixture\n'
+        '.input\nx\n'
+        '````\n\n'
+        '## second\n\n'
+        '````````fixture\n'
+        '.input\ny\n'
+        '````````\n'
+    )
+
+    with pytest.raises(ValueError, match="missing a closing fence before 'second'"):
+        parse_text_fixture(text)
+
+
+def test_text_fixture_parser_rejects_duplicate_sections() -> None:
+    text = '## broken\n\n````````fixture\n.input\nx\n.input\ny\n````````\n'
+
+    with pytest.raises(ValueError, match="section 'input' more than once"):
+        parse_text_fixture(text)
+
+
+def test_text_fixture_parser_unescapes_literal_section_markers() -> None:
+    text = (
+        '## escaped\n\n'
+        '````````fixture\n'
+        '.input\n\\.html\n\\.rst\n'
+        '.html\n<p>.html</p>\n'
+        '````````\n'
+    )
+
+    assert parse_text_fixture(text) == [
+        {
+            'name': 'escaped',
+            'input': '.html\n.rst',
+            'html': '<p>.html</p>',
+        }
+    ]
 
 
 def html_directives_for_example(example: RendererExample):
