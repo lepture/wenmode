@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, cast
 
 from wenmode.nodes import Node, Text
 from wenmode.rules.base import InlineRule
-from wenmode.rules.inlines.emphasis import parse_emphasis_sequence
 from wenmode.state import BlockState, SourceMap
 
 from .ruleset import RuleSet
@@ -96,8 +95,8 @@ class InlineParser:
 
     def _finalize_inline_nodes(self, nodes: list[Node]) -> list[Node]:
         nodes = merge_text(nodes)
-        if self._rule_set.emphasis_enabled and contains_emphasis_marker(nodes):
-            nodes = parse_emphasis_sequence(nodes)
+        if self._rule_set.emphasis_rule is not None and contains_emphasis_marker(nodes):
+            nodes = self._rule_set.emphasis_rule.parse_emphasis_sequence(nodes)
         else:
             return nodes
         return merge_text(nodes)
@@ -185,7 +184,9 @@ def merge_text(nodes: list[Node]) -> list[Node]:
         if isinstance(node, Text):
             if text_node_ is not None and node._parse_emphasis == text_node_._parse_emphasis:
                 if text_node_.position is not None and node.position is not None:
-                    text_node_.position = type(text_node_.position)(start=text_node_.position.start, end=node.position.end)
+                    text_node_.position = type(text_node_.position)(
+                        start=text_node_.position.start, end=node.position.end
+                    )
                 text_parts.append(node.value)
                 continue
             flush_text()

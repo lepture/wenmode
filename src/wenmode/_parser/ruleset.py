@@ -3,12 +3,19 @@ from __future__ import annotations
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TypeVar, cast
+from typing import Protocol, TypeVar, cast
 
+from wenmode.nodes import Node
 from wenmode.rules.base import BlockRule, ContinueRule, InlineRule, Rule
 from wenmode.rules.transforms import RootTransform
 
 T = TypeVar('T', bound=Rule)
+
+
+class EmphasisRule(Protocol):
+    """Rule protocol for deferred emphasis delimiter processing."""
+
+    def parse_emphasis_sequence(self, nodes: list[Node]) -> list[Node]: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -20,7 +27,7 @@ class RuleSet:
     inline_rules: list[InlineRule]
     root_transforms: list[RootTransform]
     paragraph_continuations: list[ContinueRule]
-    emphasis_enabled: bool
+    emphasis_rule: EmphasisRule | None
     defer_inlines: bool
     streaming_blockers: tuple[str, ...]
     block_rule_order: dict[str, int]
@@ -45,13 +52,15 @@ class RuleSet:
         inline_rules = sorted_by_order([rule for rule in resolved_rules if isinstance(rule, InlineRule)])
         triggered_inline_rules, search_inline_rules = prepare_inline_dispatch(inline_rules)
         streaming_blockers = tuple(transform.name for transform in root_transforms if transform.defer_inlines)
+        emphasis = rules.get('emphasis')
+        emphasis_rule = cast(EmphasisRule | None, emphasis) if has_emphasis_parser(emphasis) else None
         return cls(
             rules=rules,
             block_rules=block_rules,
             inline_rules=inline_rules,
             root_transforms=root_transforms,
             paragraph_continuations=[rule for rule in resolved_rules if isinstance(rule, ContinueRule)],
-            emphasis_enabled='emphasis' in rules,
+            emphasis_rule=emphasis_rule,
             defer_inlines=bool(streaming_blockers),
             streaming_blockers=streaming_blockers,
             block_rule_order={rule.name: index for index, rule in enumerate(block_rules)},
@@ -61,6 +70,10 @@ class RuleSet:
             inline_trigger_re=compile_inline_trigger_re(triggered_inline_rules),
             block_openers=compile_block_openers(block_rules),
         )
+
+
+def has_emphasis_parser(rule: Rule | None) -> bool:
+    return callable(getattr(rule, 'parse_emphasis_sequence', None))
 
 
 def resolve_rule(rule: type[Rule] | Rule) -> Rule:

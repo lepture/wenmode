@@ -7,6 +7,7 @@ from wenmode.nodes import Link, Node, Text
 from wenmode.state import BlockState
 
 from ..base import InlineRule
+from ..cjk import is_cjk_punctuation
 from .html import normalize_uri
 
 if TYPE_CHECKING:
@@ -43,6 +44,10 @@ class ExtendedAutolink(InlineRule):
 
     name = 'extended_autolink'
     pattern = EXTENDED_AUTOLINK_RE
+
+    def __init__(self, cjk_friendly: bool = False) -> None:
+        super().__init__()
+        self.cjk_friendly = cjk_friendly
 
     def search(self, text: str, pos: int = 0) -> re.Match[str] | None:
         url_match = self.search_url(text, pos)
@@ -82,7 +87,7 @@ class ExtendedAutolink(InlineRule):
         if is_mailto_or_xmpp(value):
             value = trim_mailto_or_xmpp(value)
         else:
-            value = trim_trailing_punctuation(value)
+            value = trim_trailing_punctuation(value, cjk_friendly=self.cjk_friendly)
             value = trim_entity_suffix(value)
         if not value:
             return None, match.start()
@@ -100,8 +105,10 @@ class ExtendedAutolink(InlineRule):
         return Link(url=normalize_uri(url), children=[text_node]), match.start() + len(value)
 
 
-def trim_trailing_punctuation(value: str) -> str:
+def trim_trailing_punctuation(value: str, cjk_friendly: bool = False) -> str:
     value = value.rstrip(TRAILING_PUNCTUATION)
+    if cjk_friendly:
+        value = trim_trailing_cjk_punctuation(value)
 
     extra_closing_parens = value.count(')') - value.count('(')
     if extra_closing_parens > 0:
@@ -112,6 +119,13 @@ def trim_trailing_punctuation(value: str) -> str:
         value = value[:end]
 
     return value
+
+
+def trim_trailing_cjk_punctuation(value: str) -> str:
+    end = len(value)
+    while end > 0 and is_cjk_punctuation(value[end - 1]):
+        end -= 1
+    return value[:end]
 
 
 def trim_entity_suffix(value: str) -> str:

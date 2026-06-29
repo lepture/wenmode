@@ -11,6 +11,7 @@ from typing import cast
 from . import __version__
 from .plugins import (
     abbr,
+    cjk_friendly,
     definition_list,
     fenced_directive,
     frontmatter,
@@ -39,6 +40,7 @@ PRESETS: dict[str, RuleList] = {
 
 BUILTIN_PLUGINS: dict[str, ModuleType] = {
     'abbr': abbr,
+    'cjk_friendly': cjk_friendly,
     'definition_list': definition_list,
     'fenced_directive': fenced_directive,
     'frontmatter': frontmatter,
