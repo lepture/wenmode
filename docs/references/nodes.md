@@ -33,6 +33,74 @@ Use `wenmode.ast.walk()`, `wenmode.ast.find_all()`, and
 `wenmode.ast.plain_text()` when you want to inspect node objects directly
 instead of first converting the tree with `to_ast()`.
 
+## Shape contract
+
+Every serialized node has a non-empty string `type`. Nodes may also include
+`data` and `position`. Fields whose value is `None` are omitted by `to_ast()`;
+boolean `False`, empty lists, and empty strings are preserved.
+
+Parent nodes use `children`, and literal nodes use `value`. Other fields are
+node-specific:
+
+| Type | Class | Fields beyond `type`, `data`, and `position` |
+| --- | --- | --- |
+| `root` | `Root` | `children` |
+| `paragraph` | `Paragraph` | `children` |
+| `heading` | `Heading` | `children`, `depth` |
+| `blockquote` | `Blockquote` | `children` |
+| `list` | `List` | `children`, `ordered`, `start`, `spread` |
+| `listItem` | `ListItem` | `children`, `checked`, `spread` |
+| `code` | `Code` | `value`, `lang`, `meta` |
+| `thematicBreak` | `ThematicBreak` | none |
+| `html` | `Html` | `value` |
+| `text` | `Text` | `value` |
+| `inlineCode` | `InlineCode` | `value` |
+| `strong` | `Strong` | `children` |
+| `emphasis` | `Emphasis` | `children` |
+| `delete` | `Delete` | `children` |
+| `table` | `Table` | `children`, `align` |
+| `tableRow` | `TableRow` | `children` |
+| `tableCell` | `TableCell` | `children` |
+| `link` | `Link` | `children`, `url`, `title` |
+| `image` | `Image` | `url`, `alt`, `title` |
+| `break` | `Break` | none |
+| `footnoteReference` | `FootnoteReference` | `identifier`, `label` |
+| `footnoteDefinition` | `FootnoteDefinition` | `children`, `identifier`, `label` |
+| `textDirective` | `TextDirective` | `children`, `name`, `attributes` |
+| `leafDirective` | `LeafDirective` | `children`, `name`, `attributes` |
+| `containerDirective` | `ContainerDirective` | `children`, `name`, `attributes` |
+| `literalDirective` | `LiteralDirective` | `value`, `name`, `argument`, `attributes` |
+
+Plugin nodes have the same common fields, but their concrete classes are only
+restored by `from_ast()` when you pass a plugin node registry:
+
+| Type | Plugin class | Fields beyond `type`, `data`, and `position` |
+| --- | --- | --- |
+| `abbreviation` | `abbr.AbbreviationNode` | `children`, `title` |
+| `definitionList` | `definition_list.DefinitionListNode` | `children` |
+| `definitionTerm` | `definition_list.DefinitionTermNode` | `children` |
+| `definitionDescription` | `definition_list.DefinitionDescriptionNode` | `children`, `spread` |
+| `htmlContainer` | `html_container.HtmlContainerNode` | `children`, `name`, `attributes`, `opening`, `closing` |
+| `math` | `math.MathNode` | `value` |
+| `inlineMath` | `math.InlineMathNode` | `value` |
+| `blockSpoiler` | `spoiler.BlockSpoilerNode` | `children` |
+| `inlineSpoiler` | `spoiler.InlineSpoilerNode` | `children` |
+| `mark` | `mark.MarkNode` | `children` |
+| `insert` | `insert.InsertNode` | `children` |
+| `superscript` | `superscript.SuperscriptNode` | `children` |
+| `subscript` | `subscript.SubscriptNode` | `children` |
+| `ruby` | `ruby.RubyNode` | `segments` |
+
+`ruby.segments` is a list of `{"base": "...", "text": "..."}` mappings.
+`htmlContainer.attributes` maps attribute names to strings or boolean `true`.
+Escaped raw HTML and escaped HTML container boundaries use `data` with
+`escaped` set to `true`.
+
+Some plugins intentionally reuse core node types instead of defining custom
+nodes. `frontmatter` stores metadata on `root.data["frontmatter"]`,
+`inline_role` emits `textDirective`, and `fenced_directive` emits
+`containerDirective` or `literalDirective`.
+
 ## AST interoperability
 
 `wenmode.ast.from_ast()` converts a mdast-like mapping back into Wenmode node
@@ -67,6 +135,11 @@ assert type(node).__name__ == 'MathNode'
 Each built-in plugin exposes a `nodes` mapping. Plugins that only reuse core
 node types expose an empty mapping, so they can still be passed to
 `registry_from_plugins()`.
+
+The registry is about node classes, not enabled syntax. For example,
+`plugin(math, inline=False)` still contributes both `math` and `inlineMath`
+classes to the registry, so AST data produced by a broader dialect can still be
+restored if needed.
 
 Unknown node types are preserved as generic `Parent`, `Literal`, or `Node`
 instances by default so tools can round-trip data they do not understand. Pass

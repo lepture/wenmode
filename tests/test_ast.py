@@ -2,21 +2,66 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+import pytest
+
 from wenmode import Wenmode
-from wenmode.ast import find, find_all, from_ast, iter_children, plain_text, registry_from_plugins, walk
+from wenmode.ast import (
+    BUILTIN_NODE_REGISTRY,
+    find,
+    find_all,
+    from_ast,
+    iter_children,
+    plain_text,
+    registry_from_plugins,
+    walk,
+)
 from wenmode.nodes import (
+    Blockquote,
+    Break,
+    Code,
+    ContainerDirective,
+    Delete,
+    Emphasis,
+    FootnoteDefinition,
     FootnoteReference,
     Heading,
+    Html,
     Image,
+    InlineCode,
+    LeafDirective,
     Link,
+    List,
+    ListItem,
     LiteralDirective,
     Node,
     Paragraph,
     Parent,
     Position,
+    Root,
+    Strong,
+    Table,
+    TableCell,
+    TableRow,
     Text,
+    TextDirective,
+    ThematicBreak,
 )
-from wenmode.plugins import definition_list, math, plugin
+from wenmode.plugins import (
+    abbr,
+    definition_list,
+    fenced_directive,
+    frontmatter,
+    html_container,
+    inline_role,
+    insert,
+    mark,
+    math,
+    plugin,
+    ruby,
+    spoiler,
+    subscript,
+    superscript,
+)
 from wenmode.presets import github
 
 
@@ -24,6 +69,384 @@ from wenmode.presets import github
 class Callout(Parent):
     kind: str = ''
     type: str = 'callout'
+
+
+TEXT_AST = {'type': 'text', 'value': 'text'}
+INLINE_TEXT_AST = {'type': 'text', 'value': 'inline'}
+PARAGRAPH_AST = {'type': 'paragraph', 'children': [TEXT_AST]}
+
+BUILTIN_NODE_SHAPES = [
+    (
+        'root',
+        Root,
+        {'type': 'root', 'children': [PARAGRAPH_AST]},
+    ),
+    (
+        'paragraph',
+        Paragraph,
+        PARAGRAPH_AST,
+    ),
+    (
+        'heading',
+        Heading,
+        {'type': 'heading', 'children': [TEXT_AST], 'depth': 2},
+    ),
+    (
+        'blockquote',
+        Blockquote,
+        {'type': 'blockquote', 'children': [PARAGRAPH_AST]},
+    ),
+    (
+        'list',
+        List,
+        {
+            'type': 'list',
+            'children': [
+                {
+                    'type': 'listItem',
+                    'children': [PARAGRAPH_AST],
+                    'checked': False,
+                    'spread': True,
+                }
+            ],
+            'ordered': True,
+            'start': 3,
+            'spread': True,
+        },
+    ),
+    (
+        'listItem',
+        ListItem,
+        {'type': 'listItem', 'children': [PARAGRAPH_AST], 'checked': True, 'spread': False},
+    ),
+    (
+        'code',
+        Code,
+        {'type': 'code', 'value': 'print(1)\n', 'lang': 'python', 'meta': 'linenos'},
+    ),
+    (
+        'thematicBreak',
+        ThematicBreak,
+        {'type': 'thematicBreak'},
+    ),
+    (
+        'html',
+        Html,
+        {'type': 'html', 'data': {'escaped': True}, 'value': '&lt;script>alert(1)&lt;/script>\n'},
+    ),
+    (
+        'text',
+        Text,
+        TEXT_AST,
+    ),
+    (
+        'inlineCode',
+        InlineCode,
+        {'type': 'inlineCode', 'value': 'code'},
+    ),
+    (
+        'strong',
+        Strong,
+        {'type': 'strong', 'children': [INLINE_TEXT_AST]},
+    ),
+    (
+        'emphasis',
+        Emphasis,
+        {'type': 'emphasis', 'children': [INLINE_TEXT_AST]},
+    ),
+    (
+        'delete',
+        Delete,
+        {'type': 'delete', 'children': [INLINE_TEXT_AST]},
+    ),
+    (
+        'table',
+        Table,
+        {
+            'type': 'table',
+            'children': [
+                {
+                    'type': 'tableRow',
+                    'children': [
+                        {'type': 'tableCell', 'children': [TEXT_AST]},
+                        {'type': 'tableCell', 'children': [INLINE_TEXT_AST]},
+                    ],
+                }
+            ],
+            'align': ['left', None],
+        },
+    ),
+    (
+        'tableRow',
+        TableRow,
+        {'type': 'tableRow', 'children': [{'type': 'tableCell', 'children': [TEXT_AST]}]},
+    ),
+    (
+        'tableCell',
+        TableCell,
+        {'type': 'tableCell', 'children': [TEXT_AST]},
+    ),
+    (
+        'link',
+        Link,
+        {'type': 'link', 'children': [TEXT_AST], 'url': '/url', 'title': 'Title'},
+    ),
+    (
+        'image',
+        Image,
+        {'type': 'image', 'url': '/img.png', 'alt': 'Alt text', 'title': 'Title'},
+    ),
+    (
+        'break',
+        Break,
+        {'type': 'break'},
+    ),
+    (
+        'footnoteReference',
+        FootnoteReference,
+        {'type': 'footnoteReference', 'identifier': 'note-id', 'label': 'Note Label'},
+    ),
+    (
+        'footnoteDefinition',
+        FootnoteDefinition,
+        {'type': 'footnoteDefinition', 'children': [PARAGRAPH_AST], 'identifier': 'note-id', 'label': 'Note Label'},
+    ),
+    (
+        'textDirective',
+        TextDirective,
+        {'type': 'textDirective', 'children': [TEXT_AST], 'name': 'abbr', 'attributes': {'title': 'Full name'}},
+    ),
+    (
+        'leafDirective',
+        LeafDirective,
+        {'type': 'leafDirective', 'children': [TEXT_AST], 'name': 'youtube', 'attributes': {'id': 'abc'}},
+    ),
+    (
+        'containerDirective',
+        ContainerDirective,
+        {'type': 'containerDirective', 'children': [PARAGRAPH_AST], 'name': 'note', 'attributes': {'class': 'wide'}},
+    ),
+    (
+        'literalDirective',
+        LiteralDirective,
+        {
+            'type': 'literalDirective',
+            'value': 'print("*literal*")\n',
+            'name': 'code-block',
+            'argument': 'python',
+            'attributes': {'caption': 'example.py'},
+        },
+    ),
+]
+
+PLUGIN_NODE_SAMPLES = [
+    (
+        'abbreviation',
+        abbr.AbbreviationNode,
+        {'type': 'abbreviation', 'children': [TEXT_AST], 'title': 'HyperText Markup Language'},
+    ),
+    (
+        'definitionList',
+        definition_list.DefinitionListNode,
+        {
+            'type': 'definitionList',
+            'children': [
+                {'type': 'definitionTerm', 'children': [TEXT_AST]},
+                {
+                    'type': 'definitionDescription',
+                    'children': [PARAGRAPH_AST],
+                    'spread': False,
+                },
+            ],
+        },
+    ),
+    (
+        'definitionTerm',
+        definition_list.DefinitionTermNode,
+        {'type': 'definitionTerm', 'children': [TEXT_AST]},
+    ),
+    (
+        'definitionDescription',
+        definition_list.DefinitionDescriptionNode,
+        {'type': 'definitionDescription', 'children': [PARAGRAPH_AST], 'spread': True},
+    ),
+    (
+        'htmlContainer',
+        html_container.HtmlContainerNode,
+        {
+            'type': 'htmlContainer',
+            'data': {'escaped': True},
+            'children': [PARAGRAPH_AST],
+            'name': 'div',
+            'attributes': {'id': 'steps', 'hidden': True},
+            'opening': '<div id="steps" hidden>',
+            'closing': '</div>',
+        },
+    ),
+    (
+        'math',
+        math.MathNode,
+        {'type': 'math', 'value': 'x + y\n'},
+    ),
+    (
+        'inlineMath',
+        math.InlineMathNode,
+        {'type': 'inlineMath', 'value': 'x + y'},
+    ),
+    (
+        'blockSpoiler',
+        spoiler.BlockSpoilerNode,
+        {'type': 'blockSpoiler', 'children': [PARAGRAPH_AST]},
+    ),
+    (
+        'inlineSpoiler',
+        spoiler.InlineSpoilerNode,
+        {'type': 'inlineSpoiler', 'children': [TEXT_AST]},
+    ),
+    (
+        'mark',
+        mark.MarkNode,
+        {'type': 'mark', 'children': [TEXT_AST]},
+    ),
+    (
+        'insert',
+        insert.InsertNode,
+        {'type': 'insert', 'children': [TEXT_AST]},
+    ),
+    (
+        'superscript',
+        superscript.SuperscriptNode,
+        {'type': 'superscript', 'children': [TEXT_AST]},
+    ),
+    (
+        'subscript',
+        subscript.SubscriptNode,
+        {'type': 'subscript', 'children': [TEXT_AST]},
+    ),
+    (
+        'ruby',
+        ruby.RubyNode,
+        {'type': 'ruby', 'segments': [{'base': '漢字', 'text': 'kanji'}]},
+    ),
+]
+
+PLUGIN_REGISTRY_TARGETS = [
+    abbr,
+    definition_list,
+    fenced_directive,
+    frontmatter,
+    html_container,
+    inline_role,
+    insert,
+    mark,
+    plugin(math, inline=False),
+    ruby,
+    spoiler,
+    subscript,
+    superscript,
+]
+
+
+@pytest.mark.parametrize(
+    ('node_type', 'node_class', 'ast'),
+    BUILTIN_NODE_SHAPES,
+    ids=[node_type for node_type, _node_class, _ast in BUILTIN_NODE_SHAPES],
+)
+def test_from_ast_round_trips_builtin_node_shapes(node_type: str, node_class: type[Node], ast: dict) -> None:
+    node = from_ast(ast)
+
+    assert BUILTIN_NODE_REGISTRY[node_type] is node_class
+    assert isinstance(node, node_class)
+    assert node.to_ast() == ast
+
+
+@pytest.mark.parametrize(
+    ('node_type', 'node_class', 'ast'),
+    PLUGIN_NODE_SAMPLES,
+    ids=[node_type for node_type, _node_class, _ast in PLUGIN_NODE_SAMPLES],
+)
+def test_from_ast_round_trips_plugin_node_shapes(node_type: str, node_class: type[Node], ast: dict) -> None:
+    registry = registry_from_plugins(PLUGIN_REGISTRY_TARGETS)
+    node = from_ast(ast, registry=registry)
+
+    assert registry[node_type] is node_class
+    assert isinstance(node, node_class)
+    assert node.to_ast() == ast
+
+
+def test_registry_from_plugins_collects_all_builtin_plugin_nodes() -> None:
+    registry = registry_from_plugins(PLUGIN_REGISTRY_TARGETS)
+
+    assert registry == {node_type: node_class for node_type, node_class, _ast in PLUGIN_NODE_SAMPLES}
+
+
+def test_parsed_plugin_ast_round_trips_through_plugin_registry() -> None:
+    plugins = [
+        frontmatter,
+        html_container,
+        abbr,
+        definition_list,
+        fenced_directive,
+        inline_role,
+        insert,
+        mark,
+        math,
+        ruby,
+        spoiler,
+        subscript,
+        superscript,
+    ]
+    app = Wenmode(github, plugins=plugins)
+    markdown = '''---
+title: AST contract
+---
+
+The HTML spec uses ==mark==, ^^insert^^, H~2~O, 2^10^, [漢字(kanji)], >! secret !<,
+$x + y$, and {abbr}`CPU`.
+
+*[HTML]: HyperText Markup Language
+
+Apple
+: *fruit*
+
+>! hidden *thing*
+
+<div id="steps" hidden>
+- one
+</div>
+
+$$
+x + y
+$$
+
+```{code-block} python
+print("*literal*")
+```
+'''
+
+    ast = app.parse(markdown).to_ast()
+    restored = from_ast(ast, registry=registry_from_plugins(plugins))
+
+    assert restored.to_ast() == ast
+    assert {node.type for node in walk(restored)} >= {
+        'root',
+        'abbreviation',
+        'definitionList',
+        'definitionTerm',
+        'definitionDescription',
+        'htmlContainer',
+        'mark',
+        'insert',
+        'subscript',
+        'superscript',
+        'ruby',
+        'inlineSpoiler',
+        'blockSpoiler',
+        'inlineMath',
+        'math',
+        'textDirective',
+        'literalDirective',
+    }
 
 
 def test_walk_yields_nodes_in_depth_first_order() -> None:

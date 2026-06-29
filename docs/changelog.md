@@ -13,6 +13,9 @@ here while preparing a release, then move them under the final version heading.
 
 ## Unreleased
 
+- Document core and plugin AST node shape contracts and expand round-trip
+  coverage for `from_ast()` with plugin node registries.
+
 ## 0.8.0
 
 Released **Jun 29, 2026**.
