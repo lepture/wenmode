@@ -84,6 +84,7 @@ chain-style setup remains supported.
 | Plugin | Enables |
 | --- | --- |
 | `wenmode.plugins.abbr` | Abbreviation definitions and `abbreviation` nodes |
+| `wenmode.plugins.cjk_friendly` | CJK-friendly inline parsing behavior |
 | `wenmode.plugins.definition_list` | Definition list syntax and nodes |
 | `wenmode.plugins.fenced_directive` | MyST-style fenced directives, rendered as `containerDirective` or `literalDirective` nodes |
 | `wenmode.plugins.frontmatter` | Top-level `---` front matter stored on `root.data["frontmatter"]` |
@@ -101,6 +102,35 @@ Each plugin also registers default HTML, Markdown, or RST renderer handlers when
 the feature has a standard representation in Wenmode's built-in renderers.
 Plugins that introduce custom node types expose a `nodes` registry for
 `wenmode.ast.from_ast()`; see {ref}`reference-nodes`.
+
+## CJK-Friendly Parsing
+
+The `cjk_friendly` plugin keeps default parsing for non-CJK text while making
+inline behavior friendlier for Chinese, Japanese, and Korean prose. It allows
+emphasis markers to open or close next to CJK characters and punctuation. When
+the `extended_autolink` rule is already enabled, such as in the `github` preset,
+it also leaves trailing CJK punctuation outside the generated link.
+
+```python
+from wenmode import Wenmode
+from wenmode.plugins import cjk_friendly
+
+wen = Wenmode(plugins=[cjk_friendly])
+
+assert wen.render('**你好。**世界\n') == '<p><strong>你好。</strong>世界</p>\n'
+```
+
+```python
+from wenmode import Wenmode
+from wenmode.plugins import cjk_friendly
+from wenmode.presets import github
+
+wen = Wenmode(github, plugins=[cjk_friendly])
+
+assert wen.render('请看 https://example.com。\n') == (
+    '<p>请看 <a href="https://example.com">https://example.com</a>。</p>\n'
+)
+```
 
 ## HTML Containers
 

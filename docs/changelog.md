@@ -13,6 +13,9 @@ here while preparing a release, then move them under the final version heading.
 
 ## Unreleased
 
+- Add `wenmode.plugins.cjk_friendly` for opt-in CJK-friendly inline parsing,
+  including emphasis delimiter matching and extended autolink trailing
+  punctuation handling.
 - Document core and plugin AST node shape contracts and expand round-trip
   coverage for `from_ast()` with plugin node registries.
 
