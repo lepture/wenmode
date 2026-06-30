@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 from wenmode.nodes import Literal, Node
 from wenmode.renderers import MarkdownRenderer, RenderContext
+from wenmode.renderers.asciidoc import AsciiDocRenderContext, AsciiDocRenderer
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer, indent_block
 from wenmode.rules.base import BlockRule, InlineRule, Rule
@@ -161,12 +162,26 @@ def render_rst_inline_math(renderer: RSTRenderer, node: InlineMathNode, context:
     return f':math:`{renderer.escape_interpreted_text(node.value)}`'
 
 
+def render_asciidoc_math(renderer: AsciiDocRenderer, node: MathNode, context: AsciiDocRenderContext) -> str:
+    value = node.value.rstrip('\n')
+    if value:
+        return '[stem]\n++++\n' + value + '\n++++\n\n'
+    return '[stem]\n++++\n++++\n\n'
+
+
+def render_asciidoc_inline_math(
+    renderer: AsciiDocRenderer, node: InlineMathNode, context: AsciiDocRenderContext
+) -> str:
+    return f'stem:[{node.value}]'
+
+
 nodes = {MathNode.type: MathNode, InlineMathNode.type: InlineMathNode}
 rules: list[type[Rule] | Rule] = [MathBlockRule, InlineMathRule]
 handlers: RendererHandlers = {
     'html': {MathNode.type: render_html_math, InlineMathNode.type: render_html_inline_math},
     'markdown': {MathNode.type: render_markdown_math, InlineMathNode.type: render_markdown_inline_math},
     'rst': {MathNode.type: render_rst_math, InlineMathNode.type: render_rst_inline_math},
+    'asciidoc': {MathNode.type: render_asciidoc_math, InlineMathNode.type: render_asciidoc_inline_math},
 }
 
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from wenmode import MarkdownRenderer, RSTRenderer, Wenmode
+from wenmode import AsciiDocRenderer, MarkdownRenderer, RSTRenderer, Wenmode
 from wenmode.plugins import frontmatter
 from wenmode.presets import github
 
@@ -165,6 +165,17 @@ def test_frontmatter_plugin_renders_rst_docinfo() -> None:
         '\n'
         'Hi\n'
         '==\n'
+    )
+
+
+def test_frontmatter_plugin_renders_asciidoc_attributes() -> None:
+    app = Wenmode(renderer=AsciiDocRenderer()).use(frontmatter)
+
+    assert app.render('---\ntitle: Hello\nlayout: "landing"\n---\n\n# Hi\n') == (
+        ':title: Hello\n'
+        ':layout: landing\n'
+        '\n'
+        '= Hi\n'
     )
 
 

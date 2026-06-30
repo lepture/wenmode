@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 from wenmode.nodes import Node, Parent
 from wenmode.renderers import MarkdownRenderer, RenderContext
+from wenmode.renderers.asciidoc import AsciiDocRenderContext, AsciiDocRenderer
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer
 from wenmode.rules.base import InlineRule, Rule
@@ -61,12 +62,17 @@ def render_rst(renderer: RSTRenderer, node: InsertNode, context: RSTRenderContex
     return renderer.render_children(node.children, context)
 
 
+def render_asciidoc(renderer: AsciiDocRenderer, node: InsertNode, context: AsciiDocRenderContext) -> str:
+    return f'[.underline]#{renderer.render_children(node.children, context)}#'
+
+
 nodes = {InsertNode.type: InsertNode}
 rules: list[type[Rule] | Rule] = [InsertRule]
 handlers: RendererHandlers = {
     'html': {InsertNode.type: render_html},
     'markdown': {InsertNode.type: render_markdown},
     'rst': {InsertNode.type: render_rst},
+    'asciidoc': {InsertNode.type: render_asciidoc},
 }
 
 

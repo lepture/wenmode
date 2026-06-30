@@ -577,6 +577,14 @@ a :math:`x + y`
 
    z = 1
 
+.asciidoc
+a stem:[x + y]
+
+[stem]
+++++
+z = 1
+++++
+
 ````````
 
 ## tables and definitions
@@ -628,6 +636,15 @@ Name  Value
 A     1
 ====  =====
 
+.asciidoc
+Apple:: Fruit
+
+[options="header"]
+|===
+| Name | Value
+| A | 1
+|===
+
 ````````
 
 ## empty definition description
@@ -650,6 +667,9 @@ Term
 
 .rst
 Term
+
+.asciidoc
+Term::
 
 ````````
 
@@ -804,6 +824,14 @@ image
 
    second paragraph
 
+.asciidoc
+[.spoiler]
+--
+hidden _thing_
+
+second paragraph
+--
+
 ````````
 
 ## extended inline nodes
@@ -822,6 +850,9 @@ HTML ~~gone~~ ==mark== ^^insert^^ ^2^ ~n~ [漢(kan)] >! secret !< :kbd[Ctrl\+C]
 
 .rst
 :abbr:`HTML (HyperText)` gone mark insert :sup:`2` :sub:`n` 漢 (kan) secret :kbd:`Ctrl+C`
+
+.asciidoc
+HTML [.line-through]#gone# #mark# [.underline]#insert# ^2^ ~n~ 漢 (kan) [.spoiler]#secret# Ctrl+C
 
 ````````
 
@@ -1328,6 +1359,13 @@ Term
 
   two
 
+.asciidoc
+Term::
++
+one
+
+two
+
 ````````
 
 ## definition list without trailing newline
@@ -1354,6 +1392,9 @@ Term
 Term
   desc
 
+.asciidoc
+Term:: desc
+
 ````````
 
 ## abbreviation without title
@@ -1371,6 +1412,9 @@ HTML
 HTML
 
 .rst
+HTML
+
+.asciidoc
 HTML
 
 ````````
@@ -1777,5 +1821,16 @@ Title
 .. raw:: html
 
    </section>
+
+.asciidoc
+++++
+<section class="hero" hidden>
+++++
+
+= Title
+
+++++
+</section>
+++++
 
 ````````

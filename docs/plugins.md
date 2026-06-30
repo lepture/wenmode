@@ -98,8 +98,9 @@ chain-style setup remains supported.
 | `wenmode.plugins.subscript` | `subscript` inline nodes |
 | `wenmode.plugins.superscript` | `superscript` inline nodes |
 
-Each plugin also registers default HTML, Markdown, or RST renderer handlers when
-the feature has a standard representation in Wenmode's built-in renderers.
+Each plugin also registers default HTML, Markdown, RST, or AsciiDoc renderer
+handlers when the feature has a standard representation in Wenmode's built-in
+renderers.
 Plugins that introduce custom node types expose a `nodes` registry for
 `wenmode.ast.from_ast()`; see {ref}`reference-nodes`.
 

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, TypeAlias
 
 from wenmode.nodes import Node, Parent
 from wenmode.renderers import MarkdownRenderer, RenderContext
+from wenmode.renderers.asciidoc import AsciiDocRenderContext, AsciiDocRenderer
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer, indent_block
 from wenmode.rules.base import BlockRule, Rule
@@ -219,12 +220,21 @@ def render_rst_container(renderer: RSTRenderer, node: HtmlContainerNode, context
     return opening + renderer.render_children(node.children, context) + closing
 
 
+def render_asciidoc_container(
+    renderer: AsciiDocRenderer, node: HtmlContainerNode, context: AsciiDocRenderContext
+) -> str:
+    opening = '++++\n' + node.opening + '\n++++\n\n'
+    closing = '++++\n' + node.closing + '\n++++\n\n'
+    return opening + renderer.render_children(node.children, context) + closing
+
+
 rules: list[type[Rule] | Rule] = [HtmlContainer]
 nodes = {HtmlContainerNode.type: HtmlContainerNode}
 handlers: RendererHandlers = {
     'html': {HtmlContainerNode.type: render_html_container},
     'markdown': {HtmlContainerNode.type: render_markdown_container},
     'rst': {HtmlContainerNode.type: render_rst_container},
+    'asciidoc': {HtmlContainerNode.type: render_asciidoc_container},
 }
 
 

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 from wenmode.nodes import Link as LinkNode
 from wenmode.nodes import Node
 from wenmode.renderers import MarkdownRenderer, RenderContext
+from wenmode.renderers.asciidoc import AsciiDocRenderContext, AsciiDocRenderer
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer
 from wenmode.rules.base import InlineRule, Rule
@@ -111,12 +112,20 @@ def render_rst(renderer: RSTRenderer, node: RubyNode, context: RSTRenderContext)
     )
 
 
+def render_asciidoc(renderer: AsciiDocRenderer, node: RubyNode, context: AsciiDocRenderContext) -> str:
+    return ''.join(
+        f'{renderer.escape_text(segment["base"])} ({renderer.escape_text(segment["text"])})'
+        for segment in node.segments
+    )
+
+
 nodes = {RubyNode.type: RubyNode}
 rules: list[type[Rule] | Rule] = [RubyRule]
 handlers: RendererHandlers = {
     'html': {RubyNode.type: render_html},
     'markdown': {RubyNode.type: render_markdown},
     'rst': {RubyNode.type: render_rst},
+    'asciidoc': {RubyNode.type: render_asciidoc},
 }
 
 

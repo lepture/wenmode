@@ -5,6 +5,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, ClassVar
 
+from wenmode.renderers.asciidoc import AsciiDocRenderContext, AsciiDocRenderer
 from wenmode.renderers.base import RenderContext
 from wenmode.renderers.markdown import MarkdownRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer
@@ -169,6 +170,25 @@ def render_rst_frontmatter(value: Any) -> str:
     return '\n'.join(lines) + '\n\n'
 
 
+def render_asciidoc_frontmatter(value: Any) -> str:
+    if not isinstance(value, Mapping):
+        return ''
+
+    lines: list[str] = []
+    for key, item in value.items():
+        name = str(key).strip()
+        if not name or RST_FIELD_NAME_RE.fullmatch(name) is None:
+            continue
+        text = dump_simple_scalar(item)
+        if text:
+            lines.append(f':{name}: {text}')
+        else:
+            lines.append(f':{name}:')
+    if not lines:
+        return ''
+    return '\n'.join(lines) + '\n\n'
+
+
 def render_markdown_frontmatter_prelude(
     data_key: str,
     dump: FrontmatterDump,
@@ -194,6 +214,18 @@ def render_rst_frontmatter_prelude(
     return render_frontmatter
 
 
+def render_asciidoc_frontmatter_prelude(
+    data_key: str,
+) -> Callable[[AsciiDocRenderer, Root, AsciiDocRenderContext], str]:
+    def render_frontmatter(renderer: AsciiDocRenderer, node: Root, context: AsciiDocRenderContext) -> str:
+        value = root_frontmatter(node, data_key)
+        if value is MISSING:
+            return ''
+        return render_asciidoc_frontmatter(value)
+
+    return render_frontmatter
+
+
 def create_handlers(data_key: str, dump: FrontmatterDump) -> RendererHandlers:
     return {
         'markdown': {
@@ -201,6 +233,9 @@ def create_handlers(data_key: str, dump: FrontmatterDump) -> RendererHandlers:
         },
         'rst': {
             'root:pre': render_rst_frontmatter_prelude(data_key),
+        },
+        'asciidoc': {
+            'root:pre': render_asciidoc_frontmatter_prelude(data_key),
         },
     }
 

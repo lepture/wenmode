@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 from wenmode.nodes import Node, Paragraph, Parent
 from wenmode.renderers import MarkdownRenderer, RenderContext
+from wenmode.renderers.asciidoc import AsciiDocRenderContext, AsciiDocRenderer
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer, indent_block
 from wenmode.rules.base import ContinueRule, Rule
@@ -247,6 +248,37 @@ def render_definition_body(renderer: RSTRenderer, children: list[Node], context:
     return renderer.render_children(children, context).rstrip('\n')
 
 
+def render_asciidoc_list(renderer: AsciiDocRenderer, node: DefinitionListNode, context: AsciiDocRenderContext) -> str:
+    return renderer.render_children(node.children, context) + '\n'
+
+
+def render_asciidoc_term(renderer: AsciiDocRenderer, node: DefinitionTermNode, context: AsciiDocRenderContext) -> str:
+    return renderer.render_children(node.children, context).strip()
+
+
+def render_asciidoc_description(
+    renderer: AsciiDocRenderer, node: DefinitionDescriptionNode, context: AsciiDocRenderContext
+) -> str:
+    if not node.children:
+        return '::\n'
+    if not node.spread and len(node.children) == 1 and isinstance(node.children[0], Paragraph):
+        return ':: ' + renderer.render_children(node.children[0].children, context).strip() + '\n'
+    body = render_asciidoc_definition_body(renderer, node.children, context)
+    if body:
+        return '::\n+\n' + body + '\n'
+    return '::\n'
+
+
+def render_asciidoc_definition_body(
+    renderer: AsciiDocRenderer, children: list[Node], context: AsciiDocRenderContext
+) -> str:
+    if not children:
+        return ''
+    if len(children) == 1 and isinstance(children[0], Paragraph):
+        return renderer.render_children(children[0].children, context).strip()
+    return renderer.render_children(children, context).rstrip('\n')
+
+
 nodes = {
     DefinitionListNode.type: DefinitionListNode,
     DefinitionTermNode.type: DefinitionTermNode,
@@ -268,6 +300,11 @@ handlers: RendererHandlers = {
         DefinitionListNode.type: render_rst_list,
         DefinitionTermNode.type: render_rst_term,
         DefinitionDescriptionNode.type: render_rst_description,
+    },
+    'asciidoc': {
+        DefinitionListNode.type: render_asciidoc_list,
+        DefinitionTermNode.type: render_asciidoc_term,
+        DefinitionDescriptionNode.type: render_asciidoc_description,
     },
 }
 

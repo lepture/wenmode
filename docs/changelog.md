@@ -13,8 +13,8 @@ here while preparing a release, then move them under the final version heading.
 
 ## Unreleased
 
-- Add `AsciiDocRenderer` and CLI `--format=asciidoc` support for best-effort
-  core AST serialization to AsciiDoc.
+- Add `AsciiDocRenderer`, CLI `--format=asciidoc` support, and built-in plugin
+  handlers for best-effort serialization to AsciiDoc.
 - Add `wenmode.plugins.cjk_friendly` for opt-in CJK-friendly inline parsing,
   including emphasis delimiter matching and extended autolink trailing
   punctuation handling.
