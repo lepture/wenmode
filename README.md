@@ -155,21 +155,21 @@ assert ast['children'][0] == {
 }
 ```
 
-Pass a different renderer when you want another output format:
+Pass a different renderer when you want another output format, such as
+reStructuredText or AsciiDoc:
 
 ```python
-from wenmode import RSTRenderer, Wenmode
+from wenmode import AsciiDocRenderer, Wenmode
 
-wen = Wenmode(renderer=RSTRenderer())
+wen = Wenmode(renderer=AsciiDocRenderer())
 
 text = '# Hello'
 expected = '''
-Hello
-=====
+= Hello
 '''
 
-rst = wen.render(text)
-assert rst == expected.lstrip()
+asciidoc = wen.render(text)
+assert asciidoc == expected.lstrip()
 ```
 
 ## Rules, presets, and plugins

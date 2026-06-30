@@ -26,7 +26,7 @@ from .plugins import (
     superscript,
 )
 from .presets import commonmark, github, streaming
-from .renderers import HTMLRenderer, MarkdownRenderer, RSTRenderer
+from .renderers import AsciiDocRenderer, HTMLRenderer, MarkdownRenderer, RSTRenderer
 from .rules.base import Rule
 from .wenmode import Wenmode
 
@@ -62,13 +62,13 @@ def create_parser() -> argparse.ArgumentParser:
 
     commands = parser.add_subparsers(dest='command', required=True)
 
-    render = commands.add_parser('render', help='Render Markdown to HTML, Markdown, or reStructuredText.')
+    render = commands.add_parser('render', help='Render Markdown to HTML, Markdown, reStructuredText, or AsciiDoc.')
     add_source_argument(render)
     add_preset_argument(render)
     add_plugin_argument(render)
     render.add_argument(
         '--format',
-        choices=('html', 'markdown', 'rst'),
+        choices=('html', 'markdown', 'rst', 'asciidoc'),
         default='html',
         help='Output format. Defaults to html.',
     )
@@ -151,7 +151,7 @@ def create_renderer(
     output_format: str,
     unsafe_html: bool = False,
     unsafe_urls: bool = False,
-) -> HTMLRenderer | MarkdownRenderer | RSTRenderer:
+) -> HTMLRenderer | MarkdownRenderer | RSTRenderer | AsciiDocRenderer:
     if output_format == 'html':
         return HTMLRenderer(escape=not unsafe_html, sanitize_urls=not unsafe_urls)
     if unsafe_html or unsafe_urls:
@@ -160,6 +160,8 @@ def create_renderer(
         return MarkdownRenderer()
     if output_format == 'rst':
         return RSTRenderer()
+    if output_format == 'asciidoc':
+        return AsciiDocRenderer()
     raise ValueError(f'unsupported output format: {output_format}')
 
 

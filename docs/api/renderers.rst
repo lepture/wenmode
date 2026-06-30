@@ -20,5 +20,8 @@ Renderers
 .. autoclass:: wenmode.RSTRenderer
    :members:
 
+.. autoclass:: wenmode.AsciiDocRenderer
+   :members:
+
 .. autoclass:: wenmode.renderers.DirectiveHtmlRenderer
    :members:

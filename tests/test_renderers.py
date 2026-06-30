@@ -7,7 +7,7 @@ import pytest
 
 from tests.helpers import load_text_fixture, parse_text_fixture
 from tests.plugin_helpers import configured_app
-from wenmode import HTMLRenderer, MarkdownRenderer, RSTRenderer, Wenmode
+from wenmode import AsciiDocRenderer, HTMLRenderer, MarkdownRenderer, RSTRenderer, Wenmode
 from wenmode.directives import Admonition, Details, Figure, TableOfContents
 from wenmode.nodes import Html, Image, Link, Literal, Paragraph, Parent, Root, Text
 from wenmode.plugins import math
@@ -93,6 +93,7 @@ class RendererExample(TypedDict, total=False):
     html: str
     markdown: str
     rst: str
+    asciidoc: str
 
 
 def load_renderer_examples() -> list[RendererExample]:
@@ -172,6 +173,7 @@ def test_renderer_examples(example: RendererExample) -> None:
     html = html_app.render_node(root)
     markdown = configured_app(rule_names, renderer=MarkdownRenderer()).render_node(root)
     rst = configured_app(rule_names, renderer=RSTRenderer()).render_node(root)
+    asciidoc = configured_app(rule_names, renderer=AsciiDocRenderer()).render_node(root)
 
     if example.get('roundtrip_html'):
         assert configured_app(rule_names, renderer=html_renderer).render(markdown) == html
@@ -179,6 +181,8 @@ def test_renderer_examples(example: RendererExample) -> None:
     assert html == example['html']
     assert markdown == example['markdown']
     assert rst == example['rst']
+    if 'asciidoc' in example:
+        assert asciidoc == example['asciidoc']
 
 
 def test_renderer_registers_custom_node_handler() -> None:

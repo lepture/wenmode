@@ -212,6 +212,35 @@ b
 a
 b
 
+.asciidoc
+____
+quote
+____
+
+* one
+
+* two
+
+. three
+
+. four
+
+* loose
++
+item
+
+* next
+
+[source,py]
+----
+print(1)
+----
+
+'''
+
+a +
+b
+
 ````````
 
 ## commonmark roundtrip
@@ -298,6 +327,23 @@ A
 .. |image-1| image:: /img.png
    :alt: alt
 
+.asciidoc
+= A
+
+____
+hi _there_
+____
+
+* one
+* two
+
+[source,py]
+----
+print(1)
+----
+
+link:/url[link] and image:/img.png[alt]
+
 ````````
 
 ## soft line break
@@ -320,6 +366,10 @@ a
 b
 
 .rst
+a
+b
+
+.asciidoc
 a
 b
 
@@ -371,6 +421,9 @@ a[#one]_
 .. [#two] first
 
    second
+
+.asciidoc
+afootnote:one[note]
 
 ````````
 
@@ -658,6 +711,12 @@ print("*not emphasis*")
    :caption: example.py
 
    print("*not emphasis*")
+
+.asciidoc
+[source,python]
+----
+print("*not emphasis*")
+----
 
 ````````
 
@@ -969,6 +1028,13 @@ Left    Center  Right
 a<br>b  c       d
 ======  ======  =====
 
+.asciidoc
+[cols="<,^,>",options="header"]
+|===
+| Left | Center | Right
+| apass:[<br>]b | c | d
+|===
+
 ````````
 
 ## empty footnote definition output
@@ -1166,6 +1232,23 @@ b](/break-link)
 
      print(1)
 
+.asciidoc
+* parent
+** child
+
+* quote
++
+____
+nested quote
+____
+
+* code
++
+[source,py]
+----
+print(1)
+----
+
 ````````
 
 ## short table body row
@@ -1205,6 +1288,13 @@ a    b    c
 ===  ===  ===
 1    2
 ===  ===  ===
+
+.asciidoc
+[options="header"]
+|===
+| a | b | c
+| 1 | 2 | 
+|===
 
 ````````
 
@@ -1397,6 +1487,9 @@ code
    :alt: a*b
    :title: title
 
+.asciidoc
+link:/a%20b(1)[link] image:/a)b[a*b,title="title"]
+
 ````````
 
 ## inline escaping edges
@@ -1439,6 +1532,13 @@ Link: `a \<b\> </a%20b(1)>`__ |image-1|
    :alt: x*y
    :title: img "t"
 
+.asciidoc
+Escaped: \` \* \_ { } \[ \] < > ( ) \# + - . ! \|.
+
+Code: + padded + and +`tick`+.
+
+Link: link:/a%20b(1)[a <b>] image:/img%20path(1).png[x*y,title="img \"t\""]
+
 ````````
 
 ## empty document
@@ -1451,6 +1551,8 @@ Link: `a \<b\> </a%20b(1)>`__ |image-1|
 .markdown
 
 .rst
+
+.asciidoc
 
 ````````
 
@@ -1472,6 +1574,10 @@ Link: `a \<b\> </a%20b(1)>`__ |image-1|
 >
 
 .rst
+
+.asciidoc
+____
+____
 
 ````````
 
@@ -1499,6 +1605,10 @@ Link: `a \<b\> </a%20b(1)>`__ |image-1|
 .rst
 #. one
 #. two
+
+.asciidoc
+. one
+. two
 
 ````````
 

@@ -14,7 +14,7 @@ filter.
 
 Wenmode is a Markdown toolkit for Python applications that need to control the
 Markdown dialect they accept. It parses Markdown into node objects first, then
-renders those nodes with an HTML, Markdown, reStructuredText, or custom
+renders those nodes with an HTML, Markdown, reStructuredText, AsciiDoc, or custom
 renderer.
 
 That split is the core design choice. Parsing, rule selection, transforms,

@@ -55,8 +55,8 @@ passthrough only when your application has a separate sanitization layer.
 :link: recipes
 :link-type: doc
 
-Render HTML, normalized Markdown, reStructuredText, or application-specific
-output with renderer handlers.
+Render HTML, normalized Markdown, reStructuredText, AsciiDoc, or
+application-specific output with renderer handlers.
 :::
 ::::
 

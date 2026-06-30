@@ -38,7 +38,7 @@ Most code uses one of these shapes:
 | --- | --- |
 | `Wenmode` | You want one object that parses Markdown and renders output. |
 | `Parser` | You want the AST and will render, transform, or store it yourself. |
-| `HTMLRenderer`, `MarkdownRenderer`, `RSTRenderer` | You already have parsed nodes and want a specific output format. |
+| `HTMLRenderer`, `MarkdownRenderer`, `RSTRenderer`, `AsciiDocRenderer` | You already have parsed nodes and want a specific output format. |
 
 `Wenmode()` defaults to the `commonmark` preset and `HTMLRenderer()`. Pass a
 different preset, rule list, renderer, or `positions=True` only when your
@@ -104,6 +104,7 @@ stdout unless you pass `-o`:
 ```bash
 printf '# Hello\n' | wenmode render --preset=github
 wenmode render README.md --format=rst -o README.rst
+wenmode render README.md --format=asciidoc -o README.adoc
 ```
 
 Use `ast` when you want JSON output for tooling, tests, or editor integrations:
@@ -220,18 +221,17 @@ for ordinary HTML rendering.
 want another output format.
 
 ```python
-from wenmode import RSTRenderer, Wenmode
+from wenmode import AsciiDocRenderer, Wenmode
 
-wen = Wenmode(renderer=RSTRenderer())
+wen = Wenmode(renderer=AsciiDocRenderer())
 text = '# Hello'
 expected = '''
-Hello
-=====
+= Hello
 '''
 
-rst = wen.render(text)
+asciidoc = wen.render(text)
 
-assert rst == expected.lstrip()
+assert asciidoc == expected.lstrip()
 ```
 
 Wenmode currently provides:
@@ -239,11 +239,12 @@ Wenmode currently provides:
 - `HTMLRenderer`, for HTML output.
 - `MarkdownRenderer`, for serializing the AST back to Markdown.
 - `RSTRenderer`, for serializing the AST to reStructuredText.
+- `AsciiDocRenderer`, for serializing the AST to AsciiDoc.
 - `BaseRenderer`, a small dispatch-based base class for custom renderers.
 
-`MarkdownRenderer` and `RSTRenderer` serialize the AST to canonical markup. They
-are not source-preserving formatters; syntax details that are not represented in
-the AST may be normalized or omitted.
+`MarkdownRenderer`, `RSTRenderer`, and `AsciiDocRenderer` serialize the AST to
+canonical markup. They are not source-preserving formatters; syntax details that
+are not represented in the AST may be normalized or omitted.
 
 If you already have a node, use `render_node()` to render it directly.
 

@@ -75,6 +75,16 @@ def test_cli_renders_rst_format(tmp_path, capsys) -> None:
     assert captured.out == 'Hello\n=====\n'
 
 
+def test_cli_renders_asciidoc_format(tmp_path, capsys) -> None:
+    source = tmp_path / 'input.md'
+    source.write_text('# Hello\n', encoding='utf-8')
+
+    assert main(['render', '--format', 'asciidoc', str(source)]) == 0
+
+    captured = capsys.readouterr()
+    assert captured.out == '= Hello\n'
+
+
 def test_cli_renders_markdown_format(tmp_path, capsys) -> None:
     source = tmp_path / 'input.md'
     source.write_text('# Hello\n\nA **bold** word.\n', encoding='utf-8')

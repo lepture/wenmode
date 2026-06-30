@@ -7,6 +7,7 @@ from typing import Any, TypedDict
 
 FIXTURES_DIR = Path(__file__).parent / 'fixtures'
 TEXT_FIXTURE_FIELDS = (
+    'asciidoc',
     'html',
     'html_directives',
     'html_options',
