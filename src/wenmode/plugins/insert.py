@@ -5,10 +5,9 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from wenmode.nodes import Node, Parent
-from wenmode.renderers import MarkdownRenderer, RenderContext
+from wenmode.renderers import MarkdownRenderer, RenderContext, render_node_children
 from wenmode.renderers.asciidoc import AsciiDocRenderContext, AsciiDocRenderer
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
-from wenmode.renderers.rst import RSTRenderContext, RSTRenderer
 from wenmode.rules.base import InlineRule, Rule
 from wenmode.state import BlockState
 
@@ -58,10 +57,6 @@ def render_markdown(renderer: MarkdownRenderer, node: InsertNode, context: Rende
     return f'^^{renderer.render_children(node.children, context)}^^'
 
 
-def render_rst(renderer: RSTRenderer, node: InsertNode, context: RSTRenderContext) -> str:
-    return renderer.render_children(node.children, context)
-
-
 def render_asciidoc(renderer: AsciiDocRenderer, node: InsertNode, context: AsciiDocRenderContext) -> str:
     return f'[.underline]#{renderer.render_children(node.children, context)}#'
 
@@ -71,7 +66,7 @@ rules: list[type[Rule] | Rule] = [InsertRule]
 handlers: RendererHandlers = {
     'html': {InsertNode.type: render_html},
     'markdown': {InsertNode.type: render_markdown},
-    'rst': {InsertNode.type: render_rst},
+    'rst': {InsertNode.type: render_node_children},
     'asciidoc': {InsertNode.type: render_asciidoc},
 }
 

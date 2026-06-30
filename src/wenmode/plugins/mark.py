@@ -5,10 +5,9 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from wenmode.nodes import Node, Parent
-from wenmode.renderers import MarkdownRenderer, RenderContext
+from wenmode.renderers import MarkdownRenderer, RenderContext, render_node_children
 from wenmode.renderers.asciidoc import AsciiDocRenderContext, AsciiDocRenderer
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
-from wenmode.renderers.rst import RSTRenderContext, RSTRenderer
 from wenmode.rules.base import InlineRule, Rule
 from wenmode.state import BlockState
 
@@ -58,10 +57,6 @@ def render_markdown(renderer: MarkdownRenderer, node: MarkNode, context: RenderC
     return f'=={renderer.render_children(node.children, context)}=='
 
 
-def render_rst(renderer: RSTRenderer, node: MarkNode, context: RSTRenderContext) -> str:
-    return renderer.render_children(node.children, context)
-
-
 def render_asciidoc(renderer: AsciiDocRenderer, node: MarkNode, context: AsciiDocRenderContext) -> str:
     return f'#{renderer.render_children(node.children, context)}#'
 
@@ -71,7 +66,7 @@ rules: list[type[Rule] | Rule] = [MarkRule]
 handlers: RendererHandlers = {
     'html': {MarkNode.type: render_html},
     'markdown': {MarkNode.type: render_markdown},
-    'rst': {MarkNode.type: render_rst},
+    'rst': {MarkNode.type: render_node_children},
     'asciidoc': {MarkNode.type: render_asciidoc},
 }
 

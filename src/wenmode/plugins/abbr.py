@@ -6,8 +6,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from wenmode.nodes import Node, Parent, Position, Text
-from wenmode.renderers import MarkdownRenderer, RenderContext
-from wenmode.renderers.asciidoc import AsciiDocRenderContext, AsciiDocRenderer
+from wenmode.renderers import render_node_children
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer
 from wenmode.rules.base import BlockRule, Rule
@@ -199,10 +198,6 @@ def render_html(renderer: HTMLRenderer, node: AbbreviationNode, context: HTMLRen
     return f'<abbr{renderer.render_attrs(attrs)}>{renderer.render_children(node.children, context)}</abbr>'
 
 
-def render_markdown(renderer: MarkdownRenderer, node: AbbreviationNode, context: RenderContext) -> str:
-    return renderer.render_children(node.children, context)
-
-
 def render_rst(renderer: RSTRenderer, node: AbbreviationNode, context: RSTRenderContext) -> str:
     content = renderer.render_children(node.children, context)
     if not node.title:
@@ -210,17 +205,13 @@ def render_rst(renderer: RSTRenderer, node: AbbreviationNode, context: RSTRender
     return f':abbr:`{content} ({renderer.escape_text(node.title)})`'
 
 
-def render_asciidoc(renderer: AsciiDocRenderer, node: AbbreviationNode, context: AsciiDocRenderContext) -> str:
-    return renderer.render_children(node.children, context)
-
-
 nodes = {AbbreviationNode.type: AbbreviationNode}
 rules: list[type[Rule] | Rule] = [AbbreviationRule]
 handlers: RendererHandlers = {
     'html': {AbbreviationNode.type: render_html},
-    'markdown': {AbbreviationNode.type: render_markdown},
+    'markdown': {AbbreviationNode.type: render_node_children},
     'rst': {AbbreviationNode.type: render_rst},
-    'asciidoc': {AbbreviationNode.type: render_asciidoc},
+    'asciidoc': {AbbreviationNode.type: render_node_children},
 }
 
 

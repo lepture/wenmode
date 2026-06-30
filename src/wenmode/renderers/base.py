@@ -20,6 +20,14 @@ ROOT_PRE_HANDLER = 'root:pre'
 ROOT_POST_HANDLER = 'root:post'
 
 
+def render_node_children(renderer: BaseRenderer, node: Node, context: RenderContext) -> str:
+    """Render child nodes for handlers that intentionally collapse a wrapper."""
+    children = getattr(node, 'children', None)
+    if isinstance(children, list):
+        return renderer.render_children(cast(list[Node], children), context)
+    return ''
+
+
 class BaseRenderer:
     """Dispatch-based base class for renderers.
 

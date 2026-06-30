@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from wenmode.nodes import Node, Parent
-from wenmode.renderers import MarkdownRenderer, RenderContext
+from wenmode.renderers import MarkdownRenderer, RenderContext, render_node_children
 from wenmode.renderers.asciidoc import AsciiDocRenderContext, AsciiDocRenderer
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.markdown import render_prefixed_block
@@ -149,10 +149,6 @@ def render_rst_block(renderer: RSTRenderer, node: BlockSpoilerNode, context: RST
     return '.. admonition:: Spoiler\n\n' + indent_block(body, '   ') + '\n\n'
 
 
-def render_rst_inline(renderer: RSTRenderer, node: InlineSpoilerNode, context: RSTRenderContext) -> str:
-    return renderer.render_children(node.children, context)
-
-
 def render_asciidoc_block(
     renderer: AsciiDocRenderer, node: BlockSpoilerNode, context: AsciiDocRenderContext
 ) -> str:
@@ -173,7 +169,7 @@ rules: list[type[Rule] | Rule] = [BlockSpoilerRule, InlineSpoilerRule]
 handlers: RendererHandlers = {
     'html': {BlockSpoilerNode.type: render_html_block, InlineSpoilerNode.type: render_html_inline},
     'markdown': {BlockSpoilerNode.type: render_markdown_block, InlineSpoilerNode.type: render_markdown_inline},
-    'rst': {BlockSpoilerNode.type: render_rst_block, InlineSpoilerNode.type: render_rst_inline},
+    'rst': {BlockSpoilerNode.type: render_rst_block, InlineSpoilerNode.type: render_node_children},
     'asciidoc': {BlockSpoilerNode.type: render_asciidoc_block, InlineSpoilerNode.type: render_asciidoc_inline},
 }
 
