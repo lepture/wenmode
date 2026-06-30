@@ -300,6 +300,31 @@ A
 
 ````````
 
+## soft line break
+
+````````fixture
+.rules
+[
+  "hard_break"
+]
+.input
+a
+b
+
+.html
+<p>a
+b</p>
+
+.markdown
+a
+b
+
+.rst
+a
+b
+
+````````
+
 ## footnotes
 
 ````````fixture
@@ -599,6 +624,40 @@ Body\.
    :class: warning
 
    Body.
+
+````````
+
+## literal directive renderers
+
+````````fixture
+.rules
+[
+  "fenced_directive",
+  "emphasis"
+]
+.input
+```{code-block} python
+:caption: example.py
+
+print("*not emphasis*")
+```
+
+.html
+<pre><code class="language-python">print(&quot;*not emphasis*&quot;)
+</code></pre>
+
+.markdown
+```{code-block} python
+:caption: example.py
+
+print("*not emphasis*")
+```
+
+.rst
+.. code-block:: python
+   :caption: example.py
+
+   print("*not emphasis*")
 
 ````````
 
@@ -1036,6 +1095,79 @@ b](/break-link)
 
 ````````
 
+## nested list block children
+
+````````fixture
+.rules
+[
+  "list",
+  "blockquote",
+  "fenced_code"
+]
+.input
+- parent
+  - child
+
+- quote
+  > nested quote
+
+- code
+  ```py
+  print(1)
+  ```
+
+.html
+<ul>
+<li>
+<p>parent</p>
+<ul>
+<li>child</li>
+</ul>
+</li>
+<li>
+<p>quote</p>
+<blockquote>
+<p>nested quote</p>
+</blockquote>
+</li>
+<li>
+<p>code</p>
+<pre><code class="language-py">print(1)
+</code></pre>
+</li>
+</ul>
+
+.markdown
+- parent
+
+  - child
+
+- quote
+
+  > nested quote
+
+- code
+  ```py
+  print(1)
+  ```
+
+.rst
+- parent
+
+  - child
+
+- quote
+
+     nested quote
+
+- code
+
+  .. code-block:: py
+
+     print(1)
+
+````````
+
 ## short table body row
 
 ````````fixture
@@ -1264,6 +1396,48 @@ code
 .. |image-1| image:: /a)b
    :alt: a*b
    :title: title
+
+````````
+
+## inline escaping edges
+
+````````fixture
+.rules
+[
+  "backslash_escape",
+  "inline_code",
+  "link",
+  "image"
+]
+.input
+Escaped: \` \* \_ \{ \} \[ \] \< \> \( \) \# \+ \- \. \! \|.
+
+Code: ``  padded  `` and `` `tick` ``.
+
+Link: [a <b>](</a b(1)> "a \"quote\"") ![x*y](</img path(1).png> "img \"t\"")
+
+.html
+<p>Escaped: ` * _ { } [ ] &lt; &gt; ( ) # + - . ! |.</p>
+<p>Code: <code> padded </code> and <code>`tick`</code>.</p>
+<p>Link: <a href="/a%20b(1)" title="a &quot;quote&quot;">a &lt;b&gt;</a> <img src="/img%20path(1).png" alt="x*y" title="img &quot;t&quot;" /></p>
+
+.markdown
+Escaped: \` \* \_ \{ \} \[ \] \< \> \( \) \# \+ \- \. \! \|\.
+
+Code: `  padded  ` and `` `tick` ``\.
+
+Link: [a \<b\>](</a%20b(1)> "a \"quote\"") ![x\*y](</img%20path(1).png> "img \"t\"")
+
+.rst
+Escaped: \` \* _ { } [ ] < > ( ) # + - . ! \|.
+
+Code: `` padded `` and :literal:`\`tick\``.
+
+Link: `a \<b\> </a%20b(1)>`__ |image-1|
+
+.. |image-1| image:: /img%20path(1).png
+   :alt: x*y
+   :title: img "t"
 
 ````````
 
