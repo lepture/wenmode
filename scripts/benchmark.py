@@ -235,22 +235,21 @@ def make_wenmode_all() -> Wenmode:
             TextDirective,
         ],
         HTMLRenderer(escape=False, sanitize_urls=False),
+        plugins=[
+            fenced_directive,
+            frontmatter,
+            math,
+            spoiler,
+            definition_list,
+            abbr,
+            inline_role,
+            ruby,
+            mark,
+            insert,
+            superscript,
+            subscript,
+        ],
     )
-    for plugin in [
-        fenced_directive,
-        frontmatter,
-        math,
-        spoiler,
-        definition_list,
-        abbr,
-        inline_role,
-        ruby,
-        mark,
-        insert,
-        superscript,
-        subscript,
-    ]:
-        wen.use(plugin)
     return wen
 
 
