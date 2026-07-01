@@ -15,6 +15,7 @@ from wenmode.plugins import (
     mark,
     math,
     ruby,
+    smartypants,
     spoiler,
     subscript,
     superscript,
@@ -102,6 +103,8 @@ PLUGIN_RULES: dict[str, PluginConfig] = {
     'math_block': (math, {'inline': False}),
     'role': (inline_role, {}),
     'ruby': (ruby, {}),
+    'smartypants': (smartypants, {}),
+    'smartypants_no_dashes': (smartypants, {'dashes': False}),
     'subscript': (subscript, {}),
     'superscript': (superscript, {}),
 }

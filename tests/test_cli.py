@@ -65,6 +65,16 @@ def test_cli_render_enables_cjk_friendly_plugin(tmp_path, capsys) -> None:
     assert captured.out == '<p><strong>你好。</strong>世界</p>\n'
 
 
+def test_cli_render_enables_smartypants_plugin(tmp_path, capsys) -> None:
+    source = tmp_path / 'input.md'
+    source.write_text('"Hello..." -- ok\n', encoding='utf-8')
+
+    assert main(['render', '--plugin', 'smartypants', str(source)]) == 0
+
+    captured = capsys.readouterr()
+    assert captured.out == '<p>“Hello…” – ok</p>\n'
+
+
 def test_cli_renders_rst_format(tmp_path, capsys) -> None:
     source = tmp_path / 'input.md'
     source.write_text('# Hello\n', encoding='utf-8')

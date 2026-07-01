@@ -37,6 +37,72 @@ Hello *em* **strong** ``code`` :math:`x + y` `link </url>`__ |image-1|
 
 ````````
 
+## smartypants
+
+````````fixture
+.rules
+[
+  "smartypants",
+  "backslash_escape",
+  "inline_code",
+  "emphasis",
+  "link",
+  "image"
+]
+.input
+"Hello..." -- it's < 6 & more.
+
+"Hello **world**" and `"code" -- ...` [link](/url "--") ![alt](/img.png "title -- ...")
+
+.html
+<p>“Hello…” – it’s &lt; 6 &amp; more.</p>
+<p>“Hello <strong>world</strong>” and <code>&quot;code&quot; -- ...</code> <a href="/url" title="--">link</a> <img src="/img.png" alt="alt" title="title -- ..." /></p>
+
+.markdown
+"Hello\.\.\." \-\- it's \< 6 & more\.
+
+"Hello **world**" and `"code" -- ...` [link](/url "--") ![alt](/img.png "title -- ...")
+
+.rst
+"Hello..." -- it's < 6 & more.
+
+"Hello **world**" and ``"code" -- ...`` `link </url>`__ |image-1|
+
+.. |image-1| image:: /img.png
+   :alt: alt
+   :title: title -- ...
+
+.asciidoc
+"Hello..." -- it's < 6 & more.
+
+"Hello *world*" and +"code" -- ...+ link:/url[link] image:/img.png[alt,title="title -- ..."]
+
+````````
+
+## smartypants options
+
+````````fixture
+.rules
+[
+  "smartypants_no_dashes"
+]
+.input
+"Hello..." -- ok
+
+.html
+<p>“Hello…” -- ok</p>
+
+.markdown
+"Hello\.\.\." \-\- ok
+
+.rst
+"Hello..." -- ok
+
+.asciidoc
+"Hello..." -- ok
+
+````````
+
 ## heading ids from inline content
 
 ````````fixture
