@@ -242,9 +242,9 @@ task lists, strikethrough, extended autolinks, and footnotes:
 
    wen = Wenmode(github)
 
-Use built-in plugins for non-standard syntax and document metadata such as
-front matter, math, definition lists, abbreviations, spoilers, ruby text, and
-extra inline formatting:
+Use built-in plugins for non-standard syntax, document metadata, and rendering
+behavior such as front matter, math, definition lists, abbreviations, spoilers,
+ruby text, HTML smart punctuation, and extra inline formatting:
 
 .. code-block:: python
 

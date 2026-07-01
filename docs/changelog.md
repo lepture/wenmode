@@ -18,6 +18,8 @@ here while preparing a release, then move them under the final version heading.
 - Add `wenmode.plugins.cjk_friendly` for opt-in CJK-friendly inline parsing,
   including emphasis delimiter matching and extended autolink trailing
   punctuation handling.
+- Add `wenmode.plugins.smartypants` for opt-in HTML smart punctuation rendering
+  of quotes, dashes, and ellipses in plain text nodes.
 - Document core and plugin AST node shape contracts and expand round-trip
   coverage for `from_ast()` with plugin node registries.
 

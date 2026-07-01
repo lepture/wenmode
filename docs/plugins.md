@@ -94,6 +94,7 @@ chain-style setup remains supported.
 | `wenmode.plugins.mark` | `mark` inline nodes |
 | `wenmode.plugins.math` | Display and inline math nodes |
 | `wenmode.plugins.ruby` | Ruby annotation nodes |
+| `wenmode.plugins.smartypants` | HTML smart punctuation rendering for quotes, dashes, and ellipses |
 | `wenmode.plugins.spoiler` | Block and inline spoiler nodes |
 | `wenmode.plugins.subscript` | `subscript` inline nodes |
 | `wenmode.plugins.superscript` | `superscript` inline nodes |
@@ -131,6 +132,32 @@ wen = Wenmode(github, plugins=[cjk_friendly])
 assert wen.render('请看 https://example.com。\n') == (
     '<p>请看 <a href="https://example.com">https://example.com</a>。</p>\n'
 )
+```
+
+## Smart Punctuation
+
+The `smartypants` plugin converts common ASCII punctuation in text nodes while
+rendering HTML. It turns straight quotes into curly quotes, `--` and `---` into
+en and em dashes, and `...` into an ellipsis. Code spans, fenced code, raw HTML,
+link destinations, and image attributes are left unchanged. Non-HTML renderers
+ignore this plugin.
+
+```python
+from wenmode import Wenmode
+from wenmode.plugins import smartypants
+
+wen = Wenmode(plugins=[smartypants])
+
+assert wen.render('"Hello..." -- ok\n') == '<p>“Hello…” – ok</p>\n'
+```
+
+Use `wenmode.plugins.plugin()` to disable individual replacements:
+
+```python
+from wenmode import Wenmode
+from wenmode.plugins import plugin, smartypants
+
+wen = Wenmode(plugins=[plugin(smartypants, dashes=False)])
 ```
 
 ## HTML Containers
