@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, cast
 
@@ -11,7 +12,10 @@ if TYPE_CHECKING:
     from wenmode import Wenmode
 
 
-@dataclass
+SMART_TRIGGER_RE = re.compile(r'---|--|\.{3}|["\']')
+
+
+@dataclass(slots=True)
 class SmartypantsState:
     """Mutable typography state carried by one render context."""
 
@@ -68,36 +72,51 @@ def smarten(
     if state is None:
         state = SmartypantsState()
 
+    first_match = SMART_TRIGGER_RE.search(value)
+    if first_match is None:
+        if value:
+            state.previous = value[-1]
+        return value
+
     parts: list[str] = []
     index = 0
-    while index < len(value):
-        if ellipses and value.startswith('...', index):
+    match: re.Match[str] | None = first_match
+    while match is not None:
+        start = match.start()
+        if start > index:
+            literal = value[index:start]
+            parts.append(literal)
+            state.previous = literal[-1]
+
+        token = match.group(0)
+        if ellipses and token == '...':
             parts.append('…')
             state.previous = '…'
-            index += 3
-            continue
-
-        if dashes and value.startswith('---', index):
+        elif dashes and token == '---':
             parts.append('—')
             state.previous = '—'
-            index += 3
-            continue
-
-        if dashes and value.startswith('--', index):
+        elif dashes and token == '--':
             parts.append('–')
             state.previous = '–'
-            index += 2
-            continue
+        elif quotes and token == '"':
+            char = smart_double_quote(state, next_char(value, start))
+            parts.append(char)
+            state.previous = char
+        elif quotes and token == "'":
+            char = smart_single_quote(state, next_char(value, start))
+            parts.append(char)
+            state.previous = char
+        else:
+            parts.append(token)
+            state.previous = token[-1]
 
-        char = value[index]
-        if quotes and char == '"':
-            char = smart_double_quote(state, next_char(value, index))
-        elif quotes and char == "'":
-            char = smart_single_quote(state, next_char(value, index))
+        index = match.end()
+        match = SMART_TRIGGER_RE.search(value, index)
 
-        parts.append(char)
-        state.previous = char
-        index += 1
+    if index < len(value):
+        literal = value[index:]
+        parts.append(literal)
+        state.previous = literal[-1]
 
     return ''.join(parts)
 
