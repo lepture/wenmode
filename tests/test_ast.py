@@ -29,12 +29,13 @@ from wenmode.nodes import (
     Link,
     LiteralDirective,
     Node,
+    NodeSpec,
     Paragraph,
     Parent,
     Position,
     Text,
 )
-from wenmode.plugins import block_math, definition_list
+from wenmode.plugins import block_math, definition_list, mark
 from wenmode.presets import github
 
 
@@ -94,6 +95,23 @@ def test_parsed_plugin_ast_round_trips_through_plugin_registry() -> None:
 
     assert restored.to_ast() == ast
     assert {node.type for node in walk(restored)} >= PLUGIN_ROUND_TRIP_NODE_TYPES
+
+
+def test_node_to_spec_describes_builtin_node_shapes() -> None:
+    assert Paragraph.to_spec() == NodeSpec(type='paragraph', kind='parent')
+    assert Text.to_spec() == NodeSpec(type='text', kind='literal')
+    assert Heading.to_spec() == NodeSpec(type='heading', kind='parent', fields=('depth',))
+    assert Image.to_spec() == NodeSpec(type='image', kind='node', fields=('url', 'alt', 'title'))
+
+
+def test_node_to_spec_describes_plugin_node_shapes() -> None:
+    assert Callout.to_spec() == NodeSpec(type='callout', kind='parent', fields=('kind',))
+    assert mark.MarkNode.to_spec() == NodeSpec(type='mark', kind='parent')
+
+
+def test_node_to_spec_requires_default_type() -> None:
+    with pytest.raises(TypeError, match='Node.to_spec\\(\\) requires a default type value'):
+        Node.to_spec()
 
 
 def test_walk_yields_nodes_in_depth_first_order() -> None:

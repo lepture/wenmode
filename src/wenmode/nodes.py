@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import bisect
 from collections.abc import Sequence
-from dataclasses import dataclass, field
+from dataclasses import MISSING, dataclass, field, fields
 from typing import Any
+from typing import Literal as TypingLiteral
 
 
 @dataclass(frozen=True, slots=True)
@@ -46,6 +47,24 @@ class Position:
         }
 
 
+NodeKind = TypingLiteral['node', 'parent', 'literal']
+
+
+@dataclass(frozen=True)
+class NodeSpec:
+    """Static shape description for a Wenmode node class.
+
+    :param type: mdast-compatible node type name.
+    :param kind: Whether the node is a bare node, parent node, or literal node.
+    :param fields: Node-specific dataclass fields beyond Wenmode's common
+        fields for that node kind.
+    """
+
+    type: str
+    kind: NodeKind
+    fields: tuple[str, ...] = ()
+
+
 @dataclass
 class Node:
     """Base class for all Wenmode AST nodes.
@@ -58,6 +77,15 @@ class Node:
     type: str
     data: dict[str, Any] | None = None
     position: Position | None = None
+
+    @classmethod
+    def to_spec(cls) -> NodeSpec:
+        """Return a static specification for this node class.
+
+        The specification is derived from dataclass fields and does not require
+        constructing a node instance.
+        """
+        return node_spec_from_class(cls, kind='node', standard_fields={'type', 'data', 'position'})
 
     def to_ast(self) -> dict[str, Any]:
         """Convert this node and its children to plain Python data.
@@ -95,11 +123,26 @@ class Node:
         return data
 
 
+def node_type_from_class(node_class: type[Node]) -> str:
+    for item in fields(node_class):
+        if item.name != 'type':
+            continue
+        if item.default is not MISSING:
+            return str(item.default)
+        raise TypeError(f'{node_class.__name__}.to_spec() requires a default type value')
+    raise TypeError(f'{node_class.__name__}.to_spec() requires a type field')
+
+
 @dataclass
 class Parent(Node):
     """Base class for nodes that contain child nodes."""
 
     children: list[Node] = field(default_factory=list)
+
+    @classmethod
+    def to_spec(cls) -> NodeSpec:
+        """Return a static specification for this parent node class."""
+        return node_spec_from_class(cls, kind='parent', standard_fields={'type', 'data', 'position', 'children'})
 
 
 @dataclass
@@ -107,6 +150,11 @@ class Literal(Node):
     """Base class for nodes that store literal text."""
 
     value: str = ''
+
+    @classmethod
+    def to_spec(cls) -> NodeSpec:
+        """Return a static specification for this literal node class."""
+        return node_spec_from_class(cls, kind='literal', standard_fields={'type', 'data', 'position', 'value'})
 
 
 @dataclass
@@ -144,6 +192,15 @@ def _point_ast_from_offset(line_starts: Sequence[int], offset: int) -> dict[str,
         'column': offset - line_starts[index] + 1,
         'offset': offset,
     }
+
+
+def node_spec_from_class(node_class: type[Node], kind: NodeKind, standard_fields: set[str]) -> NodeSpec:
+    custom_fields = tuple(
+        item.name
+        for item in fields(node_class)
+        if item.name not in standard_fields and not item.name.startswith('_')
+    )
+    return NodeSpec(type=node_type_from_class(node_class), kind=kind, fields=custom_fields)
 
 
 @dataclass

@@ -46,6 +46,8 @@ here while preparing a release, then move them under the final version heading.
   `inline_spoiler` to use the new Python-side installer.
 - Export `RenderHandler` from `wenmode.renderers` for custom renderer handler
   type annotations.
+- Add `NodeSpec` and `Node.to_spec()` for deriving static node shape metadata
+  from Wenmode node classes.
 - Document core and plugin AST node shape contracts and expand round-trip
   coverage for `from_ast()` with plugin node classes.
 
