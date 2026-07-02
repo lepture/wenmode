@@ -44,6 +44,9 @@ here while preparing a release, then move them under the final version heading.
 - Add declarative plugin specs with `wenmode.plugins.install_declarative()`,
   and convert simple delimiter plugins such as `mark`, `insert`, and
   `inline_spoiler` to use the new Python-side installer.
+- Add declarative `InlineLiteral`, `BlockFenced`, and `RendererFallback` specs
+  for literal spans, fenced blocks, and wrapper-free renderer output; convert
+  `inline_math` and `block_math` parsing to those specs.
 - Export `RenderHandler` from `wenmode.renderers` for custom renderer handler
   type annotations.
 - Add `NodeSpec` and `Node.to_spec()` for deriving static node shape metadata

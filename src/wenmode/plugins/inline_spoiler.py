@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from wenmode.nodes import Parent
 
-from .._declarative import DeclarativePluginSpec, InlineDelimited, RenderTemplate
+from .._declarative import DeclarativePluginSpec, InlineDelimited, RendererFallback, RenderTemplate
 
 
 @dataclass
@@ -34,7 +34,7 @@ spec = DeclarativePluginSpec(
     renderers={
         'html': {InlineSpoilerNode.type: RenderTemplate('<span class="spoiler">{children}</span>')},
         'markdown': {InlineSpoilerNode.type: RenderTemplate('>! {children} !<')},
-        'rst': {InlineSpoilerNode.type: RenderTemplate('{children}')},
+        'rst': {InlineSpoilerNode.type: RendererFallback('children')},
         'asciidoc': {InlineSpoilerNode.type: RenderTemplate('[.spoiler]#{children}#')},
     },
 )

@@ -7,8 +7,18 @@ import pytest
 
 from wenmode import Parser, Wenmode
 from wenmode.directives import Admonition
-from wenmode.nodes import Literal
-from wenmode.plugins import DeclarativePluginSpec, mark, plugin, ruby, smartypants
+from wenmode.nodes import Literal, Parent
+from wenmode.plugins import (
+    BlockFenced,
+    DeclarativePluginSpec,
+    InlineLiteral,
+    RendererFallback,
+    RenderTemplate,
+    mark,
+    plugin,
+    ruby,
+    smartypants,
+)
 from wenmode.renderers import HTMLRenderer, RenderContext
 from wenmode.rules import AtxHeading, ContainerDirective, Link
 
@@ -16,6 +26,21 @@ from wenmode.rules import AtxHeading, ContainerDirective, Link
 @dataclass
 class CustomLiteral(Literal):
     type: str = 'customLiteral'
+
+
+@dataclass
+class CustomInlineLiteral(Literal):
+    type: str = 'customInlineLiteral'
+
+
+@dataclass
+class CustomBlockLiteral(Literal):
+    type: str = 'customBlockLiteral'
+
+
+@dataclass
+class CustomBlockParent(Parent):
+    type: str = 'customBlockParent'
 
 
 def test_wenmode_contains_parser_and_renderer() -> None:
@@ -62,6 +87,80 @@ def test_wenmode_installs_declarative_plugin() -> None:
     assert mark.spec.syntax[0].opener == '=='
     assert wen.render('==marked *text*==\n') == '<p><mark>marked <em>text</em></mark></p>\n'
     assert wen.render('===not marked===\n') == '<p>===not marked===</p>\n'
+
+
+def test_wenmode_installs_declarative_inline_literal() -> None:
+    class InlineLiteralPlugin:
+        spec = DeclarativePluginSpec(
+            name='custom_inline_literal',
+            nodes=[CustomInlineLiteral],
+            syntax=[
+                InlineLiteral(
+                    name='custom_inline_literal',
+                    node=CustomInlineLiteral,
+                    opener='$',
+                    closer='$',
+                    reject_adjacent_delimiter=True,
+                    reject_closing_before_digit=True,
+                )
+            ],
+            renderers={'html': {CustomInlineLiteral.type: RendererFallback('value')}},
+        )
+
+        nodes = spec.nodes
+
+    wen = Wenmode(plugins=[InlineLiteralPlugin])
+
+    assert wen.render('$value$ and $$not literal$$\n') == '<p>value and $$not literal$$</p>\n'
+    assert wen.render('$value$5\n') == '<p>$value$5</p>\n'
+
+
+def test_wenmode_installs_declarative_block_fenced_literal() -> None:
+    class BlockLiteralPlugin:
+        spec = DeclarativePluginSpec(
+            name='custom_block_literal',
+            nodes=[CustomBlockLiteral],
+            syntax=[
+                BlockFenced(
+                    name='custom_block_literal',
+                    node=CustomBlockLiteral,
+                    opener='%%%',
+                    closer='%%%',
+                    strip_content=True,
+                )
+            ],
+            renderers={'html': {CustomBlockLiteral.type: RenderTemplate('<aside>{value}</aside>\n')}},
+        )
+
+        nodes = spec.nodes
+
+    wen = Wenmode(plugins=[BlockLiteralPlugin])
+
+    assert wen.render('%%%\nbody\n%%%\n') == '<aside>body</aside>\n'
+
+
+def test_wenmode_installs_declarative_block_fenced_children() -> None:
+    class BlockParentPlugin:
+        spec = DeclarativePluginSpec(
+            name='custom_block_parent',
+            nodes=[CustomBlockParent],
+            syntax=[
+                BlockFenced(
+                    name='custom_block_parent',
+                    node=CustomBlockParent,
+                    opener='+++',
+                    closer='+++',
+                    content='children',
+                )
+            ],
+            renderers={'html': {CustomBlockParent.type: RendererFallback('children')}},
+        )
+
+        nodes = spec.nodes
+
+    wen = Wenmode(plugins=[BlockParentPlugin])
+
+    assert wen.render('+++\n# Nested\n+++\n') == '<h1>Nested</h1>\n'
 
 
 def test_wenmode_rejects_declarative_plugin_options() -> None:

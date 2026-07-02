@@ -86,7 +86,7 @@ from dataclasses import dataclass
 import typing
 
 from wenmode.nodes import Parent
-from wenmode.plugins import DeclarativePluginSpec, InlineDelimited, RenderTemplate
+from wenmode.plugins import DeclarativePluginSpec, InlineDelimited, RendererFallback, RenderTemplate
 
 
 @dataclass
@@ -98,7 +98,10 @@ spec = DeclarativePluginSpec(
     name='mark',
     nodes=[MarkNode],
     syntax=[InlineDelimited(name='mark', node=MarkNode, opener='==', closer='==')],
-    renderers={'html': {'mark': RenderTemplate('<mark>{children}</mark>')}},
+    renderers={
+        'html': {'mark': RenderTemplate('<mark>{children}</mark>')},
+        'rst': {'mark': RendererFallback('children')},
+    },
 )
 
 nodes = spec.nodes
@@ -108,6 +111,11 @@ Wenmode turns the declarative syntax into normal parser rules and renderer
 handlers when the plugin is installed. Use `install_declarative()` inside a
 custom `setup()` only when a plugin needs to combine a declarative spec with
 additional command-style setup.
+
+Use `InlineLiteral` for delimiter pairs that should produce a literal node, and
+`BlockFenced` for simple fenced blocks. `RendererFallback('children')` and
+`RendererFallback('value')` render a node the same way Wenmode would render an
+unknown parent or literal node, without requiring a string template.
 
 ## Built-In Plugins
 

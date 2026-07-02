@@ -7,20 +7,49 @@ from typing import Literal, TypeAlias, cast
 from wenmode.nodes import Node
 from wenmode.renderers import BaseRenderer, RenderContext, RenderHandler
 
-from .spec import RenderTemplate
+from .spec import RendererFallback, RendererSpec, RenderTemplate
 
 RendererHandlers: TypeAlias = Mapping[str, Mapping[str, RenderHandler]]
 TemplatePart: TypeAlias = Literal['children', 'value'] | str
 
 
-def renderer_handlers_from_templates(renderers: Mapping[str, Mapping[str, RenderTemplate]]) -> RendererHandlers:
+def renderer_handlers_from_templates(renderers: Mapping[str, Mapping[str, RendererSpec]]) -> RendererHandlers:
     return {
         renderer_name: {
-            node_type: render_template(template)
-            for node_type, template in templates.items()
+            node_type: render_renderer_spec(spec) for node_type, spec in templates.items()
         }
         for renderer_name, templates in renderers.items()
     }
+
+
+def render_renderer_spec(spec: RendererSpec) -> RenderHandler:
+    if isinstance(spec, RendererFallback):
+        return render_fallback(spec)
+    return render_template(spec)
+
+
+def render_fallback(fallback: RendererFallback) -> RenderHandler:
+    if fallback.mode == 'children':
+
+        def render_children_fallback(renderer: BaseRenderer, node: Node, context: RenderContext) -> str:
+            node_children = getattr(node, 'children', None)
+            if isinstance(node_children, list):
+                return renderer.render_children(cast(list[Node], node_children), context)
+            return ''
+
+        return render_children_fallback
+
+    if fallback.mode == 'value':
+
+        def render_value_fallback(renderer: BaseRenderer, node: Node, context: RenderContext) -> str:
+            value = getattr(node, 'value', '')
+            if isinstance(value, str):
+                return value
+            return ''
+
+        return render_value_fallback
+
+    raise TypeError(f'unsupported renderer fallback mode {fallback.mode!r}')
 
 
 def render_template(template: RenderTemplate) -> RenderHandler:

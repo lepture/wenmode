@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from wenmode.nodes import Parent
 
-from .._declarative import DeclarativePluginSpec, InlineDelimited, RenderTemplate
+from .._declarative import DeclarativePluginSpec, InlineDelimited, RendererFallback, RenderTemplate
 
 
 @dataclass
@@ -29,7 +29,7 @@ spec = DeclarativePluginSpec(
     renderers={
         'html': {MarkNode.type: RenderTemplate('<mark>{children}</mark>')},
         'markdown': {MarkNode.type: RenderTemplate('=={children}==')},
-        'rst': {MarkNode.type: RenderTemplate('{children}')},
+        'rst': {MarkNode.type: RendererFallback('children')},
         'asciidoc': {MarkNode.type: RenderTemplate('#{children}#')},
     },
 )
