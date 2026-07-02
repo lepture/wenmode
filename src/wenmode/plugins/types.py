@@ -45,12 +45,7 @@ class PluginConfig:
 PluginTarget: TypeAlias = PluginLike | PluginConfig
 
 
-def plugin(target: PluginLike, **options: Any) -> PluginConfig:
-    """Return a plugin configuration that carries setup options."""
-    return PluginConfig(target=target, options=dict(options))
-
-
-class _PluginSetup(Protocol):
+class PluginSetupCall(Protocol):
     """Callable shape of a plugin ``setup`` function."""
 
     def __call__(self, wen: Wenmode, **options: Any) -> None:

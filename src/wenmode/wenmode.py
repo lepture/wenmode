@@ -7,7 +7,7 @@ from ._declarative import DeclarativePluginSpec, install_declarative
 from .nodes import Node, Root
 from .parser import Parser
 from .plugins import RendererHandlers
-from .plugins.types import PluginConfig, PluginLike, PluginTarget, _PluginSetup
+from .plugins.types import PluginConfig, PluginLike, PluginSetupCall, PluginTarget
 from .presets import commonmark
 from .renderers import BaseRenderer, DirectiveHtmlRenderer, HTMLRenderer
 from .rules.base import Rule
@@ -165,5 +165,5 @@ class Wenmode:
 
         if not callable(setup):
             raise TypeError('plugins must define spec or setup(wen, **options)')
-        cast(_PluginSetup, setup)(self, **options)
+        cast(PluginSetupCall, setup)(self, **options)
         return self
