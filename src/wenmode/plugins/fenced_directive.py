@@ -145,9 +145,9 @@ nodes: dict[str, type[Node]] = {}
 
 
 def setup(
-    wenmode: Wenmode,
+    wen: Wenmode,
     literal_names: Iterable[str] = DEFAULT_LITERAL_DIRECTIVE_NAMES,
     fence: FencedDirectiveFence = DEFAULT_FENCE,
     **options: Any,
 ) -> None:
-    wenmode.register_rule(FencedDirectiveRule(literal_names=literal_names, fence=fence))
+    wen.register_rule(FencedDirectiveRule(literal_names=literal_names, fence=fence))

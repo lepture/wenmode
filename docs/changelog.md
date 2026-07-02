@@ -48,6 +48,8 @@ here while preparing a release, then move them under the final version heading.
 - Add declarative `InlineLiteral`, `BlockFenced`, and `RendererFallback` specs
   for literal spans, fenced blocks, and wrapper-free renderer output; convert
   `inline_math` and `block_math` parsing to those specs.
+- Allow declarative plugins to expose renderer `handlers` next to `spec`, so
+  plugins with custom renderer functions do not need `setup()`.
 - Export `RenderHandler` from `wenmode.renderers` for custom renderer handler
   type annotations.
 - Add `NodeSpec` and `Node.to_spec()` for deriving static node shape metadata

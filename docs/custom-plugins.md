@@ -25,14 +25,16 @@ Plugins usually keep these pieces together:
 - custom node classes,
 - parser rules and root transforms,
 - renderer handlers for supported output formats,
-- either a declarative `spec` or a `setup(wenmode, **options)` function.
+- a declarative `spec`, optional renderer `handlers`, or a
+  `setup(wen, **options)` function.
 
 ## Plugin Shape
 
 A plugin can be a module or an object. During construction, `Wenmode` looks for
 a declarative `spec` or a callable `setup()` function on each plugin in
-`plugins=[...]`. Use `Wenmode.use(plugin, **options)` when a command-style
-plugin needs setup options.
+`plugins=[...]`. When a plugin exposes `spec`, Wenmode also registers a sibling
+`handlers` mapping if present. Use `Wenmode.use(plugin, **options)` when a
+command-style plugin needs setup options.
 
 ```python
 from typing import Any
@@ -42,8 +44,8 @@ from wenmode.rules import Emphasis
 
 
 class EmphasisOnlyPlugin:
-    def setup(self, wenmode: Wenmode, **options: Any) -> None:
-        wenmode.register_rule(Emphasis)
+    def setup(self, wen: Wenmode, **options: Any) -> None:
+        wen.register_rule(Emphasis)
 
 
 wen = Wenmode([], plugins=[EmphasisOnlyPlugin()])
@@ -61,9 +63,9 @@ from typing import Any
 from wenmode import Wenmode
 
 
-def setup(wenmode: Wenmode, **options: Any) -> None:
-    wenmode.register_rules(rules)
-    wenmode.register_renderer_handlers(handlers)
+def setup(wen: Wenmode, **options: Any) -> None:
+    wen.register_rules(rules)
+    wen.register_renderer_handlers(handlers)
 ```
 
 Applications import the module and pass it to `plugins`:
@@ -134,9 +136,9 @@ handlers = {'html': {PlusMarkNode.type: render_plus_mark}}
 
 
 class PlusMarkPlugin:
-    def setup(self, wenmode: Wenmode, **options: Any) -> None:
-        wenmode.register_rules(rules)
-        wenmode.register_renderer_handlers(handlers)
+    def setup(self, wen: Wenmode, **options: Any) -> None:
+        wen.register_rules(rules)
+        wen.register_renderer_handlers(handlers)
 
 
 wen = Wenmode(plugins=[PlusMarkPlugin()])
@@ -166,9 +168,9 @@ handlers = {
 }
 
 
-def setup(wenmode: Wenmode, **options: Any) -> None:
-    wenmode.register_rules([PlusMarkRule])
-    wenmode.register_renderer_handlers(handlers)
+def setup(wen: Wenmode, **options: Any) -> None:
+    wen.register_rules([PlusMarkRule])
+    wen.register_renderer_handlers(handlers)
 ```
 
 Use stable node `type` values. Renderer handlers are selected by `node.type`,
@@ -191,19 +193,19 @@ handlers = {
 Expose options on `setup()` when callers need to configure part of a plugin.
 
 ```{code-block} python
-def setup(wenmode: Wenmode, inline: bool = True, block: bool = True, **options: Any) -> None:
+def setup(wen: Wenmode, inline: bool = True, block: bool = True, **options: Any) -> None:
     selected_rules = []
     if inline:
         selected_rules.append(MyInlineRule)
     if block:
         selected_rules.append(MyBlockRule)
 
-    wenmode.register_rules(selected_rules)
-    wenmode.register_renderer_handlers(handlers)
+    wen.register_rules(selected_rules)
+    wen.register_renderer_handlers(handlers)
 ```
 
 Unknown options are accepted by convention so plugins can share a consistent
-`setup(wenmode, **options)` shape. Validate option values inside `setup()` when
+`setup(wen, **options)` shape. Validate option values inside `setup()` when
 the plugin needs stricter behavior.
 
 ## Rule Types Inside Plugins

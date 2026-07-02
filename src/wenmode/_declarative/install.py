@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from wenmode import Wenmode
 
 
-def install_declarative(wenmode: Wenmode, spec: DeclarativePluginSpec, **options: Any) -> None:
+def install_declarative(wen: Wenmode, spec: DeclarativePluginSpec, **options: Any) -> None:
     """Install a declarative plugin spec into a ``Wenmode`` instance."""
 
     if options:
@@ -22,8 +22,8 @@ def install_declarative(wenmode: Wenmode, spec: DeclarativePluginSpec, **options
 
     rules: list[type[Rule] | Rule] = [_rule_from_syntax(syntax) for syntax in spec.syntax]
     if rules:
-        wenmode.register_rules(rules)
-    wenmode.register_renderer_handlers(renderer_handlers_from_templates(spec.renderers))
+        wen.register_rules(rules)
+    wen.register_renderer_handlers(renderer_handlers_from_templates(spec.renderers))
 
 
 def _rule_from_syntax(syntax: BlockFenced | InlineDelimited | InlineLiteral) -> Rule:

@@ -29,7 +29,7 @@ behavior you need.
 
 Import a plugin module from `wenmode.plugins` and pass it to `Wenmode` with the
 `plugins` argument. During initialization, Wenmode installs each plugin's
-declarative `spec` or calls its `setup(wenmode, **options)` function with no
+declarative `spec` or calls its `setup(wen, **options)` function with no
 extra options.
 
 ```python
@@ -108,9 +108,11 @@ nodes = spec.nodes
 ```
 
 Wenmode turns the declarative syntax into normal parser rules and renderer
-handlers when the plugin is installed. Use `install_declarative()` inside a
-custom `setup()` only when a plugin needs to combine a declarative spec with
-additional command-style setup.
+handlers when the plugin is installed. If a declarative plugin needs custom
+renderer functions, expose a `handlers` mapping next to `spec`; Wenmode
+registers those handlers after installing the spec. Use `setup()` only when a
+plugin needs additional command-style setup beyond declarative syntax and
+renderer handlers.
 
 Use `InlineLiteral` for delimiter pairs that should produce a literal node, and
 `BlockFenced` for simple fenced blocks. `RendererFallback('children')` and
@@ -355,7 +357,7 @@ mdast directive syntax with colon markers.
 ## Creating Plugins
 
 A custom command-style plugin is a module or object with a
-`setup(wenmode, **options)` function. Inside `setup()`, register parser rules,
+`setup(wen, **options)` function. Inside `setup()`, register parser rules,
 renderer handlers, directive renderers, or any combination of them.
 
 ```python
@@ -364,12 +366,13 @@ from wenmode.rules import Emphasis
 
 
 class MyPlugin:
-    def setup(self, wenmode: Wenmode, **options) -> None:
-        wenmode.register_rule(Emphasis)
+    def setup(self, wen: Wenmode, **options) -> None:
+        wen.register_rule(Emphasis)
 
 
 wen = Wenmode([], plugins=[MyPlugin()])
 ```
 
-For non-trivial syntax, define the node, rule, render handlers, and `setup()`
-together. See {ref}`custom-plugins` for a complete custom plugin walkthrough.
+For non-trivial command-style syntax, define the node, rule, render handlers,
+and `setup()` together. Declarative plugins can expose `spec` and `handlers`
+directly. See {ref}`custom-plugins` for a complete custom plugin walkthrough.

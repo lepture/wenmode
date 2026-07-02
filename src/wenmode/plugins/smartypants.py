@@ -25,7 +25,7 @@ class SmartypantsState:
 
 
 def setup(
-    wenmode: Wenmode,
+    wen: Wenmode,
     quotes: bool = True,
     dashes: bool = True,
     ellipses: bool = True,
@@ -42,7 +42,7 @@ def setup(
         text = smarten(value, state_for(context), quotes=quotes, dashes=dashes, ellipses=ellipses)
         return renderer.escape_html(text)
 
-    wenmode.register_renderer_handlers(
+    wen.register_renderer_handlers(
         {
             'html': {
                 Text.type: render_text_node,

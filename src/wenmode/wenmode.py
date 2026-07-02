@@ -158,9 +158,12 @@ class Wenmode:
             if callable(setup):
                 raise TypeError('plugins must define either spec or setup, not both')
             install_declarative(self, spec, **options)
+            handlers = getattr(target, 'handlers', None)
+            if handlers is not None:
+                self.register_renderer_handlers(cast(RendererHandlers, handlers))
             return self
 
         if not callable(setup):
-            raise TypeError('plugins must define spec or setup(wenmode, **options)')
+            raise TypeError('plugins must define spec or setup(wen, **options)')
         cast(_PluginSetup, setup)(self, **options)
         return self

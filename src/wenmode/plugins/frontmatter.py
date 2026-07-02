@@ -245,12 +245,12 @@ rules: list[type[Rule] | Rule] = [FrontmatterRule]
 
 
 def setup(
-    wenmode: Wenmode,
+    wen: Wenmode,
     load: FrontmatterLoad | None = None,
     dump: FrontmatterDump | None = None,
     data_key: str = 'frontmatter',
     **options: Any,
 ) -> None:
     frontmatter_dump = dump or dump_simple_frontmatter
-    wenmode.register_rule(FrontmatterRule(load=load or load_simple_frontmatter, data_key=data_key))
-    wenmode.register_renderer_handlers(create_handlers(data_key, frontmatter_dump))
+    wen.register_rule(FrontmatterRule(load=load or load_simple_frontmatter, data_key=data_key))
+    wen.register_renderer_handlers(create_handlers(data_key, frontmatter_dump))

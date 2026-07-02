@@ -14,6 +14,7 @@ from wenmode.plugins import (
     InlineLiteral,
     RendererFallback,
     RenderTemplate,
+    inline_math,
     mark,
     plugin,
     ruby,
@@ -87,6 +88,14 @@ def test_wenmode_installs_declarative_plugin() -> None:
     assert mark.spec.syntax[0].opener == '=='
     assert wen.render('==marked *text*==\n') == '<p><mark>marked <em>text</em></mark></p>\n'
     assert wen.render('===not marked===\n') == '<p>===not marked===</p>\n'
+
+
+def test_wenmode_installs_declarative_plugin_handlers() -> None:
+    wen = Wenmode(plugins=[inline_math])
+
+    assert not hasattr(inline_math, 'setup')
+    assert inline_math.nodes == inline_math.spec.nodes == [inline_math.InlineMathNode]
+    assert wen.render('$x < y$\n') == '<p><span class="math math-inline">x &lt; y</span></p>\n'
 
 
 def test_wenmode_installs_declarative_inline_literal() -> None:
@@ -211,7 +220,7 @@ def test_wenmode_rejects_plugins_with_spec_and_setup() -> None:
         spec = DeclarativePluginSpec(name='ambiguous', nodes=[], syntax=[], renderers={})
 
         @staticmethod
-        def setup(wenmode: Wenmode, **options: object) -> None:
+        def setup(wen: Wenmode, **options: object) -> None:
             raise AssertionError('setup should not be called')
 
     with pytest.raises(TypeError, match='plugins must define either spec or setup, not both'):

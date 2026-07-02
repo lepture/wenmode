@@ -238,6 +238,6 @@ handlers: RendererHandlers = {
 }
 
 
-def setup(wenmode: Wenmode, **options: Any) -> None:
-    wenmode.register_rule(HtmlContainer(**options))
-    wenmode.register_renderer_handlers(handlers)
+def setup(wen: Wenmode, **options: Any) -> None:
+    wen.register_rule(HtmlContainer(**options))
+    wen.register_renderer_handlers(handlers)

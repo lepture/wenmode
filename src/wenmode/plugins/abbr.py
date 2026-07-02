@@ -215,6 +215,6 @@ handlers: RendererHandlers = {
 }
 
 
-def setup(wenmode: Wenmode, **options: Any) -> None:
-    wenmode.register_rules(rules)
-    wenmode.register_renderer_handlers(handlers)
+def setup(wen: Wenmode, **options: Any) -> None:
+    wen.register_rules(rules)
+    wen.register_renderer_handlers(handlers)
