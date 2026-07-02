@@ -72,11 +72,11 @@ The plugin name in the first column is the module you import from
 | `block_math` | `MathBlockRule` | block | `math` | compatible |
 | `inline_math` | `InlineMathRule` | inline | `inlineMath` | compatible |
 | `block_spoiler` | `BlockSpoilerRule` | block | `blockSpoiler` | compatible |
-| `inline_spoiler` | `InlineSpoilerRule` | inline | `inlineSpoiler` | compatible |
+| `inline_spoiler` | declarative inline delimiter | inline | `inlineSpoiler` | compatible |
 | `fenced_directive` | `FencedDirectiveRule` | block | `containerDirective`, or `literalDirective` for configured literal-body names such as `code-block` | compatible |
 | `inline_role` | `RoleRule` | inline | `textDirective` | compatible |
-| `mark` | `MarkRule` | inline | `mark` | compatible |
-| `insert` | `InsertRule` | inline | `insert` | compatible |
+| `mark` | declarative inline delimiter | inline | `mark` | compatible |
+| `insert` | declarative inline delimiter | inline | `insert` | compatible |
 | `superscript` | `SuperscriptRule` | inline | `superscript` | compatible |
 | `subscript` | `SubscriptRule` | inline | `subscript` | compatible |
 | `ruby` | `RubyRule` | inline | `ruby` | compatible |

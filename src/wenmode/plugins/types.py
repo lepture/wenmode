@@ -5,7 +5,9 @@ from dataclasses import dataclass
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Protocol, TypeAlias
 
-from wenmode.renderers.base import RenderHandler
+from wenmode.renderers import RenderHandler
+
+from .._declarative import DeclarativePluginSpec
 
 if TYPE_CHECKING:
     from wenmode.wenmode import Wenmode
@@ -23,23 +25,29 @@ class Plugin(Protocol):
         pass
 
 
-PluginLike: TypeAlias = Plugin | ModuleType
+class DeclarativePluginModule(Protocol):
+    """Protocol for plugin modules exposing a declarative spec."""
+
+    spec: DeclarativePluginSpec
+
+
+PluginLike: TypeAlias = Plugin | DeclarativePluginModule | ModuleType
 
 
 @dataclass(frozen=True)
-class PluginSpec:
+class PluginConfig:
     """Plugin plus setup options for constructor-time installation."""
 
     target: PluginLike
     options: Mapping[str, Any]
 
 
-PluginTarget: TypeAlias = PluginLike | PluginSpec
+PluginTarget: TypeAlias = PluginLike | PluginConfig
 
 
-def plugin(target: PluginLike, **options: Any) -> PluginSpec:
-    """Return a plugin specification that carries setup options."""
-    return PluginSpec(target=target, options=dict(options))
+def plugin(target: PluginLike, **options: Any) -> PluginConfig:
+    """Return a plugin configuration that carries setup options."""
+    return PluginConfig(target=target, options=dict(options))
 
 
 class _PluginSetup(Protocol):

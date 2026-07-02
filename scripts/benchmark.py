@@ -22,15 +22,17 @@ from marko.ext.gfm import gfm as marko_gfm
 from wenmode import HTMLRenderer, Wenmode, __version__
 from wenmode.plugins import (
     abbr,
+    block_math,
+    block_spoiler,
     definition_list,
     fenced_directive,
     frontmatter,
+    inline_math,
     inline_role,
+    inline_spoiler,
     insert,
     mark,
-    math,
     ruby,
-    spoiler,
     subscript,
     superscript,
 )
@@ -238,8 +240,10 @@ def make_wenmode_all() -> Wenmode:
         plugins=[
             fenced_directive,
             frontmatter,
-            math,
-            spoiler,
+            inline_math,
+            block_math,
+            inline_spoiler,
+            block_spoiler,
             definition_list,
             abbr,
             inline_role,

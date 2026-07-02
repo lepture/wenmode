@@ -24,6 +24,13 @@ here while preparing a release, then move them under the final version heading.
   `wenmode.plugins.block_math`.
 - Split `wenmode.plugins.spoiler` into `wenmode.plugins.inline_spoiler` and
   `wenmode.plugins.block_spoiler`.
+- Rename constructor-time plugin option containers from `PluginSpec` to
+  `PluginConfig`; `plugin(target, **options)` now returns `PluginConfig`.
+- Stop exporting plugin plumbing types `Plugin`, `PluginConfig`, and
+  `PluginTarget` from package facades; use `plugin()` and declarative spec APIs
+  instead.
+- Expose declarative plugin data as `DeclarativePluginSpec`, and allow
+  declarative plugins to omit `setup()` when they expose `spec`.
 
 ### Added
 
@@ -34,6 +41,11 @@ here while preparing a release, then move them under the final version heading.
   punctuation handling.
 - Add `wenmode.plugins.smartypants` for opt-in HTML smart punctuation rendering
   of quotes, dashes, and ellipses in plain text nodes.
+- Add declarative plugin specs with `wenmode.plugins.install_declarative()`,
+  and convert simple delimiter plugins such as `mark`, `insert`, and
+  `inline_spoiler` to use the new Python-side installer.
+- Export `RenderHandler` from `wenmode.renderers` for custom renderer handler
+  type annotations.
 - Document core and plugin AST node shape contracts and expand round-trip
   coverage for `from_ast()` with plugin node classes.
 

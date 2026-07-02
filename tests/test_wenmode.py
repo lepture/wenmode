@@ -8,7 +8,7 @@ import pytest
 from wenmode import Parser, Wenmode
 from wenmode.directives import Admonition
 from wenmode.nodes import Literal
-from wenmode.plugins import plugin, ruby, smartypants
+from wenmode.plugins import DeclarativePluginSpec, mark, plugin, ruby, smartypants
 from wenmode.renderers import HTMLRenderer, RenderContext
 from wenmode.rules import AtxHeading, ContainerDirective, Link
 
@@ -55,6 +55,20 @@ def test_wenmode_accepts_plugins_during_initialization() -> None:
     assert wen.render('[漢字(kanji)]\n') == '<p><ruby>漢字<rt>kanji</rt></ruby></p>\n'
 
 
+def test_wenmode_installs_declarative_plugin() -> None:
+    wen = Wenmode(plugins=[mark])
+
+    assert mark.nodes == mark.spec.nodes == [mark.MarkNode]
+    assert mark.spec.syntax[0].opener == '=='
+    assert wen.render('==marked *text*==\n') == '<p><mark>marked <em>text</em></mark></p>\n'
+    assert wen.render('===not marked===\n') == '<p>===not marked===</p>\n'
+
+
+def test_wenmode_rejects_declarative_plugin_options() -> None:
+    with pytest.raises(TypeError, match="declarative plugin 'mark' does not accept setup options: custom"):
+        Wenmode().use(mark, custom=True)
+
+
 def test_wenmode_uses_plugin_options() -> None:
     wen = Wenmode().use(smartypants, dashes=False)
 
@@ -74,23 +88,35 @@ def test_wenmode_accepts_plugin_specs_with_use() -> None:
 
 
 def test_wenmode_rejects_plugin_spec_plus_extra_options() -> None:
-    with pytest.raises(TypeError, match='plugin specs cannot be combined with extra options'):
+    with pytest.raises(TypeError, match='plugin configs cannot be combined with extra options'):
         Wenmode([]).use(plugin(smartypants, dashes=False), quotes=False)
 
 
 def test_wenmode_rejects_modules_without_setup() -> None:
-    with pytest.raises(TypeError, match='plugins must define setup'):
+    with pytest.raises(TypeError, match='plugins must define spec or setup'):
         Wenmode().use(ModuleType('empty_plugin'))
 
 
 def test_wenmode_rejects_constructor_plugins_without_setup() -> None:
-    with pytest.raises(TypeError, match='plugins must define setup'):
+    with pytest.raises(TypeError, match='plugins must define spec or setup'):
         Wenmode(plugins=[ModuleType('empty_plugin')])
 
 
 def test_wenmode_rejects_constructor_plugin_option_tuples() -> None:
-    with pytest.raises(TypeError, match='plugins must define setup'):
+    with pytest.raises(TypeError, match='plugins must define spec or setup'):
         Wenmode(plugins=[(smartypants, {'dashes': False})])
+
+
+def test_wenmode_rejects_plugins_with_spec_and_setup() -> None:
+    class AmbiguousPlugin:
+        spec = DeclarativePluginSpec(name='ambiguous', nodes=[], syntax=[], renderers={})
+
+        @staticmethod
+        def setup(wenmode: Wenmode, **options: object) -> None:
+            raise AssertionError('setup should not be called')
+
+    with pytest.raises(TypeError, match='plugins must define either spec or setup, not both'):
+        Wenmode().use(AmbiguousPlugin)
 
 
 def test_wenmode_registers_renderer_handlers_for_current_renderer() -> None:

@@ -3,10 +3,11 @@ from __future__ import annotations
 from collections.abc import Iterable, Iterator
 from typing import Any, cast
 
+from ._declarative import DeclarativePluginSpec, install_declarative
 from .nodes import Node, Root
 from .parser import Parser
-from .plugins import PluginTarget, RendererHandlers
-from .plugins.types import PluginLike, PluginSpec, _PluginSetup
+from .plugins import RendererHandlers
+from .plugins.types import PluginConfig, PluginLike, PluginTarget, _PluginSetup
 from .presets import commonmark
 from .renderers import BaseRenderer, DirectiveHtmlRenderer, HTMLRenderer
 from .rules.base import Rule
@@ -143,16 +144,23 @@ class Wenmode:
     def use(self, plugin: PluginTarget, **options: Any) -> Wenmode:
         """Install a plugin module or plugin object on this parser and renderer."""
         target: PluginLike
-        if isinstance(plugin, PluginSpec):
+        if isinstance(plugin, PluginConfig):
             if options:
-                raise TypeError('plugin specs cannot be combined with extra options')
+                raise TypeError('plugin configs cannot be combined with extra options')
             target = plugin.target
             options = dict(plugin.options)
         else:
             target = plugin
 
+        spec = getattr(target, 'spec', None)
         setup = getattr(target, 'setup', None)
+        if isinstance(spec, DeclarativePluginSpec):
+            if callable(setup):
+                raise TypeError('plugins must define either spec or setup, not both')
+            install_declarative(self, spec, **options)
+            return self
+
         if not callable(setup):
-            raise TypeError('plugins must define setup(wenmode, **options)')
+            raise TypeError('plugins must define spec or setup(wenmode, **options)')
         cast(_PluginSetup, setup)(self, **options)
         return self

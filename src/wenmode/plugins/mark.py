@@ -1,22 +1,10 @@
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
 
-from wenmode.nodes import Node, Parent
-from wenmode.renderers import MarkdownRenderer, RenderContext, render_node_children
-from wenmode.renderers.asciidoc import AsciiDocRenderContext, AsciiDocRenderer
-from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
-from wenmode.rules.base import InlineRule, Rule
-from wenmode.state import BlockState
+from wenmode.nodes import Parent
 
-from ._formatting import find_closing_marker, is_part_of_longer_run
-from .types import RendererHandlers
-
-if TYPE_CHECKING:
-    from wenmode import Wenmode
-    from wenmode.parser import Parser
+from .._declarative import DeclarativePluginSpec, InlineDelimited, RenderTemplate
 
 
 @dataclass
@@ -26,51 +14,24 @@ class MarkNode(Parent):
     type: str = 'mark'
 
 
-class MarkRule(InlineRule):
-    """Parse highlighted text delimited by ``==``."""
+spec = DeclarativePluginSpec(
+    name='mark',
+    nodes=[MarkNode],
+    syntax=[
+        InlineDelimited(
+            name='mark',
+            node=MarkNode,
+            opener='==',
+            closer='==',
+            trigger_chars='=',
+        )
+    ],
+    renderers={
+        'html': {MarkNode.type: RenderTemplate('<mark>{children}</mark>')},
+        'markdown': {MarkNode.type: RenderTemplate('=={children}==')},
+        'rst': {MarkNode.type: RenderTemplate('{children}')},
+        'asciidoc': {MarkNode.type: RenderTemplate('#{children}#')},
+    },
+)
 
-    name = 'mark'
-    pattern = r'==(?=[^\s=])'
-    trigger_chars = '='
-
-    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
-        start = match.start()
-        if is_part_of_longer_run(text, start, '='):
-            return None, start
-
-        close = find_closing_marker(text, match.end(), '=')
-        if close == -1:
-            return None, start
-
-        value_start = match.end()
-        value = text[value_start:close]
-        return MarkNode(
-            children=parser.parse_inlines(value, state, source=parser.inline_source(text, state, value_start, close))
-        ), close + 2
-
-
-def render_html(renderer: HTMLRenderer, node: MarkNode, context: HTMLRenderContext) -> str:
-    return f'<mark>{renderer.render_children(node.children, context)}</mark>'
-
-
-def render_markdown(renderer: MarkdownRenderer, node: MarkNode, context: RenderContext) -> str:
-    return f'=={renderer.render_children(node.children, context)}=='
-
-
-def render_asciidoc(renderer: AsciiDocRenderer, node: MarkNode, context: AsciiDocRenderContext) -> str:
-    return f'#{renderer.render_children(node.children, context)}#'
-
-
-nodes = [MarkNode]
-rules: list[type[Rule] | Rule] = [MarkRule]
-handlers: RendererHandlers = {
-    'html': {MarkNode.type: render_html},
-    'markdown': {MarkNode.type: render_markdown},
-    'rst': {MarkNode.type: render_node_children},
-    'asciidoc': {MarkNode.type: render_asciidoc},
-}
-
-
-def setup(wenmode: Wenmode, **options: Any) -> None:
-    wenmode.register_rules(rules)
-    wenmode.register_renderer_handlers(handlers)
+nodes = spec.nodes

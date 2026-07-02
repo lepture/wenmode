@@ -8,6 +8,8 @@ Renderers
 .. autoclass:: wenmode.renderers.RenderContext
    :members:
 
+.. autodata:: wenmode.renderers.RenderHandler
+
 .. autoclass:: wenmode.renderers.BaseRenderer
    :members:
 

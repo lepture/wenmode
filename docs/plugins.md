@@ -28,8 +28,9 @@ behavior you need.
 ## Using Plugins
 
 Import a plugin module from `wenmode.plugins` and pass it to `Wenmode` with the
-`plugins` argument. During initialization, Wenmode calls each plugin's
-`setup(wenmode, **options)` function with no extra options.
+`plugins` argument. During initialization, Wenmode installs each plugin's
+declarative `spec` or calls its `setup(wenmode, **options)` function with no
+extra options.
 
 ```python
 from wenmode import Wenmode
@@ -75,6 +76,38 @@ wen = Wenmode().use(smartypants, dashes=False)
 Use `Wenmode.use(plugin, **options)` when you need to install a plugin after the
 instance already exists. It returns the same `Wenmode` instance, so existing
 chain-style setup remains supported.
+
+## Declarative Plugins
+
+Simple inline plugins can expose a `DeclarativePluginSpec` directly:
+
+```python
+from dataclasses import dataclass
+import typing
+
+from wenmode.nodes import Parent
+from wenmode.plugins import DeclarativePluginSpec, InlineDelimited, RenderTemplate
+
+
+@dataclass
+class MarkNode(Parent):
+    type: typing.ClassVar[str] = 'mark'
+
+
+spec = DeclarativePluginSpec(
+    name='mark',
+    nodes=[MarkNode],
+    syntax=[InlineDelimited(name='mark', node=MarkNode, opener='==', closer='==')],
+    renderers={'html': {'mark': RenderTemplate('<mark>{children}</mark>')}},
+)
+
+nodes = spec.nodes
+```
+
+Wenmode turns the declarative syntax into normal parser rules and renderer
+handlers when the plugin is installed. Use `install_declarative()` inside a
+custom `setup()` only when a plugin needs to combine a declarative spec with
+additional command-style setup.
 
 ## Built-In Plugins
 
@@ -313,9 +346,9 @@ mdast directive syntax with colon markers.
 
 ## Creating Plugins
 
-A custom plugin is a module or object with a `setup(wenmode, **options)`
-function. Inside `setup()`, register parser rules, renderer handlers, directive
-renderers, or any combination of them.
+A custom command-style plugin is a module or object with a
+`setup(wenmode, **options)` function. Inside `setup()`, register parser rules,
+renderer handlers, directive renderers, or any combination of them.
 
 ```python
 from wenmode import Wenmode

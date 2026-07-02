@@ -25,14 +25,14 @@ Plugins usually keep these pieces together:
 - custom node classes,
 - parser rules and root transforms,
 - renderer handlers for supported output formats,
-- a `setup(wenmode, **options)` function.
+- either a declarative `spec` or a `setup(wenmode, **options)` function.
 
 ## Plugin Shape
 
 A plugin can be a module or an object. During construction, `Wenmode` looks for
-a callable `setup()` function on each plugin in `plugins=[...]` and passes the
-`Wenmode` instance. Use `Wenmode.use(plugin, **options)` when a plugin needs
-setup options.
+a declarative `spec` or a callable `setup()` function on each plugin in
+`plugins=[...]`. Use `Wenmode.use(plugin, **options)` when a command-style
+plugin needs setup options.
 
 ```python
 from typing import Any

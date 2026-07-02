@@ -1,5 +1,4 @@
 from .parser import Parser, StreamingUnsupportedError
-from .plugins import Plugin, PluginSpec, PluginTarget
 from .renderers import AsciiDocRenderer, HTMLRenderer, MarkdownRenderer, RSTRenderer
 from .wenmode import Wenmode
 
@@ -14,9 +13,6 @@ __all__ = [
     'MarkdownRenderer',
     'RSTRenderer',
     'Parser',
-    'Plugin',
-    'PluginSpec',
-    'PluginTarget',
     'StreamingUnsupportedError',
     'Wenmode',
 ]

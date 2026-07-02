@@ -87,10 +87,11 @@ def test_streaming_rejects_core_rules_with_deferred_transforms(rule) -> None:
 
 def test_documented_public_extension_imports_resolve() -> None:
     import wenmode
-    from wenmode import HTMLRenderer, MarkdownRenderer, Parser, Plugin, PluginTarget, RSTRenderer
+    import wenmode.plugins
+    from wenmode import HTMLRenderer, MarkdownRenderer, Parser, RSTRenderer
     from wenmode.ast import BUILTIN_NODES, find_all, from_ast, plain_text, walk
     from wenmode.nodes import LiteralDirective, Root, Text
-    from wenmode.renderers import BaseRenderer, DirectiveHtmlRenderer, RenderContext
+    from wenmode.renderers import BaseRenderer, DirectiveHtmlRenderer, RenderContext, RenderHandler
     from wenmode.rules import BlockRule, ContinueRule, InlineRule, Rule
     from wenmode.state import BlockState, SourceMap, StateKey, StateStore
 
@@ -98,15 +99,15 @@ def test_documented_public_extension_imports_resolve() -> None:
     assert wenmode.MarkdownRenderer is MarkdownRenderer
     assert wenmode.RSTRenderer is RSTRenderer
     assert wenmode.Parser is Parser
-    assert wenmode.Plugin is Plugin
-    assert wenmode.PluginTarget is PluginTarget
+    assert all(name not in wenmode.__all__ for name in {'Plugin', 'PluginConfig', 'PluginTarget'})
+    assert all(name not in wenmode.plugins.__all__ for name in {'Plugin', 'PluginConfig', 'PluginTarget'})
     assert all('_parser' not in name for name in wenmode.__all__)
     assert {node.type: node for node in BUILTIN_NODES}['literalDirective'] is LiteralDirective
     assert isinstance(from_ast({'type': 'literalDirective', 'name': 'code-block', 'value': 'x'}), LiteralDirective)
     assert plain_text(Root(children=[Text(value='text')])) == 'text'
     assert list(find_all(Root(children=[Text(value='text')]), Text))
     assert [node.type for node in walk(Root(children=[Text(value='text')]))] == ['root', 'text']
-    assert BaseRenderer and DirectiveHtmlRenderer and RenderContext
+    assert BaseRenderer and DirectiveHtmlRenderer and RenderContext and RenderHandler
     assert BlockRule and ContinueRule and InlineRule and Rule
     assert BlockState and SourceMap and StateKey and StateStore
 
