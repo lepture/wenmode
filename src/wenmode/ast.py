@@ -38,7 +38,6 @@ from .nodes import (
 )
 
 NodeMatcher: TypeAlias = str | type[Node] | tuple[str | type[Node], ...]
-NodeClasses: TypeAlias = Iterable[type[Node]]
 UnknownNodePolicy: TypeAlias = str
 BUILTIN_NODES: list[type[Node]] = [
     Root,
@@ -70,7 +69,6 @@ BUILTIN_NODES: list[type[Node]] = [
 ]
 __all__ = [
     'BUILTIN_NODES',
-    'NodeClasses',
     'NodeMatcher',
     'UnknownNodePolicy',
     'find',
@@ -86,7 +84,7 @@ __all__ = [
 def from_ast(
     data: Mapping[str, Any],
     *,
-    nodes: NodeClasses | None = None,
+    nodes: Iterable[type[Node]] | None = None,
     unknown: UnknownNodePolicy = 'generic',
 ) -> Node:
     """Convert a mdast-like mapping into Wenmode nodes.
@@ -108,7 +106,7 @@ def from_ast(
 def node_from_ast(
     data: Mapping[str, Any],
     *,
-    nodes: NodeClasses | None = None,
+    nodes: Iterable[type[Node]] | None = None,
     unknown: UnknownNodePolicy = 'generic',
 ) -> Node:
     """Convert one AST node mapping into a Wenmode node."""
@@ -122,7 +120,7 @@ def node_from_ast(
 
 
 def _node_lookup(
-    nodes: NodeClasses,
+    nodes: Iterable[type[Node]],
     *,
     error_prefix: str = 'nodes',
 ) -> dict[str, type[Node]]:
