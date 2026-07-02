@@ -13,6 +13,10 @@ here while preparing a release, then move them under the final version heading.
 
 ## Unreleased
 
+## 0.9.0
+
+Released **Jul 2, 2026**.
+
 ### Breaking Changes
 
 - Change `from_ast()` and `node_from_ast()` to accept `nodes=[MyNode]`
