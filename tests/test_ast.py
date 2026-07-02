@@ -14,7 +14,6 @@ from tests.ast_fixtures import (
 )
 from wenmode import Wenmode
 from wenmode.ast import (
-    BUILTIN_NODES,
     find,
     find_all,
     from_ast,
@@ -23,6 +22,7 @@ from wenmode.ast import (
     walk,
 )
 from wenmode.nodes import (
+    BUILTIN_NODES,
     FootnoteReference,
     Heading,
     Image,

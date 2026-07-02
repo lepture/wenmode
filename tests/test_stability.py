@@ -89,8 +89,8 @@ def test_documented_public_extension_imports_resolve() -> None:
     import wenmode
     import wenmode.plugins
     from wenmode import HTMLRenderer, MarkdownRenderer, Parser, RSTRenderer
-    from wenmode.ast import BUILTIN_NODES, find_all, from_ast, plain_text, walk
-    from wenmode.nodes import LiteralDirective, Root, Text
+    from wenmode.ast import find_all, from_ast, plain_text, walk
+    from wenmode.nodes import BUILTIN_NODES, LiteralDirective, Root, Text
     from wenmode.renderers import BaseRenderer, DirectiveHtmlRenderer, RenderContext, RenderHandler
     from wenmode.rules import BlockRule, ContinueRule, InlineRule, Rule
     from wenmode.state import BlockState, SourceMap, StateKey, StateStore

@@ -410,3 +410,32 @@ class LiteralDirective(Literal):
 
 
 DirectiveNode = TextDirective | LeafDirective | ContainerDirective | LiteralDirective
+
+BUILTIN_NODES: list[type[Node]] = [
+    Root,
+    Paragraph,
+    Heading,
+    Blockquote,
+    List,
+    ListItem,
+    Code,
+    ThematicBreak,
+    Html,
+    Text,
+    InlineCode,
+    Strong,
+    Emphasis,
+    Delete,
+    Table,
+    TableRow,
+    TableCell,
+    Link,
+    Image,
+    Break,
+    FootnoteReference,
+    FootnoteDefinition,
+    TextDirective,
+    LeafDirective,
+    ContainerDirective,
+    LiteralDirective,
+]

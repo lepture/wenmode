@@ -18,8 +18,9 @@ here while preparing a release, then move them under the final version heading.
 - Change `from_ast()` and `node_from_ast()` to accept `nodes=[MyNode]`
   instead of `registry={MyNode.type: MyNode}`, and remove
   `registry_from_plugins()`.
-- Rename `BUILTIN_NODE_REGISTRY` to `BUILTIN_NODES`, and change built-in plugin
-  `nodes` exports to node class lists instead of `{type: class}` mappings.
+- Rename `BUILTIN_NODE_REGISTRY` to `wenmode.nodes.BUILTIN_NODES`, and change
+  built-in plugin `nodes` exports to node class lists instead of
+  `{type: class}` mappings.
 - Split `wenmode.plugins.math` into `wenmode.plugins.inline_math` and
   `wenmode.plugins.block_math`.
 - Split `wenmode.plugins.spoiler` into `wenmode.plugins.inline_spoiler` and

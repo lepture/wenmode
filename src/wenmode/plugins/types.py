@@ -17,7 +17,7 @@ else:
 RendererHandlers: TypeAlias = Mapping[str, Mapping[str, RenderHandler]]
 
 
-class Plugin(Protocol):
+class SetupPluginModule(Protocol):
     """Protocol for objects installable through ``Wenmode`` plugins."""
 
     def setup(self, wenmode: Wenmode, **options: Any) -> None:
@@ -31,7 +31,7 @@ class DeclarativePluginModule(Protocol):
     spec: DeclarativePluginSpec
 
 
-PluginLike: TypeAlias = Plugin | DeclarativePluginModule | ModuleType
+PluginLike: TypeAlias = SetupPluginModule | DeclarativePluginModule | ModuleType
 
 
 @dataclass(frozen=True)
