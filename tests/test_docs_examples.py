@@ -69,12 +69,12 @@ def iter_compilable_myst_python_blocks() -> list[object]:
 def test_documentation_python_examples(label: str, code: str, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(ROOT)
     namespace = {'__name__': f'docs_example_{label}'}
-    exec(compile(code, label, 'exec'), namespace)
+    exec(compile(code, label, 'exec', dont_inherit=True), namespace)
 
 
 @pytest.mark.parametrize(('label', 'code'), iter_compilable_myst_python_blocks())
 def test_migration_python_code_blocks_compile(label: str, code: str) -> None:
-    compile(code, label, 'exec')
+    compile(code, label, 'exec', dont_inherit=True)
 
 
 def test_migration_python_code_blocks_are_discovered() -> None:

@@ -77,69 +77,27 @@ Use `Wenmode.use(plugin, **options)` when you need to install a plugin after the
 instance already exists. It returns the same `Wenmode` instance, so existing
 chain-style setup remains supported.
 
-## Declarative Plugins
-
-Simple inline plugins can expose a `DeclarativePluginSpec` directly:
-
-```python
-from dataclasses import dataclass
-import typing
-
-from wenmode.nodes import Parent
-from wenmode.plugins import DeclarativePluginSpec, InlineDelimited, RendererFallback, RenderTemplate
-
-
-@dataclass
-class MarkNode(Parent):
-    type: typing.ClassVar[str] = 'mark'
-
-
-spec = DeclarativePluginSpec(
-    name='mark',
-    nodes=[MarkNode],
-    syntax=[InlineDelimited(name='mark', node=MarkNode, opener='==', closer='==')],
-    renderers={
-        'html': {'mark': RenderTemplate('<mark>{children}</mark>')},
-        'rst': {'mark': RendererFallback('children')},
-    },
-)
-
-nodes = spec.nodes
-```
-
-Wenmode turns the declarative syntax into normal parser rules and renderer
-handlers when the plugin is installed. If a declarative plugin needs custom
-renderer functions, expose a `handlers` mapping next to `spec`; Wenmode
-registers those handlers after installing the spec. Use `setup()` only when a
-plugin needs additional command-style setup beyond declarative syntax and
-renderer handlers.
-
-Use `InlineLiteral` for delimiter pairs that should produce a literal node, and
-`BlockFenced` for simple fenced blocks. `RendererFallback('children')` and
-`RendererFallback('value')` render a node the same way Wenmode would render an
-unknown parent or literal node, without requiring a string template.
-
 ## Built-In Plugins
 
-| Plugin | Enables |
-| --- | --- |
-| `wenmode.plugins.abbr` | Abbreviation definitions and `abbreviation` nodes |
-| `wenmode.plugins.block_spoiler` | Block spoiler containers |
-| `wenmode.plugins.cjk_friendly` | CJK-friendly inline parsing behavior |
-| `wenmode.plugins.definition_list` | Definition list syntax and nodes |
-| `wenmode.plugins.fenced_directive` | MyST-style fenced directives, rendered as `containerDirective` or `literalDirective` nodes |
-| `wenmode.plugins.frontmatter` | Top-level `---` front matter stored on `root.data["frontmatter"]` |
-| `wenmode.plugins.html_container` | Standalone HTML tag pairs whose body is parsed as Markdown blocks |
-| `wenmode.plugins.block_math` | Display math blocks |
-| `wenmode.plugins.inline_math` | Inline math spans |
-| `wenmode.plugins.inline_role` | MyST-style inline roles, rendered as `textDirective` nodes |
-| `wenmode.plugins.inline_spoiler` | Inline spoiler spans |
-| `wenmode.plugins.insert` | `insert` inline nodes |
-| `wenmode.plugins.mark` | `mark` inline nodes |
-| `wenmode.plugins.ruby` | Ruby annotation nodes |
-| `wenmode.plugins.smartypants` | HTML smart punctuation rendering for quotes, dashes, and ellipses |
-| `wenmode.plugins.subscript` | `subscript` inline nodes |
-| `wenmode.plugins.superscript` | `superscript` inline nodes |
+| Plugin | Enables | Defined with |
+| --- | --- | --- |
+| `wenmode.plugins.abbr` | Abbreviation definitions and `abbreviation` nodes | `setup()` |
+| `wenmode.plugins.block_spoiler` | Block spoiler containers | `setup()` |
+| `wenmode.plugins.cjk_friendly` | CJK-friendly inline parsing behavior | `setup()` |
+| `wenmode.plugins.definition_list` | Definition list syntax and nodes | `setup()` |
+| `wenmode.plugins.fenced_directive` | MyST-style fenced directives, rendered as `containerDirective` or `literalDirective` nodes | `setup()` |
+| `wenmode.plugins.frontmatter` | Top-level `---` front matter stored on `root.data["frontmatter"]` | `setup()` |
+| `wenmode.plugins.html_container` | Standalone HTML tag pairs whose body is parsed as Markdown blocks | `setup()` |
+| `wenmode.plugins.block_math` | Display math blocks | `spec` + `handlers` |
+| `wenmode.plugins.inline_math` | Inline math spans | `spec` + `handlers` |
+| `wenmode.plugins.inline_role` | MyST-style inline roles, rendered as `textDirective` nodes | `setup()` |
+| `wenmode.plugins.inline_spoiler` | Inline spoiler spans | `spec` |
+| `wenmode.plugins.insert` | `insert` inline nodes | `spec` |
+| `wenmode.plugins.mark` | `mark` inline nodes | `spec` |
+| `wenmode.plugins.ruby` | Ruby annotation nodes | `setup()` |
+| `wenmode.plugins.smartypants` | HTML smart punctuation rendering for quotes, dashes, and ellipses | `setup()` |
+| `wenmode.plugins.subscript` | `subscript` inline nodes | `setup()` |
+| `wenmode.plugins.superscript` | `superscript` inline nodes | `setup()` |
 
 Each plugin also registers default HTML, Markdown, RST, or AsciiDoc renderer
 handlers when the feature has a standard representation in Wenmode's built-in
@@ -215,9 +173,21 @@ from wenmode.plugins import html_container
 
 wen = Wenmode(renderer=HTMLRenderer(escape=False), plugins=[html_container])
 
-assert wen.render('<div>\n- one\n</div>\n') == (
-    '<div>\n<ul>\n<li>one</li>\n</ul>\n</div>\n'
-)
+text = '''
+<div>
+- one
+</div>
+'''
+
+result = '''
+<div>
+<ul>
+<li>one</li>
+</ul>
+</div>
+'''
+
+assert wen.render(text.lstrip()) == result.lstrip()
 ```
 
 The plugin keeps raw-text tags such as `script`, `style`, `pre`, and
@@ -356,9 +326,51 @@ mdast directive syntax with colon markers.
 
 ## Creating Plugins
 
-A custom command-style plugin is a module or object with a
-`setup(wen, **options)` function. Inside `setup()`, register parser rules,
-renderer handlers, directive renderers, or any combination of them.
+Start with a declarative plugin when the syntax can be described with Wenmode's
+declarative specs. Simple inline plugins can expose a `DeclarativePluginSpec`
+directly:
+
+```python
+from dataclasses import dataclass
+import typing
+
+from wenmode.nodes import Parent
+from wenmode.plugins import DeclarativePluginSpec, InlineDelimited, RendererFallback, RenderTemplate
+
+
+@dataclass
+class MarkNode(Parent):
+    type: typing.ClassVar[str] = 'mark'
+
+
+spec = DeclarativePluginSpec(
+    name='mark',
+    nodes=[MarkNode],
+    syntax=[InlineDelimited(name='mark', node=MarkNode, opener='==', closer='==')],
+    renderers={
+        'html': {'mark': RenderTemplate('<mark>{children}</mark>')},
+        'rst': {'mark': RendererFallback('children')},
+    },
+)
+
+nodes = spec.nodes
+```
+
+Wenmode turns declarative syntax into normal parser rules and renderer handlers
+when the plugin is installed. If a declarative plugin needs custom renderer
+functions, expose a `handlers` mapping next to `spec`; Wenmode registers those
+handlers after installing the spec.
+
+Use `InlineLiteral` for delimiter pairs that should produce a literal node, and
+`BlockFenced` for simple fenced blocks. `RendererFallback('children')` and
+`RendererFallback('value')` render a node the same way Wenmode would render an
+unknown parent or literal node, without requiring a string template.
+
+Use a command-style plugin when a plugin needs setup options, directive
+renderers, root transforms, or command-style installation logic. A
+command-style plugin is a module or object with a `setup(wen, **options)`
+function. Inside `setup()`, register parser rules, renderer handlers, directive
+renderers, or any combination of them.
 
 ```python
 from wenmode import Wenmode
@@ -374,5 +386,5 @@ wen = Wenmode([], plugins=[MyPlugin()])
 ```
 
 For non-trivial command-style syntax, define the node, rule, render handlers,
-and `setup()` together. Declarative plugins can expose `spec` and `handlers`
-directly. See {ref}`custom-plugins` for a complete custom plugin walkthrough.
+and `setup()` together. See {ref}`custom-plugins` for a complete custom plugin
+walkthrough.

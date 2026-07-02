@@ -2,8 +2,8 @@
 # Custom Plugins
 
 ```{rst-class} lead
-Create plugins for `Wenmode(..., plugins=[...])` that package syntax rules,
-nodes, renderer handlers, and setup options.
+Create plugins for `Wenmode(..., plugins=[...])` that package declarative specs,
+syntax rules, nodes, renderer handlers, and setup options.
 ```
 
 ---
@@ -53,7 +53,8 @@ wen = Wenmode([], plugins=[EmphasisOnlyPlugin()])
 assert wen.render('*emphasis*') == '<p><em>emphasis</em></p>\n'
 ```
 
-Module plugins use the same shape. This is the pattern used by built-in plugins:
+Declarative module plugins expose `spec`, `nodes`, and optionally `handlers`.
+Command-style module plugins expose `setup()`:
 
 ```{code-block} python
 :caption: my_project/wenmode_plugins/plus_mark.py
@@ -83,62 +84,30 @@ This plugin parses `++marked++` into a custom `plusMark` node and teaches the
 HTML renderer how to serialize it.
 
 ```python
-import re
-from typing import Any
+from dataclasses import dataclass
 
-from wenmode import HTMLRenderer, Wenmode
-from wenmode.nodes import Node, Parent
-from wenmode.parser import Parser
-from wenmode.renderers import RenderContext
-from wenmode.rules import InlineRule, Rule
-from wenmode.state import BlockState
+from wenmode import Wenmode
+from wenmode.nodes import Parent
+from wenmode.plugins import DeclarativePluginSpec, InlineDelimited, RenderTemplate
 
 
+@dataclass
 class PlusMarkNode(Parent):
-    type = 'plusMark'
-
-    def __init__(self, children: list[Node]) -> None:
-        super().__init__(self.type, children=children)
+    type: str = 'plusMark'
 
 
-class PlusMarkRule(InlineRule):
-    name = 'plus_mark'
-    pattern = r'\+\+'
-    trigger_chars = '+'
-
-    def parse(
-        self,
-        parser: Parser,
-        text: str,
-        match: re.Match[str],
-        state: BlockState,
-    ) -> tuple[Node | None, int]:
-        end = text.find('++', match.end())
-        if end == -1:
-            return None, match.start()
-
-        value_start = match.end()
-        children = parser.parse_inlines(
-            text[value_start:end],
-            state,
-            source=parser.inline_source(text, state, value_start, end),
-        )
-        return PlusMarkNode(children=children), end + 2
-
-
-def render_plus_mark(renderer: HTMLRenderer, node: PlusMarkNode, context: RenderContext) -> str:
-    return f'<mark>{renderer.render_children(node.children, context)}</mark>'
-
-
-nodes = [PlusMarkNode]
-rules: list[type[Rule] | Rule] = [PlusMarkRule]
-handlers = {'html': {PlusMarkNode.type: render_plus_mark}}
+spec = DeclarativePluginSpec(
+    name='plus_mark',
+    nodes=[PlusMarkNode],
+    syntax=[InlineDelimited(name='plus_mark', node=PlusMarkNode, opener='++', closer='++')],
+    renderers={'html': {PlusMarkNode.type: RenderTemplate('<mark>{children}</mark>')}},
+)
+nodes = spec.nodes
 
 
 class PlusMarkPlugin:
-    def setup(self, wen: Wenmode, **options: Any) -> None:
-        wen.register_rules(rules)
-        wen.register_renderer_handlers(handlers)
+    spec = spec
+    nodes = nodes
 
 
 wen = Wenmode(plugins=[PlusMarkPlugin()])
@@ -149,15 +118,17 @@ expected = '''
 assert wen.render('++very *important*++') == expected.lstrip()
 ```
 
-The parser creates the node. Renderer handlers decide how each output format
-serializes that node. If a renderer has no handler for a node type,
+The declarative spec creates the parser rule and renderer handler. If a renderer
+has no handler for a node type,
 `BaseRenderer` falls back to rendering child nodes or a literal `value`.
 The `nodes` list is optional for rendering, but expose it when callers may
 restore serialized AST data with `wenmode.ast.from_ast()`.
 
 ## Renderer Handlers
 
-`register_renderer_handlers()` accepts a mapping keyed by renderer name. Only
+Declarative plugins can put `RenderTemplate` and `RendererFallback` entries in
+`spec.renderers`. When a plugin needs custom renderer functions, expose a
+`handlers` mapping next to `spec`. The mapping is keyed by renderer name; only
 handlers for the current renderer are installed.
 
 ```{code-block} python
@@ -166,7 +137,11 @@ handlers = {
     'markdown': {'plusMark': render_plus_mark_markdown},
     'rst': {'plusMark': render_plus_mark_rst},
 }
+```
 
+For command-style plugins, call `register_renderer_handlers()` inside `setup()`:
+
+```{code-block} python
 
 def setup(wen: Wenmode, **options: Any) -> None:
     wen.register_rules([PlusMarkRule])
@@ -245,9 +220,9 @@ caller-provided configuration.
 
 ## Parsing Nested Content
 
-When a rule contains nested Markdown content, call parser helpers so the nested
-content uses the same rule set and, when enabled, the same source-position
-behavior.
+Declarative parent-node specs parse nested content for you. When a command-style
+rule contains nested Markdown content, call parser helpers so the nested content
+uses the same rule set and, when enabled, the same source-position behavior.
 
 Inline rules should pass the source range of the nested label or body:
 
@@ -338,10 +313,10 @@ if node.position is not None:
     )
 ```
 
-For nested Markdown, prefer passing a source map instead of setting every child
-manually. In the `++marked++` example above, `parser.inline_source()` maps
-children to `marked`, while the returned `PlusMarkNode` still gets the full
-`++marked++` range from the parser.
+For nested Markdown in command-style rules, prefer passing a source map instead
+of setting every child manually. `parser.inline_source()` maps child nodes to
+the nested content, while the returned parent node still gets the full consumed
+range from the parser.
 
 `Root.to_ast()` converts offsets to unist-style `line` and `column` fields.
 Standalone nodes, including nodes yielded by `Parser.parse_iter()`, do not have
