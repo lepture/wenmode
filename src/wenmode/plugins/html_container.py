@@ -229,7 +229,7 @@ def render_asciidoc_container(
 
 
 rules: list[type[Rule] | Rule] = [HtmlContainer]
-nodes = {HtmlContainerNode.type: HtmlContainerNode}
+nodes = [HtmlContainerNode]
 handlers: RendererHandlers = {
     'html': {HtmlContainerNode.type: render_html_container},
     'markdown': {HtmlContainerNode.type: render_markdown_container},

@@ -238,9 +238,9 @@ Output nodes are `DefinitionListNode`, `DefinitionTermNode`, and
 }
 ```
 
-## Math Plugin
+## Block Math Plugin
 
-`wenmode.plugins.math` parses display math fenced by `$$` markers.
+`wenmode.plugins.block_math` parses display math fenced by `$$` markers.
 
 ```markdown
 $$
@@ -264,7 +264,7 @@ Output node is `MathNode`, and its AST is:
 
 ## Spoiler Plugin
 
-`wenmode.plugins.spoiler` parses `>!`-prefixed spoiler blocks.
+`wenmode.plugins.block_spoiler` parses `>!`-prefixed spoiler blocks.
 
 ```markdown
 >! hidden *thing*

@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from wenmode import StreamingUnsupportedError, Wenmode
-from wenmode.plugins import abbr, math, spoiler
+from wenmode.plugins import abbr, block_math, block_spoiler, inline_math, inline_spoiler
 from wenmode.presets import github, streaming
 from wenmode.rules import Footnote, Link
 
@@ -61,7 +61,13 @@ def test_plugin_state_is_created_per_parse() -> None:
 
 
 def test_streaming_preset_supports_streaming_compatible_plugins() -> None:
-    app = Wenmode(streaming).use(math).use(spoiler)
+    app = (
+        Wenmode(streaming)
+        .use(block_math)
+        .use(inline_math)
+        .use(block_spoiler)
+        .use(inline_spoiler)
+    )
     markdown = 'A $x$ and >! hidden !<.\n\n- [x] done\n'
 
     assert ''.join(app.stream(markdown)) == app.render(markdown)
@@ -82,7 +88,7 @@ def test_streaming_rejects_core_rules_with_deferred_transforms(rule) -> None:
 def test_documented_public_extension_imports_resolve() -> None:
     import wenmode
     from wenmode import HTMLRenderer, MarkdownRenderer, Parser, Plugin, PluginTarget, RSTRenderer
-    from wenmode.ast import BUILTIN_NODE_REGISTRY, find_all, from_ast, plain_text, walk
+    from wenmode.ast import BUILTIN_NODES, find_all, from_ast, plain_text, walk
     from wenmode.nodes import LiteralDirective, Root, Text
     from wenmode.renderers import BaseRenderer, DirectiveHtmlRenderer, RenderContext
     from wenmode.rules import BlockRule, ContinueRule, InlineRule, Rule
@@ -95,7 +101,7 @@ def test_documented_public_extension_imports_resolve() -> None:
     assert wenmode.Plugin is Plugin
     assert wenmode.PluginTarget is PluginTarget
     assert all('_parser' not in name for name in wenmode.__all__)
-    assert BUILTIN_NODE_REGISTRY['literalDirective'] is LiteralDirective
+    assert {node.type: node for node in BUILTIN_NODES}['literalDirective'] is LiteralDirective
     assert isinstance(from_ast({'type': 'literalDirective', 'name': 'code-block', 'value': 'x'}), LiteralDirective)
     assert plain_text(Root(children=[Text(value='text')])) == 'text'
     assert list(find_all(Root(children=[Text(value='text')]), Text))
@@ -136,7 +142,14 @@ def test_github_nested_disallowed_html_is_escaped_once() -> None:
 
 
 def test_streaming_positions_remain_offset_only_for_plugin_nodes() -> None:
-    parser = Wenmode(streaming, positions=True).use(math).use(spoiler).parser
+    parser = (
+        Wenmode(streaming, positions=True)
+        .use(block_math)
+        .use(inline_math)
+        .use(block_spoiler)
+        .use(inline_spoiler)
+        .parser
+    )
     markdown = 'A $x$ and >! hidden !<.\n'
 
     paragraph = next(parser.parse_iter(markdown)).to_ast()

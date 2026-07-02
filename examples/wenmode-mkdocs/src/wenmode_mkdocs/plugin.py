@@ -6,7 +6,7 @@ from mkdocs.plugins import BasePlugin
 
 from wenmode import HTMLRenderer, Wenmode
 from wenmode.directives import Admonition, Details, Figure, TableOfContents
-from wenmode.plugins import definition_list, fenced_directive, frontmatter, math
+from wenmode.plugins import block_math, definition_list, fenced_directive, frontmatter, inline_math
 from wenmode.presets import github
 from wenmode.rules import AtxHeading, ContainerDirective, LeafDirective, SetextHeading, TextDirective
 
@@ -38,7 +38,7 @@ def create_wenmode() -> Wenmode:
             SetextHeading(id_transform=True),
         ],
         renderer=HTMLRenderer(directives=[Admonition(names=ADMONITION_NAMES), Details(), Figure(), TableOfContents()]),
-        plugins=[definition_list, fenced_directive, frontmatter, math],
+        plugins=[definition_list, fenced_directive, frontmatter, inline_math, block_math],
     )
     return app
 

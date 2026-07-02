@@ -8,7 +8,7 @@ from sphinx.application import Sphinx
 from sphinx.parsers import Parser as SphinxParser
 
 from wenmode import RSTRenderer, Wenmode
-from wenmode.plugins import definition_list, frontmatter, inline_role, math
+from wenmode.plugins import block_math, definition_list, frontmatter, inline_math, inline_role
 from wenmode.plugins.fenced_directive import FencedDirectiveRule
 from wenmode.presets import github
 
@@ -24,7 +24,7 @@ wen = Wenmode(
         *github,
     ],
     renderer=RSTRenderer(),
-    plugins=[definition_list, frontmatter, inline_role, math, target],
+    plugins=[definition_list, frontmatter, inline_role, inline_math, block_math, target],
 )
 
 

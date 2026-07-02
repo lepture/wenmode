@@ -61,7 +61,7 @@ def render_asciidoc(renderer: AsciiDocRenderer, node: MarkNode, context: AsciiDo
     return f'#{renderer.render_children(node.children, context)}#'
 
 
-nodes = {MarkNode.type: MarkNode}
+nodes = [MarkNode]
 rules: list[type[Rule] | Rule] = [MarkRule]
 handlers: RendererHandlers = {
     'html': {MarkNode.type: render_html},

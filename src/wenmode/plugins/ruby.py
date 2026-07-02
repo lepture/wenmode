@@ -119,7 +119,7 @@ def render_asciidoc(renderer: AsciiDocRenderer, node: RubyNode, context: AsciiDo
     )
 
 
-nodes = {RubyNode.type: RubyNode}
+nodes = [RubyNode]
 rules: list[type[Rule] | Rule] = [RubyRule]
 handlers: RendererHandlers = {
     'html': {RubyNode.type: render_html},

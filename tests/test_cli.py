@@ -49,7 +49,7 @@ def test_cli_render_enables_builtin_plugins(tmp_path, capsys) -> None:
     source = tmp_path / 'input.md'
     source.write_text('Inline $x + y$ and ==marked==.\n', encoding='utf-8')
 
-    assert main(['render', '--plugin', 'math', '--plugin', 'mark', str(source)]) == 0
+    assert main(['render', '--plugin', 'inline_math', '--plugin', 'mark', str(source)]) == 0
 
     captured = capsys.readouterr()
     assert captured.out == ('<p>Inline <span class="math math-inline">x + y</span> and <mark>marked</mark>.</p>\n')
@@ -199,7 +199,7 @@ def test_cli_ast_enables_builtin_plugins(tmp_path, capsys) -> None:
     source = tmp_path / 'input.md'
     source.write_text('Inline $x + y$.\n', encoding='utf-8')
 
-    assert main(['ast', '--plugin', 'math', str(source)]) == 0
+    assert main(['ast', '--plugin', 'inline_math', str(source)]) == 0
 
     captured = capsys.readouterr()
     ast = json.loads(captured.out)

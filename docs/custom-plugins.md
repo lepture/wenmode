@@ -128,7 +128,7 @@ def render_plus_mark(renderer: HTMLRenderer, node: PlusMarkNode, context: Render
     return f'<mark>{renderer.render_children(node.children, context)}</mark>'
 
 
-nodes = {PlusMarkNode.type: PlusMarkNode}
+nodes = [PlusMarkNode]
 rules: list[type[Rule] | Rule] = [PlusMarkRule]
 handlers = {'html': {PlusMarkNode.type: render_plus_mark}}
 
@@ -150,7 +150,7 @@ assert wen.render('++very *important*++') == expected.lstrip()
 The parser creates the node. Renderer handlers decide how each output format
 serializes that node. If a renderer has no handler for a node type,
 `BaseRenderer` falls back to rendering child nodes or a literal `value`.
-The `nodes` mapping is optional for rendering, but expose it when callers may
+The `nodes` list is optional for rendering, but expose it when callers may
 restore serialized AST data with `wenmode.ast.from_ast()`.
 
 ## Renderer Handlers
@@ -188,9 +188,7 @@ handlers = {
 
 ## Setup Options
 
-Expose options on `setup()` when callers need to enable part of a plugin. This
-is how built-in plugins such as `math` and `spoiler` let callers install only
-their inline or block syntax.
+Expose options on `setup()` when callers need to configure part of a plugin.
 
 ```{code-block} python
 def setup(wenmode: Wenmode, inline: bool = True, block: bool = True, **options: Any) -> None:

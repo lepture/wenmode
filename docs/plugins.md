@@ -16,9 +16,9 @@ Most applications use plugins in addition to a preset:
 ```python
 from wenmode import Wenmode
 from wenmode.presets import github
-from wenmode.plugins import math
+from wenmode.plugins import block_math, inline_math
 
-wen = Wenmode(github, plugins=[math])
+wen = Wenmode(github, plugins=[inline_math, block_math])
 ```
 
 Use a plugin when you want a complete feature. Use individual rules when you
@@ -33,9 +33,9 @@ Import a plugin module from `wenmode.plugins` and pass it to `Wenmode` with the
 
 ```python
 from wenmode import Wenmode
-from wenmode.plugins import math
+from wenmode.plugins import inline_math
 
-wen = Wenmode(plugins=[math])
+wen = Wenmode(plugins=[inline_math])
 
 assert wen.render('Inline $x + y$.\n') == (
     '<p>Inline <span class="math math-inline">x + y</span>.</p>\n'
@@ -51,28 +51,25 @@ from wenmode.plugins import mark, superscript
 wen = Wenmode(plugins=[mark, superscript])
 ```
 
-Some plugins accept setup options. For example, `math` can install only inline
-or block syntax. Use `wenmode.plugins.plugin()` when those options are part of
-constructor-time setup:
+Some plugins accept setup options. Use `wenmode.plugins.plugin()` when those
+options are part of constructor-time setup:
 
 ```python
 from wenmode import Wenmode
-from wenmode.plugins import math, plugin
+from wenmode.plugins import plugin, smartypants
 
-wen = Wenmode(plugins=[plugin(math, inline=False)])
+wen = Wenmode(plugins=[plugin(smartypants, dashes=False)])
 
-assert wen.render('Inline $x$.\n') == '<p>Inline $x$.</p>\n'
-assert wen.render('$$\nx\n$$\n') == '<div class="math math-display">x\n</div>\n'
+assert wen.render('"Hello..." -- ok\n') == '<p>“Hello…” -- ok</p>\n'
 ```
 
 Use `use()` when you need to pass options after an instance already exists:
 
 ```python
 from wenmode import Wenmode
-from wenmode.plugins import math
+from wenmode.plugins import smartypants
 
-inline_math = Wenmode().use(math, block=False)
-block_math = Wenmode().use(math, inline=False)
+wen = Wenmode().use(smartypants, dashes=False)
 ```
 
 Use `Wenmode.use(plugin, **options)` when you need to install a plugin after the
@@ -84,25 +81,27 @@ chain-style setup remains supported.
 | Plugin | Enables |
 | --- | --- |
 | `wenmode.plugins.abbr` | Abbreviation definitions and `abbreviation` nodes |
+| `wenmode.plugins.block_spoiler` | Block spoiler containers |
 | `wenmode.plugins.cjk_friendly` | CJK-friendly inline parsing behavior |
 | `wenmode.plugins.definition_list` | Definition list syntax and nodes |
 | `wenmode.plugins.fenced_directive` | MyST-style fenced directives, rendered as `containerDirective` or `literalDirective` nodes |
 | `wenmode.plugins.frontmatter` | Top-level `---` front matter stored on `root.data["frontmatter"]` |
 | `wenmode.plugins.html_container` | Standalone HTML tag pairs whose body is parsed as Markdown blocks |
+| `wenmode.plugins.block_math` | Display math blocks |
+| `wenmode.plugins.inline_math` | Inline math spans |
 | `wenmode.plugins.inline_role` | MyST-style inline roles, rendered as `textDirective` nodes |
+| `wenmode.plugins.inline_spoiler` | Inline spoiler spans |
 | `wenmode.plugins.insert` | `insert` inline nodes |
 | `wenmode.plugins.mark` | `mark` inline nodes |
-| `wenmode.plugins.math` | Display and inline math nodes |
 | `wenmode.plugins.ruby` | Ruby annotation nodes |
 | `wenmode.plugins.smartypants` | HTML smart punctuation rendering for quotes, dashes, and ellipses |
-| `wenmode.plugins.spoiler` | Block and inline spoiler nodes |
 | `wenmode.plugins.subscript` | `subscript` inline nodes |
 | `wenmode.plugins.superscript` | `superscript` inline nodes |
 
 Each plugin also registers default HTML, Markdown, RST, or AsciiDoc renderer
 handlers when the feature has a standard representation in Wenmode's built-in
 renderers.
-Plugins that introduce custom node types expose a `nodes` registry for
+Plugins that introduce custom node types expose a `nodes` class list for
 `wenmode.ast.from_ast()`; see {ref}`reference-nodes`.
 
 ## CJK-Friendly Parsing

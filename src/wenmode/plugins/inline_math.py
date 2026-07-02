@@ -8,11 +8,10 @@ from wenmode.nodes import Literal, Node
 from wenmode.renderers import MarkdownRenderer, RenderContext
 from wenmode.renderers.asciidoc import AsciiDocRenderContext, AsciiDocRenderer
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
-from wenmode.renderers.rst import RSTRenderContext, RSTRenderer, indent_block
-from wenmode.rules.base import BlockRule, InlineRule, Rule
-from wenmode.rules.blocks.util import collect_until
+from wenmode.renderers.rst import RSTRenderContext, RSTRenderer
+from wenmode.rules.base import InlineRule, Rule
 from wenmode.state import BlockState
-from wenmode.utils import is_escaped, match_pattern
+from wenmode.utils import is_escaped
 
 from .types import RendererHandlers
 
@@ -20,40 +19,12 @@ if TYPE_CHECKING:
     from wenmode import Wenmode
     from wenmode.parser import Parser
 
-MATH_OPENER_RE = re.compile(r'^[ \t]{0,3}\$\$[ \t]*')
-MATH_CLOSER_RE = re.compile(r'^[ \t]{0,3}\$\$[ \t]*(?:\r?\n)?$')
-
-
-@dataclass
-class MathNode(Literal):
-    """Display math block node."""
-
-    type: str = 'math'
-
 
 @dataclass
 class InlineMathNode(Literal):
     """Inline math node."""
 
     type: str = 'inlineMath'
-
-
-class MathBlockRule(BlockRule):
-    """Parse display math blocks fenced by ``$$`` markers."""
-
-    name = 'math_block'
-    pattern = r'[ \t]{0,3}\$\$'
-
-    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node:
-        rest = parse_math_opener(state.line)
-        if rest is None:  # pragma: no cover - block opener already matched
-            rest = ''
-        lines: list[str] = []
-        if rest:
-            lines.append(rest + '\n')
-        state.advance()
-        lines.extend(collect_until(state, lambda line: match_pattern(MATH_CLOSER_RE, line)))
-        return MathNode(value=''.join(lines))
 
 
 class InlineMathRule(InlineRule):
@@ -93,19 +64,6 @@ def find_closing_dollar(text: str, start: int) -> int | None:
     return None
 
 
-def parse_math_opener(line: str) -> str | None:
-    text = line
-    if text.endswith('\n'):
-        text = text[:-1]
-        if text.endswith('\r'):
-            text = text[:-1]
-
-    match = MATH_OPENER_RE.match(text)
-    if match is None:
-        return None
-    return text[match.end() :]
-
-
 def is_opening_space(text: str, index: int) -> bool:
     return index + 1 >= len(text) or text[index + 1].isspace()
 
@@ -130,43 +88,16 @@ def is_adjacent_to_dollar(text: str, index: int) -> bool:
     return previous_is_dollar or next_is_dollar
 
 
-def render_html_math(renderer: HTMLRenderer, node: MathNode, context: HTMLRenderContext) -> str:
-    return f'<div class="math math-display">{renderer.escape_html(node.value)}</div>\n'
-
-
 def render_html_inline_math(renderer: HTMLRenderer, node: InlineMathNode, context: HTMLRenderContext) -> str:
     return f'<span class="math math-inline">{renderer.escape_html(node.value)}</span>'
-
-
-def render_markdown_math(renderer: MarkdownRenderer, node: MathNode, context: RenderContext) -> str:
-    if node.value.endswith('\n'):
-        value = node.value
-    else:
-        value = node.value + '\n'
-    return f'$$\n{value}$$\n\n'
 
 
 def render_markdown_inline_math(renderer: MarkdownRenderer, node: InlineMathNode, context: RenderContext) -> str:
     return f'${node.value}$'
 
 
-def render_rst_math(renderer: RSTRenderer, node: MathNode, context: RSTRenderContext) -> str:
-    if node.value.endswith('\n'):
-        value = node.value
-    else:
-        value = node.value + '\n'
-    return '.. math::\n\n' + indent_block(value.rstrip('\n'), '   ') + '\n\n'
-
-
 def render_rst_inline_math(renderer: RSTRenderer, node: InlineMathNode, context: RSTRenderContext) -> str:
     return f':math:`{renderer.escape_interpreted_text(node.value)}`'
-
-
-def render_asciidoc_math(renderer: AsciiDocRenderer, node: MathNode, context: AsciiDocRenderContext) -> str:
-    value = node.value.rstrip('\n')
-    if value:
-        return '[stem]\n++++\n' + value + '\n++++\n\n'
-    return '[stem]\n++++\n++++\n\n'
 
 
 def render_asciidoc_inline_math(
@@ -175,21 +106,16 @@ def render_asciidoc_inline_math(
     return f'stem:[{node.value}]'
 
 
-nodes = {MathNode.type: MathNode, InlineMathNode.type: InlineMathNode}
-rules: list[type[Rule] | Rule] = [MathBlockRule, InlineMathRule]
+nodes = [InlineMathNode]
+rules: list[type[Rule] | Rule] = [InlineMathRule]
 handlers: RendererHandlers = {
-    'html': {MathNode.type: render_html_math, InlineMathNode.type: render_html_inline_math},
-    'markdown': {MathNode.type: render_markdown_math, InlineMathNode.type: render_markdown_inline_math},
-    'rst': {MathNode.type: render_rst_math, InlineMathNode.type: render_rst_inline_math},
-    'asciidoc': {MathNode.type: render_asciidoc_math, InlineMathNode.type: render_asciidoc_inline_math},
+    'html': {InlineMathNode.type: render_html_inline_math},
+    'markdown': {InlineMathNode.type: render_markdown_inline_math},
+    'rst': {InlineMathNode.type: render_rst_inline_math},
+    'asciidoc': {InlineMathNode.type: render_asciidoc_inline_math},
 }
 
 
-def setup(wenmode: Wenmode, block: bool = True, inline: bool = True, **options: Any) -> None:
-    selected_rules: list[type[Rule] | Rule] = []
-    if block:
-        selected_rules.append(MathBlockRule)
-    if inline:
-        selected_rules.append(InlineMathRule)
-    wenmode.register_rules(selected_rules)
+def setup(wenmode: Wenmode, **options: Any) -> None:
+    wenmode.register_rules(rules)
     wenmode.register_renderer_handlers(handlers)

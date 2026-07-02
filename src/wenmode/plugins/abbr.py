@@ -205,7 +205,7 @@ def render_rst(renderer: RSTRenderer, node: AbbreviationNode, context: RSTRender
     return f':abbr:`{content} ({renderer.escape_text(node.title)})`'
 
 
-nodes = {AbbreviationNode.type: AbbreviationNode}
+nodes = [AbbreviationNode]
 rules: list[type[Rule] | Rule] = [AbbreviationRule]
 handlers: RendererHandlers = {
     'html': {AbbreviationNode.type: render_html},

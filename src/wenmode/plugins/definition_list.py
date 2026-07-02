@@ -279,11 +279,7 @@ def render_asciidoc_definition_body(
     return renderer.render_children(children, context).rstrip('\n')
 
 
-nodes = {
-    DefinitionListNode.type: DefinitionListNode,
-    DefinitionTermNode.type: DefinitionTermNode,
-    DefinitionDescriptionNode.type: DefinitionDescriptionNode,
-}
+nodes = [DefinitionListNode, DefinitionTermNode, DefinitionDescriptionNode]
 rules: list[type[Rule] | Rule] = [DefinitionListRule]
 handlers: RendererHandlers = {
     'html': {

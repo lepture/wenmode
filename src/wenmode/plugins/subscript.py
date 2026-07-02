@@ -55,7 +55,7 @@ def render_asciidoc(renderer: AsciiDocRenderer, node: SubscriptNode, context: As
     return f'~{renderer.render_children(node.children, context)}~'
 
 
-nodes = {SubscriptNode.type: SubscriptNode}
+nodes = [SubscriptNode]
 rules: list[type[Rule] | Rule] = [SubscriptRule]
 handlers: RendererHandlers = {
     'html': {SubscriptNode.type: render_html},

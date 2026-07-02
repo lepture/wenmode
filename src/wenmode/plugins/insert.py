@@ -61,7 +61,7 @@ def render_asciidoc(renderer: AsciiDocRenderer, node: InsertNode, context: Ascii
     return f'[.underline]#{renderer.render_children(node.children, context)}#'
 
 
-nodes = {InsertNode.type: InsertNode}
+nodes = [InsertNode]
 rules: list[type[Rule] | Rule] = [InsertRule]
 handlers: RendererHandlers = {
     'html': {InsertNode.type: render_html},

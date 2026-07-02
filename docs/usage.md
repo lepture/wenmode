@@ -126,7 +126,7 @@ Enable built-in plugins with `--plugin`. Repeat the option to enable multiple
 plugins.
 
 ```bash
-wenmode render notes.md --plugin=frontmatter --plugin=math
+wenmode render notes.md --plugin=frontmatter --plugin=inline_math
 ```
 
 HTML output uses the same safety defaults as `HTMLRenderer()`: raw HTML nodes are

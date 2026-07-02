@@ -14,13 +14,12 @@ from tests.ast_fixtures import (
 )
 from wenmode import Wenmode
 from wenmode.ast import (
-    BUILTIN_NODE_REGISTRY,
+    BUILTIN_NODES,
     find,
     find_all,
     from_ast,
     iter_children,
     plain_text,
-    registry_from_plugins,
     walk,
 )
 from wenmode.nodes import (
@@ -35,7 +34,7 @@ from wenmode.nodes import (
     Position,
     Text,
 )
-from wenmode.plugins import definition_list, math, plugin
+from wenmode.plugins import block_math, definition_list
 from wenmode.presets import github
 
 
@@ -43,6 +42,13 @@ from wenmode.presets import github
 class Callout(Parent):
     kind: str = ''
     type: str = 'callout'
+
+
+def collect_plugin_nodes(plugins: list[object]) -> list[type[Node]]:
+    nodes: list[type[Node]] = []
+    for plugin in plugins:
+        nodes.extend(getattr(plugin, 'nodes', []))
+    return nodes
 
 
 @pytest.mark.parametrize(
@@ -53,7 +59,7 @@ class Callout(Parent):
 def test_from_ast_round_trips_builtin_node_shapes(node_type: str, node_class: type[Node], ast: dict) -> None:
     node = from_ast(ast)
 
-    assert BUILTIN_NODE_REGISTRY[node_type] is node_class
+    assert {node.type: node for node in BUILTIN_NODES}[node_type] is node_class
     assert isinstance(node, node_class)
     assert node.to_ast() == ast
 
@@ -64,25 +70,27 @@ def test_from_ast_round_trips_builtin_node_shapes(node_type: str, node_class: ty
     ids=[node_type for node_type, _node_class, _ast in PLUGIN_NODE_SAMPLES],
 )
 def test_from_ast_round_trips_plugin_node_shapes(node_type: str, node_class: type[Node], ast: dict) -> None:
-    registry = registry_from_plugins(PLUGIN_REGISTRY_TARGETS)
-    node = from_ast(ast, registry=registry)
+    nodes = collect_plugin_nodes(PLUGIN_REGISTRY_TARGETS)
+    node = from_ast(ast, nodes=nodes)
 
-    assert registry[node_type] is node_class
+    assert {node.type: node for node in nodes}[node_type] is node_class
     assert isinstance(node, node_class)
     assert node.to_ast() == ast
 
 
-def test_registry_from_plugins_collects_all_builtin_plugin_nodes() -> None:
-    registry = registry_from_plugins(PLUGIN_REGISTRY_TARGETS)
+def test_builtin_plugins_expose_node_lists() -> None:
+    nodes = collect_plugin_nodes(PLUGIN_REGISTRY_TARGETS)
 
-    assert registry == {node_type: node_class for node_type, node_class, _ast in PLUGIN_NODE_SAMPLES}
+    assert {node.type: node for node in nodes} == {
+        node_type: node_class for node_type, node_class, _ast in PLUGIN_NODE_SAMPLES
+    }
 
 
 def test_parsed_plugin_ast_round_trips_through_plugin_registry() -> None:
     app = Wenmode(github, plugins=PLUGIN_ROUND_TRIP_TARGETS)
 
     ast = app.parse(PLUGIN_ROUND_TRIP_MARKDOWN).to_ast()
-    restored = from_ast(ast, registry=registry_from_plugins(PLUGIN_ROUND_TRIP_TARGETS))
+    restored = from_ast(ast, nodes=collect_plugin_nodes(PLUGIN_ROUND_TRIP_TARGETS))
 
     assert restored.to_ast() == ast
     assert {node.type for node in walk(restored)} >= PLUGIN_ROUND_TRIP_NODE_TYPES
@@ -256,7 +264,7 @@ def test_from_ast_uses_custom_registry() -> None:
             'kind': 'warning',
             'children': [{'type': 'text', 'value': 'Careful'}],
         },
-        registry={'callout': Callout},
+        nodes=[Callout],
     )
 
     assert isinstance(node, Callout)
@@ -268,7 +276,18 @@ def test_from_ast_uses_custom_registry() -> None:
     }
 
 
-def test_registry_from_plugins_restores_builtin_plugin_nodes() -> None:
+def test_from_ast_rejects_mapping_registry() -> None:
+    with pytest.raises(TypeError, match='nodes entries must be Node classes'):
+        from_ast(
+            {
+                'type': 'callout',
+                'kind': 'warning',
+            },
+            nodes={'callout': Callout},
+        )
+
+
+def test_from_ast_restores_builtin_plugin_nodes() -> None:
     ast = {
         'type': 'root',
         'children': [
@@ -287,8 +306,8 @@ def test_registry_from_plugins_restores_builtin_plugin_nodes() -> None:
         ],
     }
 
-    registry = registry_from_plugins([plugin(math, inline=False), definition_list])
-    node = from_ast(ast, registry=registry)
+    nodes = [*block_math.nodes, *definition_list.nodes]
+    node = from_ast(ast, nodes=nodes)
 
     assert type(node.children[0]).__name__ == 'MathNode'
     assert type(node.children[1]).__name__ == 'DefinitionListNode'

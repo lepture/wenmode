@@ -38,40 +38,40 @@ from .nodes import (
 )
 
 NodeMatcher: TypeAlias = str | type[Node] | tuple[str | type[Node], ...]
-NodeRegistry: TypeAlias = Mapping[str, type[Node]]
+NodeClasses: TypeAlias = Iterable[type[Node]]
 UnknownNodePolicy: TypeAlias = str
-BUILTIN_NODE_REGISTRY: dict[str, type[Node]] = {
-    'root': Root,
-    'paragraph': Paragraph,
-    'heading': Heading,
-    'blockquote': Blockquote,
-    'list': List,
-    'listItem': ListItem,
-    'code': Code,
-    'thematicBreak': ThematicBreak,
-    'html': Html,
-    'text': Text,
-    'inlineCode': InlineCode,
-    'strong': Strong,
-    'emphasis': Emphasis,
-    'delete': Delete,
-    'table': Table,
-    'tableRow': TableRow,
-    'tableCell': TableCell,
-    'link': Link,
-    'image': Image,
-    'break': Break,
-    'footnoteReference': FootnoteReference,
-    'footnoteDefinition': FootnoteDefinition,
-    'textDirective': TextDirective,
-    'leafDirective': LeafDirective,
-    'containerDirective': ContainerDirective,
-    'literalDirective': LiteralDirective,
-}
+BUILTIN_NODES: list[type[Node]] = [
+    Root,
+    Paragraph,
+    Heading,
+    Blockquote,
+    List,
+    ListItem,
+    Code,
+    ThematicBreak,
+    Html,
+    Text,
+    InlineCode,
+    Strong,
+    Emphasis,
+    Delete,
+    Table,
+    TableRow,
+    TableCell,
+    Link,
+    Image,
+    Break,
+    FootnoteReference,
+    FootnoteDefinition,
+    TextDirective,
+    LeafDirective,
+    ContainerDirective,
+    LiteralDirective,
+]
 __all__ = [
-    'BUILTIN_NODE_REGISTRY',
+    'BUILTIN_NODES',
+    'NodeClasses',
     'NodeMatcher',
-    'NodeRegistry',
     'UnknownNodePolicy',
     'find',
     'find_all',
@@ -79,7 +79,6 @@ __all__ = [
     'iter_children',
     'node_from_ast',
     'plain_text',
-    'registry_from_plugins',
     'walk',
 ]
 
@@ -87,14 +86,15 @@ __all__ = [
 def from_ast(
     data: Mapping[str, Any],
     *,
-    registry: NodeRegistry | None = None,
+    nodes: NodeClasses | None = None,
     unknown: UnknownNodePolicy = 'generic',
 ) -> Node:
     """Convert a mdast-like mapping into Wenmode nodes.
 
     Built-in mdast-compatible node types are restored as their concrete Wenmode
-    node classes. Pass ``registry`` to restore plugin node types. Unknown nodes
-    are preserved as generic :class:`~wenmode.nodes.Parent`,
+    node classes. Pass ``nodes`` as an iterable of node classes to restore
+    plugin node types. Unknown nodes are preserved as generic
+    :class:`~wenmode.nodes.Parent`,
     :class:`~wenmode.nodes.Literal`, or :class:`~wenmode.nodes.Node` instances by
     default; pass ``unknown="error"`` to reject them.
 
@@ -102,46 +102,39 @@ def from_ast(
     ``position.end.offset`` are present. Line and column values alone are not
     enough to reconstruct Wenmode's internal offset ranges.
     """
-    return node_from_ast(data, registry=registry, unknown=unknown)
+    return node_from_ast(data, nodes=nodes, unknown=unknown)
 
 
 def node_from_ast(
     data: Mapping[str, Any],
     *,
-    registry: NodeRegistry | None = None,
+    nodes: NodeClasses | None = None,
     unknown: UnknownNodePolicy = 'generic',
 ) -> Node:
     """Convert one AST node mapping into a Wenmode node."""
     if unknown not in {'generic', 'error'}:
         raise ValueError('unknown must be "generic" or "error"')
 
-    node_registry = dict(BUILTIN_NODE_REGISTRY)
-    if registry is not None:
-        node_registry.update(registry)
-    return _node_from_ast(data, node_registry, unknown)
+    node_lookup = _node_lookup(BUILTIN_NODES)
+    if nodes is not None:
+        node_lookup.update(_node_lookup(nodes))
+    return _node_from_ast(data, node_lookup, unknown)
 
 
-def registry_from_plugins(plugins: Iterable[object]) -> dict[str, type[Node]]:
-    """Return a node registry collected from plugin ``nodes`` mappings.
-
-    The returned mapping is intended for :func:`from_ast`, which already merges
-    custom registries with Wenmode's built-in node registry.
-    """
-    registry: dict[str, type[Node]] = {}
-    for plugin in plugins:
-        target = getattr(plugin, 'target', plugin)
-        nodes = getattr(target, 'nodes', None)
-        if nodes is None:
-            continue
-        if not isinstance(nodes, Mapping):
-            raise TypeError('plugin nodes registry must be a mapping')
-        for node_type, node_class in nodes.items():
-            if not isinstance(node_type, str) or not node_type:
-                raise TypeError('plugin node registry keys must be non-empty strings')
-            if not isinstance(node_class, type) or not issubclass(node_class, Node):
-                raise TypeError('plugin node registry values must be Node classes')
-            registry[node_type] = node_class
-    return registry
+def _node_lookup(
+    nodes: NodeClasses,
+    *,
+    error_prefix: str = 'nodes',
+) -> dict[str, type[Node]]:
+    result: dict[str, type[Node]] = {}
+    for node_class in nodes:
+        if not isinstance(node_class, type) or not issubclass(node_class, Node):
+            raise TypeError(f'{error_prefix} entries must be Node classes')
+        node_type = getattr(node_class, 'type', None)
+        if not isinstance(node_type, str) or not node_type:
+            raise TypeError(f'{error_prefix} entries must define a non-empty string type')
+        result[node_type] = node_class
+    return result
 
 
 def iter_children(node: Node) -> Iterator[Node]:
@@ -248,7 +241,7 @@ def _matches(node: Node, matcher: NodeMatcher | None) -> bool:
 
 def _node_from_ast(
     data: Mapping[str, Any],
-    registry: dict[str, type[Node]],
+    node_lookup: dict[str, type[Node]],
     unknown: UnknownNodePolicy,
 ) -> Node:
     node_type = data.get('type')
@@ -267,14 +260,14 @@ def _node_from_ast(
         if key == 'children':
             if not isinstance(value, list):
                 raise TypeError('AST node "children" must be a list')
-            attrs[key] = [_ast_value_from_ast(item, registry, unknown) for item in value]
+            attrs[key] = [_ast_value_from_ast(item, node_lookup, unknown) for item in value]
             continue
         if key == 'data':
             attrs[key] = dict(value) if isinstance(value, Mapping) else value
             continue
-        attrs[key] = _ast_value_from_ast(value, registry, unknown)
+        attrs[key] = _ast_value_from_ast(value, node_lookup, unknown)
 
-    node_class = registry.get(node_type)
+    node_class = node_lookup.get(node_type)
     if node_class is None:
         if unknown == 'error':
             raise ValueError(f'unsupported AST node type: {node_type}')
@@ -282,11 +275,11 @@ def _node_from_ast(
     return _construct_node(node_class, node_type, attrs)
 
 
-def _ast_value_from_ast(value: Any, registry: dict[str, type[Node]], unknown: UnknownNodePolicy) -> Any:
+def _ast_value_from_ast(value: Any, node_lookup: dict[str, type[Node]], unknown: UnknownNodePolicy) -> Any:
     if isinstance(value, Mapping) and isinstance(value.get('type'), str):
-        return _node_from_ast(value, registry, unknown)
+        return _node_from_ast(value, node_lookup, unknown)
     if isinstance(value, list):
-        return [_ast_value_from_ast(item, registry, unknown) for item in value]
+        return [_ast_value_from_ast(item, node_lookup, unknown) for item in value]
     return value
 
 

@@ -235,9 +235,9 @@ ruby text, HTML smart punctuation, and extra inline formatting:
 
 ```python
 from wenmode import Wenmode
-from wenmode.plugins import math
+from wenmode.plugins import inline_math
 
-wen = Wenmode(plugins=[math])
+wen = Wenmode(plugins=[inline_math])
 
 assert wen.render('Inline $x + y$.\n') == (
     '<p>Inline <span class="math math-inline">x + y</span>.</p>\n'

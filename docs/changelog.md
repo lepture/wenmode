@@ -13,6 +13,20 @@ here while preparing a release, then move them under the final version heading.
 
 ## Unreleased
 
+### Breaking Changes
+
+- Change `from_ast()` and `node_from_ast()` to accept `nodes=[MyNode]`
+  instead of `registry={MyNode.type: MyNode}`, and remove
+  `registry_from_plugins()`.
+- Rename `BUILTIN_NODE_REGISTRY` to `BUILTIN_NODES`, and change built-in plugin
+  `nodes` exports to node class lists instead of `{type: class}` mappings.
+- Split `wenmode.plugins.math` into `wenmode.plugins.inline_math` and
+  `wenmode.plugins.block_math`.
+- Split `wenmode.plugins.spoiler` into `wenmode.plugins.inline_spoiler` and
+  `wenmode.plugins.block_spoiler`.
+
+### Added
+
 - Add `AsciiDocRenderer`, CLI `--format=asciidoc` support, and built-in plugin
   handlers for best-effort serialization to AsciiDoc.
 - Add `wenmode.plugins.cjk_friendly` for opt-in CJK-friendly inline parsing,
@@ -21,7 +35,7 @@ here while preparing a release, then move them under the final version heading.
 - Add `wenmode.plugins.smartypants` for opt-in HTML smart punctuation rendering
   of quotes, dashes, and ellipses in plain text nodes.
 - Document core and plugin AST node shape contracts and expand round-trip
-  coverage for `from_ast()` with plugin node registries.
+  coverage for `from_ast()` with plugin node classes.
 
 ## 0.8.0
 

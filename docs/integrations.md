@@ -223,12 +223,12 @@ rendering, background jobs, and test fixtures.
 
 ```python
 from wenmode import Wenmode
-from wenmode.plugins import frontmatter, math
+from wenmode.plugins import block_math, frontmatter, inline_math
 from wenmode.presets import commonmark, create_preset
 from wenmode.rules import HtmlBlock, RawHtml
 
 product_rules = create_preset(commonmark, remove=[HtmlBlock, RawHtml])
-product_plugins = [frontmatter, math]
+product_plugins = [frontmatter, inline_math, block_math]
 
 
 def create_product_markdown(**options):

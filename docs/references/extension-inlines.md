@@ -184,7 +184,7 @@ Output node is `RubyNode`, and its AST is:
 
 ## Spoiler Plugin
 
-`wenmode.plugins.spoiler` parses spoiler spans delimited by `>!` and `!<`.
+`wenmode.plugins.inline_spoiler` parses spoiler spans delimited by `>!` and `!<`.
 
 ```markdown
 >! secret !<
@@ -214,9 +214,9 @@ Output node is `InlineSpoilerNode`, and its AST is:
 }
 ```
 
-## Math Plugin
+## Inline Math Plugin
 
-`wenmode.plugins.math` parses inline math delimited by `$`.
+`wenmode.plugins.inline_math` parses inline math delimited by `$`.
 
 ```markdown
 $x + y$

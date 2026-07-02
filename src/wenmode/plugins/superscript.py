@@ -54,7 +54,7 @@ def render_asciidoc(renderer: AsciiDocRenderer, node: SuperscriptNode, context: 
     return f'^{renderer.render_children(node.children, context)}^'
 
 
-nodes = {SuperscriptNode.type: SuperscriptNode}
+nodes = [SuperscriptNode]
 rules: list[type[Rule] | Rule] = [SuperscriptRule]
 handlers: RendererHandlers = {
     'html': {SuperscriptNode.type: render_html},

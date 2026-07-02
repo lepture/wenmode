@@ -10,7 +10,7 @@ from tests.plugin_helpers import configured_app
 from wenmode import AsciiDocRenderer, HTMLRenderer, MarkdownRenderer, RSTRenderer, Wenmode
 from wenmode.directives import Admonition, Details, Figure, TableOfContents
 from wenmode.nodes import Html, Image, Link, Literal, Paragraph, Parent, Root, Text
-from wenmode.plugins import math
+from wenmode.plugins import inline_math
 from wenmode.renderers import BaseRenderer, RenderContext
 from wenmode.rules import (
     Footnote,
@@ -330,7 +330,7 @@ def test_rst_renderer_normalizes_multiline_image_options() -> None:
 
 
 def test_rst_renderer_escapes_backticks_in_inline_math() -> None:
-    app = Wenmode(renderer=RSTRenderer(), plugins=[math])
+    app = Wenmode(renderer=RSTRenderer(), plugins=[inline_math])
 
     assert app.render('$x` y$\n') == ':math:`x\\` y`\n'
 

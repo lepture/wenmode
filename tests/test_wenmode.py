@@ -8,7 +8,7 @@ import pytest
 from wenmode import Parser, Wenmode
 from wenmode.directives import Admonition
 from wenmode.nodes import Literal
-from wenmode.plugins import math, plugin, ruby
+from wenmode.plugins import plugin, ruby, smartypants
 from wenmode.renderers import HTMLRenderer, RenderContext
 from wenmode.rules import AtxHeading, ContainerDirective, Link
 
@@ -56,29 +56,26 @@ def test_wenmode_accepts_plugins_during_initialization() -> None:
 
 
 def test_wenmode_uses_plugin_options() -> None:
-    wen = Wenmode().use(math, inline=False)
+    wen = Wenmode().use(smartypants, dashes=False)
 
-    assert wen.render('Inline $x$.\n') == '<p>Inline $x$.</p>\n'
-    assert wen.render('$$\nx\n$$\n') == '<div class="math math-display">x\n</div>\n'
+    assert wen.render('"Hello..." -- ok\n') == '<p>“Hello…” -- ok</p>\n'
 
 
 def test_wenmode_accepts_plugin_specs_during_initialization() -> None:
-    wen = Wenmode([], plugins=[plugin(math, inline=False)])
+    wen = Wenmode([], plugins=[plugin(smartypants, dashes=False)])
 
-    assert wen.render('Inline $x$.\n') == '<p>Inline $x$.</p>\n'
-    assert wen.render('$$\nx\n$$\n') == '<div class="math math-display">x\n</div>\n'
+    assert wen.render('"Hello..." -- ok\n') == '<p>“Hello…” -- ok</p>\n'
 
 
 def test_wenmode_accepts_plugin_specs_with_use() -> None:
-    wen = Wenmode([]).use(plugin(math, inline=False))
+    wen = Wenmode([]).use(plugin(smartypants, dashes=False))
 
-    assert wen.render('Inline $x$.\n') == '<p>Inline $x$.</p>\n'
-    assert wen.render('$$\nx\n$$\n') == '<div class="math math-display">x\n</div>\n'
+    assert wen.render('"Hello..." -- ok\n') == '<p>“Hello…” -- ok</p>\n'
 
 
 def test_wenmode_rejects_plugin_spec_plus_extra_options() -> None:
     with pytest.raises(TypeError, match='plugin specs cannot be combined with extra options'):
-        Wenmode([]).use(plugin(math, inline=False), block=False)
+        Wenmode([]).use(plugin(smartypants, dashes=False), quotes=False)
 
 
 def test_wenmode_rejects_modules_without_setup() -> None:
@@ -93,7 +90,7 @@ def test_wenmode_rejects_constructor_plugins_without_setup() -> None:
 
 def test_wenmode_rejects_constructor_plugin_option_tuples() -> None:
     with pytest.raises(TypeError, match='plugins must define setup'):
-        Wenmode(plugins=[(math, {'inline': False})])
+        Wenmode(plugins=[(smartypants, {'dashes': False})])
 
 
 def test_wenmode_registers_renderer_handlers_for_current_renderer() -> None:

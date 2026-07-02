@@ -72,7 +72,7 @@ node-specific:
 | `literalDirective` | `LiteralDirective` | `value`, `name`, `argument`, `attributes` |
 
 Plugin nodes have the same common fields, but their concrete classes are only
-restored by `from_ast()` when you pass a plugin node registry:
+restored by `from_ast()` when you pass plugin node classes:
 
 | Type | Plugin class | Fields beyond `type`, `data`, and `position` |
 | --- | --- | --- |
@@ -81,10 +81,10 @@ restored by `from_ast()` when you pass a plugin node registry:
 | `definitionTerm` | `definition_list.DefinitionTermNode` | `children` |
 | `definitionDescription` | `definition_list.DefinitionDescriptionNode` | `children`, `spread` |
 | `htmlContainer` | `html_container.HtmlContainerNode` | `children`, `name`, `attributes`, `opening`, `closing` |
-| `math` | `math.MathNode` | `value` |
-| `inlineMath` | `math.InlineMathNode` | `value` |
-| `blockSpoiler` | `spoiler.BlockSpoilerNode` | `children` |
-| `inlineSpoiler` | `spoiler.InlineSpoilerNode` | `children` |
+| `math` | `block_math.MathNode` | `value` |
+| `inlineMath` | `inline_math.InlineMathNode` | `value` |
+| `blockSpoiler` | `block_spoiler.BlockSpoilerNode` | `children` |
+| `inlineSpoiler` | `inline_spoiler.InlineSpoilerNode` | `children` |
 | `mark` | `mark.MarkNode` | `children` |
 | `insert` | `insert.InsertNode` | `children` |
 | `superscript` | `superscript.SuperscriptNode` | `children` |
@@ -104,7 +104,8 @@ nodes. `frontmatter` stores metadata on `root.data["frontmatter"]`,
 ## AST interoperability
 
 `wenmode.ast.from_ast()` converts a mdast-like mapping back into Wenmode node
-objects. Built-in node types are restored from Wenmode's built-in registry:
+objects. Built-in node types are restored from Wenmode's built-in node class
+list:
 
 ```python
 from wenmode.ast import from_ast
@@ -116,30 +117,24 @@ node = from_ast({
 ```
 
 Plugin nodes live in their plugin modules. When you need concrete plugin node
-classes after loading serialized AST data, collect registries from the plugins
+classes after loading serialized AST data, collect node classes from the plugins
 used by that Markdown dialect:
 
 ```python
-from wenmode.ast import from_ast, registry_from_plugins
-from wenmode.plugins import html_container, math, plugin
+from wenmode.ast import from_ast
+from wenmode.plugins import block_math, html_container
 
-registry = registry_from_plugins([html_container, plugin(math, inline=False)])
 node = from_ast({
     'type': 'math',
     'value': 'x + y\n',
-}, registry=registry)
+}, nodes=[*html_container.nodes, *block_math.nodes])
 
 assert type(node).__name__ == 'MathNode'
 ```
 
-Each built-in plugin exposes a `nodes` mapping. Plugins that only reuse core
-node types expose an empty mapping, so they can still be passed to
-`registry_from_plugins()`.
-
-The registry is about node classes, not enabled syntax. For example,
-`plugin(math, inline=False)` still contributes both `math` and `inlineMath`
-classes to the registry, so AST data produced by a broader dialect can still be
-restored if needed.
+Each built-in plugin that defines custom node types exposes a `nodes` list.
+Pass the node classes for the Markdown dialect whose AST data you want to
+restore.
 
 Unknown node types are preserved as generic `Parent`, `Literal`, or `Node`
 instances by default so tools can round-trip data they do not understand. Pass

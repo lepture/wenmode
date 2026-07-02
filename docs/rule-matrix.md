@@ -69,10 +69,10 @@ The plugin name in the first column is the module you import from
 | `definition_list` | `DefinitionListRule` | continuation | `definitionList`, `definitionTerm`, `definitionDescription` | compatible |
 | `frontmatter` | `FrontmatterRule` | block + transform | stores parsed data on `root.data["frontmatter"]` | compatible |
 | `html_container` | `HtmlContainer` | block | replaces `HtmlBlock`; emits `htmlContainer` for standalone tag pairs and `html` for raw fallback cases | compatible |
-| `math` | `MathBlockRule` | block | `math` | compatible |
-| `math` | `InlineMathRule` | inline | `inlineMath` | compatible |
-| `spoiler` | `BlockSpoilerRule` | block | `blockSpoiler` | compatible |
-| `spoiler` | `InlineSpoilerRule` | inline | `inlineSpoiler` | compatible |
+| `block_math` | `MathBlockRule` | block | `math` | compatible |
+| `inline_math` | `InlineMathRule` | inline | `inlineMath` | compatible |
+| `block_spoiler` | `BlockSpoilerRule` | block | `blockSpoiler` | compatible |
+| `inline_spoiler` | `InlineSpoilerRule` | inline | `inlineSpoiler` | compatible |
 | `fenced_directive` | `FencedDirectiveRule` | block | `containerDirective`, or `literalDirective` for configured literal-body names such as `code-block` | compatible |
 | `inline_role` | `RoleRule` | inline | `textDirective` | compatible |
 | `mark` | `MarkRule` | inline | `mark` | compatible |
