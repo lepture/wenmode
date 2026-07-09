@@ -297,6 +297,10 @@ class StateStore:
             self._values[key.name] = key.factory()
         return cast(T, self._values[key.name])
 
+    def set(self, key: StateKey[T], value: T) -> None:
+        """Store a value for a key in this parse."""
+        self._values[key.name] = value
+
 
 class StreamLineBuffer:
     """Lazy line buffer for iterable Markdown sources."""

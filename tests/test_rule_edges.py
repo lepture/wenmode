@@ -129,6 +129,14 @@ def test_long_emphasis_runs_do_not_exceed_container_depth() -> None:
     assert app.render_node(root).startswith('<p>' + '*' * 960)
 
 
+def test_deep_link_label_brackets_do_not_recurse_before_destination_check() -> None:
+    markdown = '[' * 1000 + 'a' + ']' * 1000 + '(/u)\n'
+
+    html = Wenmode().render(markdown)
+
+    assert html == '<p><a href="/u">' + '[' * 999 + 'a' + ']' * 999 + '</a></p>\n'
+
+
 def max_emphasis_depth(node: Node) -> int:
     max_depth = 0
     stack: list[tuple[Node, int]] = [(node, 0)]

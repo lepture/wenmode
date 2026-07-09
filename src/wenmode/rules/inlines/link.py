@@ -6,11 +6,11 @@ from typing import TYPE_CHECKING
 from wenmode.nodes import Break, InlineCode, Node, Parent, Text
 from wenmode.nodes import Image as ImageNode
 from wenmode.nodes import Link as LinkNode
-from wenmode.state import BlockState, StateKey
+from wenmode.state import BlockState, SourceMap, StateKey
 from wenmode.utils import is_escaped, normalize_label_text, normalize_uri_text
 
 from ..base import InlineRule
-from ..references import ReferenceTransform, resolve_state_reference
+from ..references import REFERENCES_KEY, ReferenceTransform, resolve_state_reference
 from .html import EMAIL_RE, HTML_RE, URI_RE
 
 if TYPE_CHECKING:
@@ -20,6 +20,7 @@ if TYPE_CHECKING:
 ANGLE_SPAN_RE = re.compile(rf'{URI_RE}|{EMAIL_RE}|{HTML_RE}')
 ClosingBracketCache = dict[int, tuple[str, dict[int, int]]]
 CLOSING_BRACKET_CACHE = StateKey[ClosingBracketCache]('wenmode.inline.closing_brackets', lambda: {})
+IN_LINK_DEPTH = StateKey[int]('wenmode.inline.in_link_depth', lambda: 0)
 
 
 class Image(InlineRule):
@@ -85,13 +86,24 @@ class Link(InlineRule):
     def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
         if match.start() > 0 and text[match.start() - 1] == '!' and not is_escaped(text, match.start() - 1):
             return None, match.start()
+        if state.store.get(IN_LINK_DEPTH) > 0:
+            return None, match.start()
         parsed = parse_link_or_image(parser, text, match.start(), image=False, state=state, references=self.references)
         if parsed is None:
             return None, match.start()
 
         label, url, title, end, label_start, label_end = parsed
         label_source = parser.inline_source(text, state, label_start, label_end)
-        return LinkNode(url=url, title=title, children=parser.parse_inlines(label, state, source=label_source)), end
+        return LinkNode(url=url, title=title, children=parse_link_children(parser, label, state, label_source)), end
+
+
+def parse_link_children(parser: Parser, label: str, state: BlockState, source: SourceMap | None) -> list[Node]:
+    in_link = state.store.get(IN_LINK_DEPTH)
+    state.store.set(IN_LINK_DEPTH, in_link + 1)
+    try:
+        return parser.parse_inlines(label, state, source=source)
+    finally:
+        state.store.set(IN_LINK_DEPTH, in_link)
 
 
 def parse_link_or_image(
@@ -108,11 +120,11 @@ def parse_link_or_image(
 
     label = text[label_start:label_end]
     after_label = label_end + 1
-    if not image and label_contains_link(parser, label, state):
-        return None
 
     direct = parse_direct_destination(text, after_label)
     if direct is not None:
+        if not image and label_contains_link(parser, label, state):
+            return None
         url, title, end = direct
         return label, url, title, end, label_start, label_end
     if not references:
@@ -135,6 +147,8 @@ def parse_link_or_image(
 
     reference = resolve_state_reference(state, reference_label)
     if reference is not None:
+        if not image and label_contains_link(parser, label, state):
+            return None
         return label, reference.url, reference.title, end, label_start, label_end
     return None
 
@@ -188,15 +202,55 @@ def build_closing_bracket_map(text: str) -> dict[int, int]:
 def label_contains_link(parser: Parser, label: str, state: BlockState) -> bool:
     if '[' not in label:
         return False
-    return any(contains_link(node) for node in parser.parse_inlines(label, state))
+    if '](' not in label and '][' not in label and not state.store.get(REFERENCES_KEY):
+        return False
 
+    bracket_cache = closing_bracket_cache(state)
+    pairs = closing_bracket_map(label, bracket_cache)
+    start = label.find('[')
+    while start != -1:
+        if is_image_label(label, start):
+            start = label.find('[', start + 1)
+            continue
 
-def contains_link(node: Node) -> bool:
-    if isinstance(node, LinkNode):
-        return True
-    if isinstance(node, Parent):
-        return any(contains_link(child) for child in node.children)
+        label_start = start + 1
+        label_end = pairs.get(label_start)
+        if label_end is None:
+            start = label.find('[', start + 1)
+            continue
+
+        if link_destination_or_reference_exists(parser, label, label_start, label_end, state, pairs):
+            return True
+        start = label.find('[', start + 1)
     return False
+
+
+def is_image_label(text: str, start: int) -> bool:
+    return start > 0 and text[start - 1] == '!' and not is_escaped(text, start - 1)
+
+
+def link_destination_or_reference_exists(
+    parser: Parser,
+    text: str,
+    label_start: int,
+    label_end: int,
+    state: BlockState,
+    pairs: dict[int, int],
+) -> bool:
+    after_label = label_end + 1
+    if parse_direct_destination(text, after_label) is not None:
+        return True
+    if after_label < len(text) and text[after_label] == '[':
+        ref_end = pairs.get(after_label + 1)
+        if ref_end is None:
+            return False
+        explicit = text[after_label + 1 : ref_end]
+        if invalid_reference_label(explicit):
+            return False
+        reference_label = explicit or text[label_start:label_end]
+        return resolve_state_reference(state, reference_label) is not None
+    reference_label = text[label_start:label_end]
+    return not invalid_reference_label(reference_label) and resolve_state_reference(state, reference_label) is not None
 
 
 def invalid_reference_label(label: str) -> bool:

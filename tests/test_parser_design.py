@@ -26,7 +26,7 @@ from wenmode.rules import (
     Table,
     ThematicBreak,
 )
-from wenmode.state import BlockState, SourceMap, StateKey
+from wenmode.state import BlockState, SourceMap, StateKey, StateStore
 
 TERMS = StateKey('tests.terms', lambda: {})
 TERM_RE = re.compile(r'^[ \t]{0,3}@term\[(?P<label>[^\]]+)]:[ \t]*(?P<title>.*)$')
@@ -84,6 +84,15 @@ def test_rule_base_state_is_instance_local() -> None:
     first.root_transforms.append(GlossaryTransform())
 
     assert second.root_transforms == []
+
+
+def test_state_store_sets_scalar_values() -> None:
+    key = StateKey('tests.scalar', lambda: 0)
+    store = StateStore()
+
+    store.set(key, store.get(key) + 1)
+
+    assert store.get(key) == 1
 
 
 def test_inline_rule_compiles_pattern_on_init() -> None:

@@ -46,6 +46,10 @@ def test_unmatched_link_openers_do_not_rescan_suffixes() -> None:
     assert_scales_nearly_linearly(lambda size: '[' * size + '\n', commonmark)
 
 
+def test_nested_link_label_brackets_do_not_parse_labels_recursively() -> None:
+    assert_scales_nearly_linearly(lambda size: '[' * size + 'a' + ']' * size + '(/u)\n', commonmark, 200, 400)
+
+
 def test_failed_footnote_like_links_do_not_rescan_suffixes() -> None:
     assert_scales_nearly_linearly(lambda size: '[^x' * size + '\n', github)
 
