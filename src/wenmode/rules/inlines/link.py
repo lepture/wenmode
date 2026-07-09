@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from bisect import bisect_left
 from typing import TYPE_CHECKING
 
 from wenmode.nodes import Break, InlineCode, Node, Parent, Text
@@ -19,7 +20,9 @@ if TYPE_CHECKING:
 
 ANGLE_SPAN_RE = re.compile(rf'{URI_RE}|{EMAIL_RE}|{HTML_RE}')
 ClosingBracketCache = dict[int, tuple[str, dict[int, int]]]
+LinkContainmentCache = dict[tuple[int, bool, int, int], tuple[str, list[int], list[int]]]
 CLOSING_BRACKET_CACHE = StateKey[ClosingBracketCache]('wenmode.inline.closing_brackets', lambda: {})
+LINK_CONTAINMENT_CACHE = StateKey[LinkContainmentCache]('wenmode.inline.link_containment', lambda: {})
 IN_LINK_DEPTH = StateKey[int]('wenmode.inline.in_link_depth', lambda: 0)
 IMAGE_ALT_DEPTH = StateKey[int]('wenmode.inline.image_alt_depth', lambda: 0)
 
@@ -129,18 +132,18 @@ def parse_link_or_image(
     if label_end is None:
         return None
 
-    label = text[label_start:label_end]
     after_label = label_end + 1
 
     direct = parse_direct_destination(text, after_label)
     if direct is not None:
-        if not image and label_contains_link(parser, label, state):
+        if not image and label_contains_link(text, label_start, label_end, state, references):
             return None
         url, title, end = direct
-        return label, url, title, end, label_start, label_end
+        return text[label_start:label_end], url, title, end, label_start, label_end
     if not references:
         return None
 
+    label = text[label_start:label_end]
     reference_label = label
     end = after_label
     if after_label < len(text) and text[after_label] == '[':
@@ -158,7 +161,7 @@ def parse_link_or_image(
 
     reference = resolve_state_reference(state, reference_label)
     if reference is not None:
-        if not image and label_contains_link(parser, label, state):
+        if not image and label_contains_link(text, label_start, label_end, state, references):
             return None
         return label, reference.url, reference.title, end, label_start, label_end
     return None
@@ -210,58 +213,84 @@ def build_closing_bracket_map(text: str) -> dict[int, int]:
     return pairs
 
 
-def label_contains_link(parser: Parser, label: str, state: BlockState) -> bool:
-    if '[' not in label:
-        return False
-    if '](' not in label and '][' not in label and not state.store.get(REFERENCES_KEY):
-        return False
-
+def label_contains_link(
+    text: str,
+    label_start: int,
+    label_end: int,
+    state: BlockState,
+    references: bool,
+) -> bool:
     bracket_cache = closing_bracket_cache(state)
-    pairs = closing_bracket_map(label, bracket_cache)
-    start = label.find('[')
-    while start != -1:
-        if is_image_label(label, start):
-            start = label.find('[', start + 1)
-            continue
+    pairs = closing_bracket_map(text, bracket_cache)
+    starts, suffix_min_ends = link_containment_index(text, state, pairs, references)
+    index = bisect_left(starts, label_start)
+    return index < len(starts) and starts[index] < label_end and suffix_min_ends[index] <= label_end
 
-        label_start = start + 1
-        label_end = pairs.get(label_start)
-        if label_end is None:
-            start = label.find('[', start + 1)
-            continue
 
-        if link_destination_or_reference_exists(parser, label, label_start, label_end, state, pairs):
-            return True
-        start = label.find('[', start + 1)
-    return False
+def link_containment_index(
+    text: str,
+    state: BlockState,
+    pairs: dict[int, int],
+    references: bool,
+) -> tuple[list[int], list[int]]:
+    reference_cache = state.store.get(REFERENCES_KEY)
+    cache_key = (id(text), references, id(reference_cache), len(reference_cache))
+    cache = state.store.get(LINK_CONTAINMENT_CACHE)
+    cached = cache.get(cache_key)
+    if cached is not None and cached[0] is text:
+        return cached[1], cached[2]
+
+    ranges: list[tuple[int, int]] = []
+    for nested_label_start, nested_label_end in pairs.items():
+        opener = nested_label_start - 1
+        if is_image_label(text, opener):
+            continue
+        nested_end = link_destination_or_reference_end(text, nested_label_start, nested_label_end, state, pairs, references)
+        if nested_end is not None:
+            ranges.append((opener, nested_end))
+
+    ranges.sort()
+    starts = [start for start, _end in ranges]
+    suffix_min_ends = [end for _start, end in ranges]
+    for index in range(len(suffix_min_ends) - 2, -1, -1):
+        suffix_min_ends[index] = min(suffix_min_ends[index], suffix_min_ends[index + 1])
+    cache[cache_key] = (text, starts, suffix_min_ends)
+    return starts, suffix_min_ends
 
 
 def is_image_label(text: str, start: int) -> bool:
     return start > 0 and text[start - 1] == '!' and not is_escaped(text, start - 1)
 
 
-def link_destination_or_reference_exists(
-    parser: Parser,
+def link_destination_or_reference_end(
     text: str,
     label_start: int,
     label_end: int,
     state: BlockState,
     pairs: dict[int, int],
-) -> bool:
+    references: bool,
+) -> int | None:
     after_label = label_end + 1
-    if parse_direct_destination(text, after_label) is not None:
-        return True
+    direct = parse_direct_destination(text, after_label)
+    if direct is not None:
+        return direct[2]
+    if not references or not state.store.get(REFERENCES_KEY):
+        return None
     if after_label < len(text) and text[after_label] == '[':
         ref_end = pairs.get(after_label + 1)
         if ref_end is None:
-            return False
+            return None
         explicit = text[after_label + 1 : ref_end]
         if invalid_reference_label(explicit):
-            return False
+            return None
         reference_label = explicit or text[label_start:label_end]
-        return resolve_state_reference(state, reference_label) is not None
+        if resolve_state_reference(state, reference_label) is None:
+            return None
+        return ref_end + 1
     reference_label = text[label_start:label_end]
-    return not invalid_reference_label(reference_label) and resolve_state_reference(state, reference_label) is not None
+    if invalid_reference_label(reference_label) or resolve_state_reference(state, reference_label) is None:
+        return None
+    return after_label
 
 
 def invalid_reference_label(label: str) -> bool:

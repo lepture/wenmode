@@ -50,6 +50,10 @@ def test_nested_link_label_brackets_do_not_parse_labels_recursively() -> None:
     assert_scales_nearly_linearly(lambda size: '[' * size + 'a' + ']' * size + '(/u)\n', commonmark, 200, 400)
 
 
+def test_repeated_link_suffixes_do_not_rescan_outer_labels() -> None:
+    assert_scales_nearly_linearly(lambda size: '[' * size + 'a' + '](/u)' * size + '\n', commonmark, 500, 1000)
+
+
 def test_nested_image_alt_brackets_do_not_parse_unbounded_recursively() -> None:
     assert_scales_nearly_linearly(lambda size: '![' * size + 'a' + '](/u)' * size + '\n', commonmark, 200, 400)
 
