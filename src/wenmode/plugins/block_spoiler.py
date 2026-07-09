@@ -28,6 +28,7 @@ BLOCK_SPOILER_RE = re.compile(r'[ \t]{0,3}>! ?(.*)')
 class BlockSpoilerNode(Parent):
     """Block spoiler container node."""
 
+    block: ClassVar[bool] = True
     type: str = 'blockSpoiler'
 
 

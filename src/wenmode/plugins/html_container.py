@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, TypeAlias
+from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias
 
 from wenmode.nodes import Node, Parent
 from wenmode.renderers import MarkdownRenderer, RenderContext
@@ -66,6 +66,7 @@ class HtmlContainerNode(Parent):
     attributes: dict[str, HtmlContainerAttributeValue] | None = None
     opening: str = ''
     closing: str = ''
+    block: ClassVar[bool] = True
     type: str = 'htmlContainer'
 
 

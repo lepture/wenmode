@@ -147,25 +147,41 @@ def find_all(
     ]
 
 
-def plain_text(value: Node | Iterable[Node]) -> str:
+def plain_text(value: Node | Iterable[Node], *, block_separator: str = '\n') -> str:
     """Return the concatenated plain text content of a node or node sequence.
 
     Images contribute their ``alt`` text, literal nodes contribute ``value``,
     parent nodes contribute their children's text, and reference-like leaf nodes
-    fall back to ``label`` or ``identifier`` fields.
+    fall back to ``label`` or ``identifier`` fields. Block-level sibling nodes
+    are separated with ``block_separator``.
     """
     if isinstance(value, Node):
-        return _plain_text_node(value)
-    return ''.join(_plain_text_node(node) for node in value)
+        return _plain_text_node(value, block_separator)
+    return _plain_text_nodes(value, block_separator)
 
 
-def _plain_text_node(node: Node) -> str:
+def _plain_text_nodes(nodes: Iterable[Node], block_separator: str) -> str:
+    parts: list[str] = []
+    previous_separated = False
+    for node in nodes:
+        text = _plain_text_node(node, block_separator)
+        if not text:
+            continue
+        separated = node.block
+        if parts and (previous_separated or separated):
+            parts.append(block_separator)
+        parts.append(text)
+        previous_separated = separated
+    return ''.join(parts)
+
+
+def _plain_text_node(node: Node, block_separator: str) -> str:
     if isinstance(node, Image):
         return node.alt
     if isinstance(node, Literal):
         return node.value
     if isinstance(node, Parent):
-        return ''.join(_plain_text_node(child) for child in node.children)
+        return _plain_text_nodes(node.children, block_separator)
     label = getattr(node, 'label', None)
     if isinstance(label, str):
         return label

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import ClassVar
 
 from wenmode.nodes import Literal
 from wenmode.renderers import MarkdownRenderer, RenderContext
@@ -16,6 +17,7 @@ from .types import RendererHandlers
 class MathNode(Literal):
     """Display math block node."""
 
+    block: ClassVar[bool] = True
     type: str = 'math'
 
 

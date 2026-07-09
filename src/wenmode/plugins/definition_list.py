@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from wenmode.nodes import Node, Paragraph, Parent
 from wenmode.renderers import MarkdownRenderer, RenderContext
@@ -28,6 +28,7 @@ INDENTED_RE = re.compile(r'^(?: {4}|\t)')
 class DefinitionListNode(Parent):
     """Definition list node."""
 
+    block: ClassVar[bool] = True
     type: str = 'definitionList'
 
 
@@ -35,6 +36,7 @@ class DefinitionListNode(Parent):
 class DefinitionTermNode(Parent):
     """Definition term node."""
 
+    block: ClassVar[bool] = True
     type: str = 'definitionTerm'
 
 
@@ -43,6 +45,7 @@ class DefinitionDescriptionNode(Parent):
     """Definition description node."""
 
     spread: bool = False
+    block: ClassVar[bool] = True
     type: str = 'definitionDescription'
 
 

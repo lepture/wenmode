@@ -185,6 +185,24 @@ def test_plain_text_extracts_textual_content() -> None:
     assert plain_text(Text(value='literal')) == 'literal'
 
 
+def test_plain_text_separates_block_siblings() -> None:
+    root = Wenmode().parse(' blah \n\nbblah')
+
+    assert plain_text(root) == 'blah\nbblah'
+    assert plain_text(root.children) == 'blah\nbblah'
+    assert plain_text(root, block_separator='\n\n') == 'blah\n\nbblah'
+    assert plain_text(root, block_separator='') == 'blahbblah'
+
+
+def test_plain_text_keeps_inline_children_concatenated() -> None:
+    root = Wenmode(github).parse('# A *strong* [link](/url)\n\n- first\n- second\n')
+    heading = find(root, Heading)
+
+    assert heading is not None
+    assert plain_text(heading) == 'A strong link'
+    assert plain_text(root) == 'A strong link\nfirst\nsecond'
+
+
 def test_from_ast_round_trips_builtin_nodes() -> None:
     app = Wenmode(github)
     ast = app.parse('# Title\n\nA [link](/url) and ![alt](/img.png).\n\n| A | B |\n| --- | --- |\nx | y\n').to_ast()

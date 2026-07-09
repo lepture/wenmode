@@ -3,7 +3,7 @@ from __future__ import annotations
 import bisect
 from collections.abc import Sequence
 from dataclasses import MISSING, dataclass, field, fields
-from typing import Any
+from typing import Any, ClassVar
 from typing import Literal as TypingLiteral
 
 
@@ -75,6 +75,7 @@ class Node:
     """
 
     type: str
+    block: ClassVar[bool] = False
     data: dict[str, Any] | None = None
     position: Position | None = None
 
@@ -163,6 +164,7 @@ class Root(Parent):
 
     _footnote_definitions: dict[str, FootnoteDefinition] | None = field(default=None, repr=False)
     _line_starts: list[int] | None = field(default=None, repr=False)
+    block: ClassVar[bool] = True
     type: str = 'root'
 
     def to_ast(self) -> dict[str, Any]:
@@ -207,6 +209,7 @@ def node_spec_from_class(node_class: type[Node], kind: NodeKind, standard_fields
 class Paragraph(Parent):
     """Paragraph node."""
 
+    block: ClassVar[bool] = True
     type: str = 'paragraph'
 
 
@@ -218,6 +221,7 @@ class Heading(Parent):
     """
 
     depth: int = 1
+    block: ClassVar[bool] = True
     type: str = 'heading'
 
 
@@ -225,6 +229,7 @@ class Heading(Parent):
 class Blockquote(Parent):
     """Block quote container node."""
 
+    block: ClassVar[bool] = True
     type: str = 'blockquote'
 
 
@@ -235,6 +240,7 @@ class List(Parent):
     ordered: bool = False
     start: int | None = None
     spread: bool = False
+    block: ClassVar[bool] = True
     type: str = 'list'
 
 
@@ -244,6 +250,7 @@ class ListItem(Parent):
 
     checked: bool | None = None
     spread: bool = False
+    block: ClassVar[bool] = True
     type: str = 'listItem'
 
 
@@ -253,6 +260,7 @@ class Code(Literal):
 
     lang: str | None = None
     meta: str | None = None
+    block: ClassVar[bool] = True
     type: str = 'code'
 
 
@@ -260,6 +268,7 @@ class Code(Literal):
 class ThematicBreak(Node):
     """Thematic break node."""
 
+    block: ClassVar[bool] = True
     type: str = 'thematicBreak'
 
 
@@ -267,6 +276,7 @@ class ThematicBreak(Node):
 class Html(Literal):
     """Raw HTML node."""
 
+    block: ClassVar[bool] = True
     type: str = 'html'
 
 
@@ -311,6 +321,7 @@ class Table(Parent):
     """Table node."""
 
     align: list[str | None] = field(default_factory=list)
+    block: ClassVar[bool] = True
     type: str = 'table'
 
 
@@ -318,6 +329,7 @@ class Table(Parent):
 class TableRow(Parent):
     """Table row node."""
 
+    block: ClassVar[bool] = True
     type: str = 'tableRow'
 
 
@@ -325,6 +337,7 @@ class TableRow(Parent):
 class TableCell(Parent):
     """Table cell node."""
 
+    block: ClassVar[bool] = True
     type: str = 'tableCell'
 
 
@@ -369,6 +382,7 @@ class FootnoteDefinition(Parent):
 
     identifier: str = ''
     label: str = ''
+    block: ClassVar[bool] = True
     type: str = 'footnoteDefinition'
 
 
@@ -387,6 +401,7 @@ class LeafDirective(Parent):
 
     name: str = ''
     attributes: dict[str, str] | None = None
+    block: ClassVar[bool] = True
     type: str = 'leafDirective'
 
 
@@ -396,6 +411,7 @@ class ContainerDirective(Parent):
 
     name: str = ''
     attributes: dict[str, str] | None = None
+    block: ClassVar[bool] = True
     type: str = 'containerDirective'
 
 
@@ -406,6 +422,7 @@ class LiteralDirective(Literal):
     name: str = ''
     argument: str | None = None
     attributes: dict[str, str] | None = None
+    block: ClassVar[bool] = True
     type: str = 'literalDirective'
 
 
