@@ -4,8 +4,9 @@ import re
 from typing import TYPE_CHECKING
 
 from wenmode.nodes import Node
+from wenmode.nodes import Text as TextNode
 from wenmode.nodes import TextDirective as TextDirectiveNode
-from wenmode.state import BlockState, StateKey
+from wenmode.state import BlockState, SourceMap, StateKey
 
 from ..base import InlineRule
 from ..directives import parse_attributes, parse_directive_head
@@ -17,6 +18,7 @@ if TYPE_CHECKING:
 NAME_RE = re.compile(r'[A-Za-z][A-Za-z0-9_-]*')
 DirectiveBracketCache = dict[int, tuple[str, dict[int, int], dict[int, int]]]
 DIRECTIVE_BRACKET_CACHE = StateKey[DirectiveBracketCache]('wenmode.inline.directive_brackets', lambda: {})
+TEXT_DIRECTIVE_DEPTH = StateKey[int]('wenmode.inline.text_directive_depth', lambda: 0)
 
 
 class TextDirective(InlineRule):
@@ -40,10 +42,29 @@ class TextDirective(InlineRule):
 
         name, label, attributes, end, label_start, label_end = parsed
         if label is not None and label_start is not None and label_end is not None:
-            children = parser.parse_inlines(label, state, source=parser.inline_source(text, state, label_start, label_end))
+            children = parse_text_directive_children(
+                parser,
+                label,
+                state,
+                parser.inline_source(text, state, label_start, label_end),
+            )
         else:
             children = []
         return TextDirectiveNode(name=name, attributes=attributes, children=children), end
+
+
+def parse_text_directive_children(
+    parser: Parser, label: str, state: BlockState, source: SourceMap | None
+) -> list[Node]:
+    depth = state.store.get(TEXT_DIRECTIVE_DEPTH)
+    if depth >= parser.max_container_depth:
+        return [TextNode(value=label)]
+
+    state.store.set(TEXT_DIRECTIVE_DEPTH, depth + 1)
+    try:
+        return parser.parse_inlines(label, state, source=source)
+    finally:
+        state.store.set(TEXT_DIRECTIVE_DEPTH, depth)
 
 
 def parse_text_directive_head(

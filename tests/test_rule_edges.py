@@ -137,6 +137,22 @@ def test_deep_link_label_brackets_do_not_recurse_before_destination_check() -> N
     assert html == '<p><a href="/u">' + '[' * 999 + 'a' + ']' * 999 + '</a></p>\n'
 
 
+def test_image_alt_respects_max_container_depth() -> None:
+    app = Wenmode()
+    app.parser.max_container_depth = 1
+
+    assert app.render('![![![a](/u)](/v)](/img)\n') == '<p><img src="/img" alt="![a](/u)" /></p>\n'
+
+
+def test_deep_image_alt_does_not_recurse_unbounded() -> None:
+    markdown = '![' * 1000 + 'a' + '](/u)' * 1000 + '\n'
+
+    html = Wenmode().render(markdown)
+
+    assert html.startswith('<p><img src="/u" alt="')
+    assert html.endswith('" /></p>\n')
+
+
 def max_emphasis_depth(node: Node) -> int:
     max_depth = 0
     stack: list[tuple[Node, int]] = [(node, 0)]

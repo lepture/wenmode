@@ -6,14 +6,17 @@ from typing import TYPE_CHECKING, cast
 
 from wenmode.nodes import Literal as LiteralNode
 from wenmode.nodes import Node, Parent
+from wenmode.nodes import Text as TextNode
 from wenmode.rules.base import InlineRule
-from wenmode.state import BlockState
+from wenmode.state import BlockState, SourceMap, StateKey
 from wenmode.utils import is_escaped
 
 from .spec import InlineDelimited, InlineLiteral
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
+
+DECLARATIVE_INLINE_DEPTH = StateKey[int]('wenmode.declarative.inline_depth', lambda: 0)
 
 
 def _inline_rule_from_syntax(syntax: InlineDelimited | InlineLiteral) -> InlineRule:
@@ -114,7 +117,12 @@ class _SimpleDelimitedChildrenRule(InlineRule):
             return None, start
 
         value = text[value_start:close]
-        children = parser.parse_inlines(value, state, source=parser.inline_source(text, state, value_start, close))
+        children = parse_delimited_children(
+            parser,
+            value,
+            state,
+            parser.inline_source(text, state, value_start, close),
+        )
         return self._node_factory(children=children), close + len(syntax.closer)
 
 
@@ -156,10 +164,11 @@ class _TrimmedDelimitedChildrenRule(InlineRule):
             if has_newline(text, value_start, value_end):
                 return None, start
 
-            children = parser.parse_inlines(
+            children = parse_delimited_children(
+                parser,
                 value,
                 state,
-                source=parser.inline_source(text, state, value_start, value_end),
+                parser.inline_source(text, state, value_start, value_end),
             )
             return self._node_factory(children=children), close + len(syntax.closer)
         return None, start
@@ -226,7 +235,12 @@ def create_delimited_node(
     if syntax.content == 'children':
         if not issubclass(node_class, Parent):
             raise TypeError(f'{syntax.name!r} requires a Parent node for children content')
-        children = parser.parse_inlines(value, state, source=parser.inline_source(text, state, value_start, value_end))
+        children = parse_delimited_children(
+            parser,
+            value,
+            state,
+            parser.inline_source(text, state, value_start, value_end),
+        )
         node_factory = cast(Callable[..., Node], node_class)
         return node_factory(children=children)
 
@@ -234,6 +248,23 @@ def create_delimited_node(
         return _literal_node_factory(syntax)(value=value)
 
     raise TypeError(f'{syntax.name!r} uses unsupported content mode {syntax.content!r}')
+
+
+def parse_delimited_children(
+    parser: Parser,
+    value: str,
+    state: BlockState,
+    source: SourceMap | None,
+) -> list[Node]:
+    depth = state.store.get(DECLARATIVE_INLINE_DEPTH)
+    if depth >= parser.max_container_depth:
+        return [TextNode(value=value)]
+
+    state.store.set(DECLARATIVE_INLINE_DEPTH, depth + 1)
+    try:
+        return parser.parse_inlines(value, state, source=source)
+    finally:
+        state.store.set(DECLARATIVE_INLINE_DEPTH, depth)
 
 
 def find_delimited_content_range(text: str, start: int, syntax: InlineDelimited) -> tuple[int, int, int] | None:

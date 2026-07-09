@@ -108,6 +108,33 @@ def test_abbreviation_directive_falls_back_without_title() -> None:
     assert app.render(':abbr[HTML]\n') == '<p>HTML</p>\n'
 
 
+def test_text_directive_respects_max_container_depth() -> None:
+    app = Wenmode([TextDirective])
+    app.parser.max_container_depth = 1
+
+    assert app.parse(':x[:x[:x[a]]]\n').to_ast() == {
+        'type': 'root',
+        'children': [
+            {
+                'type': 'paragraph',
+                'children': [
+                    {
+                        'type': 'textDirective',
+                        'children': [
+                            {
+                                'type': 'textDirective',
+                                'children': [{'type': 'text', 'value': ':x[a]'}],
+                                'name': 'x',
+                            }
+                        ],
+                        'name': 'x',
+                    }
+                ],
+            }
+        ],
+    }
+
+
 def test_builtin_directives_drop_event_and_style_attributes() -> None:
     app = Wenmode([ContainerDirective], renderer=HTMLRenderer(directives=[Figure()]))
 

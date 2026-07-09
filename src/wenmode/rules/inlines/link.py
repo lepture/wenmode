@@ -21,6 +21,7 @@ ANGLE_SPAN_RE = re.compile(rf'{URI_RE}|{EMAIL_RE}|{HTML_RE}')
 ClosingBracketCache = dict[int, tuple[str, dict[int, int]]]
 CLOSING_BRACKET_CACHE = StateKey[ClosingBracketCache]('wenmode.inline.closing_brackets', lambda: {})
 IN_LINK_DEPTH = StateKey[int]('wenmode.inline.in_link_depth', lambda: 0)
+IMAGE_ALT_DEPTH = StateKey[int]('wenmode.inline.image_alt_depth', lambda: 0)
 
 
 class Image(InlineRule):
@@ -54,9 +55,7 @@ class Image(InlineRule):
 
         label, url, title, end, label_start, label_end = parsed
         label_source = parser.inline_source(text, state, label_start, label_end)
-        return ImageNode(
-            url=url, alt=plain_text(parser.parse_inlines(label, state, source=label_source)), title=title
-        ), end
+        return ImageNode(url=url, alt=parse_image_alt(parser, label, state, label_source), title=title), end
 
 
 class Link(InlineRule):
@@ -104,6 +103,18 @@ def parse_link_children(parser: Parser, label: str, state: BlockState, source: S
         return parser.parse_inlines(label, state, source=source)
     finally:
         state.store.set(IN_LINK_DEPTH, in_link)
+
+
+def parse_image_alt(parser: Parser, label: str, state: BlockState, source: SourceMap | None) -> str:
+    depth = state.store.get(IMAGE_ALT_DEPTH)
+    if depth >= parser.max_container_depth:
+        return label
+
+    state.store.set(IMAGE_ALT_DEPTH, depth + 1)
+    try:
+        return plain_text(parser.parse_inlines(label, state, source=source))
+    finally:
+        state.store.set(IMAGE_ALT_DEPTH, depth)
 
 
 def parse_link_or_image(

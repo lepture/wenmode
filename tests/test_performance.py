@@ -50,6 +50,10 @@ def test_nested_link_label_brackets_do_not_parse_labels_recursively() -> None:
     assert_scales_nearly_linearly(lambda size: '[' * size + 'a' + ']' * size + '(/u)\n', commonmark, 200, 400)
 
 
+def test_nested_image_alt_brackets_do_not_parse_unbounded_recursively() -> None:
+    assert_scales_nearly_linearly(lambda size: '![' * size + 'a' + '](/u)' * size + '\n', commonmark, 200, 400)
+
+
 def test_failed_footnote_like_links_do_not_rescan_suffixes() -> None:
     assert_scales_nearly_linearly(lambda size: '[^x' * size + '\n', github)
 
@@ -98,6 +102,10 @@ def test_inline_spoiler_candidates_scale_nearly_linearly() -> None:
 
 def test_text_directive_candidates_scale_nearly_linearly() -> None:
     assert_scales_nearly_linearly(lambda size: ':name[' * size + '\n', [TextDirective], 1000, 2000)
+
+
+def test_nested_text_directives_do_not_parse_unbounded_recursively() -> None:
+    assert_scales_nearly_linearly(lambda size: ':x[' * size + 'a' + ']' * size + '\n', [TextDirective], 200, 400)
 
 
 def test_extended_autolink_trailing_parentheses_scale_nearly_linearly() -> None:
