@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from bisect import bisect_left
 from collections.abc import Callable
 from typing import TYPE_CHECKING, cast
 
@@ -16,7 +17,11 @@ from .spec import InlineDelimited, InlineLiteral
 if TYPE_CHECKING:
     from wenmode.parser import Parser
 
+ClosingDelimiterCache = dict[tuple[int, int], tuple[str, object, list[int]]]
 DECLARATIVE_INLINE_DEPTH = StateKey[int]('wenmode.declarative.inline_depth', lambda: 0)
+DECLARATIVE_CLOSING_DELIMITERS = StateKey[ClosingDelimiterCache](
+    'wenmode.declarative.closing_delimiters', lambda: {}
+)
 
 
 def _inline_rule_from_syntax(syntax: InlineDelimited | InlineLiteral) -> InlineRule:
@@ -81,7 +86,7 @@ class DeclarativeInlineRule(InlineRule):
         if syntax.reject_opening_whitespace and text[value_start].isspace():
             return None, start
 
-        content = find_delimited_content_range(text, value_start, syntax)
+        content = find_delimited_content_range(text, value_start, syntax, state)
         if content is None:
             return None, start
 
@@ -112,7 +117,7 @@ class _SimpleDelimitedChildrenRule(InlineRule):
         if value_start >= len(text) or text[value_start].isspace():
             return None, start
 
-        close = find_closing_delimiter(text, value_start, syntax)
+        close = find_closing_delimiter(text, value_start, syntax, state)
         if close == -1 or close == value_start:
             return None, start
 
@@ -202,7 +207,7 @@ class _InlineLiteralRule(InlineRule):
         if syntax.reject_opening_whitespace and text[value_start].isspace():
             return None, start
 
-        content = find_literal_content_range(text, value_start, syntax)
+        content = find_literal_content_range(text, value_start, syntax, state)
         if content is None:
             return None, start
 
@@ -267,14 +272,16 @@ def parse_delimited_children(
         state.store.set(DECLARATIVE_INLINE_DEPTH, depth)
 
 
-def find_delimited_content_range(text: str, start: int, syntax: InlineDelimited) -> tuple[int, int, int] | None:
-    close = find_closing_delimiter(text, start, syntax)
+def find_delimited_content_range(
+    text: str, start: int, syntax: InlineDelimited, state: BlockState
+) -> tuple[int, int, int] | None:
+    close = find_closing_delimiter(text, start, syntax, state)
     while close != -1:
         value_start, value_end = start, close
         if syntax.strip_content:
             stripped = stripped_content_range(text, value_start, value_end)
             if stripped is None:
-                close = find_closing_delimiter(text, close + len(syntax.closer), syntax)
+                close = find_closing_delimiter(text, close + len(syntax.closer), syntax, state)
                 continue
             value_start, value_end = stripped
 
@@ -286,14 +293,16 @@ def find_delimited_content_range(text: str, start: int, syntax: InlineDelimited)
     return None
 
 
-def find_literal_content_range(text: str, start: int, syntax: InlineLiteral) -> tuple[int, int, int] | None:
-    close = find_literal_closing_delimiter(text, start, syntax)
+def find_literal_content_range(
+    text: str, start: int, syntax: InlineLiteral, state: BlockState
+) -> tuple[int, int, int] | None:
+    close = find_literal_closing_delimiter(text, start, syntax, state)
     while close != -1:
         value_start, value_end = start, close
         if syntax.strip_content:
             stripped = stripped_content_range(text, value_start, value_end)
             if stripped is None:
-                close = find_literal_closing_delimiter(text, close + len(syntax.closer), syntax)
+                close = find_literal_closing_delimiter(text, close + len(syntax.closer), syntax, state)
                 continue
             value_start, value_end = stripped
 
@@ -305,22 +314,53 @@ def find_literal_content_range(text: str, start: int, syntax: InlineLiteral) -> 
     return None
 
 
-def find_closing_delimiter(text: str, start: int, syntax: InlineDelimited) -> int:
-    index = text.find(syntax.closer, start)
-    while index != -1:
-        if is_closing_delimiter(text, index, syntax):
-            return index
-        index = text.find(syntax.closer, index + 1)
-    return -1
+def find_closing_delimiter(text: str, start: int, syntax: InlineDelimited, state: BlockState) -> int:
+    positions = closing_delimiter_positions(
+        text,
+        state,
+        syntax,
+        lambda index: is_closing_delimiter(text, index, syntax),
+    )
+    return next_closing_delimiter(positions, start)
 
 
-def find_literal_closing_delimiter(text: str, start: int, syntax: InlineLiteral) -> int:
-    index = text.find(syntax.closer, start)
+def find_literal_closing_delimiter(text: str, start: int, syntax: InlineLiteral, state: BlockState) -> int:
+    positions = closing_delimiter_positions(
+        text,
+        state,
+        syntax,
+        lambda index: is_literal_closing_delimiter(text, index, syntax),
+    )
+    return next_closing_delimiter(positions, start)
+
+
+def closing_delimiter_positions(
+    text: str,
+    state: BlockState,
+    syntax: InlineDelimited | InlineLiteral,
+    is_closer: Callable[[int], bool],
+) -> list[int]:
+    cache = state.store.get(DECLARATIVE_CLOSING_DELIMITERS)
+    key = (id(text), id(syntax))
+    cached = cache.get(key)
+    if cached is not None and cached[0] is text and cached[1] is syntax:
+        return cached[2]
+
+    positions: list[int] = []
+    index = text.find(syntax.closer)
     while index != -1:
-        if is_literal_closing_delimiter(text, index, syntax):
-            return index
+        if is_closer(index):
+            positions.append(index)
         index = text.find(syntax.closer, index + 1)
-    return -1
+    cache[key] = (text, syntax, positions)
+    return positions
+
+
+def next_closing_delimiter(positions: list[int], start: int) -> int:
+    index = bisect_left(positions, start)
+    if index == len(positions):
+        return -1
+    return positions[index]
 
 
 def is_closing_delimiter(text: str, start: int, syntax: InlineDelimited) -> bool:

@@ -5,7 +5,16 @@ from collections.abc import Callable, Iterable
 from typing import Any
 
 from wenmode import Wenmode
-from wenmode.plugins import abbr, block_math, definition_list, fenced_directive, html_container, inline_spoiler
+from wenmode.plugins import (
+    abbr,
+    block_math,
+    definition_list,
+    fenced_directive,
+    html_container,
+    inline_math,
+    inline_spoiler,
+    mark,
+)
 from wenmode.presets import commonmark, github
 from wenmode.rules import (
     AtxHeading,
@@ -102,6 +111,14 @@ def test_disallowed_nested_html_filter_scales_nearly_linearly() -> None:
 
 def test_inline_spoiler_candidates_scale_nearly_linearly() -> None:
     assert_scales_nearly_linearly(lambda size: '>!x' + ' ' * size + 'y\n', [], 8000, 16000, plugins=[inline_spoiler])
+
+
+def test_inline_math_invalid_digit_closers_scale_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(lambda size: '$x' + '$5' * size + '\n', [], 500, 1000, plugins=[inline_math])
+
+
+def test_declarative_inline_invalid_closers_scale_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(lambda size: '==x ' * size + '==' * size + '\n', [], 500, 1000, plugins=[mark])
 
 
 def test_text_directive_candidates_scale_nearly_linearly() -> None:
