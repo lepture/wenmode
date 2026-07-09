@@ -13,6 +13,22 @@ here while preparing a release, then move them under the final version heading.
 
 ## Unreleased
 
+## 0.9.1
+
+Released **Jul 9, 2026**.
+
+- Limit recursive inline parsing for emphasis, image alt text, text directives,
+  and declarative inline children with `Parser.max_container_depth`, avoiding
+  `RecursionError` on deeply nested or adversarial inline input.
+- Avoid repeatedly scanning nested link labels when parsing inputs with many
+  bracket openers and repeated link suffixes, improving pathological link and
+  reference parsing from near-quadratic to near-linear behavior.
+- Cache declarative inline closer positions so invalid closer candidates, such
+  as inline math delimiters before digits, do not rescan the same suffixes for
+  each opener.
+- Respect container depth in the `html_container` plugin so deeply nested HTML
+  containers fall back to raw HTML instead of recursing unboundedly.
+
 ## 0.9.0
 
 Released **Jul 2, 2026**.
