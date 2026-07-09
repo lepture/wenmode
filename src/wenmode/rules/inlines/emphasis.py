@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from wenmode.nodes import Emphasis as EmphasisNode
-from wenmode.nodes import Node, Position
+from wenmode.nodes import Node, Parent, Position
 from wenmode.nodes import Strong as StrongNode
 from wenmode.nodes import Text as TextNode
 from wenmode.state import BlockState
@@ -42,8 +42,8 @@ class Emphasis(InlineRule):
     def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
         return None, match.start()
 
-    def parse_emphasis_sequence(self, nodes: list[Node]) -> list[Node]:
-        return parse_emphasis_sequence(nodes, cjk_friendly=self.cjk_friendly)
+    def parse_emphasis_sequence(self, nodes: list[Node], max_depth: int = 20) -> list[Node]:
+        return parse_emphasis_sequence(nodes, cjk_friendly=self.cjk_friendly, max_depth=max_depth)
 
 
 @dataclass(slots=True)
@@ -56,7 +56,11 @@ class Delimiter:
     orig_length: int
 
 
-def parse_emphasis_sequence(nodes: list[Node], cjk_friendly: bool = False) -> list[Node]:
+def parse_emphasis_sequence(
+    nodes: list[Node],
+    cjk_friendly: bool = False,
+    max_depth: int = 20,
+) -> list[Node]:
     parts: list[Node] = []
     delimiters: list[Delimiter] = []
     source = source_text(nodes)
@@ -70,7 +74,7 @@ def parse_emphasis_sequence(nodes: list[Node], cjk_friendly: bool = False) -> li
             parts.append(node)
             source_pos += source_length(node)
 
-    process_delimiters(parts, delimiters)
+    process_delimiters(parts, delimiters, max_depth=max_depth)
     return [part for part in parts if not (isinstance(part, TextNode) and part.value == '')]
 
 
@@ -142,7 +146,7 @@ def next_delimiter_run(text: str, start: int) -> int:
     return index
 
 
-def process_delimiters(parts: list[Node], delimiters: list[Delimiter]) -> None:
+def process_delimiters(parts: list[Node], delimiters: list[Delimiter], max_depth: int = 20) -> None:
     closer_pos = 0
     openers_bottom: dict[tuple[str, int, bool], int] = {}
     while closer_pos < len(delimiters):
@@ -159,7 +163,7 @@ def process_delimiters(parts: list[Node], delimiters: list[Delimiter]) -> None:
             closer_pos += 1
             continue
 
-        use_length, opener_text, closer_text = prepare_delimiter_match(parts, opener, closer)
+        use_length, opener_text, closer_text = prepare_delimiter_match(parts, opener, closer, max_depth)
         if use_length == 0 or opener_text is None or closer_text is None:
             closer_pos += 1
             continue
@@ -199,6 +203,7 @@ def prepare_delimiter_match(
     parts: list[Node],
     opener: Delimiter,
     closer: Delimiter,
+    max_depth: int = 20,
 ) -> tuple[int, TextNode | None, TextNode | None]:
     if opener.length >= 2 and closer.length >= 2:
         length = 2
@@ -209,6 +214,8 @@ def prepare_delimiter_match(
     if length == 1 and not has_emphasis_enabled(parts, opener, closer):
         return 0, None, None
     if not has_content(parts, opener.index + 1, closer.index):
+        return 0, None, None
+    if emphasis_depth(parts[opener.index + 1 : closer.index]) >= max_depth:
         return 0, None, None
 
     opener_text = parts[opener.index]
@@ -301,6 +308,22 @@ def text_value(node: Node) -> str:
 
 def has_content(parts: list[Node], start: int, end: int) -> bool:
     return any(not isinstance(part, TextNode) or part.value != '' for part in parts[start:end])
+
+
+def emphasis_depth(nodes: list[Node]) -> int:
+    max_depth = 0
+    stack: list[tuple[Node, int]] = [(node, 0) for node in nodes]
+    while stack:
+        node, parent_depth = stack.pop()
+        if isinstance(node, (EmphasisNode, StrongNode)):
+            depth = parent_depth + 1
+            if depth > max_depth:
+                max_depth = depth
+        else:
+            depth = parent_depth
+        if isinstance(node, Parent):
+            stack.extend((child, depth) for child in node.children)
+    return max_depth
 
 
 def emphasis_position(opener: TextNode, closer: TextNode, size: int) -> Position | None:

@@ -96,7 +96,7 @@ class InlineParser:
     def _finalize_inline_nodes(self, nodes: list[Node]) -> list[Node]:
         nodes = merge_text(nodes)
         if self._rule_set.emphasis_rule is not None and contains_emphasis_marker(nodes):
-            nodes = self._rule_set.emphasis_rule.parse_emphasis_sequence(nodes)
+            nodes = self._rule_set.emphasis_rule.parse_emphasis_sequence(nodes, max_depth=self._parser.max_container_depth)
         else:
             return nodes
         return merge_text(nodes)

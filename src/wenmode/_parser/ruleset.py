@@ -15,7 +15,7 @@ T = TypeVar('T', bound=Rule)
 class EmphasisRule(Protocol):
     """Rule protocol for deferred emphasis delimiter processing."""
 
-    def parse_emphasis_sequence(self, nodes: list[Node]) -> list[Node]: ...
+    def parse_emphasis_sequence(self, nodes: list[Node], max_depth: int = 20) -> list[Node]: ...
 
 
 @dataclass(frozen=True, slots=True)

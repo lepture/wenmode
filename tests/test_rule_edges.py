@@ -9,7 +9,7 @@ from tests.helpers import load_fixture
 from tests.plugin_helpers import configured_app
 from wenmode import HTMLRenderer, MarkdownRenderer, Parser, Wenmode
 from wenmode.directives import Figure
-from wenmode.nodes import Node, Text
+from wenmode.nodes import Node, Parent, Text
 from wenmode.rules import (
     AtxHeading,
     InlineRule,
@@ -110,6 +110,38 @@ def test_raw_html_comment_styles() -> None:
 )
 def test_emphasis_multiple_of_three_uses_original_delimiter_length(markdown: str, html: str) -> None:
     assert Wenmode().render(markdown) == html
+
+
+def test_emphasis_respects_max_container_depth() -> None:
+    app = Wenmode()
+    app.parser.max_container_depth = 1
+
+    assert app.render('****a****\n') == '<p>**<strong>a</strong>**</p>\n'
+
+
+def test_long_emphasis_runs_do_not_exceed_container_depth() -> None:
+    app = Wenmode()
+    markdown = '*' * 1000 + 'a' + '*' * 1000 + '\n'
+
+    root = app.parse(markdown)
+
+    assert max_emphasis_depth(root) == app.parser.max_container_depth
+    assert app.render_node(root).startswith('<p>' + '*' * 960)
+
+
+def max_emphasis_depth(node: Node) -> int:
+    max_depth = 0
+    stack: list[tuple[Node, int]] = [(node, 0)]
+    while stack:
+        item, parent_depth = stack.pop()
+        if item.type in {'emphasis', 'strong'}:
+            depth = parent_depth + 1
+            max_depth = max(max_depth, depth)
+        else:
+            depth = parent_depth
+        if isinstance(item, Parent):
+            stack.extend((child, depth) for child in item.children)
+    return max_depth
 
 
 def test_parser_uses_first_inline_match_for_same_position() -> None:
