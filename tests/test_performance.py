@@ -205,7 +205,7 @@ def test_html_container_nested_same_name_tags_scale_nearly_linearly() -> None:
     assert_scales_nearly_linearly(
         lambda size: '<div>\n' * size + '</div>\n' * size,
         [],
-        16,
-        32,
+        64,
+        128,
         plugins=[html_container],
     )

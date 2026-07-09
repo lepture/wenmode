@@ -86,6 +86,8 @@ class HtmlContainer(BlockRule):
         self.fallback = HtmlBlock(disallowed_tags=disallowed_tags)
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node:
+        if state.depth >= parser.max_container_depth - 1:
+            return self.fallback.parse(parser, state, match)
         parsed = parse_html_container(parser, state, self.disallowed_html_filter)
         if parsed is not None:
             return parsed
