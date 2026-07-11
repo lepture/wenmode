@@ -31,6 +31,11 @@ here while preparing a release, then move them under the final version heading.
   with `allow_internal_metadata=True`.
 - Remove `wenmode.ast.node_from_ast()`. Use `wenmode.ast.from_ast()` for AST
   restoration.
+- Use a single plugin protocol: plugins must expose `setup(wen, /)`. Configure
+  built-in plugins with `plugin_module.configure(...)` before passing them to
+  `Wenmode` or `Wenmode.use()`.
+- Remove `nodes` from `DeclarativePluginSpec`. Plugins that expose custom node
+  classes should publish them separately with a module-level `nodes` list.
 
 ### Fixed
 

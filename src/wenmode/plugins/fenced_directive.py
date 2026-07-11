@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias, cast
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, ClassVar, TypeAlias, cast
 
 from wenmode.nodes import ContainerDirective as ContainerDirectiveNode
 from wenmode.nodes import LiteralDirective as LiteralDirectiveNode
@@ -145,10 +146,22 @@ def parse_attribute_line(line: str) -> tuple[str, str] | None:
 nodes: dict[str, type[Node]] = {}
 
 
-def setup(
-    wen: Wenmode,
+@dataclass(frozen=True)
+class FencedDirectivePlugin:
+    literal_names: Iterable[str] = DEFAULT_LITERAL_DIRECTIVE_NAMES
+    fence: FencedDirectiveFence = DEFAULT_FENCE
+
+    def setup(self, wen: Wenmode, /) -> None:
+        wen.register_rule(FencedDirectiveRule(literal_names=self.literal_names, fence=self.fence))
+
+
+def configure(
+    *,
     literal_names: Iterable[str] = DEFAULT_LITERAL_DIRECTIVE_NAMES,
     fence: FencedDirectiveFence = DEFAULT_FENCE,
-    **options: Any,
-) -> None:
-    wen.register_rule(FencedDirectiveRule(literal_names=literal_names, fence=fence))
+) -> FencedDirectivePlugin:
+    return FencedDirectivePlugin(literal_names=literal_names, fence=fence)
+
+
+def setup(wen: Wenmode, /) -> None:
+    configure().setup(wen)

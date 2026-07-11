@@ -245,13 +245,26 @@ nodes: dict[str, type[Node]] = {}
 rules: list[type[Rule] | Rule] = [FrontmatterRule]
 
 
-def setup(
-    wen: Wenmode,
+@dataclass(frozen=True)
+class FrontmatterPlugin:
+    load: FrontmatterLoad | None = None
+    dump: FrontmatterDump | None = None
+    data_key: str = 'frontmatter'
+
+    def setup(self, wen: Wenmode, /) -> None:
+        frontmatter_dump = self.dump or dump_simple_frontmatter
+        wen.register_rule(FrontmatterRule(load=self.load or load_simple_frontmatter, data_key=self.data_key))
+        wen.register_renderer_handlers(create_handlers(self.data_key, frontmatter_dump))
+
+
+def configure(
+    *,
     load: FrontmatterLoad | None = None,
     dump: FrontmatterDump | None = None,
     data_key: str = 'frontmatter',
-    **options: Any,
-) -> None:
-    frontmatter_dump = dump or dump_simple_frontmatter
-    wen.register_rule(FrontmatterRule(load=load or load_simple_frontmatter, data_key=data_key))
-    wen.register_renderer_handlers(create_handlers(data_key, frontmatter_dump))
+) -> FrontmatterPlugin:
+    return FrontmatterPlugin(load=load, dump=dump, data_key=data_key)
+
+
+def setup(wen: Wenmode, /) -> None:
+    configure().setup(wen)

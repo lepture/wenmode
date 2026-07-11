@@ -25,26 +25,21 @@ Plugins usually keep these pieces together:
 - custom node classes,
 - parser rules and root transforms,
 - renderer handlers for supported output formats,
-- a declarative `spec`, optional renderer `handlers`, or a
-  `setup(wen, **options)` function.
+- a `setup(wen, /)` function.
 
 ## Plugin Shape
 
-A plugin can be a module or an object. During construction, `Wenmode` looks for
-a declarative `spec` or a callable `setup()` function on each plugin in
-`plugins=[...]`. When a plugin exposes `spec`, Wenmode also registers a sibling
-`handlers` mapping if present. Use `Wenmode.use(plugin, **options)` when a
-command-style plugin needs setup options.
+A plugin can be a module or an object. During construction, `Wenmode` calls
+`setup(wen, /)` on each plugin in `plugins=[...]`. Use `configure()` to return a
+configured plugin object when a plugin needs options.
 
 ```python
-from typing import Any
-
 from wenmode import Wenmode
 from wenmode.rules import Emphasis
 
 
 class EmphasisOnlyPlugin:
-    def setup(self, wen: Wenmode, **options: Any) -> None:
+    def setup(self, wen: Wenmode, /) -> None:
         wen.register_rule(Emphasis)
 
 
@@ -53,18 +48,15 @@ wen = Wenmode([], plugins=[EmphasisOnlyPlugin()])
 assert wen.render('*emphasis*') == '<p><em>emphasis</em></p>\n'
 ```
 
-Declarative module plugins expose `spec`, `nodes`, and optionally `handlers`.
-Command-style module plugins expose `setup()`:
+Module plugins expose `setup()`:
 
 ```{code-block} python
 :caption: my_project/wenmode_plugins/plus_mark.py
 
-from typing import Any
-
 from wenmode import Wenmode
 
 
-def setup(wen: Wenmode, **options: Any) -> None:
+def setup(wen: Wenmode, /) -> None:
     wen.register_rules(rules)
     wen.register_renderer_handlers(handlers)
 ```
@@ -88,7 +80,7 @@ from dataclasses import dataclass
 
 from wenmode import Wenmode
 from wenmode.nodes import Parent
-from wenmode.plugins import DeclarativePluginSpec, InlineDelimited, RenderTemplate
+from wenmode.plugins import DeclarativePluginSpec, InlineDelimited, RenderTemplate, install_declarative
 
 
 @dataclass
@@ -98,16 +90,18 @@ class PlusMarkNode(Parent):
 
 spec = DeclarativePluginSpec(
     name='plus_mark',
-    nodes=[PlusMarkNode],
     syntax=[InlineDelimited(name='plus_mark', node=PlusMarkNode, opener='++', closer='++')],
     renderers={'html': {PlusMarkNode.type: RenderTemplate('<mark>{children}</mark>')}},
 )
-nodes = spec.nodes
+nodes = [PlusMarkNode]
 
 
 class PlusMarkPlugin:
     spec = spec
     nodes = nodes
+
+    def setup(self, wen: Wenmode, /) -> None:
+        install_declarative(wen, self.spec)
 
 
 wen = Wenmode(plugins=[PlusMarkPlugin()])
@@ -172,23 +166,34 @@ handlers = {
 
 ## Setup Options
 
-Expose options on `setup()` when callers need to configure part of a plugin.
+Expose a `configure()` helper when callers need to configure part of a plugin.
 
 ```{code-block} python
-def setup(wen: Wenmode, inline: bool = True, block: bool = True, **options: Any) -> None:
-    selected_rules = []
-    if inline:
-        selected_rules.append(MyInlineRule)
-    if block:
-        selected_rules.append(MyBlockRule)
+from dataclasses import dataclass
 
-    wen.register_rules(selected_rules)
-    wen.register_renderer_handlers(handlers)
+
+@dataclass(frozen=True)
+class MyPlugin:
+    inline: bool = True
+    block: bool = True
+
+    def setup(self, wen: Wenmode, /) -> None:
+        selected_rules = []
+        if self.inline:
+            selected_rules.append(MyInlineRule)
+        if self.block:
+            selected_rules.append(MyBlockRule)
+
+        wen.register_rules(selected_rules)
+        wen.register_renderer_handlers(handlers)
+
+
+def configure(*, inline: bool = True, block: bool = True) -> MyPlugin:
+    return MyPlugin(inline=inline, block=block)
 ```
 
-Unknown options are accepted by convention so plugins can share a consistent
-`setup(wen, **options)` shape. Validate option values inside `setup()` when
-the plugin needs stricter behavior.
+Validate option values inside `configure()` or the configured plugin's
+`setup()` when the plugin needs stricter behavior.
 
 ## Rule Types Inside Plugins
 

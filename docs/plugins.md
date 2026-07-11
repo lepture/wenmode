@@ -28,9 +28,8 @@ behavior you need.
 ## Using Plugins
 
 Import a plugin module from `wenmode.plugins` and pass it to `Wenmode` with the
-`plugins` argument. During initialization, Wenmode installs each plugin's
-declarative `spec` or calls its `setup(wen, **options)` function with no
-extra options.
+`plugins` argument. During initialization, Wenmode calls each plugin's
+`setup(wen, /)` function.
 
 ```python
 from wenmode import Wenmode
@@ -52,30 +51,29 @@ from wenmode.plugins import mark, superscript
 wen = Wenmode(plugins=[mark, superscript])
 ```
 
-Some plugins accept setup options. Use `wenmode.plugins.plugin()` when those
-options are part of constructor-time setup:
-
-```python
-from wenmode import Wenmode
-from wenmode.plugins import plugin, smartypants
-
-wen = Wenmode(plugins=[plugin(smartypants, dashes=False)])
-
-assert wen.render('"Hello..." -- ok\n') == '<p>“Hello…” -- ok</p>\n'
-```
-
-Use `use()` when you need to pass options after an instance already exists:
+Some plugins accept configuration. Call `configure()` first and pass the
+configured plugin to `Wenmode`:
 
 ```python
 from wenmode import Wenmode
 from wenmode.plugins import smartypants
 
-wen = Wenmode().use(smartypants, dashes=False)
+wen = Wenmode(plugins=[smartypants.configure(dashes=False)])
+
+assert wen.render('"Hello..." -- ok\n') == '<p>“Hello…” -- ok</p>\n'
 ```
 
-Use `Wenmode.use(plugin, **options)` when you need to install a plugin after the
-instance already exists. It returns the same `Wenmode` instance, so existing
-chain-style setup remains supported.
+Use `use()` when you need to install a plugin after an instance already exists:
+
+```python
+from wenmode import Wenmode
+from wenmode.plugins import smartypants
+
+wen = Wenmode().use(smartypants.configure(dashes=False))
+```
+
+`use()` returns the same `Wenmode` instance, so chain-style setup remains
+supported.
 
 ## Built-In Plugins
 
@@ -151,13 +149,13 @@ wen = Wenmode(plugins=[smartypants])
 assert wen.render('"Hello..." -- ok\n') == '<p>“Hello…” – ok</p>\n'
 ```
 
-Use `wenmode.plugins.plugin()` to disable individual replacements:
+Use `configure()` to disable individual replacements:
 
 ```python
 from wenmode import Wenmode
-from wenmode.plugins import plugin, smartypants
+from wenmode.plugins import smartypants
 
-wen = Wenmode(plugins=[plugin(smartypants, dashes=False)])
+wen = Wenmode(plugins=[smartypants.configure(dashes=False)])
 ```
 
 ## HTML Containers
@@ -246,7 +244,7 @@ def dump_meta(value: object) -> str | None:
     return str(value['raw'])
 
 
-wen = Wenmode().use(frontmatter, load=load_meta, dump=dump_meta, data_key='meta')
+wen = Wenmode().use(frontmatter.configure(load=load_meta, dump=dump_meta, data_key='meta'))
 ```
 
 ## Fenced Directives And Roles
@@ -290,18 +288,19 @@ print("*not emphasis*")
 ```
 ````
 
-Pass `literal_names` to `use()` when your application needs a different set.
-Pass `fence` when your dialect also accepts other repeated fence characters,
-such as MyST colon fences:
+Pass `literal_names` to `configure()` when your application needs a different
+set. Pass `fence` when your dialect also accepts other repeated fence
+characters, such as MyST colon fences:
 
 ```python
 from wenmode import Wenmode
 from wenmode.plugins import fenced_directive
 
 wen = Wenmode().use(
-    fenced_directive,
-    literal_names={'code-block', 'sourcecode'},
-    fence=('`', '~', ':'),
+    fenced_directive.configure(
+        literal_names={'code-block', 'sourcecode'},
+        fence=('`', '~', ':'),
+    )
 )
 ```
 
@@ -345,7 +344,6 @@ class MarkNode(Parent):
 
 spec = DeclarativePluginSpec(
     name='mark',
-    nodes=[MarkNode],
     syntax=[InlineDelimited(name='mark', node=MarkNode, opener='==', closer='==')],
     renderers={
         'html': {'mark': RenderTemplate('<mark>{children}</mark>')},
@@ -353,7 +351,7 @@ spec = DeclarativePluginSpec(
     },
 )
 
-nodes = spec.nodes
+nodes = [MarkNode]
 ```
 
 Wenmode turns declarative syntax into normal parser rules and renderer handlers
@@ -368,7 +366,7 @@ unknown parent or literal node, without requiring a string template.
 
 Use a command-style plugin when a plugin needs setup options, directive
 renderers, root transforms, or command-style installation logic. A
-command-style plugin is a module or object with a `setup(wen, **options)`
+command-style plugin is a module or object with a `setup(wen, /)`
 function. Inside `setup()`, register parser rules, renderer handlers, directive
 renderers, or any combination of them.
 
@@ -378,7 +376,7 @@ from wenmode.rules import Emphasis
 
 
 class MyPlugin:
-    def setup(self, wen: Wenmode, **options) -> None:
+    def setup(self, wen: Wenmode, /) -> None:
         wen.register_rule(Emphasis)
 
 

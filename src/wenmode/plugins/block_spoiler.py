@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from wenmode.nodes import Parent
 from wenmode.renderers import MarkdownRenderer, RenderContext
@@ -96,6 +96,6 @@ handlers: RendererHandlers = {
 }
 
 
-def setup(wen: Wenmode, **options: Any) -> None:
+def setup(wen: Wenmode, /) -> None:
     wen.register_rules(rules)
     wen.register_renderer_handlers(handlers)

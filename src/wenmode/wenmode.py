@@ -1,15 +1,13 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Iterator
-from typing import Any, cast
 
-from ._declarative import DeclarativePluginSpec, install_declarative
 from ._parser.source import LineSource
 from ._streaming import assert_streaming_supported, unique_blockers
 from .nodes import Node, Root
 from .parser import Parser
 from .plugins import RendererHandlers
-from .plugins.types import PluginConfig, PluginLike, PluginSetupCall, PluginTarget
+from .plugins.types import PluginModule
 from .presets import commonmark
 from .renderers import BaseRenderer, DirectiveHtmlRenderer, HTMLRenderer
 from .rules.base import Rule
@@ -39,7 +37,7 @@ class Wenmode:
         rules: Iterable[type[Rule] | Rule] | None = None,
         renderer: BaseRenderer | None = None,
         directives: Iterable[DirectiveHtmlRenderer] = (),
-        plugins: Iterable[PluginTarget] = (),
+        plugins: Iterable[PluginModule] = (),
         positions: bool = False,
     ) -> None:
         parser_rules: Iterable[type[Rule] | Rule]
@@ -149,29 +147,10 @@ class Wenmode:
         """Return transform and root hook labels that prevent streaming output."""
         return unique_blockers([*self.parser.streaming_blockers(), *self.renderer.streaming_blockers()])
 
-    def use(self, plugin: PluginTarget, **options: Any) -> Wenmode:
+    def use(self, plugin: PluginModule) -> Wenmode:
         """Install a plugin module or plugin object on this parser and renderer."""
-        target: PluginLike
-        if isinstance(plugin, PluginConfig):
-            if options:
-                raise TypeError('plugin configs cannot be combined with extra options')
-            target = plugin.target
-            options = dict(plugin.options)
-        else:
-            target = plugin
-
-        spec = getattr(target, 'spec', None)
-        setup = getattr(target, 'setup', None)
-        if isinstance(spec, DeclarativePluginSpec):
-            if callable(setup):
-                raise TypeError('plugins must define either spec or setup, not both')
-            install_declarative(self, spec, **options)
-            handlers = getattr(target, 'handlers', None)
-            if handlers is not None:
-                self.register_renderer_handlers(cast(RendererHandlers, handlers))
-            return self
-
+        setup = getattr(plugin, 'setup', None)
         if not callable(setup):
-            raise TypeError('plugins must define spec or setup(wen, **options)')
-        cast(PluginSetupCall, setup)(self, **options)
+            raise TypeError('plugins must define setup(wen, /)')
+        plugin.setup(self)
         return self

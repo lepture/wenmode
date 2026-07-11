@@ -89,6 +89,5 @@ class DeclarativePluginSpec:
     """Declarative plugin specification installable by ``install_declarative``."""
 
     name: str
-    nodes: list[type[Node]]
     syntax: list[SyntaxSpec]
     renderers: Mapping[str, Mapping[str, RendererSpec]]

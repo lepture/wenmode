@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from wenmode.nodes import Literal
 from wenmode.renderers import MarkdownRenderer, RenderContext
@@ -8,8 +9,11 @@ from wenmode.renderers.asciidoc import AsciiDocRenderContext, AsciiDocRenderer
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer
 
-from .._declarative import DeclarativePluginSpec, InlineLiteral
+from .._declarative import DeclarativePluginSpec, InlineLiteral, install_declarative
 from .types import RendererHandlers
+
+if TYPE_CHECKING:
+    from wenmode import Wenmode
 
 
 @dataclass
@@ -39,7 +43,6 @@ def render_asciidoc_inline_math(
 
 spec = DeclarativePluginSpec(
     name='inline_math',
-    nodes=[InlineMathNode],
     syntax=[
         InlineLiteral(
             name='inline_math',
@@ -54,10 +57,15 @@ spec = DeclarativePluginSpec(
     renderers={},
 )
 
-nodes = spec.nodes
+nodes = [InlineMathNode]
 handlers: RendererHandlers = {
     'html': {InlineMathNode.type: render_html_inline_math},
     'markdown': {InlineMathNode.type: render_markdown_inline_math},
     'rst': {InlineMathNode.type: render_rst_inline_math},
     'asciidoc': {InlineMathNode.type: render_asciidoc_inline_math},
 }
+
+
+def setup(wen: Wenmode, /) -> None:
+    install_declarative(wen, spec)
+    wen.register_renderer_handlers(handlers)

@@ -8,10 +8,13 @@ from ._parser.inlines import InlineParser
 from ._parser.ruleset import RuleSet, resolve_rule
 from ._parser.source import LineSource, NullSourceTracker, PositionSourceTracker, SourceMap, StreamPositionSourceTracker
 from ._parser.state import BlockState, StreamBlockState, StreamLineBuffer
+from ._streaming import StreamingUnsupportedError as _StreamingUnsupportedError
 from ._streaming import assert_streaming_supported
 from .nodes import Node, Root
 from .rules.base import BlockRule, InlineRule, Rule
 from .rules.transforms import RootTransform
+
+StreamingUnsupportedError = _StreamingUnsupportedError
 
 
 class Parser:

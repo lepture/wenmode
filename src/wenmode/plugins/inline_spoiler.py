@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from wenmode.nodes import Parent
 
-from .._declarative import DeclarativePluginSpec, InlineDelimited, RendererFallback, RenderTemplate
+from .._declarative import DeclarativePluginSpec, InlineDelimited, RendererFallback, RenderTemplate, install_declarative
+
+if TYPE_CHECKING:
+    from wenmode import Wenmode
 
 
 @dataclass
@@ -16,7 +20,6 @@ class InlineSpoilerNode(Parent):
 
 spec = DeclarativePluginSpec(
     name='inline_spoiler',
-    nodes=[InlineSpoilerNode],
     syntax=[
         InlineDelimited(
             name='inline_spoiler',
@@ -39,4 +42,8 @@ spec = DeclarativePluginSpec(
     },
 )
 
-nodes = spec.nodes
+nodes = [InlineSpoilerNode]
+
+
+def setup(wen: Wenmode, /) -> None:
+    install_declarative(wen, spec)

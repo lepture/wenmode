@@ -24,31 +24,44 @@ class SmartypantsState:
     single_open: bool = True
 
 
-def setup(
-    wen: Wenmode,
+@dataclass(frozen=True)
+class SmartypantsPlugin:
+    quotes: bool = True
+    dashes: bool = True
+    ellipses: bool = True
+
+    def setup(self, wen: Wenmode, /) -> None:
+        """Install smart punctuation rendering for plain text nodes."""
+
+        def render_text_node(
+            renderer: HTMLRenderer,
+            node: Text,
+            context: HTMLRenderContext,
+        ) -> str:
+            value = SOFT_BREAK_SPACE_RE.sub('', node.value)
+            text = smarten(value, state_for(context), quotes=self.quotes, dashes=self.dashes, ellipses=self.ellipses)
+            return renderer.escape_html(text)
+
+        wen.register_renderer_handlers(
+            {
+                'html': {
+                    Text.type: render_text_node,
+                }
+            }
+        )
+
+
+def configure(
+    *,
     quotes: bool = True,
     dashes: bool = True,
     ellipses: bool = True,
-    **options: Any,
-) -> None:
-    """Install smart punctuation rendering for plain text nodes."""
+) -> SmartypantsPlugin:
+    return SmartypantsPlugin(quotes=quotes, dashes=dashes, ellipses=ellipses)
 
-    def render_text_node(
-        renderer: HTMLRenderer,
-        node: Text,
-        context: HTMLRenderContext,
-    ) -> str:
-        value = SOFT_BREAK_SPACE_RE.sub('', node.value)
-        text = smarten(value, state_for(context), quotes=quotes, dashes=dashes, ellipses=ellipses)
-        return renderer.escape_html(text)
 
-    wen.register_renderer_handlers(
-        {
-            'html': {
-                Text.type: render_text_node,
-            }
-        }
-    )
+def setup(wen: Wenmode, /) -> None:
+    configure().setup(wen)
 
 
 def state_for(context: RenderContext) -> SmartypantsState:

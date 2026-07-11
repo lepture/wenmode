@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from typing import Any
 
 from wenmode import Wenmode
 from wenmode.plugins import (
@@ -89,26 +88,24 @@ STANDARD_RULES: dict[str, RuleSpec] = {
     'thematic_break': ThematicBreak,
 }
 
-PluginConfig = tuple[Any, dict[str, object]]
-
-PLUGIN_RULES: dict[str, PluginConfig] = {
-    'abbreviation': (abbr, {}),
-    'block_spoiler': (block_spoiler, {}),
-    'definition_list': (definition_list, {}),
-    'fenced_directive': (fenced_directive, {}),
-    'frontmatter': (frontmatter, {}),
-    'html_container': (html_container, {}),
-    'inline_math': (inline_math, {}),
-    'inline_spoiler': (inline_spoiler, {}),
-    'insert': (insert, {}),
-    'mark': (mark, {}),
-    'math_block': (block_math, {}),
-    'role': (inline_role, {}),
-    'ruby': (ruby, {}),
-    'smartypants': (smartypants, {}),
-    'smartypants_no_dashes': (smartypants, {'dashes': False}),
-    'subscript': (subscript, {}),
-    'superscript': (superscript, {}),
+PLUGIN_RULES: dict[str, object] = {
+    'abbreviation': abbr,
+    'block_spoiler': block_spoiler,
+    'definition_list': definition_list,
+    'fenced_directive': fenced_directive,
+    'frontmatter': frontmatter,
+    'html_container': html_container,
+    'inline_math': inline_math,
+    'inline_spoiler': inline_spoiler,
+    'insert': insert,
+    'mark': mark,
+    'math_block': block_math,
+    'role': inline_role,
+    'ruby': ruby,
+    'smartypants': smartypants,
+    'smartypants_no_dashes': smartypants.configure(dashes=False),
+    'subscript': subscript,
+    'superscript': superscript,
 }
 
 
@@ -126,14 +123,13 @@ def configured_app(
     if rule_names is None:
         return app
 
-    installed_plugins: set[tuple[int, tuple[tuple[str, object], ...]]] = set()
+    installed_plugins: set[int] = set()
     for name in rule_names:
         plugin_spec = PLUGIN_RULES.get(name)
         if plugin_spec is not None:
-            plugin, options = plugin_spec
-            key = (id(plugin), tuple(sorted(options.items())))
+            key = id(plugin_spec)
             if key not in installed_plugins:
-                app.use(plugin, **options)
+                app.use(plugin_spec)
                 installed_plugins.add(key)
             continue
         app.register_rule(STANDARD_RULES[name])

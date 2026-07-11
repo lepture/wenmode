@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from wenmode.nodes import Parent
 
-from .._declarative import DeclarativePluginSpec, InlineDelimited, RendererFallback, RenderTemplate
+from .._declarative import DeclarativePluginSpec, InlineDelimited, RendererFallback, RenderTemplate, install_declarative
+
+if TYPE_CHECKING:
+    from wenmode import Wenmode
 
 
 @dataclass
@@ -16,7 +20,6 @@ class MarkNode(Parent):
 
 spec = DeclarativePluginSpec(
     name='mark',
-    nodes=[MarkNode],
     syntax=[
         InlineDelimited(
             name='mark',
@@ -34,4 +37,8 @@ spec = DeclarativePluginSpec(
     },
 )
 
-nodes = spec.nodes
+nodes = [MarkNode]
+
+
+def setup(wen: Wenmode, /) -> None:
+    install_declarative(wen, spec)

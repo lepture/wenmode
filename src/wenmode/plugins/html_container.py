@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias
+from typing import TYPE_CHECKING, ClassVar, TypeAlias
 
 from wenmode.nodes import Node, Parent
 from wenmode.renderers import MarkdownRenderer, RenderContext
@@ -242,6 +242,18 @@ handlers: RendererHandlers = {
 }
 
 
-def setup(wen: Wenmode, **options: Any) -> None:
-    wen.register_rule(HtmlContainer(**options))
-    wen.register_renderer_handlers(handlers)
+@dataclass(frozen=True)
+class HtmlContainerPlugin:
+    disallowed_tags: Sequence[str] = ()
+
+    def setup(self, wen: Wenmode, /) -> None:
+        wen.register_rule(HtmlContainer(disallowed_tags=self.disallowed_tags))
+        wen.register_renderer_handlers(handlers)
+
+
+def configure(*, disallowed_tags: Sequence[str] = ()) -> HtmlContainerPlugin:
+    return HtmlContainerPlugin(disallowed_tags=disallowed_tags)
+
+
+def setup(wen: Wenmode, /) -> None:
+    configure().setup(wen)

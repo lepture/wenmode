@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from wenmode.nodes import Node
 from wenmode.nodes import TextDirective as TextDirectiveNode
@@ -66,5 +66,5 @@ def parse_role(text: str, start: int = 0) -> tuple[str, str, int, int, int] | No
 nodes: dict[str, type[Node]] = {}
 
 
-def setup(wen: Wenmode, **options: Any) -> None:
+def setup(wen: Wenmode, /) -> None:
     wen.register_rule(RoleRule)

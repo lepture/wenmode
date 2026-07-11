@@ -15,8 +15,8 @@ from wenmode.plugins import (
     RendererFallback,
     RenderTemplate,
     inline_math,
+    install_declarative,
     mark,
-    plugin,
     ruby,
     smartypants,
 )
@@ -111,7 +111,7 @@ def test_wenmode_accepts_plugins_during_initialization() -> None:
 def test_wenmode_installs_declarative_plugin() -> None:
     wen = Wenmode(plugins=[mark])
 
-    assert mark.nodes == mark.spec.nodes == [mark.MarkNode]
+    assert mark.nodes == [mark.MarkNode]
     assert mark.spec.syntax[0].opener == '=='
     assert wen.render('==marked *text*==\n') == '<p><mark>marked <em>text</em></mark></p>\n'
     assert wen.render('===not marked===\n') == '<p>===not marked===</p>\n'
@@ -120,8 +120,8 @@ def test_wenmode_installs_declarative_plugin() -> None:
 def test_wenmode_installs_declarative_plugin_handlers() -> None:
     wen = Wenmode(plugins=[inline_math])
 
-    assert not hasattr(inline_math, 'setup')
-    assert inline_math.nodes == inline_math.spec.nodes == [inline_math.InlineMathNode]
+    assert callable(inline_math.setup)
+    assert inline_math.nodes == [inline_math.InlineMathNode]
     assert wen.render('$x < y$\n') == '<p><span class="math math-inline">x &lt; y</span></p>\n'
 
 
@@ -129,7 +129,6 @@ def test_wenmode_installs_declarative_inline_literal() -> None:
     class InlineLiteralPlugin:
         spec = DeclarativePluginSpec(
             name='custom_inline_literal',
-            nodes=[CustomInlineLiteral],
             syntax=[
                 InlineLiteral(
                     name='custom_inline_literal',
@@ -143,7 +142,11 @@ def test_wenmode_installs_declarative_inline_literal() -> None:
             renderers={'html': {CustomInlineLiteral.type: RendererFallback('value')}},
         )
 
-        nodes = spec.nodes
+        nodes = [CustomInlineLiteral]
+
+        @staticmethod
+        def setup(wen: Wenmode, /) -> None:
+            install_declarative(wen, InlineLiteralPlugin.spec)
 
     wen = Wenmode(plugins=[InlineLiteralPlugin])
 
@@ -155,7 +158,6 @@ def test_wenmode_installs_declarative_block_fenced_literal() -> None:
     class BlockLiteralPlugin:
         spec = DeclarativePluginSpec(
             name='custom_block_literal',
-            nodes=[CustomBlockLiteral],
             syntax=[
                 BlockFenced(
                     name='custom_block_literal',
@@ -168,7 +170,11 @@ def test_wenmode_installs_declarative_block_fenced_literal() -> None:
             renderers={'html': {CustomBlockLiteral.type: RenderTemplate('<aside>{value}</aside>\n')}},
         )
 
-        nodes = spec.nodes
+        nodes = [CustomBlockLiteral]
+
+        @staticmethod
+        def setup(wen: Wenmode, /) -> None:
+            install_declarative(wen, BlockLiteralPlugin.spec)
 
     wen = Wenmode(plugins=[BlockLiteralPlugin])
 
@@ -179,7 +185,6 @@ def test_wenmode_installs_declarative_block_fenced_children() -> None:
     class BlockParentPlugin:
         spec = DeclarativePluginSpec(
             name='custom_block_parent',
-            nodes=[CustomBlockParent],
             syntax=[
                 BlockFenced(
                     name='custom_block_parent',
@@ -192,7 +197,11 @@ def test_wenmode_installs_declarative_block_fenced_children() -> None:
             renderers={'html': {CustomBlockParent.type: RendererFallback('children')}},
         )
 
-        nodes = spec.nodes
+        nodes = [CustomBlockParent]
+
+        @staticmethod
+        def setup(wen: Wenmode, /) -> None:
+            install_declarative(wen, BlockParentPlugin.spec)
 
     wen = Wenmode(plugins=[BlockParentPlugin])
 
@@ -205,7 +214,6 @@ def test_declarative_block_fenced_children_respects_max_container_depth() -> Non
     class BlockParentPlugin:
         spec = DeclarativePluginSpec(
             name='bounded_custom_block_parent',
-            nodes=[CustomBlockParent],
             syntax=[
                 BlockFenced(
                     name=f'custom_block_parent_{index}',
@@ -219,7 +227,11 @@ def test_declarative_block_fenced_children_respects_max_container_depth() -> Non
             renderers={'html': {CustomBlockParent.type: RendererFallback('children')}},
         )
 
-        nodes = spec.nodes
+        nodes = [CustomBlockParent]
+
+        @staticmethod
+        def setup(wen: Wenmode, /) -> None:
+            install_declarative(wen, BlockParentPlugin.spec)
 
     markdown = (
         ''.join(f'{opener}\n' for opener in openers)
@@ -235,59 +247,61 @@ def test_declarative_block_fenced_children_respects_max_container_depth() -> Non
     assert any('deepest source' in value for value in _text_values(ast))
 
 
-def test_wenmode_rejects_declarative_plugin_options() -> None:
-    with pytest.raises(TypeError, match="declarative plugin 'mark' does not accept setup options: custom"):
+def test_wenmode_rejects_plugin_options() -> None:
+    with pytest.raises(TypeError, match="unexpected keyword argument 'custom'"):
         Wenmode().use(mark, custom=True)
 
 
 def test_wenmode_uses_plugin_options() -> None:
-    wen = Wenmode().use(smartypants, dashes=False)
+    wen = Wenmode().use(smartypants.configure(dashes=False))
 
     assert wen.render('"Hello..." -- ok\n') == '<p>“Hello…” -- ok</p>\n'
 
 
 def test_wenmode_accepts_plugin_specs_during_initialization() -> None:
-    wen = Wenmode([], plugins=[plugin(smartypants, dashes=False)])
+    wen = Wenmode([], plugins=[smartypants.configure(dashes=False)])
 
     assert wen.render('"Hello..." -- ok\n') == '<p>“Hello…” -- ok</p>\n'
 
 
 def test_wenmode_accepts_plugin_specs_with_use() -> None:
-    wen = Wenmode([]).use(plugin(smartypants, dashes=False))
+    wen = Wenmode([]).use(smartypants.configure(dashes=False))
 
     assert wen.render('"Hello..." -- ok\n') == '<p>“Hello…” -- ok</p>\n'
 
 
-def test_wenmode_rejects_plugin_spec_plus_extra_options() -> None:
-    with pytest.raises(TypeError, match='plugin configs cannot be combined with extra options'):
-        Wenmode([]).use(plugin(smartypants, dashes=False), quotes=False)
+def test_wenmode_rejects_configured_plugin_plus_extra_options() -> None:
+    with pytest.raises(TypeError, match="unexpected keyword argument 'quotes'"):
+        Wenmode([]).use(smartypants.configure(dashes=False), quotes=False)
 
 
 def test_wenmode_rejects_modules_without_setup() -> None:
-    with pytest.raises(TypeError, match='plugins must define spec or setup'):
+    with pytest.raises(TypeError, match=r'plugins must define setup\(wen, /\)'):
         Wenmode().use(ModuleType('empty_plugin'))
 
 
 def test_wenmode_rejects_constructor_plugins_without_setup() -> None:
-    with pytest.raises(TypeError, match='plugins must define spec or setup'):
+    with pytest.raises(TypeError, match=r'plugins must define setup\(wen, /\)'):
         Wenmode(plugins=[ModuleType('empty_plugin')])
 
 
 def test_wenmode_rejects_constructor_plugin_option_tuples() -> None:
-    with pytest.raises(TypeError, match='plugins must define spec or setup'):
+    with pytest.raises(TypeError, match=r'plugins must define setup\(wen, /\)'):
         Wenmode(plugins=[(smartypants, {'dashes': False})])
 
 
-def test_wenmode_rejects_plugins_with_spec_and_setup() -> None:
-    class AmbiguousPlugin:
-        spec = DeclarativePluginSpec(name='ambiguous', nodes=[], syntax=[], renderers={})
+def test_wenmode_uses_setup_even_when_plugin_exposes_spec() -> None:
+    class SpecBackedPlugin:
+        spec = DeclarativePluginSpec(name='spec_backed', syntax=[], renderers={})
+        called = False
 
         @staticmethod
-        def setup(wen: Wenmode, **options: object) -> None:
-            raise AssertionError('setup should not be called')
+        def setup(wen: Wenmode, /) -> None:
+            SpecBackedPlugin.called = True
 
-    with pytest.raises(TypeError, match='plugins must define either spec or setup, not both'):
-        Wenmode().use(AmbiguousPlugin)
+    Wenmode().use(SpecBackedPlugin)
+
+    assert SpecBackedPlugin.called is True
 
 
 def test_wenmode_registers_renderer_handlers_for_current_renderer() -> None:

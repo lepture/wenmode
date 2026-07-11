@@ -264,7 +264,7 @@ def test_fenced_literal_directive_preserves_code_block_body() -> None:
 
 
 def test_unknown_literal_directive_escapes_html_by_default() -> None:
-    app = Wenmode([]).use(fenced_directive, literal_names={'raw'})
+    app = Wenmode([]).use(fenced_directive.configure(literal_names={'raw'}))
 
     assert app.render('```{raw} html\n<script>alert("x")</script>\n```\n') == (
         '&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;\n'
@@ -295,7 +295,7 @@ def test_literal_directive_renderers_preserve_fenced_and_rst_forms() -> None:
 
 
 def test_fenced_directive_literal_names_are_configurable() -> None:
-    app = Wenmode([]).use(fenced_directive, literal_names=())
+    app = Wenmode([]).use(fenced_directive.configure(literal_names=()))
 
     assert app.parse('```{code-block} python\n*body*\n```\n').to_ast() == {
         'type': 'root',
@@ -319,9 +319,10 @@ def test_fenced_directive_literal_names_are_configurable() -> None:
 def test_fenced_directive_fence_chars_are_configurable() -> None:
     default_app = Wenmode([]).use(fenced_directive)
     custom_app = Wenmode([], renderer=RSTRenderer()).use(
-        fenced_directive,
-        literal_names={'sourcecode'},
-        fence=('`', '~', ':'),
+        fenced_directive.configure(
+            literal_names={'sourcecode'},
+            fence=('`', '~', ':'),
+        )
     )
 
     assert default_app.render(':::{note} Title\nBody.\n:::\n') == '<p>:::{note} Title\nBody.\n:::</p>\n'
@@ -333,10 +334,10 @@ def test_fenced_directive_fence_chars_are_configurable() -> None:
 
 def test_fenced_directive_rejects_invalid_fence_config() -> None:
     with pytest.raises(ValueError, match='at least one character'):
-        Wenmode([]).use(fenced_directive, fence=())
+        Wenmode([]).use(fenced_directive.configure(fence=()))
 
     with pytest.raises(ValueError, match='single characters'):
-        Wenmode([]).use(fenced_directive, fence=('::',))
+        Wenmode([]).use(fenced_directive.configure(fence=('::',)))
 
 
 def test_fenced_directive_handles_empty_and_unclosed_bodies() -> None:

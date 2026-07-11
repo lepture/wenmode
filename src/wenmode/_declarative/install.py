@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from wenmode.rules.base import Rule
 
@@ -13,12 +13,8 @@ if TYPE_CHECKING:
     from wenmode import Wenmode
 
 
-def install_declarative(wen: Wenmode, spec: DeclarativePluginSpec, **options: Any) -> None:
+def install_declarative(wen: Wenmode, spec: DeclarativePluginSpec) -> None:
     """Install a declarative plugin spec into a ``Wenmode`` instance."""
-
-    if options:
-        option_names = ', '.join(sorted(options))
-        raise TypeError(f'declarative plugin {spec.name!r} does not accept setup options: {option_names}')
 
     rules: list[type[Rule] | Rule] = [_rule_from_syntax(syntax) for syntax in spec.syntax]
     if rules:

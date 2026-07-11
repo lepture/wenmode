@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from wenmode.nodes import Node, Parent, Position, Text
 from wenmode.renderers import render_node_children
@@ -216,6 +216,6 @@ handlers: RendererHandlers = {
 }
 
 
-def setup(wen: Wenmode, **options: Any) -> None:
+def setup(wen: Wenmode, /) -> None:
     wen.register_rules(rules)
     wen.register_renderer_handlers(handlers)
