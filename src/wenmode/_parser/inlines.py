@@ -113,7 +113,8 @@ class InlineParser:
         if self._rule_set.inline_trigger_re is None:
             return found
 
-        trigger_match = self._rule_set.inline_trigger_re.search(text, pos)
+        trigger_end = min(limit + 1, len(text))
+        trigger_match = self._rule_set.inline_trigger_re.search(text, pos, trigger_end)
         while trigger_match is not None and trigger_match.start() <= limit:
             start = trigger_match.start()
             for rule in self._rule_set.triggered_inline_rules[text[start]]:
@@ -123,7 +124,7 @@ class InlineParser:
                 candidate = (start, rule, match)
                 if found is None or self._inline_candidate_before(candidate, found):
                     return candidate
-            trigger_match = self._rule_set.inline_trigger_re.search(text, start + 1)
+            trigger_match = self._rule_set.inline_trigger_re.search(text, start + 1, trigger_end)
         return found
 
     def _search_inline_match(

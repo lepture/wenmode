@@ -44,11 +44,13 @@ def assert_scales_nearly_linearly(
     small_size: int = 4000,
     large_size: int = 8000,
     plugins: Iterable[Any] = (),
+    ratio: float = 3.5,
+    slack: float = 0.02,
 ) -> None:
     small = parse_time(factory(small_size), rules, plugins)
     large = parse_time(factory(large_size), rules, plugins)
 
-    assert large < small * 3.5 + 0.02
+    assert large < small * ratio + slack
 
 
 def test_unmatched_link_openers_do_not_rescan_suffixes() -> None:
@@ -77,6 +79,17 @@ def test_dense_emphasis_delimiters_scale_nearly_linearly() -> None:
 
 def test_plain_text_inline_dispatch_scales_nearly_linearly() -> None:
     assert_scales_nearly_linearly(lambda size: 'a' * size + '\n', commonmark, 8000, 16000)
+
+
+def test_repeated_hard_break_dispatch_scales_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(
+        lambda size: 'a  \n' * size,
+        commonmark,
+        4000,
+        8000,
+        ratio=3.0,
+        slack=0.01,
+    )
 
 
 def test_leaf_directive_candidates_scale_nearly_linearly() -> None:

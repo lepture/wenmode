@@ -210,6 +210,33 @@ def test_parser_rebuilds_inline_dispatch_when_rule_is_replaced() -> None:
     assert render(parser, '@a !b\n') == '<p>@a bang</p>\n'
 
 
+def test_inline_dispatch_uses_rule_order_for_equal_offset_candidates() -> None:
+    class TriggeredAt(InlineRule):
+        name = 'triggered_at'
+        pattern = r'@'
+        trigger_chars = '@'
+
+        def parse(
+            self, parser: Parser, text: str, match: re.Match[str], state: BlockState
+        ) -> tuple[Node | None, int]:
+            return Text(value='triggered'), match.end()
+
+    class SearchedAt(InlineRule):
+        name = 'searched_at'
+        pattern = r'@'
+
+        def parse(
+            self, parser: Parser, text: str, match: re.Match[str], state: BlockState
+        ) -> tuple[Node | None, int]:
+            return Text(value='searched'), match.end()
+
+    triggered_first = parse_inlines(Parser([TriggeredAt, SearchedAt]), '@')
+    searched_first = parse_inlines(Parser([SearchedAt, TriggeredAt]), '@')
+
+    assert [node.to_ast() for node in triggered_first] == [{'type': 'text', 'value': 'triggered'}]
+    assert [node.to_ast() for node in searched_first] == [{'type': 'text', 'value': 'searched'}]
+
+
 def test_custom_extension_state_uses_state_store() -> None:
     app = Wenmode([Glossary, Blockquote])
 
