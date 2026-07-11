@@ -22,6 +22,9 @@ here while preparing a release, then move them under the final version heading.
   update rule configurations.
 - Stop exporting Markdown renderer implementation helpers from
   `wenmode.renderers`; use the documented renderer classes and extension hooks.
+- Escape string values from unknown or custom literal nodes in HTML output,
+  including with `HTMLRenderer(escape=False)`. Custom literal extensions that
+  relied on implicit markup passthrough must register an HTML handler.
 
 ## 0.9.1
 

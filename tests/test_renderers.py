@@ -239,6 +239,26 @@ def test_html_renderer_custom_elements_require_registered_handler() -> None:
     assert renderer.render(node) == '<p><mark data-custom="yes">marked</mark></p>\n'
 
 
+def test_html_renderer_escapes_unknown_literal_nodes_without_registered_handler() -> None:
+    literal = CustomLiteral(value='<mark title="unsafe">&</mark>')
+
+    assert HTMLRenderer().render(literal) == '&lt;mark title=&quot;unsafe&quot;&gt;&amp;&lt;/mark&gt;'
+    assert HTMLRenderer().render(CustomParent(children=[literal])) == (
+        '&lt;mark title=&quot;unsafe&quot;&gt;&amp;&lt;/mark&gt;'
+    )
+
+    raw_renderer = HTMLRenderer(escape=False)
+    assert raw_renderer.render(literal) == '&lt;mark title=&quot;unsafe&quot;&gt;&amp;&lt;/mark&gt;'
+    assert raw_renderer.render(Html(value='<mark>trusted</mark>')) == '<mark>trusted</mark>'
+
+    def render_custom_literal(renderer: HTMLRenderer, node: CustomLiteral, context: RenderContext) -> str:
+        return f'<mark>{renderer.escape_html(node.value)}</mark>'
+
+    raw_renderer.register_handler('customLiteral', render_custom_literal)
+
+    assert raw_renderer.render(literal) == '<mark>&lt;mark title=&quot;unsafe&quot;&gt;&amp;&lt;/mark&gt;</mark>'
+
+
 def test_html_renderer_escapes_attribute_values_and_drops_unsafe_names() -> None:
     renderer = HTMLRenderer()
 

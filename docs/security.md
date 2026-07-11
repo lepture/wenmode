@@ -80,6 +80,12 @@ assert html == expected.lstrip()
 This allows raw HTML nodes to pass through the renderer. It does not sanitize
 HTML for you.
 
+Unknown or custom literal nodes render their string values as escaped text
+unless an HTML handler is registered for their node type. This boundary also
+applies when `HTMLRenderer(escape=False)` enables passthrough for concrete
+`html` nodes; custom extensions that produce markup must register an explicit
+HTML handler.
+
 ## URL sanitization
 
 `HTMLRenderer` sanitizes link and image URLs by default. URLs with an unsafe

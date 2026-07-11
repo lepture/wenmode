@@ -127,6 +127,18 @@ class HTMLRenderer(BaseRenderer):
         for name in directive.names:
             self.directives[(directive.node_type, name)] = directive
 
+    def render_unknown(self, node: Node, context: RenderContext) -> str:
+        """Render an unknown node without allowing implicit HTML markup."""
+        children = getattr(node, 'children', None)
+        if isinstance(children, list):
+            return self.render_children(cast(list[Node], children), context)
+
+        value = getattr(node, 'value', None)
+        if isinstance(value, str):
+            return self.escape_html(value)
+
+        return ''
+
     def escape(self, value: str) -> str:
         """Escape raw HTML when renderer escaping is enabled."""
         if not self.escape_enabled:

@@ -256,7 +256,7 @@ def test_wenmode_renderer_handlers_are_instance_local() -> None:
     configured.register_renderer_handlers({'html': {'customLiteral': render_custom_literal}})
 
     assert configured.render_node(CustomLiteral(value='<x>')) == '<custom>&lt;x&gt;</custom>'
-    assert plain.render_node(CustomLiteral(value='<x>')) == '<x>'
+    assert plain.render_node(CustomLiteral(value='<x>')) == '&lt;x&gt;'
 
 
 def test_wenmode_registers_directive_renderers_dynamically() -> None:
