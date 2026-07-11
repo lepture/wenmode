@@ -126,11 +126,12 @@ def test_public_state_facade_reexports_private_implementations() -> None:
         NullSourceCollector,
         NullSourceTracker,
         PositionSourceCollector,
-        PositionSourceTracker,
-        SourceCollector,
-        SourceMap,
-        SourceSegment,
-    )
+            PositionSourceTracker,
+            SourceCollector,
+            SourceMap,
+            SourceSegment,
+            StreamPositionSourceTracker,
+        )
     from wenmode._parser.state import BlockState, StreamBlockState, StreamLineBuffer
     from wenmode._parser.store import StateKey, StateStore
 
@@ -145,6 +146,7 @@ def test_public_state_facade_reexports_private_implementations() -> None:
         'SourceCollector': SourceCollector,
         'SourceMap': SourceMap,
         'SourceSegment': SourceSegment,
+        'StreamPositionSourceTracker': StreamPositionSourceTracker,
         'StateKey': StateKey,
         'StateStore': StateStore,
         'StreamBlockState': StreamBlockState,

@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 
 from wenmode import Parser, Wenmode
-from wenmode.nodes import Node, Parent, Text
+from wenmode.nodes import Node, Paragraph, Parent, Text
 from wenmode.rules import AtxHeading, BlockRule, InlineCode, InlineRule
 from wenmode.state import BlockState, SourceMap, SourceSegment
 
@@ -13,55 +13,126 @@ class BoxNode(Parent):
         super().__init__('box', children=children)
 
 
-def test_source_map_preserves_boundary_and_line_offset_semantics() -> None:
-    source = SourceMap('abcdef', [SourceSegment(0, 2, 10), SourceSegment(2, 4, 30), SourceSegment(4, 6, 80)])
+class SyntheticInlineSourceRule(BlockRule):
+    name = 'synthetic_inline_source'
+    pattern = r'::source[ \t]*$'
 
-    assert [source.source_offset(offset) for offset in (-1, 0, 1, 2, 6, 99)] == [10, 10, 11, 30, 82, 82]
-    assert source.line_offsets(['ab', 'cd', 'ef']) == [10, 30, 80]
+    def __init__(self, text: str, source: SourceMap) -> None:
+        super().__init__()
+        self.text = text
+        self.source = source
+
+    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
+        state.advance()
+        return BoxNode([Paragraph(children=parser.parse_inlines(self.text, state, source=self.source))])
 
 
-def test_source_map_preserves_duplicate_and_zero_length_segment_semantics() -> None:
+class SyntheticBlockSourceRule(SyntheticInlineSourceRule):
+    name = 'synthetic_block_source'
+
+    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
+        state.advance()
+        return BoxNode(parser.parse_blocks(self.text, state, source=self.source))
+
+
+class ProbeLetter(InlineRule):
+    name = 'probe_letter'
+    pattern = r'[A-Za-z]'
+    trigger_chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
+        return Node(type=f'probe_{match.group(0)}'), match.end()
+
+
+def probe_positions(text: str, source: SourceMap) -> list[tuple[str, int | None, int | None]]:
+    root = Wenmode([SyntheticInlineSourceRule(text, source), ProbeLetter], positions=True).parse('::source\n')
+    paragraph = root.children[0].children[0]
+    return [
+        (child.type, child.position.start if child.position is not None else None, child.position.end if child.position else None)
+        for child in paragraph.children
+        if child.type.startswith('probe_')
+    ]
+
+
+def nested_probe_positions(text: str, source: SourceMap) -> list[tuple[str, int | None, int | None]]:
+    root = Wenmode([SyntheticBlockSourceRule(text, source), ProbeLetter], positions=True).parse('::source\n')
+    paragraph = root.children[0].children[0]
+    return [
+        (child.type, child.position.start if child.position is not None else None, child.position.end if child.position else None)
+        for child in paragraph.children
+        if child.type.startswith('probe_')
+    ]
+
+
+def test_wenmode_maps_nested_blocks_across_source_segments() -> None:
     source = SourceMap(
-        'ab', [SourceSegment(0, 0, 5), SourceSegment(0, 1, 10), SourceSegment(1, 1, 20), SourceSegment(1, 2, 30)]
+        'a\nbc\nde\nf',
+        [
+            SourceSegment(0, 2, 10),
+            SourceSegment(2, 5, 30),
+            SourceSegment(5, 8, 80),
+            SourceSegment(8, 9, 100),
+        ],
     )
 
-    assert source.source_offset(0) == 5
-    assert source.source_offset(1) == 20
-    assert source.source_offset(2) == 31
+    assert probe_positions('a\nbc\nde\nf', source) == [
+        ('probe_a', 10, 11),
+        ('probe_b', 30, 31),
+        ('probe_c', 31, 32),
+        ('probe_d', 80, 81),
+        ('probe_e', 81, 82),
+        ('probe_f', 100, 101),
+    ]
 
 
-def test_source_map_preserves_first_match_order_for_arbitrary_segments() -> None:
+def test_wenmode_nested_block_line_offsets_use_source_map() -> None:
+    source = SourceMap(
+        'a\nbc\nde\nf',
+        [
+            SourceSegment(0, 2, 10),
+            SourceSegment(2, 5, 30),
+            SourceSegment(5, 8, 80),
+            SourceSegment(8, 9, 100),
+        ],
+    )
+
+    assert nested_probe_positions('a\nbc\nde\nf', source) == [
+        ('probe_a', 10, 11),
+        ('probe_b', 30, 31),
+        ('probe_c', 31, 32),
+        ('probe_d', 80, 81),
+        ('probe_e', 81, 82),
+        ('probe_f', 100, 101),
+    ]
+
+
+def test_wenmode_preserves_duplicate_and_zero_length_source_boundaries() -> None:
+    source = SourceMap(
+        'ab',
+        [SourceSegment(0, 0, 5), SourceSegment(0, 1, 10), SourceSegment(1, 1, 20), SourceSegment(1, 2, 30)],
+    )
+
+    assert probe_positions('ab', source) == [('probe_a', 5, 20), ('probe_b', 20, 31)]
+
+
+def test_wenmode_preserves_first_match_order_for_overlapping_source_segments() -> None:
     source = SourceMap('abcdefgh', [SourceSegment(0, 8, 100), SourceSegment(4, 6, 20), SourceSegment(2, 7, 60)])
 
-    assert source.source_offset(3) == 103
-    assert source.source_offset(4) == 20
-    assert source.source_offset(5) == 105
+    positions = probe_positions('abcdefgh', source)
 
-    decreasing_ends = SourceMap('abcdefgh', [SourceSegment(0, 8, 100), SourceSegment(4, 6, 20)])
-    assert decreasing_ends.source_offset(4) == 20
-    assert decreasing_ends.source_offset(5) == 105
-
-    overlapping_slice = decreasing_ends.slice(5, 6)
-    assert overlapping_slice.segments == [SourceSegment(0, 1, 105), SourceSegment(0, 1, 105)]
+    assert positions[3:6] == [('probe_d', 103, 20), ('probe_e', 20, 105), ('probe_f', 105, 106)]
 
 
-def test_source_map_preserves_partial_empty_and_missing_segment_slices() -> None:
-    source = SourceMap('abcdef', [SourceSegment(0, 2, 10), SourceSegment(2, 4, 30), SourceSegment(4, 6, 80)])
+def test_wenmode_maps_single_segment_source_slices() -> None:
+    source = SourceMap.from_parts([('  abc  ', 40)])
 
-    partial = source.slice(1, 5)
-    assert partial.text == 'bcde'
-    assert partial.segments == [SourceSegment(0, 1, 11), SourceSegment(1, 3, 30), SourceSegment(3, 4, 80)]
-    empty = source.slice(3, 3)
-    assert empty.text == ''
-    assert empty.source_offset(0) == 31
-    shared_boundary = source.slice(2, 2)
-    assert shared_boundary.segments == [SourceSegment(0, 0, 30), SourceSegment(0, 0, 30)]
+    assert probe_positions('abc', source.slice(2, 5)) == [('probe_a', 42, 43), ('probe_b', 43, 44), ('probe_c', 44, 45)]
 
-    empty_map = SourceMap('abc', [])
-    assert empty_map.source_offset(99) == 0
-    missing = empty_map.slice(1, 2)
-    assert missing.text == 'b'
-    assert missing.segments == [SourceSegment(0, 0, 0)]
+
+def test_wenmode_keeps_irregular_line_offset_fallback_semantics() -> None:
+    source = SourceMap('a\nb\nc', [SourceSegment(0, 5, 10), SourceSegment(2, 3, 50)])
+
+    assert nested_probe_positions('a\nb\nc', source) == [('probe_a', 10, 11), ('probe_b', 50, 51), ('probe_c', 14, 15)]
 
 
 def test_nested_block_and_inline_source_maps_share_parent_state() -> None:
@@ -125,11 +196,72 @@ def test_inline_sources_are_state_local() -> None:
             )
             return Text(value='!'), match.end()
 
-    parser = Parser([ProbeSource], positions=True)
-    state = BlockState([])
+    Wenmode([ProbeSource], positions=True).parse('!')
 
-    parser.parse_inlines('!', state, source=SourceMap.contiguous('!', 42))
-
-    assert observations == [(42, 43, True)]
-    assert state.inline_sources == []
     assert other_state.inline_sources == []
+    assert observations == [(0, 1, True)]
+
+
+def test_wenmode_collected_nested_paragraph_positions_trim_source() -> None:
+    class TrimBoxRule(BlockRule):
+        name = 'trim_box'
+        pattern = r'::trim[ \t]*$'
+
+        def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
+            state.advance()
+            lines: list[str] = []
+            source = state.source.collect()
+            while not state.done:
+                if re.match(r'::[ \t]*$', state.line):
+                    state.advance()
+                    break
+                source.add(state.index, 0, state.line)
+                lines.append(state.line)
+                state.advance()
+            return BoxNode(parser.parse_blocks(''.join(lines), state, source=source.map()))
+
+    root = Wenmode([TrimBoxRule], positions=True).parse('::trim\n  first\n  second  \n::\n').to_ast()
+
+    assert root['children'][0]['children'][0]['children'][0] == {
+        'type': 'text',
+        'position': {'start': {'line': 2, 'column': 3, 'offset': 9}, 'end': {'line': 3, 'column': 9, 'offset': 23}},
+        'value': 'first\nsecond',
+    }
+
+
+def test_wenmode_collected_noncontiguous_source_maps_inline_positions() -> None:
+    class SplitSourceRule(BlockRule):
+        name = 'split_source'
+        pattern = r'::split '
+
+        def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
+            line = state.line
+            first_start = line.index('alpha')
+            code_start = line.index('`beta`')
+            source = state.source.collect()
+            source.add(state.index, first_start, 'alpha ')
+            source.add(state.index, code_start, '`beta`')
+            state.advance()
+            return BoxNode([Paragraph(children=parser.parse_inlines('alpha `beta`', state, source=source.map()))])
+
+    root = Wenmode([SplitSourceRule, InlineCode], positions=True).parse('::split alpha ---- `beta`\n').to_ast()
+
+    assert root['children'][0]['children'][0]['children'][1] == {
+        'type': 'inlineCode',
+        'position': {'start': {'line': 1, 'column': 20, 'offset': 19}, 'end': {'line': 1, 'column': 26, 'offset': 25}},
+        'value': 'beta',
+    }
+
+
+def test_wenmode_iterable_source_positions_use_stream_tracker() -> None:
+    root = Wenmode([ProbeLetter], positions=True).parse(iter(['a\n', 'b\n']))
+    paragraph = root.children[0]
+
+    assert [
+        (child.type, child.position.start, child.position.end)
+        for child in paragraph.children
+        if child.type.startswith('probe_')
+    ] == [
+        ('probe_a', 0, 1),
+        ('probe_b', 2, 3),
+    ]
