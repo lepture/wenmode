@@ -46,6 +46,23 @@ generic nodes using the reserved `htmlContainer` type when the plugin node
 class was not registered. Unrelated unknown node types retain their extension
 data.
 
+Restoration also applies default resource budgets to serialized AST mappings:
+root node depth is `1`, each nested node mapping increases depth by `1`, and
+each restored node mapping counts against the node budget. The defaults are
+`max_depth=100` and `max_nodes=100_000`. These limits apply to built-in,
+plugin, and generic unknown nodes.
+
+Pass `max_depth=None` or `max_nodes=None` only after your application has
+established a trusted input boundary for that specific budget. Disabling one
+budget does not disable the other budget, reference-cycle detection, or
+structural validation. Cycles through node children, `data`, or extension
+fields are rejected by default and cannot be enabled.
+
+These budgets are not byte-size limits on the serialized payload before it is
+decoded. If your application accepts untrusted JSON or another serialized
+format, reject oversized payloads before decoding when you also need a byte
+limit.
+
 If you serialize an AST produced by Wenmode and later restore that data within
 the same trusted pipeline, pass `allow_internal_metadata=True` to preserve the
 internal escaping decision. Do not enable this option for client-supplied AST

@@ -142,6 +142,23 @@ Unknown node types are preserved as generic `Parent`, `Literal`, or `Node`
 instances by default so tools can round-trip data they do not understand. Pass
 `unknown="error"` to reject unsupported node types instead.
 
+Restoration is resource-bounded by default for serialized AST mappings. The
+root node has depth `1`, every nested node mapping increases depth by `1`, and
+every restored node mapping counts toward the node budget, including built-in
+nodes, plugin nodes, and generic unknown nodes. The default budgets are
+`max_depth=100` and `max_nodes=100_000`:
+
+```python
+node = from_ast(serialized_ast, max_depth=100, max_nodes=100_000)
+```
+
+Pass `max_depth=None` or `max_nodes=None` only for a trusted pipeline that has
+accepted the corresponding risk. The `None` opt-out applies only to the
+selected budget; reference-cycle detection and structural validation cannot be
+disabled. If your application also needs a byte-size limit for untrusted JSON
+or another serialized format, reject oversized payloads before decoding and
+before calling `from_ast()`.
+
 Restoration validates the common structural fields used by Wenmode nodes.
 `children` must be a list of node mappings, literal `value` fields must be
 strings, `data` must be a mapping when present, and heading `depth` must be an

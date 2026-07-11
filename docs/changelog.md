@@ -32,6 +32,9 @@ here while preparing a release, then move them under the final version heading.
 
 ### Fixed
 
+- Bound `from_ast()` and `node_from_ast()` restoration with default node-depth
+  and node-count budgets, and reject active reference cycles before recursive
+  restoration can hit Python recursion limits.
 - Enforce `Parser.max_container_depth` for all nested `parse_blocks()` callers,
   preserving boundary content as shallow paragraphs instead of recursing
   through directive or custom container rules without a shared limit.

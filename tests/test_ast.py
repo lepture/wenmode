@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any, cast
 
 import pytest
 
@@ -18,6 +19,7 @@ from wenmode.ast import (
     find_all,
     from_ast,
     iter_children,
+    node_from_ast,
     plain_text,
     walk,
 )
@@ -44,11 +46,26 @@ class Callout(Parent):
     type: str = 'callout'
 
 
+@dataclass
+class PluginContainer(Parent):
+    type: str = 'pluginContainer'
+
+
 def collect_plugin_nodes(plugins: list[object]) -> list[type[Node]]:
     nodes: list[type[Node]] = []
     for plugin in plugins:
         nodes.extend(getattr(plugin, 'nodes', []))
     return nodes
+
+
+def node_chain(depth: int, node_type: str = 'paragraph') -> dict[str, object]:
+    ast: dict[str, object] = {'type': node_type, 'children': []}
+    current = ast
+    for _index in range(depth - 1):
+        child: dict[str, object] = {'type': node_type, 'children': []}
+        current['children'] = [child]
+        current = child
+    return ast
 
 
 @pytest.mark.parametrize(
@@ -273,6 +290,123 @@ def test_from_ast_preserves_unknown_nodes_generically() -> None:
     assert isinstance(node, Parent)
     assert node.type == 'callout'
     assert node.to_ast() == ast
+
+
+def test_from_ast_enforces_max_depth_boundary() -> None:
+    assert from_ast(node_chain(4), max_depth=4).to_ast() == node_chain(4)
+
+    with pytest.raises(ValueError, match='^AST exceeds maximum depth of 4$'):
+        from_ast(node_chain(5), max_depth=4)
+
+
+def test_node_from_ast_enforces_max_depth_boundary() -> None:
+    assert node_from_ast(node_chain(3), max_depth=3).to_ast() == node_chain(3)
+
+    with pytest.raises(ValueError, match='^AST exceeds maximum depth of 3$'):
+        node_from_ast(node_chain(4), max_depth=3)
+
+
+def test_from_ast_enforces_max_node_count_boundary() -> None:
+    exact = {'type': 'root', 'children': [{'type': 'text', 'value': str(index)} for index in range(4)]}
+    too_many = {'type': 'root', 'children': [{'type': 'text', 'value': str(index)} for index in range(5)]}
+
+    assert from_ast(exact, max_nodes=5).to_ast() == exact
+    with pytest.raises(ValueError, match='^AST exceeds maximum node count of 5$'):
+        from_ast(too_many, max_nodes=5)
+
+
+def test_from_ast_counts_unknown_generic_and_plugin_nodes_identically() -> None:
+    generic = node_chain(4, 'unknownContainer')
+    plugin = node_chain(4, 'pluginContainer')
+
+    assert from_ast(generic, max_nodes=4).to_ast() == generic
+    assert from_ast(plugin, nodes=[PluginContainer], max_nodes=4).to_ast() == plugin
+
+    with pytest.raises(ValueError, match='^AST exceeds maximum node count of 3$'):
+        from_ast(generic, max_nodes=3)
+    with pytest.raises(ValueError, match='^AST exceeds maximum node count of 3$'):
+        from_ast(plugin, nodes=[PluginContainer], max_nodes=3)
+
+
+def test_from_ast_rejects_child_path_reference_cycle() -> None:
+    ast: dict[str, object] = {'type': 'paragraph', 'children': []}
+    child: dict[str, object] = {'type': 'paragraph', 'children': [ast]}
+    ast['children'] = [child]
+
+    with pytest.raises(ValueError, match='^AST contains a reference cycle$'):
+        from_ast(ast)
+
+
+def test_from_ast_rejects_list_cycle_in_extension_field() -> None:
+    values: list[object] = []
+    values.append(values)
+    ast = {'type': 'custom', 'values': values}
+
+    with pytest.raises(ValueError, match='^AST contains a reference cycle$'):
+        from_ast(ast)
+
+
+def test_from_ast_rejects_data_mapping_cycle() -> None:
+    data: dict[str, object] = {}
+    data['self'] = data
+    ast = {'type': 'custom', 'data': data}
+
+    with pytest.raises(ValueError, match='^AST contains a reference cycle$'):
+        from_ast(ast)
+
+
+def test_from_ast_allows_shared_acyclic_containers() -> None:
+    shared_child = {'type': 'text', 'value': 'same'}
+    shared_metadata = {'label': ['same']}
+    ast = {
+        'type': 'root',
+        'children': [
+            {'type': 'paragraph', 'children': [shared_child], 'data': shared_metadata},
+            {'type': 'paragraph', 'children': [shared_child], 'data': shared_metadata},
+        ],
+    }
+
+    assert from_ast(ast).to_ast() == ast
+
+
+@pytest.mark.parametrize('limit_name', ['max_depth', 'max_nodes'])
+@pytest.mark.parametrize('limit', [True, False, 1.5, '2'])
+def test_from_ast_rejects_invalid_limit_types(limit_name: str, limit: object) -> None:
+    with pytest.raises(TypeError, match=f'^{limit_name} must be an integer or None$'):
+        if limit_name == 'max_depth':
+            from_ast({'type': 'root', 'children': []}, max_depth=cast(Any, limit))
+        else:
+            from_ast({'type': 'root', 'children': []}, max_nodes=cast(Any, limit))
+
+
+@pytest.mark.parametrize('limit_name', ['max_depth', 'max_nodes'])
+@pytest.mark.parametrize('limit', [0, -1])
+def test_from_ast_rejects_invalid_limit_values(limit_name: str, limit: int) -> None:
+    with pytest.raises(ValueError, match=f'^{limit_name} must be a positive integer or None$'):
+        if limit_name == 'max_depth':
+            from_ast({'type': 'root', 'children': []}, max_depth=limit)
+        else:
+            from_ast({'type': 'root', 'children': []}, max_nodes=limit)
+
+
+def test_from_ast_none_disables_selected_budget_only() -> None:
+    assert from_ast(node_chain(5), max_depth=None, max_nodes=5).to_ast() == node_chain(5)
+    assert from_ast(node_chain(5), max_depth=5, max_nodes=None).to_ast() == node_chain(5)
+
+    with pytest.raises(ValueError, match='^AST exceeds maximum node count of 4$'):
+        from_ast(node_chain(5), max_depth=None, max_nodes=4)
+    with pytest.raises(ValueError, match='^AST exceeds maximum depth of 4$'):
+        from_ast(node_chain(5), max_depth=4, max_nodes=None)
+
+
+def test_from_ast_none_limits_do_not_disable_cycles_or_structural_validation() -> None:
+    data: dict[str, object] = {}
+    data['self'] = data
+    with pytest.raises(ValueError, match='^AST contains a reference cycle$'):
+        from_ast({'type': 'custom', 'data': data}, max_depth=None, max_nodes=None)
+
+    with pytest.raises(TypeError, match='^AST heading "depth" must be an integer$'):
+        from_ast({'type': 'heading', 'depth': True, 'children': []}, max_depth=None, max_nodes=None)
 
 
 def test_from_ast_uses_custom_registry() -> None:

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Iterator, Mapping
-from dataclasses import fields, is_dataclass
+from dataclasses import dataclass, field, fields, is_dataclass
 from typing import Any, TypeAlias, cast
 
 from .nodes import (
@@ -19,6 +19,8 @@ from .nodes import (
 
 NodeMatcher: TypeAlias = str | type[Node] | tuple[str | type[Node], ...]
 UnknownNodePolicy: TypeAlias = str
+_DEFAULT_MAX_DEPTH = 100
+_DEFAULT_MAX_NODES = 100_000
 
 __all__ = [
     'NodeMatcher',
@@ -33,12 +35,25 @@ __all__ = [
 ]
 
 
+@dataclass
+class _RestorationContext:
+    node_lookup: dict[str, type[Node]]
+    unknown: UnknownNodePolicy
+    allow_internal_metadata: bool
+    max_depth: int | None
+    max_nodes: int | None
+    node_count: int = 0
+    active_containers: set[int] = field(default_factory=set)
+
+
 def from_ast(
     data: Mapping[str, Any],
     *,
     nodes: Iterable[type[Node]] | None = None,
     unknown: UnknownNodePolicy = 'generic',
     allow_internal_metadata: bool = False,
+    max_depth: int | None = _DEFAULT_MAX_DEPTH,
+    max_nodes: int | None = _DEFAULT_MAX_NODES,
 ) -> Node:
     """Convert a mdast-like mapping into Wenmode nodes.
 
@@ -56,12 +71,19 @@ def from_ast(
     ``allow_internal_metadata=True`` preserves parser-internal trust metadata
     in AST data produced by a trusted Wenmode pipeline. It does not disable
     structural validation and must not be enabled for external AST input.
+
+    Restoration is bounded by ``max_depth`` node levels and ``max_nodes`` total
+    restored nodes by default. Pass ``None`` for one budget only after the
+    caller has established a trusted input boundary. Cycle detection and
+    structural validation cannot be disabled.
     """
     return node_from_ast(
         data,
         nodes=nodes,
         unknown=unknown,
         allow_internal_metadata=allow_internal_metadata,
+        max_depth=max_depth,
+        max_nodes=max_nodes,
     )
 
 
@@ -71,6 +93,8 @@ def node_from_ast(
     nodes: Iterable[type[Node]] | None = None,
     unknown: UnknownNodePolicy = 'generic',
     allow_internal_metadata: bool = False,
+    max_depth: int | None = _DEFAULT_MAX_DEPTH,
+    max_nodes: int | None = _DEFAULT_MAX_NODES,
 ) -> Node:
     """Convert one AST node mapping into a Wenmode node.
 
@@ -79,11 +103,30 @@ def node_from_ast(
     """
     if unknown not in {'generic', 'error'}:
         raise ValueError('unknown must be "generic" or "error"')
+    max_depth = _validate_restoration_limit('max_depth', max_depth)
+    max_nodes = _validate_restoration_limit('max_nodes', max_nodes)
 
     node_lookup = _node_lookup(BUILTIN_NODES)
     if nodes is not None:
         node_lookup.update(_node_lookup(nodes))
-    return _node_from_ast(data, node_lookup, unknown, allow_internal_metadata)
+    context = _RestorationContext(
+        node_lookup=node_lookup,
+        unknown=unknown,
+        allow_internal_metadata=allow_internal_metadata,
+        max_depth=max_depth,
+        max_nodes=max_nodes,
+    )
+    return _node_from_ast(data, context, 1)
+
+
+def _validate_restoration_limit(name: str, value: int | None) -> int | None:
+    if value is None:
+        return None
+    if type(value) is not int:
+        raise TypeError(f'{name} must be an integer or None')
+    if value <= 0:
+        raise ValueError(f'{name} must be a positive integer or None')
+    return value
 
 
 def _node_lookup(
@@ -222,67 +265,138 @@ def _matches(node: Node, matcher: NodeMatcher | None) -> bool:
 
 def _node_from_ast(
     data: Mapping[str, Any],
-    node_lookup: dict[str, type[Node]],
-    unknown: UnknownNodePolicy,
-    allow_internal_metadata: bool,
+    context: _RestorationContext,
+    depth: int,
 ) -> Node:
-    node_type = data.get('type')
-    if not isinstance(node_type, str) or not node_type:
-        raise ValueError('AST node must include a non-empty string "type"')
+    if context.max_depth is not None and depth > context.max_depth:
+        raise ValueError(f'AST exceeds maximum depth of {context.max_depth}')
+    if context.max_nodes is not None and context.node_count >= context.max_nodes:
+        raise ValueError(f'AST exceeds maximum node count of {context.max_nodes}')
+    context.node_count += 1
 
-    attrs: dict[str, Any] = {}
-    for key, value in data.items():
-        if key.startswith('_'):
-            raise ValueError(f'AST node field "{key}" is private')
-        if key == 'type':
-            continue
-        if key == 'position':
-            position = _position_from_ast(value)
-            if position is not None:
-                attrs[key] = position
-            continue
-        if key == 'children':
-            if not isinstance(value, list):
-                raise TypeError('AST node "children" must be a list')
-            children = [
-                _ast_value_from_ast(item, node_lookup, unknown, allow_internal_metadata) for item in value
-            ]
-            if not all(isinstance(child, Node) for child in children):
-                raise TypeError('AST node "children" entries must be nodes')
-            attrs[key] = children
-            continue
-        if key == 'data':
-            if value is not None and not isinstance(value, Mapping):
-                raise TypeError('AST node "data" must be a mapping')
-            attrs[key] = dict(value) if isinstance(value, Mapping) else value
-            continue
-        attrs[key] = _ast_value_from_ast(value, node_lookup, unknown, allow_internal_metadata)
+    token = _enter_container(data, context)
+    try:
+        node_type = data.get('type')
+        if not isinstance(node_type, str) or not node_type:
+            raise ValueError('AST node must include a non-empty string "type"')
 
-    node_class = node_lookup.get(node_type)
-    if node_class is None:
-        if unknown == 'error':
-            raise ValueError(f'unsupported AST node type: {node_type}')
-        node = _generic_node_from_attrs(node_type, attrs)
-    else:
-        node = _construct_node(node_class, node_type, attrs)
-    _validate_restored_node(
-        node,
-        allow_internal_metadata=allow_internal_metadata,
-    )
-    return node
+        attrs: dict[str, Any] = {}
+        for key, value in data.items():
+            if key.startswith('_'):
+                raise ValueError(f'AST node field "{key}" is private')
+            if key == 'type':
+                continue
+            if key == 'position':
+                position = _position_from_ast(value, context)
+                if position is not None:
+                    attrs[key] = position
+                continue
+            if key == 'children':
+                if not isinstance(value, list):
+                    raise TypeError('AST node "children" must be a list')
+                children = _ast_list_from_ast(value, context, depth)
+                if not all(isinstance(child, Node) for child in children):
+                    raise TypeError('AST node "children" entries must be nodes')
+                attrs[key] = children
+                continue
+            if key == 'data':
+                if value is not None and not isinstance(value, Mapping):
+                    raise TypeError('AST node "data" must be a mapping')
+                attrs[key] = _plain_mapping_from_ast(value, context) if isinstance(value, Mapping) else value
+                continue
+            attrs[key] = _ast_value_from_ast(value, context, depth)
+
+        node_class = context.node_lookup.get(node_type)
+        if node_class is None:
+            if context.unknown == 'error':
+                raise ValueError(f'unsupported AST node type: {node_type}')
+            node = _generic_node_from_attrs(node_type, attrs)
+        else:
+            node = _construct_node(node_class, node_type, attrs)
+        _validate_restored_node(
+            node,
+            allow_internal_metadata=context.allow_internal_metadata,
+        )
+        return node
+    finally:
+        _leave_container(token, context)
 
 
 def _ast_value_from_ast(
     value: Any,
-    node_lookup: dict[str, type[Node]],
-    unknown: UnknownNodePolicy,
-    allow_internal_metadata: bool,
+    context: _RestorationContext,
+    depth: int,
 ) -> Any:
     if isinstance(value, Mapping) and isinstance(value.get('type'), str):
-        return _node_from_ast(value, node_lookup, unknown, allow_internal_metadata)
+        return _node_from_ast(value, context, depth + 1)
+    if isinstance(value, Mapping):
+        return _ast_mapping_from_ast(value, context, depth)
     if isinstance(value, list):
-        return [_ast_value_from_ast(item, node_lookup, unknown, allow_internal_metadata) for item in value]
+        return _ast_list_from_ast(value, context, depth)
     return value
+
+
+def _ast_mapping_from_ast(
+    value: Mapping[str, Any],
+    context: _RestorationContext,
+    depth: int,
+) -> dict[str, Any]:
+    token = _enter_container(value, context)
+    try:
+        return {key: _ast_value_from_ast(item, context, depth) for key, item in value.items()}
+    finally:
+        _leave_container(token, context)
+
+
+def _ast_list_from_ast(
+    value: list[Any],
+    context: _RestorationContext,
+    depth: int,
+) -> list[Any]:
+    token = _enter_container(value, context)
+    try:
+        return [_ast_value_from_ast(item, context, depth) for item in value]
+    finally:
+        _leave_container(token, context)
+
+
+def _plain_value_from_ast(value: Any, context: _RestorationContext) -> Any:
+    if isinstance(value, Mapping):
+        return _plain_mapping_from_ast(value, context)
+    if isinstance(value, list):
+        return _plain_list_from_ast(value, context)
+    return value
+
+
+def _plain_mapping_from_ast(
+    value: Mapping[str, Any],
+    context: _RestorationContext,
+) -> dict[str, Any]:
+    token = _enter_container(value, context)
+    try:
+        return {key: _plain_value_from_ast(item, context) for key, item in value.items()}
+    finally:
+        _leave_container(token, context)
+
+
+def _plain_list_from_ast(value: list[Any], context: _RestorationContext) -> list[Any]:
+    token = _enter_container(value, context)
+    try:
+        return [_plain_value_from_ast(item, context) for item in value]
+    finally:
+        _leave_container(token, context)
+
+
+def _enter_container(value: Mapping[str, Any] | list[Any], context: _RestorationContext) -> int:
+    token = id(value)
+    if token in context.active_containers:
+        raise ValueError('AST contains a reference cycle')
+    context.active_containers.add(token)
+    return token
+
+
+def _leave_container(token: int, context: _RestorationContext) -> None:
+    context.active_containers.remove(token)
 
 
 def _validate_restored_node(
@@ -311,18 +425,28 @@ def _validate_restored_node(
         )
 
 
-def _position_from_ast(value: Any) -> Position | None:
+def _position_from_ast(value: Any, context: _RestorationContext) -> Position | None:
     if not isinstance(value, Mapping):
         return None
-    start = value.get('start')
-    end = value.get('end')
-    if not isinstance(start, Mapping) or not isinstance(end, Mapping):
+    token = _enter_container(value, context)
+    try:
+        start_offset = _position_offset_from_ast(value.get('start'), context)
+        end_offset = _position_offset_from_ast(value.get('end'), context)
+        if not isinstance(start_offset, int) or not isinstance(end_offset, int):
+            return None
+        return Position(start=start_offset, end=end_offset)
+    finally:
+        _leave_container(token, context)
+
+
+def _position_offset_from_ast(value: Any, context: _RestorationContext) -> Any:
+    if not isinstance(value, Mapping):
         return None
-    start_offset = start.get('offset')
-    end_offset = end.get('offset')
-    if not isinstance(start_offset, int) or not isinstance(end_offset, int):
-        return None
-    return Position(start=start_offset, end=end_offset)
+    token = _enter_container(value, context)
+    try:
+        return value.get('offset')
+    finally:
+        _leave_container(token, context)
 
 
 def _construct_node(node_class: type[Node], node_type: str, attrs: dict[str, Any]) -> Node:
