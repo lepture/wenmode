@@ -325,44 +325,9 @@ mdast directive syntax with colon markers.
 
 ## Creating Plugins
 
-Start with a declarative plugin when the syntax can be described with Wenmode's
-declarative specs. Simple inline plugins can expose a `DeclarativePluginSpec`
-directly:
-
-```python
-from dataclasses import dataclass
-import typing
-
-from wenmode.nodes import Parent
-from wenmode.plugins import DeclarativePluginSpec, InlineDelimited, RendererFallback, RenderTemplate
-
-
-@dataclass
-class MarkNode(Parent):
-    type: typing.ClassVar[str] = 'mark'
-
-
-spec = DeclarativePluginSpec(
-    name='mark',
-    syntax=[InlineDelimited(name='mark', node=MarkNode, opener='==', closer='==')],
-    renderers={
-        'html': {'mark': RenderTemplate('<mark>{children}</mark>')},
-        'rst': {'mark': RendererFallback('children')},
-    },
-)
-
-nodes = [MarkNode]
-```
-
-Wenmode turns declarative syntax into normal parser rules and renderer handlers
-when the plugin is installed. If a declarative plugin needs custom renderer
-functions, expose a `handlers` mapping next to `spec`; Wenmode registers those
-handlers after installing the spec.
-
-Use `InlineLiteral` for delimiter pairs that should produce a literal node, and
-`BlockFenced` for simple fenced blocks. `RendererFallback('children')` and
-`RendererFallback('value')` render a node the same way Wenmode would render an
-unknown parent or literal node, without requiring a string template.
+Implement custom parser behavior through the public rule interfaces in
+`wenmode.rules`. Renderer output stays explicit: expose a `handlers` mapping
+and register it from `setup()`.
 
 Use a command-style plugin when a plugin needs setup options, directive
 renderers, root transforms, or command-style installation logic. A

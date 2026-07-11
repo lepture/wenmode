@@ -3,13 +3,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, ClassVar
 
+from wenmode._declaratives import BlockFenced
 from wenmode.nodes import Literal
 from wenmode.renderers import MarkdownRenderer, RenderContext
 from wenmode.renderers.asciidoc import AsciiDocRenderContext, AsciiDocRenderer
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer, indent_block
 
-from .._declarative import BlockFenced, DeclarativePluginSpec, install_declarative
 from .types import RendererHandlers
 
 if TYPE_CHECKING:
@@ -51,21 +51,16 @@ def render_asciidoc_math(renderer: AsciiDocRenderer, node: MathNode, context: As
     return '[stem]\n++++\n++++\n\n'
 
 
-spec = DeclarativePluginSpec(
-    name='block_math',
-    syntax=[
-        BlockFenced(
-            name='math_block',
-            node=MathNode,
-            opener='$$',
-            closer='$$',
-            allow_opener_content=True,
-        )
-    ],
-    renderers={},
-)
-
 nodes = [MathNode]
+rules = [
+    BlockFenced(
+        name='math_block',
+        node=MathNode,
+        opener='$$',
+        closer='$$',
+        allow_opener_content=True,
+    )
+]
 handlers: RendererHandlers = {
     'html': {MathNode.type: render_html_math},
     'markdown': {MathNode.type: render_markdown_math},
@@ -75,5 +70,5 @@ handlers: RendererHandlers = {
 
 
 def setup(wen: Wenmode, /) -> None:
-    install_declarative(wen, spec)
+    wen.register_rules(rules)
     wen.register_renderer_handlers(handlers)

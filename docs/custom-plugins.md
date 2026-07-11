@@ -2,8 +2,8 @@
 # Custom Plugins
 
 ```{rst-class} lead
-Create plugins for `Wenmode(..., plugins=[...])` that package declarative specs,
-syntax rules, nodes, renderer handlers, and setup options.
+Create plugins for `Wenmode(..., plugins=[...])` that package declarative rule
+builders, syntax rules, nodes, renderer handlers, and setup options.
 ```
 
 ---
@@ -80,7 +80,7 @@ from dataclasses import dataclass
 
 from wenmode import Wenmode
 from wenmode.nodes import Parent
-from wenmode.plugins import DeclarativePluginSpec, InlineDelimited, RenderTemplate, install_declarative
+from wenmode.rules import InlineRule
 
 
 @dataclass
@@ -88,20 +88,40 @@ class PlusMarkNode(Parent):
     type: str = 'plusMark'
 
 
-spec = DeclarativePluginSpec(
-    name='plus_mark',
-    syntax=[InlineDelimited(name='plus_mark', node=PlusMarkNode, opener='++', closer='++')],
-    renderers={'html': {PlusMarkNode.type: RenderTemplate('<mark>{children}</mark>')}},
-)
+class PlusMarkRule(InlineRule):
+    name = 'plus_mark'
+    pattern = r'\+\+'
+    trigger_chars = '+'
+
+    def parse(self, parser, text, match, state):
+        start = match.start()
+        value_start = match.end()
+        close = text.find('++', value_start)
+        if close == -1:
+            return None, start
+        children = parser.parse_inlines(text[value_start:close], state)
+        return PlusMarkNode(children=children), close + 2
+
+
 nodes = [PlusMarkNode]
+rules = [PlusMarkRule]
+handlers = {
+    'html': {
+        PlusMarkNode.type: lambda renderer, node, context: (
+            f'<mark>{renderer.render_children(node.children, context)}</mark>'
+        )
+    }
+}
 
 
 class PlusMarkPlugin:
-    spec = spec
     nodes = nodes
+    rules = rules
+    handlers = handlers
 
     def setup(self, wen: Wenmode, /) -> None:
-        install_declarative(wen, self.spec)
+        wen.register_rules(self.rules)
+        wen.register_renderer_handlers(self.handlers)
 
 
 wen = Wenmode(plugins=[PlusMarkPlugin()])
@@ -112,18 +132,17 @@ expected = '''
 assert wen.render('++very *important*++') == expected.lstrip()
 ```
 
-The declarative spec creates the parser rule and renderer handler. If a renderer
-has no handler for a node type,
-`BaseRenderer` falls back to rendering child nodes or a literal `value`.
+The custom `InlineRule` creates the parser node. If a renderer has no handler
+for a node type, `BaseRenderer` falls back to rendering child nodes or a
+literal `value`.
 The `nodes` list is optional for rendering, but expose it when callers may
 restore serialized AST data with `wenmode.ast.from_ast()`.
 
 ## Renderer Handlers
 
-Declarative plugins can put `RenderTemplate` and `RendererFallback` entries in
-`spec.renderers`. When a plugin needs custom renderer functions, expose a
-`handlers` mapping next to `spec`. The mapping is keyed by renderer name; only
-handlers for the current renderer are installed.
+Plugins can expose renderer handlers separately from declarative rules. The
+mapping is keyed by renderer name; only handlers for the current renderer are
+installed.
 
 ```{code-block} python
 handlers = {

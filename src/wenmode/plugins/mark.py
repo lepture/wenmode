@@ -3,9 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from wenmode._declaratives import InlineDelimited
 from wenmode.nodes import Parent
+from wenmode.renderers import BaseRenderer, RenderContext
 
-from .._declarative import DeclarativePluginSpec, InlineDelimited, RendererFallback, RenderTemplate, install_declarative
+from .types import RendererHandlers
 
 if TYPE_CHECKING:
     from wenmode import Wenmode
@@ -18,27 +20,40 @@ class MarkNode(Parent):
     type: str = 'mark'
 
 
-spec = DeclarativePluginSpec(
-    name='mark',
-    syntax=[
-        InlineDelimited(
-            name='mark',
-            node=MarkNode,
-            opener='==',
-            closer='==',
-            trigger_chars='=',
-        )
-    ],
-    renderers={
-        'html': {MarkNode.type: RenderTemplate('<mark>{children}</mark>')},
-        'markdown': {MarkNode.type: RenderTemplate('=={children}==')},
-        'rst': {MarkNode.type: RendererFallback('children')},
-        'asciidoc': {MarkNode.type: RenderTemplate('#{children}#')},
-    },
-)
-
 nodes = [MarkNode]
+rules = [
+    InlineDelimited(
+        name='mark',
+        node=MarkNode,
+        opener='==',
+        closer='==',
+        trigger_chars='=',
+    )
+]
+handlers: RendererHandlers = {
+    'html': {MarkNode.type: lambda renderer, node, context: render_html_mark(renderer, node, context)},
+    'markdown': {MarkNode.type: lambda renderer, node, context: render_markdown_mark(renderer, node, context)},
+    'rst': {MarkNode.type: lambda renderer, node, context: render_children(renderer, node, context)},
+    'asciidoc': {MarkNode.type: lambda renderer, node, context: render_asciidoc_mark(renderer, node, context)},
+}
+
+
+def render_html_mark(renderer: BaseRenderer, node: MarkNode, context: RenderContext) -> str:
+    return f'<mark>{renderer.render_children(node.children, context)}</mark>'
+
+
+def render_markdown_mark(renderer: BaseRenderer, node: MarkNode, context: RenderContext) -> str:
+    return f'=={renderer.render_children(node.children, context)}=='
+
+
+def render_children(renderer: BaseRenderer, node: MarkNode, context: RenderContext) -> str:
+    return renderer.render_children(node.children, context)
+
+
+def render_asciidoc_mark(renderer: BaseRenderer, node: MarkNode, context: RenderContext) -> str:
+    return f'#{renderer.render_children(node.children, context)}#'
 
 
 def setup(wen: Wenmode, /) -> None:
-    install_declarative(wen, spec)
+    wen.register_rules(rules)
+    wen.register_renderer_handlers(handlers)

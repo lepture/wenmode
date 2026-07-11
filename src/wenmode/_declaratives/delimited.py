@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Configurable delimited inline rules."""
+
 import re
 from bisect import bisect_left
 from collections.abc import Callable
@@ -14,32 +16,22 @@ from wenmode.utils import is_escaped
 from .._parser.source import SourceMap
 from .._parser.state import BlockState
 from .._parser.store import StateKey
-from .spec import InlineDelimited, InlineLiteral
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
 
 ClosingDelimiterCache = dict[tuple[int, int], tuple[str, object, list[int]]]
+ClosingDelimiterFinder = Callable[[str, int, 'InlineDelimited | InlineLiteral', BlockState], int]
+InlineParse = Callable[['Parser', str, re.Match[str], BlockState], tuple[Node | None, int]]
 DECLARATIVE_INLINE_DEPTH = StateKey[int]('wenmode.declarative.inline_depth', lambda: 0)
 DECLARATIVE_CLOSING_DELIMITERS = StateKey[ClosingDelimiterCache](
     'wenmode.declarative.closing_delimiters', lambda: {}
 )
 
 
-def _inline_rule_from_syntax(syntax: InlineDelimited | InlineLiteral) -> InlineRule:
-    if isinstance(syntax, InlineLiteral):
-        return _InlineLiteralRule(syntax)
-    if _is_simple_delimited_children(syntax):
-        return _SimpleDelimitedChildrenRule(syntax)
-    if _is_trimmed_delimited_children(syntax):
-        return _TrimmedDelimitedChildrenRule(syntax)
-    return DeclarativeInlineRule(syntax)
-
-
 def _is_simple_delimited_children(syntax: InlineDelimited) -> bool:
     return (
-        syntax.content == 'children'
-        and syntax.opener == syntax.closer
+        syntax.opener == syntax.closer
         and not syntax.strip_content
         and syntax.allow_newline
         and syntax.reject_empty
@@ -52,8 +44,7 @@ def _is_simple_delimited_children(syntax: InlineDelimited) -> bool:
 
 def _is_trimmed_delimited_children(syntax: InlineDelimited) -> bool:
     return (
-        syntax.content == 'children'
-        and syntax.strip_content
+        syntax.strip_content
         and not syntax.allow_newline
         and syntax.reject_empty
         and not syntax.reject_opening_whitespace
@@ -63,90 +54,95 @@ def _is_trimmed_delimited_children(syntax: InlineDelimited) -> bool:
     )
 
 
-class DeclarativeInlineRule(InlineRule):
-    """Runtime inline rule generated from an ``InlineDelimited`` spec."""
+class InlineDelimited(InlineRule):
+    """Configurable inline rule for paired literal delimiters."""
 
-    def __init__(self, syntax: InlineDelimited) -> None:
-        self.syntax = syntax
+    def __init__(
+        self,
+        *,
+        name: str,
+        node: type[Parent],
+        opener: str,
+        closer: str,
+        trigger_chars: str | None = None,
+        allow_newline: bool = True,
+        reject_empty: bool = True,
+        reject_opening_whitespace: bool = True,
+        reject_closing_whitespace: bool = True,
+        reject_longer_run: bool = True,
+        strip_content: bool = False,
+        escape: bool = True,
+    ) -> None:
+        _validate_delimiters(opener, closer)
+        self.node = node
+        self.opener = opener
+        self.closer = closer
+        self.allow_newline = allow_newline
+        self.reject_empty = reject_empty
+        self.reject_opening_whitespace = reject_opening_whitespace
+        self.reject_closing_whitespace = reject_closing_whitespace
+        self.reject_longer_run = reject_longer_run
+        self.strip_content = strip_content
+        self.escape = escape
+        self._node_factory = _parent_node_factory(self)
+        self._parse_impl: InlineParse
+        if _is_simple_delimited_children(self):
+            self._parse_impl = self._parse_simple
+        elif _is_trimmed_delimited_children(self):
+            self._parse_impl = self._parse_trimmed
+        else:
+            self._parse_impl = self._parse_general
         super().__init__(
-            name=syntax.name,
-            pattern=re.escape(syntax.opener),
-            trigger_chars=syntax.trigger_chars or syntax.opener[0],
+            name=name,
+            pattern=re.escape(opener),
+            trigger_chars=opener[0] if trigger_chars is None else trigger_chars,
         )
 
     def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
-        syntax = self.syntax
+        return self._parse_impl(parser, text, match, state)
+
+    def _parse_general(
+        self, parser: Parser, text: str, match: re.Match[str], state: BlockState
+    ) -> tuple[Node | None, int]:
         start = match.start()
-        if syntax.escape and is_escaped(text, start):
+        if self.escape and is_escaped(text, start):
             return None, start
-        if syntax.reject_longer_run and is_part_of_longer_delimiter_run(text, start, syntax.opener):
+        if self.reject_longer_run and is_part_of_longer_delimiter_run(text, start, self.opener):
             return None, start
 
         value_start = match.end()
         if value_start >= len(text):
             return None, start
-        if syntax.reject_opening_whitespace and text[value_start].isspace():
+        if self.reject_opening_whitespace and text[value_start].isspace():
             return None, start
 
-        content = find_delimited_content_range(text, value_start, syntax, state)
+        content = find_content_range(text, value_start, self, state, find_closing_delimiter)
         if content is None:
             return None, start
 
         close, value_start, value_end = content
-        node = create_delimited_node(parser, state, text, value_start, value_end, syntax)
-        return node, close + len(syntax.closer)
+        return self._create_node(parser, text, state, value_start, value_end), close + len(self.closer)
 
-
-class _SimpleDelimitedChildrenRule(InlineRule):
-    """Fast path for parent nodes with matching literal delimiters."""
-
-    def __init__(self, syntax: InlineDelimited) -> None:
-        self.syntax = syntax
-        self._node_factory = _parent_node_factory(syntax)
-        super().__init__(
-            name=syntax.name,
-            pattern=re.escape(syntax.opener),
-            trigger_chars=syntax.trigger_chars or syntax.opener[0],
-        )
-
-    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
-        syntax = self.syntax
+    def _parse_simple(
+        self, parser: Parser, text: str, match: re.Match[str], state: BlockState
+    ) -> tuple[Node | None, int]:
         start = match.start()
-        if is_escaped(text, start) or is_part_of_longer_delimiter_run(text, start, syntax.opener):
+        if is_escaped(text, start) or is_part_of_longer_delimiter_run(text, start, self.opener):
             return None, start
 
         value_start = match.end()
         if value_start >= len(text) or text[value_start].isspace():
             return None, start
 
-        close = find_closing_delimiter(text, value_start, syntax, state)
+        close = find_closing_delimiter(text, value_start, self, state)
         if close == -1 or close == value_start:
             return None, start
 
-        value = text[value_start:close]
-        children = parse_delimited_children(
-            parser,
-            value,
-            state,
-            parser.inline_source(text, state, value_start, close),
-        )
-        return self._node_factory(children=children), close + len(syntax.closer)
+        return self._create_node(parser, text, state, value_start, close), close + len(self.closer)
 
-
-class _TrimmedDelimitedChildrenRule(InlineRule):
-    """Fast path for parent nodes whose delimited content is whitespace-trimmed."""
-
-    def __init__(self, syntax: InlineDelimited) -> None:
-        self.syntax = syntax
-        self._node_factory = _parent_node_factory(syntax)
-        super().__init__(
-            name=syntax.name,
-            pattern=re.escape(syntax.opener),
-            trigger_chars=syntax.trigger_chars or syntax.opener[0],
-        )
-
-    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
-        syntax = self.syntax
+    def _parse_trimmed(
+        self, parser: Parser, text: str, match: re.Match[str], state: BlockState
+    ) -> tuple[Node | None, int]:
         start = match.start()
         if is_escaped(text, start):
             return None, start
@@ -155,66 +151,105 @@ class _TrimmedDelimitedChildrenRule(InlineRule):
         if content_start >= len(text):
             return None, start
 
-        close = text.find(syntax.closer, content_start)
+        close = text.find(self.closer, content_start)
         while close != -1:
             if is_escaped(text, close):
-                close = text.find(syntax.closer, close + 1)
+                close = text.find(self.closer, close + 1)
                 continue
 
             stripped = stripped_content_range(text, content_start, close)
             if stripped is None:
-                close = text.find(syntax.closer, close + len(syntax.closer))
+                close = text.find(self.closer, close + len(self.closer))
                 continue
 
             value_start, value_end = stripped
-            value = text[value_start:value_end]
             if has_newline(text, value_start, value_end):
                 return None, start
 
-            children = parse_delimited_children(
-                parser,
-                value,
-                state,
-                parser.inline_source(text, state, value_start, value_end),
-            )
-            return self._node_factory(children=children), close + len(syntax.closer)
+            node = self._create_node(parser, text, state, value_start, value_end)
+            return node, close + len(self.closer)
         return None, start
 
+    def _create_node(
+        self,
+        parser: Parser,
+        text: str,
+        state: BlockState,
+        value_start: int,
+        value_end: int,
+    ) -> Node:
+        value = text[value_start:value_end]
+        children = parse_delimited_children(
+            parser,
+            value,
+            state,
+            parser.inline_source(text, state, value_start, value_end),
+        )
+        return self._node_factory(children=children)
 
-class _InlineLiteralRule(InlineRule):
-    """Runtime inline rule generated from an ``InlineLiteral`` spec."""
 
-    def __init__(self, syntax: InlineLiteral) -> None:
-        self.syntax = syntax
-        self._node_factory = _literal_node_factory(syntax)
+class InlineLiteral(InlineRule):
+    """Configurable delimiter rule that produces literal nodes."""
+
+    def __init__(
+        self,
+        *,
+        name: str,
+        node: type[LiteralNode],
+        opener: str,
+        closer: str,
+        trigger_chars: str | None = None,
+        allow_newline: bool = False,
+        reject_empty: bool = True,
+        reject_opening_whitespace: bool = True,
+        reject_closing_whitespace: bool = True,
+        reject_closing_before_digit: bool = False,
+        reject_longer_run: bool = False,
+        reject_adjacent_delimiter: bool = False,
+        strip_content: bool = False,
+        escape: bool = True,
+    ) -> None:
+        _validate_delimiters(opener, closer)
+        self.node = node
+        self.opener = opener
+        self.closer = closer
+        self.allow_newline = allow_newline
+        self.reject_empty = reject_empty
+        self.reject_opening_whitespace = reject_opening_whitespace
+        self.reject_closing_whitespace = reject_closing_whitespace
+        self.reject_closing_before_digit = reject_closing_before_digit
+        self.reject_longer_run = reject_longer_run
+        self.reject_adjacent_delimiter = reject_adjacent_delimiter
+        self.strip_content = strip_content
+        self.escape = escape
+        self._node_factory = _literal_node_factory(self)
         super().__init__(
-            name=syntax.name,
-            pattern=re.escape(syntax.opener),
-            trigger_chars=syntax.trigger_chars or syntax.opener[0],
+            name=name,
+            pattern=re.escape(opener),
+            trigger_chars=opener[0] if trigger_chars is None else trigger_chars,
         )
 
     def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
-        syntax = self.syntax
         start = match.start()
-        if syntax.escape and is_escaped(text, start):
+        if self.escape and is_escaped(text, start):
             return None, start
-        if syntax.reject_adjacent_delimiter and is_adjacent_to_delimiter(text, start, syntax.opener):
+        if self.reject_adjacent_delimiter and is_adjacent_to_delimiter(text, start, self.opener):
             return None, start
-        if syntax.reject_longer_run and is_part_of_longer_delimiter_run(text, start, syntax.opener):
+        if self.reject_longer_run and is_part_of_longer_delimiter_run(text, start, self.opener):
             return None, start
 
         value_start = match.end()
         if value_start >= len(text):
             return None, start
-        if syntax.reject_opening_whitespace and text[value_start].isspace():
+        if self.reject_opening_whitespace and text[value_start].isspace():
             return None, start
 
-        content = find_literal_content_range(text, value_start, syntax, state)
+        content = find_content_range(text, value_start, self, state, find_literal_closing_delimiter)
         if content is None:
             return None, start
 
         close, value_start, value_end = content
-        return self._node_factory(value=text[value_start:value_end]), close + len(syntax.closer)
+        return self._node_factory(value=text[value_start:value_end]), close + len(self.closer)
 
 
 def _parent_node_factory(syntax: InlineDelimited) -> Callable[..., Node]:
@@ -223,38 +258,17 @@ def _parent_node_factory(syntax: InlineDelimited) -> Callable[..., Node]:
     return cast(Callable[..., Node], syntax.node)
 
 
-def _literal_node_factory(syntax: InlineDelimited | InlineLiteral) -> Callable[..., Node]:
+def _literal_node_factory(syntax: InlineLiteral) -> Callable[..., Node]:
     if not issubclass(syntax.node, LiteralNode):
         raise TypeError(f'{syntax.name!r} requires a Literal node for value content')
     return cast(Callable[..., Node], syntax.node)
 
 
-def create_delimited_node(
-    parser: Parser,
-    state: BlockState,
-    text: str,
-    value_start: int,
-    value_end: int,
-    syntax: InlineDelimited,
-) -> Node:
-    node_class = syntax.node
-    value = text[value_start:value_end]
-    if syntax.content == 'children':
-        if not issubclass(node_class, Parent):
-            raise TypeError(f'{syntax.name!r} requires a Parent node for children content')
-        children = parse_delimited_children(
-            parser,
-            value,
-            state,
-            parser.inline_source(text, state, value_start, value_end),
-        )
-        node_factory = cast(Callable[..., Node], node_class)
-        return node_factory(children=children)
-
-    if syntax.content == 'value':
-        return _literal_node_factory(syntax)(value=value)
-
-    raise TypeError(f'{syntax.name!r} uses unsupported content mode {syntax.content!r}')
+def _validate_delimiters(opener: str, closer: str) -> None:
+    if not opener:
+        raise ValueError('opener must not be empty')
+    if not closer:
+        raise ValueError('closer must not be empty')
 
 
 def parse_delimited_children(
@@ -274,16 +288,20 @@ def parse_delimited_children(
         state.store.set(DECLARATIVE_INLINE_DEPTH, depth)
 
 
-def find_delimited_content_range(
-    text: str, start: int, syntax: InlineDelimited, state: BlockState
+def find_content_range(
+    text: str,
+    start: int,
+    syntax: InlineDelimited | InlineLiteral,
+    state: BlockState,
+    find_closer: ClosingDelimiterFinder,
 ) -> tuple[int, int, int] | None:
-    close = find_closing_delimiter(text, start, syntax, state)
+    close = find_closer(text, start, syntax, state)
     while close != -1:
         value_start, value_end = start, close
         if syntax.strip_content:
             stripped = stripped_content_range(text, value_start, value_end)
             if stripped is None:
-                close = find_closing_delimiter(text, close + len(syntax.closer), syntax, state)
+                close = find_closer(text, close + len(syntax.closer), syntax, state)
                 continue
             value_start, value_end = stripped
 
@@ -295,28 +313,13 @@ def find_delimited_content_range(
     return None
 
 
-def find_literal_content_range(
-    text: str, start: int, syntax: InlineLiteral, state: BlockState
-) -> tuple[int, int, int] | None:
-    close = find_literal_closing_delimiter(text, start, syntax, state)
-    while close != -1:
-        value_start, value_end = start, close
-        if syntax.strip_content:
-            stripped = stripped_content_range(text, value_start, value_end)
-            if stripped is None:
-                close = find_literal_closing_delimiter(text, close + len(syntax.closer), syntax, state)
-                continue
-            value_start, value_end = stripped
-
-        if syntax.reject_empty and value_end == value_start:
-            return None
-        if not syntax.allow_newline and has_newline(text, value_start, value_end):
-            return None
-        return close, value_start, value_end
-    return None
-
-
-def find_closing_delimiter(text: str, start: int, syntax: InlineDelimited, state: BlockState) -> int:
+def find_closing_delimiter(
+    text: str,
+    start: int,
+    syntax: InlineDelimited | InlineLiteral,
+    state: BlockState,
+) -> int:
+    syntax = cast(InlineDelimited, syntax)
     positions = closing_delimiter_positions(
         text,
         state,
@@ -326,7 +329,13 @@ def find_closing_delimiter(text: str, start: int, syntax: InlineDelimited, state
     return next_closing_delimiter(positions, start)
 
 
-def find_literal_closing_delimiter(text: str, start: int, syntax: InlineLiteral, state: BlockState) -> int:
+def find_literal_closing_delimiter(
+    text: str,
+    start: int,
+    syntax: InlineDelimited | InlineLiteral,
+    state: BlockState,
+) -> int:
+    syntax = cast(InlineLiteral, syntax)
     positions = closing_delimiter_positions(
         text,
         state,

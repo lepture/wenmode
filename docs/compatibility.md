@@ -48,9 +48,8 @@ and {ref}`custom-plugins` are intended to be stable through the beta period:
 - `Wenmode`, `Parser`, and renderer construction, including
   `Wenmode(..., plugins=[...])`.
 - Rule classes and configured rule instances.
-- Plugin modules or objects with a declarative `spec`, optional renderer
-  `setup(wen, /)`, whether installed during `Wenmode` construction or later
-  with `Wenmode.use(plugin)`.
+- Plugin modules or objects with `setup(wen, /)`, whether installed during
+  `Wenmode` construction or later with `Wenmode.use(plugin)`.
 - `Node.to_ast()` output for documented node types.
 - Custom plugin `setup()` functions, rules, renderer handlers, and root
   transform shapes.
