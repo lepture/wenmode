@@ -3,7 +3,7 @@ from __future__ import annotations
 from bisect import bisect_left
 from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from wenmode.nodes import Position
 
@@ -39,11 +39,13 @@ class SourceMap:
         self.text = text
         self._text_length = len(text)
         self.segments = segments
+        segment_starts: tuple[int, ...] | None
+        segment_ends: tuple[int, ...] | None
         if len(segments) < 2:
             self._direct_slice_offsets = True
             self._contiguous_segments = True
-            self._segment_starts = tuple(segment.start for segment in segments)
-            self._segment_ends = tuple(segment.end for segment in segments)
+            self._segment_starts = cast(tuple[int, ...] | None, tuple(segment.start for segment in segments))
+            self._segment_ends = cast(tuple[int, ...] | None, tuple(segment.end for segment in segments))
             return
         starts = tuple(segment.start for segment in segments)
         ends = tuple(segment.end for segment in segments)
@@ -57,11 +59,13 @@ class SourceMap:
             left.end == right.start for left, right in zip(segments, segments[1:])
         )
         if ordered:
-            self._segment_starts: tuple[int, ...] | None = starts
-            self._segment_ends: tuple[int, ...] | None = ends
+            segment_starts = starts
+            segment_ends = ends
         else:
-            self._segment_starts = None
-            self._segment_ends = None
+            segment_starts = None
+            segment_ends = None
+        self._segment_starts = segment_starts
+        self._segment_ends = segment_ends
 
     @classmethod
     def contiguous(cls, text: str, offset: int) -> SourceMap:
