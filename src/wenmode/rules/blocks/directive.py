@@ -82,13 +82,7 @@ class ContainerDirective(BlockRule):
         lines = collect_until_with_source(state, source, lambda line: closer.match(line.rstrip('\r\n')) is not None)
 
         children = directive_label_children(parser, label, state)
-        children.extend(
-            parser.parse_blocks(
-                ''.join(lines),
-                parent_state=state,
-                source=source.map(),
-            )
-        )
+        children.extend(parser.parse_blocks(''.join(lines), parent_state=state, source=source.map()))
         return ContainerDirectiveNode(name=name, attributes=attributes, children=children)
 
 

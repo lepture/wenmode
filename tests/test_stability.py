@@ -23,10 +23,7 @@ def test_positions_survive_plugin_root_transforms() -> None:
 
     assert first == {
         'type': 'abbreviation',
-        'position': {
-            'start': {'line': 3, 'column': 1, 'offset': 20},
-            'end': {'line': 3, 'column': 5, 'offset': 24},
-        },
+        'position': {'start': {'line': 3, 'column': 1, 'offset': 20}, 'end': {'line': 3, 'column': 5, 'offset': 24}},
         'children': [
             {
                 'type': 'text',
@@ -41,10 +38,7 @@ def test_positions_survive_plugin_root_transforms() -> None:
     }
     assert middle == {
         'type': 'text',
-        'position': {
-            'start': {'line': 3, 'column': 5, 'offset': 24},
-            'end': {'line': 3, 'column': 10, 'offset': 29},
-        },
+        'position': {'start': {'line': 3, 'column': 5, 'offset': 24}, 'end': {'line': 3, 'column': 10, 'offset': 29}},
         'value': ' and ',
     }
     assert second['position'] == {
@@ -61,13 +55,7 @@ def test_plugin_state_is_created_per_parse() -> None:
 
 
 def test_streaming_preset_supports_streaming_compatible_plugins() -> None:
-    app = (
-        Wenmode(streaming)
-        .use(block_math)
-        .use(inline_math)
-        .use(block_spoiler)
-        .use(inline_spoiler)
-    )
+    app = Wenmode(streaming).use(block_math).use(inline_math).use(block_spoiler).use(inline_spoiler)
     markdown = 'A $x$ and >! hidden !<.\n\n- [x] done\n'
 
     assert ''.join(app.stream(markdown)) == app.render(markdown)
@@ -220,11 +208,5 @@ def test_streaming_positions_remain_offset_only_for_plugin_nodes() -> None:
     assert paragraph['children'][3] == {
         'type': 'inlineSpoiler',
         'position': {'start': {'offset': 10}, 'end': {'offset': 22}},
-        'children': [
-            {
-                'type': 'text',
-                'position': {'start': {'offset': 13}, 'end': {'offset': 19}},
-                'value': 'hidden',
-            }
-        ],
+        'children': [{'type': 'text', 'position': {'start': {'offset': 13}, 'end': {'offset': 19}}, 'value': 'hidden'}],
     }

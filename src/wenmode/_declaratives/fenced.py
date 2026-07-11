@@ -41,10 +41,7 @@ class BlockFenced(BlockRule):
         self.strip_content = strip_content
         self._closer_re = _closer_pattern(self)
         self._node_factory = _fenced_node_factory(self)
-        super().__init__(
-            name=name,
-            pattern=rf'[ \t]{{0,3}}{re.escape(opener)}',
-        )
+        super().__init__(name=name, pattern=rf'[ \t]{{0,3}}{re.escape(opener)}')
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
         opener_content = _parse_opener_content(state.line, self, match)
@@ -73,6 +70,7 @@ def _parse_opener_content(line: str, syntax: BlockFenced, match: re.Match[str]) 
     if syntax.allow_opener_content:
         return rest.lstrip(' \t')
     return ''
+
 
 def _closer_pattern(syntax: BlockFenced) -> re.Pattern[str]:
     closer = syntax.closer or syntax.opener

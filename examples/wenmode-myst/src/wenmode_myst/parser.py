@@ -19,10 +19,7 @@ DIRECTIVE_FENCES = ('`', '~', ':')
 
 
 wen = Wenmode(
-    [
-        FencedDirectiveRule(literal_names=LITERAL_BODY_DIRECTIVES, fence=DIRECTIVE_FENCES),
-        *github,
-    ],
+    [FencedDirectiveRule(literal_names=LITERAL_BODY_DIRECTIVES, fence=DIRECTIVE_FENCES), *github],
     renderer=RSTRenderer(),
     plugins=[definition_list, frontmatter, inline_role, inline_math, block_math, target],
 )
@@ -50,8 +47,4 @@ class WenmodeMystParser(SphinxParser):
 def setup(app: Sphinx) -> dict[str, Any]:
     app.add_source_parser(WenmodeMystParser, override=True)
     app.add_source_suffix('.md', 'markdown', override=True)
-    return {
-        'version': '0.1.0',
-        'parallel_read_safe': True,
-        'parallel_write_safe': True,
-    }
+    return {'version': '0.1.0', 'parallel_read_safe': True, 'parallel_write_safe': True}

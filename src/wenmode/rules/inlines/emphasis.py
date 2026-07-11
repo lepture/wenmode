@@ -56,11 +56,7 @@ class Delimiter:
     orig_length: int
 
 
-def parse_emphasis_sequence(
-    nodes: list[Node],
-    cjk_friendly: bool = False,
-    max_depth: int = 20,
-) -> list[Node]:
+def parse_emphasis_sequence(nodes: list[Node], cjk_friendly: bool = False, max_depth: int = 20) -> list[Node]:
     parts: list[Node] = []
     delimiters: list[Delimiter] = []
     source = source_text(nodes)
@@ -176,10 +172,7 @@ def process_delimiters(parts: list[Node], delimiters: list[Delimiter], max_depth
 
 
 def find_matching_opener(
-    delimiters: list[Delimiter],
-    closer: Delimiter,
-    closer_pos: int,
-    opener_bottom: int,
+    delimiters: list[Delimiter], closer: Delimiter, closer_pos: int, opener_bottom: int
 ) -> tuple[int, Delimiter | None]:
     opener_pos = closer_pos - 1
     while opener_pos >= opener_bottom:
@@ -200,10 +193,7 @@ def is_matching_opener(candidate: Delimiter, closer: Delimiter) -> bool:
 
 
 def prepare_delimiter_match(
-    parts: list[Node],
-    opener: Delimiter,
-    closer: Delimiter,
-    max_depth: int = 20,
+    parts: list[Node], opener: Delimiter, closer: Delimiter, max_depth: int = 20
 ) -> tuple[int, TextNode | None, TextNode | None]:
     if opener.length >= 2 and closer.length >= 2:
         length = 2
@@ -240,15 +230,13 @@ def apply_delimiter_match(
         remaining_opener_position = None
     else:
         remaining_opener_position = Position(
-            start=opener_text.position.start,
-            end=opener_text.position.start + len(opener_text.value) - use_length,
+            start=opener_text.position.start, end=opener_text.position.start + len(opener_text.value) - use_length
         )
     if closer_text.position is None:
         remaining_closer_position = None
     else:
         remaining_closer_position = Position(
-            start=closer_text.position.start + use_length,
-            end=closer_text.position.start + len(closer_text.value),
+            start=closer_text.position.start + use_length, end=closer_text.position.start + len(closer_text.value)
         )
     opener_text.value = opener_text.value[: len(opener_text.value) - use_length]
     closer_text.value = closer_text.value[use_length:]
@@ -267,10 +255,7 @@ def apply_delimiter_match(
 
 
 def update_delimiter_indices(
-    delimiters: list[Delimiter],
-    opener: Delimiter,
-    closer: Delimiter,
-    old_closer_index: int,
+    delimiters: list[Delimiter], opener: Delimiter, closer: Delimiter, old_closer_index: int
 ) -> None:
     removed = old_closer_index - opener.index - 2
     closer.index = opener.index + 2

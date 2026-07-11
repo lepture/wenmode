@@ -102,11 +102,7 @@ def parse_descriptions(parser: Parser, state: BlockState) -> list[DefinitionDesc
         source.add(state.index, text_start, text)
         state.advance()
         spread = collect_description_continuation(state, lines, source)
-        children = parser.parse_blocks(
-            ''.join(lines),
-            parent_state=state,
-            source=source.map(),
-        )
+        children = parser.parse_blocks(''.join(lines), parent_state=state, source=source.map())
         description = DefinitionDescriptionNode(children=children, spread=spread)
         description.position = state.source.position_between(start_index, state.index)
         descriptions.append(description)

@@ -99,13 +99,7 @@ class FencedDirectiveRule(BlockRule):
         source = state.source.collect()
         lines = collect_until_with_source(state, source, lambda line: closer.match(line.rstrip('\r\n')) is not None)
         children = directive_label_children(parser, title, state)
-        children.extend(
-            parser.parse_blocks(
-                ''.join(lines),
-                parent_state=state,
-                source=source.map(),
-            )
-        )
+        children.extend(parser.parse_blocks(''.join(lines), parent_state=state, source=source.map()))
         return children
 
     @staticmethod
@@ -125,12 +119,7 @@ class FencedDirectiveRule(BlockRule):
         attributes = self.parse_directive_attributes(state)
         if name in self.literal_names:
             value = self.parse_literal_directive_body(state, closer)
-            return LiteralDirectiveNode(
-                name=name,
-                argument=argument,
-                attributes=attributes or None,
-                value=value,
-            )
+            return LiteralDirectiveNode(name=name, argument=argument, attributes=attributes or None, value=value)
         children = self.parse_directive_body(parser, state, argument, closer)
         return ContainerDirectiveNode(name=name, attributes=attributes or None, children=children)
 
@@ -156,9 +145,7 @@ class FencedDirectivePlugin:
 
 
 def configure(
-    *,
-    literal_names: Iterable[str] = DEFAULT_LITERAL_DIRECTIVE_NAMES,
-    fence: FencedDirectiveFence = DEFAULT_FENCE,
+    *, literal_names: Iterable[str] = DEFAULT_LITERAL_DIRECTIVE_NAMES, fence: FencedDirectiveFence = DEFAULT_FENCE
 ) -> FencedDirectivePlugin:
     return FencedDirectivePlugin(literal_names=literal_names, fence=fence)
 

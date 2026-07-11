@@ -11,10 +11,7 @@ from wenmode.renderers.asciidoc import AsciiDocRenderContext, AsciiDocRenderer
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer, indent_block
 from wenmode.rules.base import BlockRule, Rule
-from wenmode.rules.blocks.html import (
-    HTML_SCRIPT_STYLE_RE,
-    HtmlBlock,
-)
+from wenmode.rules.blocks.html import HTML_SCRIPT_STYLE_RE, HtmlBlock
 from wenmode.utils import compile_disallowed_html_filter, filter_disallowed_html, unquote_attribute_value
 
 from .._parser.source import SourceCollector
@@ -40,22 +37,7 @@ HTML_ATTRIBUTE_RE = re.compile(
     r'(?:\s*=\s*(?P<value>[^\s"\'=<>`]+|\'[^\']*\'|"[^"]*"))?'
 )
 VOID_TAGS = frozenset(
-    {
-        'area',
-        'base',
-        'br',
-        'col',
-        'embed',
-        'hr',
-        'img',
-        'input',
-        'link',
-        'meta',
-        'param',
-        'source',
-        'track',
-        'wbr',
-    }
+    {'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'}
 )
 
 
@@ -97,9 +79,7 @@ class HtmlContainer(BlockRule):
 
 
 def parse_html_container(
-    parser: Parser,
-    state: BlockState,
-    disallowed_html_filter: re.Pattern[str] | None,
+    parser: Parser, state: BlockState, disallowed_html_filter: re.Pattern[str] | None
 ) -> HtmlContainerNode | None:
     opener = parse_container_opener(state.line)
     if opener is None:

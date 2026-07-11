@@ -89,12 +89,7 @@ class InlineRule(Rule):
     trigger_chars: str = ''
     compiled: re.Pattern[str]
 
-    def __init__(
-        self,
-        name: str | None = None,
-        pattern: str | None = None,
-        trigger_chars: str | None = None,
-    ) -> None:
+    def __init__(self, name: str | None = None, pattern: str | None = None, trigger_chars: str | None = None) -> None:
         super().__init__(name)
         self.pattern = resolve_string_attribute(self, 'pattern', pattern)
         self.trigger_chars = resolve_string_attribute(self, 'trigger_chars', trigger_chars, default='')

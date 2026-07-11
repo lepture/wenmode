@@ -17,16 +17,10 @@ TEXT_FIXTURE_FIELDS = (
     'rules',
     'rst',
 )
-TEXT_FIXTURE_SECTION_RE = re.compile(
-    r'^\.(' + '|'.join(TEXT_FIXTURE_FIELDS) + r')\n',
-    re.MULTILINE,
-)
+TEXT_FIXTURE_SECTION_RE = re.compile(r'^\.(' + '|'.join(TEXT_FIXTURE_FIELDS) + r')\n', re.MULTILINE)
 TEXT_FIXTURE_START_RE = re.compile(r'^## (?P<name>[^\n]+)\n\n````````fixture\n', re.MULTILINE)
 TEXT_FIXTURE_END_RE = re.compile(r'^````````\n(?=\n## |\Z)', re.MULTILINE)
-TEXT_FIXTURE_ESCAPED_MARKER_RE = re.compile(
-    r'^\\\.(' + '|'.join(TEXT_FIXTURE_FIELDS) + r')$',
-    re.MULTILINE,
-)
+TEXT_FIXTURE_ESCAPED_MARKER_RE = re.compile(r'^\\\.(' + '|'.join(TEXT_FIXTURE_FIELDS) + r')$', re.MULTILINE)
 TEXT_FIXTURE_JSON_FIELDS = {'html_directives', 'html_options', 'roundtrip_html', 'rules'}
 
 

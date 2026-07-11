@@ -52,15 +52,7 @@ def render_asciidoc_math(renderer: AsciiDocRenderer, node: MathNode, context: As
 
 
 nodes = [MathNode]
-rules = [
-    BlockFenced(
-        name='math_block',
-        node=MathNode,
-        opener='$$',
-        closer='$$',
-        allow_opener_content=True,
-    )
-]
+rules = [BlockFenced(name='math_block', node=MathNode, opener='$$', closer='$$', allow_opener_content=True)]
 handlers: RendererHandlers = {
     'html': {MathNode.type: render_html_math},
     'markdown': {MathNode.type: render_markdown_math},

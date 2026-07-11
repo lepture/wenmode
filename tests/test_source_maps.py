@@ -14,14 +14,7 @@ class BoxNode(Parent):
 
 
 def test_source_map_preserves_boundary_and_line_offset_semantics() -> None:
-    source = SourceMap(
-        'abcdef',
-        [
-            SourceSegment(0, 2, 10),
-            SourceSegment(2, 4, 30),
-            SourceSegment(4, 6, 80),
-        ],
-    )
+    source = SourceMap('abcdef', [SourceSegment(0, 2, 10), SourceSegment(2, 4, 30), SourceSegment(4, 6, 80)])
 
     assert [source.source_offset(offset) for offset in (-1, 0, 1, 2, 6, 99)] == [10, 10, 11, 30, 82, 82]
     assert source.line_offsets(['ab', 'cd', 'ef']) == [10, 30, 80]
@@ -29,13 +22,7 @@ def test_source_map_preserves_boundary_and_line_offset_semantics() -> None:
 
 def test_source_map_preserves_duplicate_and_zero_length_segment_semantics() -> None:
     source = SourceMap(
-        'ab',
-        [
-            SourceSegment(0, 0, 5),
-            SourceSegment(0, 1, 10),
-            SourceSegment(1, 1, 20),
-            SourceSegment(1, 2, 30),
-        ],
+        'ab', [SourceSegment(0, 0, 5), SourceSegment(0, 1, 10), SourceSegment(1, 1, 20), SourceSegment(1, 2, 30)]
     )
 
     assert source.source_offset(0) == 5
@@ -44,58 +31,31 @@ def test_source_map_preserves_duplicate_and_zero_length_segment_semantics() -> N
 
 
 def test_source_map_preserves_first_match_order_for_arbitrary_segments() -> None:
-    source = SourceMap(
-        'abcdefgh',
-        [
-            SourceSegment(0, 8, 100),
-            SourceSegment(4, 6, 20),
-            SourceSegment(2, 7, 60),
-        ],
-    )
+    source = SourceMap('abcdefgh', [SourceSegment(0, 8, 100), SourceSegment(4, 6, 20), SourceSegment(2, 7, 60)])
 
     assert source.source_offset(3) == 103
     assert source.source_offset(4) == 20
     assert source.source_offset(5) == 105
 
-    decreasing_ends = SourceMap(
-        'abcdefgh',
-        [SourceSegment(0, 8, 100), SourceSegment(4, 6, 20)],
-    )
+    decreasing_ends = SourceMap('abcdefgh', [SourceSegment(0, 8, 100), SourceSegment(4, 6, 20)])
     assert decreasing_ends.source_offset(4) == 20
     assert decreasing_ends.source_offset(5) == 105
 
     overlapping_slice = decreasing_ends.slice(5, 6)
-    assert overlapping_slice.segments == [
-        SourceSegment(0, 1, 105),
-        SourceSegment(0, 1, 105),
-    ]
+    assert overlapping_slice.segments == [SourceSegment(0, 1, 105), SourceSegment(0, 1, 105)]
 
 
 def test_source_map_preserves_partial_empty_and_missing_segment_slices() -> None:
-    source = SourceMap(
-        'abcdef',
-        [
-            SourceSegment(0, 2, 10),
-            SourceSegment(2, 4, 30),
-            SourceSegment(4, 6, 80),
-        ],
-    )
+    source = SourceMap('abcdef', [SourceSegment(0, 2, 10), SourceSegment(2, 4, 30), SourceSegment(4, 6, 80)])
 
     partial = source.slice(1, 5)
     assert partial.text == 'bcde'
-    assert partial.segments == [
-        SourceSegment(0, 1, 11),
-        SourceSegment(1, 3, 30),
-        SourceSegment(3, 4, 80),
-    ]
+    assert partial.segments == [SourceSegment(0, 1, 11), SourceSegment(1, 3, 30), SourceSegment(3, 4, 80)]
     empty = source.slice(3, 3)
     assert empty.text == ''
     assert empty.source_offset(0) == 31
     shared_boundary = source.slice(2, 2)
-    assert shared_boundary.segments == [
-        SourceSegment(0, 0, 30),
-        SourceSegment(0, 0, 30),
-    ]
+    assert shared_boundary.segments == [SourceSegment(0, 0, 30), SourceSegment(0, 0, 30)]
 
     empty_map = SourceMap('abc', [])
     assert empty_map.source_offset(99) == 0
@@ -142,10 +102,7 @@ def test_nested_block_and_inline_source_maps_share_parent_state() -> None:
     }
     assert box['children'][1]['children'][1] == {
         'type': 'inlineCode',
-        'position': {
-            'start': {'line': 6, 'column': 6, 'offset': 26},
-            'end': {'line': 6, 'column': 12, 'offset': 32},
-        },
+        'position': {'start': {'line': 6, 'column': 6, 'offset': 26}, 'end': {'line': 6, 'column': 12, 'offset': 32}},
         'value': 'code',
     }
 
@@ -159,18 +116,12 @@ def test_inline_sources_are_state_local() -> None:
         pattern = r'!'
         trigger_chars = '!'
 
-        def parse(
-            self, parser: Parser, text: str, match: re.Match[str], state: BlockState
-        ) -> tuple[Node | None, int]:
+        def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
             current_source = parser.inline_source(text, state, match.start(), match.end())
             other_source = parser.inline_source(text, other_state, match.start(), match.end())
             assert current_source is not None
             observations.append(
-                (
-                    current_source.source_offset(0),
-                    current_source.source_offset(1),
-                    other_source is None,
-                )
+                (current_source.source_offset(0), current_source.source_offset(1), other_source is None)
             )
             return Text(value='!'), match.end()
 

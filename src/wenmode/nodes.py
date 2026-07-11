@@ -15,11 +15,7 @@ class Point:
     offset: int
 
     def to_ast(self) -> dict[str, int]:
-        return {
-            'line': self.line,
-            'column': self.column,
-            'offset': self.offset,
-        }
+        return {'line': self.line, 'column': self.column, 'offset': self.offset}
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,10 +32,7 @@ class Position:
 
     def to_ast(self, line_starts: Sequence[int] | None = None) -> dict[str, dict[str, int]]:
         if line_starts is None:
-            return {
-                'start': {'offset': self.start},
-                'end': {'offset': self.end},
-            }
+            return {'start': {'offset': self.start}, 'end': {'offset': self.end}}
         return {
             'start': _point_ast_from_offset(line_starts, self.start),
             'end': _point_ast_from_offset(line_starts, self.end),
@@ -102,11 +95,13 @@ class Parent(Node):
 
     children: list[Node] = field(default_factory=list)
 
+
 @dataclass
 class Literal(Node):
     """Base class for nodes that store literal text."""
 
     value: str = ''
+
 
 @dataclass
 class Root(Parent):
@@ -139,11 +134,7 @@ def _point_ast_from_offset(line_starts: Sequence[int], offset: int) -> dict[str,
     index = bisect.bisect_right(line_starts, offset) - 1
     if index < 0:
         index = 0
-    return {
-        'line': index + 1,
-        'column': offset - line_starts[index] + 1,
-        'offset': offset,
-    }
+    return {'line': index + 1, 'column': offset - line_starts[index] + 1, 'offset': offset}
 
 
 @dataclass

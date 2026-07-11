@@ -11,9 +11,7 @@ GFM_CORE = [rule for rule in github if rule is not ExtendedAutolink and not isin
 
 
 @pytest.mark.parametrize(
-    'example',
-    load_fixture('gfm-0.29.json'),
-    ids=lambda example: f'{example["example"]}: {example["section"]}',
+    'example', load_fixture('gfm-0.29.json'), ids=lambda example: f'{example["example"]}: {example["section"]}'
 )
 def test_gfm_spec(example: SpecExample) -> None:
     renderer = HTMLRenderer(escape=False, sanitize_urls=False)

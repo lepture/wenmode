@@ -16,12 +16,7 @@ def unique_blockers(blockers: Iterable[str]) -> list[str]:
     return unique
 
 
-def assert_streaming_supported(
-    blockers: Iterable[str],
-    *,
-    blocked_by: str,
-    guidance: str | None = None,
-) -> None:
+def assert_streaming_supported(blockers: Iterable[str], *, blocked_by: str, guidance: str | None = None) -> None:
     names = ', '.join(unique_blockers(blockers))
     if not names:
         return

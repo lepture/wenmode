@@ -31,10 +31,7 @@ from wenmode.rules import (
 
 
 def parse_time(
-    markdown: str,
-    rules: list[type[Rule] | Rule],
-    plugins: Iterable[Any] = (),
-    positions: bool = False,
+    markdown: str, rules: list[type[Rule] | Rule], plugins: Iterable[Any] = (), positions: bool = False
 ) -> float:
     parser = Wenmode(rules, positions=positions)
     for plugin in plugins:
@@ -89,24 +86,11 @@ def test_plain_text_inline_dispatch_scales_nearly_linearly() -> None:
 
 
 def test_repeated_hard_break_dispatch_scales_nearly_linearly() -> None:
-    assert_scales_nearly_linearly(
-        lambda size: 'a  \n' * size,
-        commonmark,
-        4000,
-        8000,
-        ratio=3.0,
-        slack=0.01,
-    )
+    assert_scales_nearly_linearly(lambda size: 'a  \n' * size, commonmark, 4000, 8000, ratio=3.0, slack=0.01)
 
 
 def test_positioned_hard_breaks_scale_nearly_linearly() -> None:
-    assert_scales_nearly_linearly(
-        lambda size: 'a  \n' * size,
-        [HardBreak],
-        2000,
-        4000,
-        positions=True,
-    )
+    assert_scales_nearly_linearly(lambda size: 'a  \n' * size, [HardBreak], 2000, 4000, positions=True)
 
 
 def test_leaf_directive_candidates_scale_nearly_linearly() -> None:
@@ -115,10 +99,7 @@ def test_leaf_directive_candidates_scale_nearly_linearly() -> None:
 
 def test_atx_heading_closing_candidates_scale_nearly_linearly() -> None:
     assert_scales_nearly_linearly(
-        lambda size: '# ' + 'a' * size + ' ' * size + '#' * size + 'x\n',
-        [AtxHeading],
-        2000,
-        4000,
+        lambda size: '# ' + 'a' * size + ' ' * size + '#' * size + 'x\n', [AtxHeading], 2000, 4000
     )
 
 
@@ -161,10 +142,7 @@ def test_nested_text_directives_do_not_parse_unbounded_recursively() -> None:
 
 def test_extended_autolink_trailing_parentheses_scale_nearly_linearly() -> None:
     assert_scales_nearly_linearly(
-        lambda size: 'https://example.com/' + ')' * size + '\n',
-        [ExtendedAutolink],
-        8000,
-        16000,
+        lambda size: 'https://example.com/' + ')' * size + '\n', [ExtendedAutolink], 8000, 16000
     )
 
 
@@ -174,10 +152,7 @@ def test_unclosed_multiline_reference_title_scales_nearly_linearly() -> None:
 
 def test_footnote_blank_continuations_scale_nearly_linearly() -> None:
     assert_scales_nearly_linearly(
-        lambda size: '[^x]: first\n' + '\n' * size + '  second\n\n[^x]\n',
-        [Footnote],
-        1000,
-        2000,
+        lambda size: '[^x]: first\n' + '\n' * size + '  second\n\n[^x]\n', [Footnote], 1000, 2000
     )
 
 
@@ -195,21 +170,13 @@ def test_abbreviation_definition_candidates_scale_nearly_linearly() -> None:
 
 def test_definition_description_candidates_scale_nearly_linearly() -> None:
     assert_scales_nearly_linearly(
-        lambda size: 'Term\n: ' + ' ' * size + '\n',
-        [],
-        8000,
-        16000,
-        plugins=[definition_list],
+        lambda size: 'Term\n: ' + ' ' * size + '\n', [], 8000, 16000, plugins=[definition_list]
     )
 
 
 def test_fenced_directive_attribute_candidates_scale_nearly_linearly() -> None:
     assert_scales_nearly_linearly(
-        lambda size: '```{note}\n:class:' + ' ' * size + '\n```\n',
-        [],
-        8000,
-        16000,
-        plugins=[fenced_directive],
+        lambda size: '```{note}\n:class:' + ' ' * size + '\n```\n', [], 8000, 16000, plugins=[fenced_directive]
     )
 
 
@@ -219,11 +186,7 @@ def test_math_block_opener_candidates_scale_nearly_linearly() -> None:
 
 def test_html_container_long_attributes_scale_nearly_linearly() -> None:
     assert_scales_nearly_linearly(
-        lambda size: '<div data-x="' + 'x' * size + '">\n</div>\n',
-        [],
-        8000,
-        16000,
-        plugins=[html_container],
+        lambda size: '<div data-x="' + 'x' * size + '">\n</div>\n', [], 8000, 16000, plugins=[html_container]
     )
 
 
@@ -233,9 +196,5 @@ def test_html_container_unclosed_candidates_scale_nearly_linearly() -> None:
 
 def test_html_container_nested_same_name_tags_scale_nearly_linearly() -> None:
     assert_scales_nearly_linearly(
-        lambda size: '<div>\n' * size + '</div>\n' * size,
-        [],
-        64,
-        128,
-        plugins=[html_container],
+        lambda size: '<div>\n' * size + '</div>\n' * size, [], 64, 128, plugins=[html_container]
     )

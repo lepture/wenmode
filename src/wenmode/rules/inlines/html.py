@@ -26,10 +26,7 @@ COMMONMARK_HTML_COMMENT_RE = r'<!-->|<!--->|<!--[\s\S]*?-->'
 GFM_HTML_COMMENT_RE = r'<!--(?!>|->)(?:(?!--)[\s\S])*?(?<!-)-->'
 HTML_COMMENT_RE = GFM_HTML_COMMENT_RE
 HTML_RE = rf'{HTML_COMMENT_RE}|<\?.*?\?>|<![A-Z]+[^>]*>|<!\[CDATA\[.*?\]\]>|{HTML_TAG_RE}'
-HTML_COMMENT_STYLE_RE = {
-    'commonmark': COMMONMARK_HTML_COMMENT_RE,
-    'gfm': GFM_HTML_COMMENT_RE,
-}
+HTML_COMMENT_STYLE_RE = {'commonmark': COMMONMARK_HTML_COMMENT_RE, 'gfm': GFM_HTML_COMMENT_RE}
 
 
 class Autolink(InlineRule):
@@ -82,9 +79,7 @@ class RawHtml(InlineRule):
     trigger_chars = '<'
 
     def __init__(
-        self,
-        disallowed_tags: Sequence[str] = (),
-        comment_style: Literal['commonmark', 'gfm'] = 'commonmark',
+        self, disallowed_tags: Sequence[str] = (), comment_style: Literal['commonmark', 'gfm'] = 'commonmark'
     ) -> None:
         comment_re = HTML_COMMENT_STYLE_RE[comment_style]
         html_re = rf'{comment_re}|<\?.*?\?>|<![A-Z]+[^>]*>|<!\[CDATA\[.*?\]\]>|{HTML_TAG_RE}'

@@ -24,9 +24,7 @@ ClosingDelimiterCache = dict[tuple[int, int], tuple[str, object, list[int]]]
 ClosingDelimiterFinder = Callable[[str, int, 'InlineDelimited | InlineLiteral', BlockState], int]
 InlineParse = Callable[['Parser', str, re.Match[str], BlockState], tuple[Node | None, int]]
 DECLARATIVE_INLINE_DEPTH = StateKey[int]('wenmode.declarative.inline_depth', lambda: 0)
-DECLARATIVE_CLOSING_DELIMITERS = StateKey[ClosingDelimiterCache](
-    'wenmode.declarative.closing_delimiters', lambda: {}
-)
+DECLARATIVE_CLOSING_DELIMITERS = StateKey[ClosingDelimiterCache]('wenmode.declarative.closing_delimiters', lambda: {})
 
 
 def _is_simple_delimited_children(syntax: InlineDelimited) -> bool:
@@ -93,9 +91,7 @@ class InlineDelimited(InlineRule):
         else:
             self._parse_impl = self._parse_general
         super().__init__(
-            name=name,
-            pattern=re.escape(opener),
-            trigger_chars=opener[0] if trigger_chars is None else trigger_chars,
+            name=name, pattern=re.escape(opener), trigger_chars=opener[0] if trigger_chars is None else trigger_chars
         )
 
     def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
@@ -170,20 +166,10 @@ class InlineDelimited(InlineRule):
             return node, close + len(self.closer)
         return None, start
 
-    def _create_node(
-        self,
-        parser: Parser,
-        text: str,
-        state: BlockState,
-        value_start: int,
-        value_end: int,
-    ) -> Node:
+    def _create_node(self, parser: Parser, text: str, state: BlockState, value_start: int, value_end: int) -> Node:
         value = text[value_start:value_end]
         children = parse_delimited_children(
-            parser,
-            value,
-            state,
-            parser.inline_source(text, state, value_start, value_end),
+            parser, value, state, parser.inline_source(text, state, value_start, value_end)
         )
         return self._node_factory(children=children)
 
@@ -224,9 +210,7 @@ class InlineLiteral(InlineRule):
         self.escape = escape
         self._node_factory = _literal_node_factory(self)
         super().__init__(
-            name=name,
-            pattern=re.escape(opener),
-            trigger_chars=opener[0] if trigger_chars is None else trigger_chars,
+            name=name, pattern=re.escape(opener), trigger_chars=opener[0] if trigger_chars is None else trigger_chars
         )
 
     def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
@@ -271,12 +255,7 @@ def _validate_delimiters(opener: str, closer: str) -> None:
         raise ValueError('closer must not be empty')
 
 
-def parse_delimited_children(
-    parser: Parser,
-    value: str,
-    state: BlockState,
-    source: SourceMap | None,
-) -> list[Node]:
+def parse_delimited_children(parser: Parser, value: str, state: BlockState, source: SourceMap | None) -> list[Node]:
     depth = state.store.get(DECLARATIVE_INLINE_DEPTH)
     if depth >= parser.max_container_depth:
         return [TextNode(value=value)]
@@ -313,43 +292,26 @@ def find_content_range(
     return None
 
 
-def find_closing_delimiter(
-    text: str,
-    start: int,
-    syntax: InlineDelimited | InlineLiteral,
-    state: BlockState,
-) -> int:
+def find_closing_delimiter(text: str, start: int, syntax: InlineDelimited | InlineLiteral, state: BlockState) -> int:
     syntax = cast(InlineDelimited, syntax)
     positions = closing_delimiter_positions(
-        text,
-        state,
-        syntax,
-        lambda index: is_closing_delimiter(text, index, syntax),
+        text, state, syntax, lambda index: is_closing_delimiter(text, index, syntax)
     )
     return next_closing_delimiter(positions, start)
 
 
 def find_literal_closing_delimiter(
-    text: str,
-    start: int,
-    syntax: InlineDelimited | InlineLiteral,
-    state: BlockState,
+    text: str, start: int, syntax: InlineDelimited | InlineLiteral, state: BlockState
 ) -> int:
     syntax = cast(InlineLiteral, syntax)
     positions = closing_delimiter_positions(
-        text,
-        state,
-        syntax,
-        lambda index: is_literal_closing_delimiter(text, index, syntax),
+        text, state, syntax, lambda index: is_literal_closing_delimiter(text, index, syntax)
     )
     return next_closing_delimiter(positions, start)
 
 
 def closing_delimiter_positions(
-    text: str,
-    state: BlockState,
-    syntax: InlineDelimited | InlineLiteral,
-    is_closer: Callable[[int], bool],
+    text: str, state: BlockState, syntax: InlineDelimited | InlineLiteral, is_closer: Callable[[int], bool]
 ) -> list[int]:
     cache = state.store.get(DECLARATIVE_CLOSING_DELIMITERS)
     key = (id(text), id(syntax))
@@ -400,23 +362,20 @@ def is_literal_closing_delimiter(text: str, start: int, syntax: InlineLiteral) -
 
 
 def is_adjacent_to_delimiter(text: str, start: int, delimiter: str) -> bool:
-    return (
-        (start > 0 and text[start - 1] == delimiter[0])
-        or (start + len(delimiter) < len(text) and text[start + len(delimiter)] == delimiter[-1])
+    return (start > 0 and text[start - 1] == delimiter[0]) or (
+        start + len(delimiter) < len(text) and text[start + len(delimiter)] == delimiter[-1]
     )
 
 
 def is_adjacent_closing_delimiter(text: str, start: int, delimiter: str) -> bool:
-    return (
-        (start > 0 and text[start - 1] == delimiter[0] and not is_escaped(text, start - 1))
-        or (start + len(delimiter) < len(text) and text[start + len(delimiter)] == delimiter[-1])
+    return (start > 0 and text[start - 1] == delimiter[0] and not is_escaped(text, start - 1)) or (
+        start + len(delimiter) < len(text) and text[start + len(delimiter)] == delimiter[-1]
     )
 
 
 def is_part_of_longer_delimiter_run(text: str, start: int, delimiter: str) -> bool:
-    return (
-        (start > 0 and text[start - 1] == delimiter[0])
-        or (start + len(delimiter) < len(text) and text[start + len(delimiter)] == delimiter[-1])
+    return (start > 0 and text[start - 1] == delimiter[0]) or (
+        start + len(delimiter) < len(text) and text[start + len(delimiter)] == delimiter[-1]
     )
 
 

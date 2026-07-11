@@ -140,9 +140,7 @@ class BlockState:
         self.index += count
 
     def consume_until(
-        self,
-        is_closer: Callable[[str], bool],
-        transform: Callable[[str], str] | None = None,
+        self, is_closer: Callable[[str], bool], transform: Callable[[str], str] | None = None
     ) -> list[str]:
         """Consume lines through an optional closing line.
 

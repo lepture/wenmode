@@ -90,9 +90,7 @@ def render_rst_block(renderer: RSTRenderer, node: BlockSpoilerNode, context: RST
     return '.. admonition:: Spoiler\n\n' + indent_block(body, '   ') + '\n\n'
 
 
-def render_asciidoc_block(
-    renderer: AsciiDocRenderer, node: BlockSpoilerNode, context: AsciiDocRenderContext
-) -> str:
+def render_asciidoc_block(renderer: AsciiDocRenderer, node: BlockSpoilerNode, context: AsciiDocRenderContext) -> str:
     body = renderer.render_children(node.children, context).rstrip('\n')
     if not body:
         return '[.spoiler]\n--\n--\n\n'

@@ -32,10 +32,7 @@ class BlockParser:
         return self.parse_nodes(state)
 
     def _create_nested_state(
-        self,
-        lines: list[str],
-        parent_state: BlockState,
-        source: SourceMap | None = None,
+        self, lines: list[str], parent_state: BlockState, source: SourceMap | None = None
     ) -> BlockState:
         source_tracker: NullSourceTracker
         if self._parser.positions and source is not None:
@@ -83,9 +80,7 @@ class BlockParser:
         return self._paragraph_from_lines(state, lines, source)
 
     @staticmethod
-    def _read_shallow_paragraph_lines(
-        state: BlockState, source: SourceCollector | None = None
-    ) -> list[str]:
+    def _read_shallow_paragraph_lines(state: BlockState, source: SourceCollector | None = None) -> list[str]:
         lines: list[str] = []
         while not state.done and state.line.strip() != '':
             _append_paragraph_line(state, source, lines, state.line)
@@ -162,8 +157,7 @@ class BlockParser:
             parsed = rule.parse(self._parser, state, rule_match)
             if state.index < previous_index:
                 raise RuntimeError(
-                    f"Block rule '{rule.name}' moved state backwards "
-                    f'from index {previous_index} to {state.index}'
+                    f"Block rule '{rule.name}' moved state backwards from index {previous_index} to {state.index}"
                 )
             if parsed is not None:
                 if state.index == previous_index:
@@ -192,10 +186,7 @@ class BlockParser:
         return self._paragraph_from_lines(state, lines, source)
 
     def _paragraph_from_lines(
-        self,
-        state: BlockState,
-        lines: list[str],
-        source: SourceCollector | None = None,
+        self, state: BlockState, lines: list[str], source: SourceCollector | None = None
     ) -> Paragraph:
         if source is None:
             text = ''.join(lines).strip()
@@ -249,19 +240,12 @@ class BlockParser:
                     f'from index {previous_index} to {state.index}'
                 )
             if state.index == previous_index:
-                raise RuntimeError(
-                    f"Continuation rule '{continuation.name}' returned a node but state did not advance"
-                )
+                raise RuntimeError(f"Continuation rule '{continuation.name}' returned a node but state did not advance")
             return parsed
         return None
 
 
-def _append_paragraph_line(
-    state: BlockState,
-    source: SourceCollector | None,
-    lines: list[str],
-    line: str,
-) -> None:
+def _append_paragraph_line(state: BlockState, source: SourceCollector | None, lines: list[str], line: str) -> None:
     if lines:
         text = line.lstrip(' \t')
     else:

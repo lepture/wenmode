@@ -131,13 +131,7 @@ class SourceMap:
                 source_offset = segment.offset + segment_start - segment.start
             else:
                 source_offset = self.source_offset(segment_start)
-            segments.append(
-                SourceSegment(
-                    start=segment_start - start,
-                    end=segment_end - start,
-                    offset=source_offset,
-                )
-            )
+            segments.append(SourceSegment(start=segment_start - start, end=segment_end - start, offset=source_offset))
         if not segments:
             segments.append(SourceSegment(0, 0, self.source_offset(start)))
         return SourceMap(text, segments)

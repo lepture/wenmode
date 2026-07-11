@@ -10,13 +10,7 @@ from tests.plugin_helpers import configured_app
 from wenmode import HTMLRenderer, MarkdownRenderer, RSTRenderer, Wenmode
 from wenmode.directives import Abbreviation, Admonition, Details, Figure, TableOfContents
 from wenmode.plugins import fenced_directive
-from wenmode.rules import (
-    AtxHeading,
-    ContainerDirective,
-    Emphasis,
-    LeafDirective,
-    TextDirective,
-)
+from wenmode.rules import AtxHeading, ContainerDirective, Emphasis, LeafDirective, TextDirective
 from wenmode.rules import Image as ImageRule
 
 
@@ -45,11 +39,7 @@ class CodeBlockHtmlOverride:
         return f'<figure class="highlight"{attrs}><pre>{renderer.escape_html(node.value)}</pre></figure>\n'
 
 
-@pytest.mark.parametrize(
-    'example',
-    load_fixture('directives_ast.json'),
-    ids=lambda example: example['name'],
-)
+@pytest.mark.parametrize('example', load_fixture('directives_ast.json'), ids=lambda example: example['name'])
 def test_directive_ast_examples(example: DirectiveExample) -> None:
     app = configured_app(
         ['text_directive', 'role', 'leaf_directive', 'container_directive', 'fenced_directive', 'emphasis']
@@ -58,11 +48,7 @@ def test_directive_ast_examples(example: DirectiveExample) -> None:
     assert app.parse(example['markdown']).to_ast() == example['ast']
 
 
-@pytest.mark.parametrize(
-    'example',
-    load_fixture('directives_html.json'),
-    ids=lambda example: example['name'],
-)
+@pytest.mark.parametrize('example', load_fixture('directives_html.json'), ids=lambda example: example['name'])
 def test_directive_html_examples(example: DirectiveHtmlExample) -> None:
     admonition_names = example.get('admonition_names')
     if admonition_names is not None:
@@ -122,11 +108,7 @@ def test_text_directive_respects_max_container_depth() -> None:
                     {
                         'type': 'textDirective',
                         'children': [
-                            {
-                                'type': 'textDirective',
-                                'children': [{'type': 'text', 'value': ':x[a]'}],
-                                'name': 'x',
-                            }
+                            {'type': 'textDirective', 'children': [{'type': 'text', 'value': ':x[a]'}], 'name': 'x'}
                         ],
                         'name': 'x',
                     }
@@ -214,8 +196,7 @@ def test_html_renderer_can_disable_attribute_sanitization() -> None:
 
 def test_markdown_renderer_outputs_directives() -> None:
     app = configured_app(
-        ['text_directive', 'role', 'leaf_directive', 'container_directive'],
-        renderer=MarkdownRenderer(),
+        ['text_directive', 'role', 'leaf_directive', 'container_directive'], renderer=MarkdownRenderer()
     )
     markdown = ':i[inline]{.x} and {role}`text`\n\n::hr[leaf]{flag}\n\n:::note[Title]{#n}\nBody.\n:::\n'
 
@@ -260,7 +241,9 @@ def test_fenced_literal_directive_preserves_code_block_body() -> None:
             }
         ],
     }
-    assert app.render_node(root) == '<pre><code class="language-python">print(&quot;*not emphasis*&quot;)\n</code></pre>\n'
+    assert (
+        app.render_node(root) == '<pre><code class="language-python">print(&quot;*not emphasis*&quot;)\n</code></pre>\n'
+    )
 
 
 def test_unknown_literal_directive_escapes_html_by_default() -> None:
@@ -272,10 +255,7 @@ def test_unknown_literal_directive_escapes_html_by_default() -> None:
 
 
 def test_literal_directive_renderer_can_override_code_block_html() -> None:
-    app = Wenmode(
-        [],
-        renderer=HTMLRenderer(directives=[CodeBlockHtmlOverride()]),
-    ).use(fenced_directive)
+    app = Wenmode([], renderer=HTMLRenderer(directives=[CodeBlockHtmlOverride()])).use(fenced_directive)
 
     assert app.render('```{code-block} python\nprint("<x>")\n```\n') == (
         '<figure class="highlight" data-language="python"><pre>print(&quot;&lt;x&gt;&quot;)\n</pre></figure>\n'
@@ -287,10 +267,7 @@ def test_literal_directive_renderers_preserve_fenced_and_rst_forms() -> None:
 
     assert configured_app(['fenced_directive'], renderer=MarkdownRenderer()).render(markdown) == markdown
     assert configured_app(['fenced_directive'], renderer=RSTRenderer()).render(markdown) == (
-        '.. code-block:: python\n'
-        '   :caption: example.py\n'
-        '\n'
-        '   print("*not emphasis*")\n'
+        '.. code-block:: python\n   :caption: example.py\n\n   print("*not emphasis*")\n'
     )
 
 
@@ -319,10 +296,7 @@ def test_fenced_directive_literal_names_are_configurable() -> None:
 def test_fenced_directive_fence_chars_are_configurable() -> None:
     default_app = Wenmode([]).use(fenced_directive)
     custom_app = Wenmode([], renderer=RSTRenderer()).use(
-        fenced_directive.configure(
-            literal_names={'sourcecode'},
-            fence=('`', '~', ':'),
-        )
+        fenced_directive.configure(literal_names={'sourcecode'}, fence=('`', '~', ':'))
     )
 
     assert default_app.render(':::{note} Title\nBody.\n:::\n') == '<p>:::{note} Title\nBody.\n:::</p>\n'
@@ -352,8 +326,7 @@ def test_fenced_directive_handles_empty_and_unclosed_bodies() -> None:
 
 def test_toc_leaf_directive_renders_heading_links() -> None:
     app = Wenmode(
-        [AtxHeading(id_transform=True), LeafDirective, ContainerDirective, Emphasis],
-        directives=[TableOfContents()],
+        [AtxHeading(id_transform=True), LeafDirective, ContainerDirective, Emphasis], directives=[TableOfContents()]
     )
 
     assert app.render(

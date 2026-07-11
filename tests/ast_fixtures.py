@@ -56,89 +56,30 @@ INLINE_TEXT_AST = {'type': 'text', 'value': 'inline'}
 PARAGRAPH_AST = {'type': 'paragraph', 'children': [TEXT_AST]}
 
 BUILTIN_NODE_SHAPES: list[NodeShape] = [
-    (
-        'root',
-        Root,
-        {'type': 'root', 'children': [PARAGRAPH_AST]},
-    ),
-    (
-        'paragraph',
-        Paragraph,
-        PARAGRAPH_AST,
-    ),
-    (
-        'heading',
-        Heading,
-        {'type': 'heading', 'children': [TEXT_AST], 'depth': 2},
-    ),
-    (
-        'blockquote',
-        Blockquote,
-        {'type': 'blockquote', 'children': [PARAGRAPH_AST]},
-    ),
+    ('root', Root, {'type': 'root', 'children': [PARAGRAPH_AST]}),
+    ('paragraph', Paragraph, PARAGRAPH_AST),
+    ('heading', Heading, {'type': 'heading', 'children': [TEXT_AST], 'depth': 2}),
+    ('blockquote', Blockquote, {'type': 'blockquote', 'children': [PARAGRAPH_AST]}),
     (
         'list',
         List,
         {
             'type': 'list',
-            'children': [
-                {
-                    'type': 'listItem',
-                    'children': [PARAGRAPH_AST],
-                    'checked': False,
-                    'spread': True,
-                }
-            ],
+            'children': [{'type': 'listItem', 'children': [PARAGRAPH_AST], 'checked': False, 'spread': True}],
             'ordered': True,
             'start': 3,
             'spread': True,
         },
     ),
-    (
-        'listItem',
-        ListItem,
-        {'type': 'listItem', 'children': [PARAGRAPH_AST], 'checked': True, 'spread': False},
-    ),
-    (
-        'code',
-        Code,
-        {'type': 'code', 'value': 'print(1)\n', 'lang': 'python', 'meta': 'linenos'},
-    ),
-    (
-        'thematicBreak',
-        ThematicBreak,
-        {'type': 'thematicBreak'},
-    ),
-    (
-        'html',
-        Html,
-        {'type': 'html', 'data': {'escaped': True}, 'value': '&lt;script>alert(1)&lt;/script>\n'},
-    ),
-    (
-        'text',
-        Text,
-        TEXT_AST,
-    ),
-    (
-        'inlineCode',
-        InlineCode,
-        {'type': 'inlineCode', 'value': 'code'},
-    ),
-    (
-        'strong',
-        Strong,
-        {'type': 'strong', 'children': [INLINE_TEXT_AST]},
-    ),
-    (
-        'emphasis',
-        Emphasis,
-        {'type': 'emphasis', 'children': [INLINE_TEXT_AST]},
-    ),
-    (
-        'delete',
-        Delete,
-        {'type': 'delete', 'children': [INLINE_TEXT_AST]},
-    ),
+    ('listItem', ListItem, {'type': 'listItem', 'children': [PARAGRAPH_AST], 'checked': True, 'spread': False}),
+    ('code', Code, {'type': 'code', 'value': 'print(1)\n', 'lang': 'python', 'meta': 'linenos'}),
+    ('thematicBreak', ThematicBreak, {'type': 'thematicBreak'}),
+    ('html', Html, {'type': 'html', 'data': {'escaped': True}, 'value': '&lt;script>alert(1)&lt;/script>\n'}),
+    ('text', Text, TEXT_AST),
+    ('inlineCode', InlineCode, {'type': 'inlineCode', 'value': 'code'}),
+    ('strong', Strong, {'type': 'strong', 'children': [INLINE_TEXT_AST]}),
+    ('emphasis', Emphasis, {'type': 'emphasis', 'children': [INLINE_TEXT_AST]}),
+    ('delete', Delete, {'type': 'delete', 'children': [INLINE_TEXT_AST]}),
     (
         'table',
         Table,
@@ -156,31 +97,11 @@ BUILTIN_NODE_SHAPES: list[NodeShape] = [
             'align': ['left', None],
         },
     ),
-    (
-        'tableRow',
-        TableRow,
-        {'type': 'tableRow', 'children': [{'type': 'tableCell', 'children': [TEXT_AST]}]},
-    ),
-    (
-        'tableCell',
-        TableCell,
-        {'type': 'tableCell', 'children': [TEXT_AST]},
-    ),
-    (
-        'link',
-        Link,
-        {'type': 'link', 'children': [TEXT_AST], 'url': '/url', 'title': 'Title'},
-    ),
-    (
-        'image',
-        Image,
-        {'type': 'image', 'url': '/img.png', 'alt': 'Alt text', 'title': 'Title'},
-    ),
-    (
-        'break',
-        Break,
-        {'type': 'break'},
-    ),
+    ('tableRow', TableRow, {'type': 'tableRow', 'children': [{'type': 'tableCell', 'children': [TEXT_AST]}]}),
+    ('tableCell', TableCell, {'type': 'tableCell', 'children': [TEXT_AST]}),
+    ('link', Link, {'type': 'link', 'children': [TEXT_AST], 'url': '/url', 'title': 'Title'}),
+    ('image', Image, {'type': 'image', 'url': '/img.png', 'alt': 'Alt text', 'title': 'Title'}),
+    ('break', Break, {'type': 'break'}),
     (
         'footnoteReference',
         FootnoteReference,
@@ -232,19 +153,11 @@ PLUGIN_NODE_SAMPLES: list[NodeShape] = [
             'type': 'definitionList',
             'children': [
                 {'type': 'definitionTerm', 'children': [TEXT_AST]},
-                {
-                    'type': 'definitionDescription',
-                    'children': [PARAGRAPH_AST],
-                    'spread': False,
-                },
+                {'type': 'definitionDescription', 'children': [PARAGRAPH_AST], 'spread': False},
             ],
         },
     ),
-    (
-        'definitionTerm',
-        definition_list.DefinitionTermNode,
-        {'type': 'definitionTerm', 'children': [TEXT_AST]},
-    ),
+    ('definitionTerm', definition_list.DefinitionTermNode, {'type': 'definitionTerm', 'children': [TEXT_AST]}),
     (
         'definitionDescription',
         definition_list.DefinitionDescriptionNode,
@@ -263,51 +176,15 @@ PLUGIN_NODE_SAMPLES: list[NodeShape] = [
             'closing': '</div>',
         },
     ),
-    (
-        'math',
-        block_math.MathNode,
-        {'type': 'math', 'value': 'x + y\n'},
-    ),
-    (
-        'inlineMath',
-        inline_math.InlineMathNode,
-        {'type': 'inlineMath', 'value': 'x + y'},
-    ),
-    (
-        'blockSpoiler',
-        block_spoiler.BlockSpoilerNode,
-        {'type': 'blockSpoiler', 'children': [PARAGRAPH_AST]},
-    ),
-    (
-        'inlineSpoiler',
-        inline_spoiler.InlineSpoilerNode,
-        {'type': 'inlineSpoiler', 'children': [TEXT_AST]},
-    ),
-    (
-        'mark',
-        mark.MarkNode,
-        {'type': 'mark', 'children': [TEXT_AST]},
-    ),
-    (
-        'insert',
-        insert.InsertNode,
-        {'type': 'insert', 'children': [TEXT_AST]},
-    ),
-    (
-        'superscript',
-        superscript.SuperscriptNode,
-        {'type': 'superscript', 'children': [TEXT_AST]},
-    ),
-    (
-        'subscript',
-        subscript.SubscriptNode,
-        {'type': 'subscript', 'children': [TEXT_AST]},
-    ),
-    (
-        'ruby',
-        ruby.RubyNode,
-        {'type': 'ruby', 'segments': [{'base': '漢字', 'text': 'kanji'}]},
-    ),
+    ('math', block_math.MathNode, {'type': 'math', 'value': 'x + y\n'}),
+    ('inlineMath', inline_math.InlineMathNode, {'type': 'inlineMath', 'value': 'x + y'}),
+    ('blockSpoiler', block_spoiler.BlockSpoilerNode, {'type': 'blockSpoiler', 'children': [PARAGRAPH_AST]}),
+    ('inlineSpoiler', inline_spoiler.InlineSpoilerNode, {'type': 'inlineSpoiler', 'children': [TEXT_AST]}),
+    ('mark', mark.MarkNode, {'type': 'mark', 'children': [TEXT_AST]}),
+    ('insert', insert.InsertNode, {'type': 'insert', 'children': [TEXT_AST]}),
+    ('superscript', superscript.SuperscriptNode, {'type': 'superscript', 'children': [TEXT_AST]}),
+    ('subscript', subscript.SubscriptNode, {'type': 'subscript', 'children': [TEXT_AST]}),
+    ('ruby', ruby.RubyNode, {'type': 'ruby', 'segments': [{'base': '漢字', 'text': 'kanji'}]}),
 ]
 
 PLUGIN_REGISTRY_TARGETS: list[object] = [
@@ -346,7 +223,7 @@ PLUGIN_ROUND_TRIP_TARGETS: list[object] = [
     superscript,
 ]
 
-PLUGIN_ROUND_TRIP_MARKDOWN = '''---
+PLUGIN_ROUND_TRIP_MARKDOWN = """---
 title: AST contract
 ---
 
@@ -371,7 +248,7 @@ $$
 ```{code-block} python
 print("*literal*")
 ```
-'''
+"""
 
 PLUGIN_ROUND_TRIP_NODE_TYPES = {
     'root',

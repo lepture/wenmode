@@ -233,10 +233,7 @@ def test_cli_writes_output_file(tmp_path, capsys) -> None:
 
 def test_python_module_entrypoint() -> None:
     completed = subprocess.run(
-        [sys.executable, '-m', 'wenmode', '--version'],
-        check=True,
-        capture_output=True,
-        text=True,
+        [sys.executable, '-m', 'wenmode', '--version'], check=True, capture_output=True, text=True
     )
 
     assert completed.stdout == f'wenmode {__version__}\n'
@@ -248,10 +245,7 @@ def test_python_module_entrypoint_writes_utf8_stdout_on_non_utf8_locale(tmp_path
     env = {**os.environ, 'PYTHONIOENCODING': 'cp1251'}
 
     completed = subprocess.run(
-        [sys.executable, '-m', 'wenmode', 'render', str(source)],
-        check=True,
-        capture_output=True,
-        env=env,
+        [sys.executable, '-m', 'wenmode', 'render', str(source)], check=True, capture_output=True, env=env
     )
 
     assert completed.stdout.decode('utf-8') == '<h1>Title ★ star</h1>\n'

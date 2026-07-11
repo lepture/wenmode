@@ -8,9 +8,7 @@ from wenmode.presets import commonmark
 
 
 @pytest.mark.parametrize(
-    'example',
-    load_fixture('commonmark-0.31.2.json'),
-    ids=lambda example: f'{example["example"]}: {example["section"]}',
+    'example', load_fixture('commonmark-0.31.2.json'), ids=lambda example: f'{example["example"]}: {example["section"]}'
 )
 def test_commonmark_spec(example: SpecExample) -> None:
     renderer = HTMLRenderer(escape=False, sanitize_urls=False)

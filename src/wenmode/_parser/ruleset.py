@@ -52,9 +52,7 @@ class RuleSet:
         inline_rules = sorted_by_order([rule for rule in resolved_rules if isinstance(rule, InlineRule)])
         triggered_inline_rules, search_inline_rules = prepare_inline_dispatch(inline_rules)
         deferred_inline_transforms = tuple(transform.name for transform in root_transforms if transform.defer_inlines)
-        streaming_blockers = tuple(
-            transform.name for transform in root_transforms if not transform.supports_streaming
-        )
+        streaming_blockers = tuple(transform.name for transform in root_transforms if not transform.supports_streaming)
         emphasis = rules.get('emphasis')
         emphasis_rule = cast(EmphasisRule | None, emphasis) if has_emphasis_parser(emphasis) else None
         return cls(

@@ -33,30 +33,15 @@ class SmartypantsPlugin:
     def setup(self, wen: Wenmode, /) -> None:
         """Install smart punctuation rendering for plain text nodes."""
 
-        def render_text_node(
-            renderer: HTMLRenderer,
-            node: Text,
-            context: HTMLRenderContext,
-        ) -> str:
+        def render_text_node(renderer: HTMLRenderer, node: Text, context: HTMLRenderContext) -> str:
             value = SOFT_BREAK_SPACE_RE.sub('', node.value)
             text = smarten(value, state_for(context), quotes=self.quotes, dashes=self.dashes, ellipses=self.ellipses)
             return renderer.escape_html(text)
 
-        wen.register_renderer_handlers(
-            {
-                'html': {
-                    Text.type: render_text_node,
-                }
-            }
-        )
+        wen.register_renderer_handlers({'html': {Text.type: render_text_node}})
 
 
-def configure(
-    *,
-    quotes: bool = True,
-    dashes: bool = True,
-    ellipses: bool = True,
-) -> SmartypantsPlugin:
+def configure(*, quotes: bool = True, dashes: bool = True, ellipses: bool = True) -> SmartypantsPlugin:
     return SmartypantsPlugin(quotes=quotes, dashes=dashes, ellipses=ellipses)
 
 

@@ -37,9 +37,13 @@ rules = [
 ]
 handlers: RendererHandlers = {
     'html': {InlineSpoilerNode.type: lambda renderer, node, context: render_html_spoiler(renderer, node, context)},
-    'markdown': {InlineSpoilerNode.type: lambda renderer, node, context: render_markdown_spoiler(renderer, node, context)},
+    'markdown': {
+        InlineSpoilerNode.type: lambda renderer, node, context: render_markdown_spoiler(renderer, node, context)
+    },
     'rst': {InlineSpoilerNode.type: lambda renderer, node, context: render_children(renderer, node, context)},
-    'asciidoc': {InlineSpoilerNode.type: lambda renderer, node, context: render_asciidoc_spoiler(renderer, node, context)},
+    'asciidoc': {
+        InlineSpoilerNode.type: lambda renderer, node, context: render_asciidoc_spoiler(renderer, node, context)
+    },
 }
 
 

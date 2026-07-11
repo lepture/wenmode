@@ -9,10 +9,7 @@ from tests.plugin_helpers import configured_app
 from wenmode import MarkdownRenderer, Wenmode
 from wenmode.presets import commonmark, github
 
-EXTENDED_PRESETS = {
-    'commonmark': commonmark,
-    'github': github,
-}
+EXTENDED_PRESETS = {'commonmark': commonmark, 'github': github}
 
 
 class ExtendedRuleExample(TypedDict, total=False):
@@ -30,11 +27,7 @@ def app_for_example(example: ExtendedRuleExample, renderer: MarkdownRenderer | N
     return configured_app(example['rules'], renderer=renderer)
 
 
-@pytest.mark.parametrize(
-    'example',
-    load_fixture('extended_rules.json'),
-    ids=lambda example: example['name'],
-)
+@pytest.mark.parametrize('example', load_fixture('extended_rules.json'), ids=lambda example: example['name'])
 def test_extended_rule_examples(example: ExtendedRuleExample) -> None:
     assert app_for_example(example).render(example['markdown']) == example['html']
 

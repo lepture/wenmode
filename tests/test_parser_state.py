@@ -100,16 +100,8 @@ def test_deferred_inline_callbacks_and_state_store_are_per_parse() -> None:
 
     app = Wenmode([DeferredRule])
 
-    assert app.parse('first\n').data == {
-        'values': ['first'],
-        'pending_inlines': 0,
-        'pending_callbacks': 0,
-    }
-    assert app.parse('second\n').data == {
-        'values': ['second'],
-        'pending_inlines': 0,
-        'pending_callbacks': 0,
-    }
+    assert app.parse('first\n').data == {'values': ['first'], 'pending_inlines': 0, 'pending_callbacks': 0}
+    assert app.parse('second\n').data == {'values': ['second'], 'pending_inlines': 0, 'pending_callbacks': 0}
 
 
 def test_parser_binds_footnote_definitions_to_root() -> None:

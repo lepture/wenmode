@@ -4,34 +4,15 @@ from collections.abc import Callable, Iterable, Iterator, Mapping
 from dataclasses import dataclass, field, fields, is_dataclass
 from typing import Any, TypeAlias, cast
 
-from .nodes import (
-    BUILTIN_NODES,
-    Heading,
-    Image,
-    Literal,
-    Node,
-    Parent,
-    Position,
-)
-from .nodes import (
-    List as ListNode,
-)
+from .nodes import BUILTIN_NODES, Heading, Image, Literal, Node, Parent, Position
+from .nodes import List as ListNode
 
 NodeMatcher: TypeAlias = str | type[Node] | tuple[str | type[Node], ...]
 UnknownNodePolicy: TypeAlias = str
 _DEFAULT_MAX_DEPTH = 100
 _DEFAULT_MAX_NODES = 100_000
 
-__all__ = [
-    'NodeMatcher',
-    'UnknownNodePolicy',
-    'find',
-    'find_all',
-    'from_ast',
-    'iter_children',
-    'plain_text',
-    'walk',
-]
+__all__ = ['NodeMatcher', 'UnknownNodePolicy', 'find', 'find_all', 'from_ast', 'iter_children', 'plain_text', 'walk']
 
 
 @dataclass
@@ -90,11 +71,7 @@ def _validate_restoration_limit(name: str, value: int | None) -> int | None:
     return value
 
 
-def _node_lookup(
-    nodes: Iterable[type[Node]],
-    *,
-    error_prefix: str = 'nodes',
-) -> dict[str, type[Node]]:
+def _node_lookup(nodes: Iterable[type[Node]], *, error_prefix: str = 'nodes') -> dict[str, type[Node]]:
     result: dict[str, type[Node]] = {}
     for node_class in nodes:
         if not isinstance(node_class, type) or not issubclass(node_class, Node):
@@ -224,11 +201,7 @@ def _matches(node: Node, matcher: NodeMatcher | None) -> bool:
     return isinstance(node, matcher)
 
 
-def _restore_ast_node(
-    data: Mapping[str, Any],
-    context: _RestorationContext,
-    depth: int,
-) -> Node:
+def _restore_ast_node(data: Mapping[str, Any], context: _RestorationContext, depth: int) -> Node:
     if context.max_depth is not None and depth > context.max_depth:
         raise ValueError(f'AST exceeds maximum depth of {context.max_depth}')
     if context.max_nodes is not None and context.node_count >= context.max_nodes:
@@ -274,20 +247,13 @@ def _restore_ast_node(
             node = _generic_node_from_attrs(node_type, attrs)
         else:
             node = _construct_node(node_class, node_type, attrs)
-        _validate_restored_node(
-            node,
-            allow_internal_metadata=context.allow_internal_metadata,
-        )
+        _validate_restored_node(node, allow_internal_metadata=context.allow_internal_metadata)
         return node
     finally:
         _leave_container(token, context)
 
 
-def _ast_value_from_ast(
-    value: Any,
-    context: _RestorationContext,
-    depth: int,
-) -> Any:
+def _ast_value_from_ast(value: Any, context: _RestorationContext, depth: int) -> Any:
     if isinstance(value, Mapping) and isinstance(value.get('type'), str):
         return _restore_ast_node(value, context, depth + 1)
     if isinstance(value, Mapping):
@@ -297,11 +263,7 @@ def _ast_value_from_ast(
     return value
 
 
-def _ast_mapping_from_ast(
-    value: Mapping[str, Any],
-    context: _RestorationContext,
-    depth: int,
-) -> dict[str, Any]:
+def _ast_mapping_from_ast(value: Mapping[str, Any], context: _RestorationContext, depth: int) -> dict[str, Any]:
     token = _enter_container(value, context)
     try:
         return {key: _ast_value_from_ast(item, context, depth) for key, item in value.items()}
@@ -309,11 +271,7 @@ def _ast_mapping_from_ast(
         _leave_container(token, context)
 
 
-def _ast_list_from_ast(
-    value: list[Any],
-    context: _RestorationContext,
-    depth: int,
-) -> list[Any]:
+def _ast_list_from_ast(value: list[Any], context: _RestorationContext, depth: int) -> list[Any]:
     token = _enter_container(value, context)
     try:
         return [_ast_value_from_ast(item, context, depth) for item in value]
@@ -329,10 +287,7 @@ def _plain_value_from_ast(value: Any, context: _RestorationContext) -> Any:
     return value
 
 
-def _plain_mapping_from_ast(
-    value: Mapping[str, Any],
-    context: _RestorationContext,
-) -> dict[str, Any]:
+def _plain_mapping_from_ast(value: Mapping[str, Any], context: _RestorationContext) -> dict[str, Any]:
     token = _enter_container(value, context)
     try:
         return {key: _plain_value_from_ast(item, context) for key, item in value.items()}
@@ -360,11 +315,7 @@ def _leave_container(token: int, context: _RestorationContext) -> None:
     context.active_containers.remove(token)
 
 
-def _validate_restored_node(
-    node: Node,
-    *,
-    allow_internal_metadata: bool,
-) -> None:
+def _validate_restored_node(node: Node, *, allow_internal_metadata: bool) -> None:
     if isinstance(node, Literal) and not isinstance(node.value, str):
         raise TypeError('AST literal "value" must be a string')
     if isinstance(node, Heading):

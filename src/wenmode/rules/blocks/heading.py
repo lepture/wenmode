@@ -111,8 +111,7 @@ class SetextHeading(ContinueRule):
             depth = 2
         text = ''.join(lines).strip()
         return Heading(
-            depth=depth,
-            children=parser.parse_inlines(text, state, source=state.source.paragraph(lines, start_index)),
+            depth=depth, children=parser.parse_inlines(text, state, source=state.source.paragraph(lines, start_index))
         )
 
 

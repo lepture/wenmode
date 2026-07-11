@@ -57,8 +57,7 @@ class FencedCode(BlockRule):
 
         closer = re.compile(rf'[ \t]{{0,3}}{re.escape(fence_char)}{{{len(fence)},}}[ \t]*$')
         lines = state.consume_until(
-            lambda line: closer.match(line.rstrip('\r\n')) is not None,
-            lambda line: strip_fence_indent(line, indent),
+            lambda line: closer.match(line.rstrip('\r\n')) is not None, lambda line: strip_fence_indent(line, indent)
         )
 
         return Code(value=''.join(lines), lang=lang, meta=meta)

@@ -196,9 +196,7 @@ def render_container_directive(
 
 
 @AsciiDocRenderer.register('literalDirective')
-def render_literal_directive(
-    renderer: AsciiDocRenderer, node: LiteralDirective, context: AsciiDocRenderContext
-) -> str:
+def render_literal_directive(renderer: AsciiDocRenderer, node: LiteralDirective, context: AsciiDocRenderContext) -> str:
     if node.name in {'code-block', 'sourcecode'}:
         return render_source_block(node.value, node.argument)
     return render_listing_block(node.value)

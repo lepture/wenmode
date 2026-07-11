@@ -37,10 +37,7 @@ def test_frontmatter_plugin_preserves_child_source_positions() -> None:
     assert root.to_ast() == {
         'type': 'root',
         'data': {'frontmatter': {'title': 'Hello'}},
-        'position': {
-            'start': {'line': 1, 'column': 1, 'offset': 0},
-            'end': {'line': 6, 'column': 1, 'offset': 27},
-        },
+        'position': {'start': {'line': 1, 'column': 1, 'offset': 0}, 'end': {'line': 6, 'column': 1, 'offset': 27}},
         'children': [
             {
                 'type': 'heading',
@@ -99,12 +96,7 @@ def test_frontmatter_plugin_renders_markdown_frontmatter() -> None:
     app = Wenmode(renderer=MarkdownRenderer()).use(frontmatter)
 
     assert app.render('---\ntitle: Hello\nlayout: "landing"\n---\n\n# Hi\n') == (
-        '---\n'
-        'title: Hello\n'
-        'layout: landing\n'
-        '---\n'
-        '\n'
-        '# Hi\n'
+        '---\ntitle: Hello\nlayout: landing\n---\n\n# Hi\n'
     )
 
 
@@ -130,25 +122,12 @@ def test_frontmatter_plugin_skips_markdown_frontmatter_without_dump_output() -> 
 
 def test_frontmatter_plugin_dumps_simple_scalar_values() -> None:
     def load_metadata(source: str) -> dict[str, object]:
-        return {
-            ' ': 'ignored',
-            'draft': True,
-            'published': False,
-            'empty': None,
-            'description': 'Line 1\nLine 2',
-        }
+        return {' ': 'ignored', 'draft': True, 'published': False, 'empty': None, 'description': 'Line 1\nLine 2'}
 
     app = Wenmode(renderer=MarkdownRenderer()).use(frontmatter.configure(load=load_metadata))
 
     assert app.render('---\nignored: true\n---\n\nBody\n') == (
-        '---\n'
-        'draft: true\n'
-        'published: false\n'
-        'empty:\n'
-        'description: Line 1 Line 2\n'
-        '---\n'
-        '\n'
-        'Body\n'
+        '---\ndraft: true\npublished: false\nempty:\ndescription: Line 1 Line 2\n---\n\nBody\n'
     )
 
 
@@ -162,11 +141,7 @@ def test_frontmatter_plugin_renders_markdown_frontmatter_with_custom_dump() -> N
         return value['raw']
 
     app = Wenmode(renderer=MarkdownRenderer()).use(
-        frontmatter.configure(
-            load=load_metadata,
-            dump=dump_metadata,
-            data_key='meta',
-        )
+        frontmatter.configure(load=load_metadata, dump=dump_metadata, data_key='meta')
     )
 
     assert app.render('---\ntitle: Hello\n---\n\nBody\n') == '---\ntitle: Hello\n---\n\nBody\n'
@@ -176,11 +151,7 @@ def test_frontmatter_plugin_renders_rst_docinfo() -> None:
     app = Wenmode(renderer=RSTRenderer()).use(frontmatter)
 
     assert app.render('---\ntitle: Hello\nlayout: "landing"\n---\n\n# Hi\n') == (
-        ':title: Hello\n'
-        ':layout: landing\n'
-        '\n'
-        'Hi\n'
-        '==\n'
+        ':title: Hello\n:layout: landing\n\nHi\n==\n'
     )
 
 
@@ -188,15 +159,14 @@ def test_frontmatter_plugin_renders_asciidoc_attributes() -> None:
     app = Wenmode(renderer=AsciiDocRenderer()).use(frontmatter)
 
     assert app.render('---\ntitle: Hello\nlayout: "landing"\n---\n\n# Hi\n') == (
-        ':title: Hello\n'
-        ':layout: landing\n'
-        '\n'
-        '= Hi\n'
+        ':title: Hello\n:layout: landing\n\n= Hi\n'
     )
 
 
 def test_frontmatter_plugin_skips_rst_frontmatter_without_docinfo_fields() -> None:
-    non_mapping = Wenmode(renderer=RSTRenderer()).use(frontmatter.configure(load=lambda source: ['not', 'a', 'mapping']))
+    non_mapping = Wenmode(renderer=RSTRenderer()).use(
+        frontmatter.configure(load=lambda source: ['not', 'a', 'mapping'])
+    )
     invalid_fields = Wenmode(renderer=RSTRenderer()).use(
         frontmatter.configure(load=lambda source: {'bad:name': 'value'})
     )
@@ -210,26 +180,14 @@ def test_frontmatter_plugin_renders_rst_empty_docinfo_values() -> None:
         frontmatter.configure(load=lambda source: {'bad:name': 'skip', ' ': 'skip', 'empty': None, 'ok': 'yes'})
     )
 
-    assert app.render('---\ntitle: Hello\n---\n\n# Hi\n') == (
-        ':empty:\n'
-        ':ok: yes\n'
-        '\n'
-        'Hi\n'
-        '==\n'
-    )
+    assert app.render('---\ntitle: Hello\n---\n\n# Hi\n') == (':empty:\n:ok: yes\n\nHi\n==\n')
 
 
 def test_frontmatter_plugin_renders_before_markdown_footnotes() -> None:
     app = Wenmode(github, renderer=MarkdownRenderer()).use(frontmatter)
 
     assert app.render('---\ntitle: Hello\n---\n\nText[^a].\n\n[^a]: Note.\n') == (
-        '---\n'
-        'title: Hello\n'
-        '---\n'
-        '\n'
-        'Text[^a]\\.\n'
-        '\n'
-        '[^a]: Note\\.\n'
+        '---\ntitle: Hello\n---\n\nText[^a]\\.\n\n[^a]: Note\\.\n'
     )
 
 
@@ -237,9 +195,5 @@ def test_frontmatter_plugin_renders_before_rst_footnotes() -> None:
     app = Wenmode(github, renderer=RSTRenderer()).use(frontmatter)
 
     assert app.render('---\ntitle: Hello\n---\n\nText[^a].\n\n[^a]: Note.\n') == (
-        ':title: Hello\n'
-        '\n'
-        'Text[#a]_.\n'
-        '\n'
-        '.. [#a] Note.\n'
+        ':title: Hello\n\nText[#a]_.\n\n.. [#a] Note.\n'
     )

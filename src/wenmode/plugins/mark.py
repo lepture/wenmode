@@ -21,15 +21,7 @@ class MarkNode(Parent):
 
 
 nodes = [MarkNode]
-rules = [
-    InlineDelimited(
-        name='mark',
-        node=MarkNode,
-        opener='==',
-        closer='==',
-        trigger_chars='=',
-    )
-]
+rules = [InlineDelimited(name='mark', node=MarkNode, opener='==', closer='==', trigger_chars='=')]
 handlers: RendererHandlers = {
     'html': {MarkNode.type: lambda renderer, node, context: render_html_mark(renderer, node, context)},
     'markdown': {MarkNode.type: lambda renderer, node, context: render_markdown_mark(renderer, node, context)},

@@ -35,12 +35,7 @@ class Slugger:
 
 
 def add_heading_ids(
-    node: Node,
-    *,
-    slugger: Slugger,
-    min_depth: int = 1,
-    max_depth: int = 6,
-    overwrite: bool = False,
+    node: Node, *, slugger: Slugger, min_depth: int = 1, max_depth: int = 6, overwrite: bool = False
 ) -> None:
     """Add generated IDs to heading nodes in a tree.
 

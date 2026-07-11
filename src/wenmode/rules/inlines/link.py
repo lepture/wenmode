@@ -215,13 +215,7 @@ def build_closing_bracket_map(text: str) -> dict[int, int]:
     return pairs
 
 
-def label_contains_link(
-    text: str,
-    label_start: int,
-    label_end: int,
-    state: BlockState,
-    references: bool,
-) -> bool:
+def label_contains_link(text: str, label_start: int, label_end: int, state: BlockState, references: bool) -> bool:
     bracket_cache = closing_bracket_cache(state)
     pairs = closing_bracket_map(text, bracket_cache)
     starts, suffix_min_ends = link_containment_index(text, state, pairs, references)
@@ -230,10 +224,7 @@ def label_contains_link(
 
 
 def link_containment_index(
-    text: str,
-    state: BlockState,
-    pairs: dict[int, int],
-    references: bool,
+    text: str, state: BlockState, pairs: dict[int, int], references: bool
 ) -> tuple[list[int], list[int]]:
     reference_cache = state.store.get(REFERENCES_KEY)
     cache_key = (id(text), references, id(reference_cache), len(reference_cache))
@@ -247,7 +238,9 @@ def link_containment_index(
         opener = nested_label_start - 1
         if is_image_label(text, opener):
             continue
-        nested_end = link_destination_or_reference_end(text, nested_label_start, nested_label_end, state, pairs, references)
+        nested_end = link_destination_or_reference_end(
+            text, nested_label_start, nested_label_end, state, pairs, references
+        )
         if nested_end is not None:
             ranges.append((opener, nested_end))
 
@@ -265,12 +258,7 @@ def is_image_label(text: str, start: int) -> bool:
 
 
 def link_destination_or_reference_end(
-    text: str,
-    label_start: int,
-    label_end: int,
-    state: BlockState,
-    pairs: dict[int, int],
-    references: bool,
+    text: str, label_start: int, label_end: int, state: BlockState, pairs: dict[int, int], references: bool
 ) -> int | None:
     after_label = label_end + 1
     direct = parse_direct_destination(text, after_label)

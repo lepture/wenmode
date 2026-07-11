@@ -154,9 +154,7 @@ def configure_standard_streams() -> None:
 
 
 def create_renderer(
-    output_format: str,
-    unsafe_html: bool = False,
-    unsafe_urls: bool = False,
+    output_format: str, unsafe_html: bool = False, unsafe_urls: bool = False
 ) -> HTMLRenderer | MarkdownRenderer | RSTRenderer | AsciiDocRenderer:
     if output_format == 'html':
         return HTMLRenderer(escape=not unsafe_html, sanitize_urls=not unsafe_urls)
@@ -177,11 +175,7 @@ def resolve_builtin_plugins(names: Sequence[str] | None) -> list[ModuleType]:
 
 def run_render(args: argparse.Namespace) -> int:
     source = read_source(str(args.source))
-    renderer = create_renderer(
-        str(args.format),
-        unsafe_html=bool(args.unsafe_html),
-        unsafe_urls=bool(args.unsafe_urls),
-    )
+    renderer = create_renderer(str(args.format), unsafe_html=bool(args.unsafe_html), unsafe_urls=bool(args.unsafe_urls))
     wen = Wenmode(
         PRESETS[str(args.preset)],
         renderer=renderer,

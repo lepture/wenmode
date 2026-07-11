@@ -14,14 +14,7 @@ from tests.ast_fixtures import (
     PLUGIN_ROUND_TRIP_TARGETS,
 )
 from wenmode import Wenmode
-from wenmode.ast import (
-    find,
-    find_all,
-    from_ast,
-    iter_children,
-    plain_text,
-    walk,
-)
+from wenmode.ast import find, find_all, from_ast, iter_children, plain_text, walk
 from wenmode.nodes import (
     BUILTIN_NODES,
     FootnoteReference,
@@ -237,10 +230,7 @@ def test_from_ast_restores_offset_positions() -> None:
     node = from_ast(
         {
             'type': 'text',
-            'position': {
-                'start': {'line': 1, 'column': 1, 'offset': 0},
-                'end': {'line': 1, 'column': 5, 'offset': 4},
-            },
+            'position': {'start': {'line': 1, 'column': 1, 'offset': 0}, 'end': {'line': 1, 'column': 5, 'offset': 4}},
             'value': 'text',
         }
     )
@@ -258,10 +248,7 @@ def test_from_ast_ignores_positions_without_offsets() -> None:
     node = from_ast(
         {
             'type': 'text',
-            'position': {
-                'start': {'line': 1, 'column': 1},
-                'end': {'line': 1, 'column': 5},
-            },
+            'position': {'start': {'line': 1, 'column': 1}, 'end': {'line': 1, 'column': 5}},
             'value': 'text',
         }
     )
@@ -274,13 +261,7 @@ def test_from_ast_preserves_unknown_nodes_generically() -> None:
     ast = {
         'type': 'callout',
         'data': {'hName': 'aside'},
-        'children': [
-            {
-                'type': 'calloutTitle',
-                'value': 'Note',
-                'priority': 2,
-            }
-        ],
+        'children': [{'type': 'calloutTitle', 'value': 'Note', 'priority': 2}],
         'kind': 'note',
     }
 
@@ -403,32 +384,17 @@ def test_from_ast_none_limits_do_not_disable_cycles_or_structural_validation() -
 
 def test_from_ast_uses_custom_registry() -> None:
     node = from_ast(
-        {
-            'type': 'callout',
-            'kind': 'warning',
-            'children': [{'type': 'text', 'value': 'Careful'}],
-        },
-        nodes=[Callout],
+        {'type': 'callout', 'kind': 'warning', 'children': [{'type': 'text', 'value': 'Careful'}]}, nodes=[Callout]
     )
 
     assert isinstance(node, Callout)
     assert node.kind == 'warning'
-    assert node.to_ast() == {
-        'type': 'callout',
-        'children': [{'type': 'text', 'value': 'Careful'}],
-        'kind': 'warning',
-    }
+    assert node.to_ast() == {'type': 'callout', 'children': [{'type': 'text', 'value': 'Careful'}], 'kind': 'warning'}
 
 
 def test_from_ast_rejects_mapping_registry() -> None:
     with pytest.raises(TypeError, match='nodes entries must be Node classes'):
-        from_ast(
-            {
-                'type': 'callout',
-                'kind': 'warning',
-            },
-            nodes={'callout': Callout},
-        )
+        from_ast({'type': 'callout', 'kind': 'warning'}, nodes={'callout': Callout})
 
 
 def test_from_ast_restores_builtin_plugin_nodes() -> None:
@@ -539,10 +505,7 @@ def test_from_ast_allows_internal_html_metadata_for_trusted_ast() -> None:
 
 def test_allow_internal_metadata_does_not_bypass_structural_validation() -> None:
     with pytest.raises(TypeError, match='^AST heading "depth" must be an integer$'):
-        from_ast(
-            {'type': 'heading', 'depth': True, 'children': []},
-            allow_internal_metadata=True,
-        )
+        from_ast({'type': 'heading', 'depth': True, 'children': []}, allow_internal_metadata=True)
 
 
 def test_from_ast_rejects_internal_html_container_metadata_by_default() -> None:
@@ -586,11 +549,7 @@ def test_from_ast_rejects_internal_metadata_on_generic_html_container() -> None:
 
 
 def test_from_ast_preserves_internal_metadata_on_unrelated_unknown_node() -> None:
-    ast = {
-        'type': 'customContainer',
-        'data': {'escaped': True},
-        'children': [],
-    }
+    ast = {'type': 'customContainer', 'data': {'escaped': True}, 'children': []}
 
     node = from_ast(ast)
 

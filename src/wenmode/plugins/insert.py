@@ -21,15 +21,7 @@ class InsertNode(Parent):
 
 
 nodes = [InsertNode]
-rules = [
-    InlineDelimited(
-        name='insert',
-        node=InsertNode,
-        opener='^^',
-        closer='^^',
-        trigger_chars='^',
-    )
-]
+rules = [InlineDelimited(name='insert', node=InsertNode, opener='^^', closer='^^', trigger_chars='^')]
 handlers: RendererHandlers = {
     'html': {InsertNode.type: lambda renderer, node, context: render_html_insert(renderer, node, context)},
     'markdown': {InsertNode.type: lambda renderer, node, context: render_markdown_insert(renderer, node, context)},

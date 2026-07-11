@@ -10,11 +10,7 @@ from tests.plugin_helpers import configured_app
 from wenmode import HTMLRenderer, MarkdownRenderer, Parser, Wenmode
 from wenmode.directives import Figure
 from wenmode.nodes import Node, Parent, Text
-from wenmode.rules import (
-    AtxHeading,
-    InlineRule,
-    RawHtml,
-)
+from wenmode.rules import AtxHeading, InlineRule, RawHtml
 from wenmode.state import BlockState
 
 
@@ -63,11 +59,7 @@ def app_for_rule_edge(example: RuleEdgeExample) -> Wenmode:
     return app
 
 
-@pytest.mark.parametrize(
-    'example',
-    load_fixture('rule_edges.json'),
-    ids=lambda example: example['name'],
-)
+@pytest.mark.parametrize('example', load_fixture('rule_edges.json'), ids=lambda example: example['name'])
 def test_rule_edge_examples(example: RuleEdgeExample) -> None:
     assert app_for_rule_edge(example).render(example['markdown']) == example['html']
 
@@ -103,10 +95,7 @@ def test_raw_html_comment_styles() -> None:
 
 @pytest.mark.parametrize(
     ('markdown', 'html'),
-    [
-        ('*a***a*\n', '<p><em>a</em>*<em>a</em></p>\n'),
-        ('*foo***bar*\n', '<p><em>foo</em>*<em>bar</em></p>\n'),
-    ],
+    [('*a***a*\n', '<p><em>a</em>*<em>a</em></p>\n'), ('*foo***bar*\n', '<p><em>foo</em>*<em>bar</em></p>\n')],
 )
 def test_emphasis_multiple_of_three_uses_original_delimiter_length(markdown: str, html: str) -> None:
     assert Wenmode().render(markdown) == html

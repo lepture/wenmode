@@ -111,9 +111,13 @@ select = [
     "F",
 ]
 
+[tool.ruff.lint.isort]
+split-on-trailing-comma=false
+
 [tool.ruff.format]
 quote-style = "single"
 docstring-code-format = true
+skip-magic-trailing-comma = true
 
 [tool.mypy]
 strict = true

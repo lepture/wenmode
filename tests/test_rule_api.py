@@ -76,7 +76,7 @@ def test_block_rule_returning_node_must_advance_state() -> None:
 
     parser = Parser([NonProgressingBlock])
 
-    with pytest.raises(RuntimeError, match=r"non_progressing_block.*state did not advance"):
+    with pytest.raises(RuntimeError, match=r'non_progressing_block.*state did not advance'):
         parser.parse('!!\n')
 
 
@@ -91,7 +91,7 @@ def test_block_rule_cannot_move_state_backwards() -> None:
 
     parser = Parser([BackwardsBlock])
 
-    with pytest.raises(RuntimeError, match=r"backwards_block.*state backwards"):
+    with pytest.raises(RuntimeError, match=r'backwards_block.*state backwards'):
         parser.parse('!!\n')
 
 
@@ -102,14 +102,12 @@ def test_continuation_rule_returning_node_must_advance_state() -> None:
         def matches(self, line: str) -> bool:
             return line.startswith('!!')
 
-        def parse_paragraph_continuation(
-            self, parser: Parser, state: BlockState, lines: list[str]
-        ) -> Node | None:
+        def parse_paragraph_continuation(self, parser: Parser, state: BlockState, lines: list[str]) -> Node | None:
             return Paragraph(children=[])
 
     parser = Parser([NonProgressingContinuation])
 
-    with pytest.raises(RuntimeError, match=r"non_progressing_continuation.*state did not advance"):
+    with pytest.raises(RuntimeError, match=r'non_progressing_continuation.*state did not advance'):
         parser.parse('text\n!!\n')
 
 
@@ -120,15 +118,13 @@ def test_continuation_rule_decline_must_not_advance_state() -> None:
         def matches(self, line: str) -> bool:
             return line.startswith('!!')
 
-        def parse_paragraph_continuation(
-            self, parser: Parser, state: BlockState, lines: list[str]
-        ) -> Node | None:
+        def parse_paragraph_continuation(self, parser: Parser, state: BlockState, lines: list[str]) -> Node | None:
             state.advance()
             return None
 
     parser = Parser([ForwardDecliningContinuation])
 
-    with pytest.raises(RuntimeError, match=r"forward_declining_continuation.*declining continuation changed state"):
+    with pytest.raises(RuntimeError, match=r'forward_declining_continuation.*declining continuation changed state'):
         parser.parse('text\n!!\ntail\n')
 
 
@@ -143,9 +139,7 @@ def test_continuation_rule_decline_must_not_move_state_backwards() -> None:
         def matches(self, line: str) -> bool:
             return line.startswith('!!')
 
-        def parse_paragraph_continuation(
-            self, parser: Parser, state: BlockState, lines: list[str]
-        ) -> Node | None:
+        def parse_paragraph_continuation(self, parser: Parser, state: BlockState, lines: list[str]) -> Node | None:
             if not self.moved:
                 self.moved = True
                 state.advance(-1)
@@ -153,7 +147,7 @@ def test_continuation_rule_decline_must_not_move_state_backwards() -> None:
 
     parser = Parser([BackwardDecliningContinuation])
 
-    with pytest.raises(RuntimeError, match=r"backward_declining_continuation.*declining continuation changed state"):
+    with pytest.raises(RuntimeError, match=r'backward_declining_continuation.*declining continuation changed state'):
         parser.parse('text\n!!\n')
 
 
@@ -164,9 +158,7 @@ def test_continuation_rule_can_decline_without_advancing() -> None:
         def matches(self, line: str) -> bool:
             return line.startswith('!!')
 
-        def parse_paragraph_continuation(
-            self, parser: Parser, state: BlockState, lines: list[str]
-        ) -> Node | None:
+        def parse_paragraph_continuation(self, parser: Parser, state: BlockState, lines: list[str]) -> Node | None:
             return None
 
     class TransformingContinuation(ContinueRule):
@@ -175,9 +167,7 @@ def test_continuation_rule_can_decline_without_advancing() -> None:
         def matches(self, line: str) -> bool:
             return line.startswith('!!')
 
-        def parse_paragraph_continuation(
-            self, parser: Parser, state: BlockState, lines: list[str]
-        ) -> Node | None:
+        def parse_paragraph_continuation(self, parser: Parser, state: BlockState, lines: list[str]) -> Node | None:
             state.advance()
             return Paragraph(children=[Text(value='transformed')])
 
@@ -290,18 +280,14 @@ def test_inline_dispatch_uses_rule_order_for_equal_offset_candidates() -> None:
         pattern = r'@'
         trigger_chars = '@'
 
-        def parse(
-            self, parser: Parser, text: str, match: re.Match[str], state: BlockState
-        ) -> tuple[Node | None, int]:
+        def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
             return Text(value='triggered'), match.end()
 
     class SearchedAt(InlineRule):
         name = 'searched_at'
         pattern = r'@'
 
-        def parse(
-            self, parser: Parser, text: str, match: re.Match[str], state: BlockState
-        ) -> tuple[Node | None, int]:
+        def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
             return Text(value='searched'), match.end()
 
     triggered_first = parse_inlines(Parser([TriggeredAt, SearchedAt]), '@')
@@ -321,11 +307,7 @@ def test_parser_replaces_dynamic_rules_by_name() -> None:
 
 def test_parse_inlines_with_explicit_state_handles_link_brackets() -> None:
     assert [node.to_ast() for node in parse_inlines(Parser([Link]), '[a \\] b](/url)')] == [
-        {
-            'type': 'link',
-            'children': [{'type': 'text', 'value': 'a \\] b'}],
-            'url': '/url',
-        }
+        {'type': 'link', 'children': [{'type': 'text', 'value': 'a \\] b'}], 'url': '/url'}
     ]
     assert [node.to_ast() for node in parse_inlines(Parser([Link, InlineCode]), '[a `[b]` c](/url)')] == [
         {
@@ -339,18 +321,10 @@ def test_parse_inlines_with_explicit_state_handles_link_brackets() -> None:
         }
     ]
     assert [node.to_ast() for node in parse_inlines(Parser([Link]), '[a <https://e.test/[x]> c](/url)')] == [
-        {
-            'type': 'link',
-            'children': [{'type': 'text', 'value': 'a <https://e.test/[x]> c'}],
-            'url': '/url',
-        }
+        {'type': 'link', 'children': [{'type': 'text', 'value': 'a <https://e.test/[x]> c'}], 'url': '/url'}
     ]
     assert [node.to_ast() for node in parse_inlines(Parser([Link]), '[a [b]](/url)')] == [
-        {
-            'type': 'link',
-            'children': [{'type': 'text', 'value': 'a [b]'}],
-            'url': '/url',
-        }
+        {'type': 'link', 'children': [{'type': 'text', 'value': 'a [b]'}], 'url': '/url'}
     ]
     assert [node.to_ast() for node in parse_inlines(Parser([Link]), '[a [b](/url')] == [
         {'type': 'text', 'value': '[a [b](/url'}

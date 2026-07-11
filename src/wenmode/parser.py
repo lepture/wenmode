@@ -132,9 +132,7 @@ class Parser:
             document-wide transforms.
         """
         assert_streaming_supported(
-            self.streaming_blockers(),
-            blocked_by='document-wide transforms',
-            guidance='use the streaming preset',
+            self.streaming_blockers(), blocked_by='document-wide transforms', guidance='use the streaming preset'
         )
         state = self._create_block_state(source, defer_inlines=False)
         while not state.done:
@@ -169,22 +167,14 @@ class Parser:
                 source_tracker = PositionSourceTracker(create_line_starts(lines))
             else:
                 source_tracker = NullSourceTracker()
-            return BlockState(
-                lines,
-                source=source_tracker,
-                defer_inlines=defer_inlines,
-            )
+            return BlockState(lines, source=source_tracker, defer_inlines=defer_inlines)
 
         line_buffer = StreamLineBuffer(source, track_positions=self.positions)
         if self.positions:
             source_tracker = StreamPositionSourceTracker(line_buffer)
         else:
             source_tracker = NullSourceTracker()
-        return StreamBlockState(
-            line_buffer,
-            source=source_tracker,
-            defer_inlines=defer_inlines,
-        )
+        return StreamBlockState(line_buffer, source=source_tracker, defer_inlines=defer_inlines)
 
     def parse_inlines(self, text: str, state: BlockState, source: SourceMap | None = None) -> list[Node]:
         """Parse inline Markdown into child nodes.

@@ -93,11 +93,7 @@ class FootnoteDefinition(BlockRule):
         source = state.source.collect()
         content_lines = collect_definition_lines(state, parsed.start('rest'), parsed.group('rest'), source)
         if content_lines:
-            children = parser.parse_blocks(
-                ''.join(content_lines),
-                parent_state=state,
-                source=source.map(),
-            )
+            children = parser.parse_blocks(''.join(content_lines), parent_state=state, source=source.map())
         else:
             children = []
         return FootnoteDefinitionNode(identifier=identifier, label=label, children=children)
@@ -115,8 +111,7 @@ class FootnoteTransform(RootTransform):
         footnotes = state.store.get(FOOTNOTES_KEY)
         for identifier, definition in definitions.items():
             footnotes.setdefault(
-                identifier,
-                FootnoteState(identifier=identifier, label=definition.label, children=definition.children),
+                identifier, FootnoteState(identifier=identifier, label=definition.label, children=definition.children)
             )
 
     def transform(self, parser: Parser, root: Root, state: BlockState) -> None:

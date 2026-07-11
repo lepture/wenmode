@@ -1,2 +1,1 @@
 """Private parser implementation helpers."""
-

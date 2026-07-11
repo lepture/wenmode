@@ -114,10 +114,7 @@ class HTMLRenderer(BaseRenderer):
         else:
             definitions = None
             root = None
-        context = HTMLRenderContext(
-            footnotes=FootnoteRenderState(definitions=definitions or {}),
-            root=root,
-        )
+        context = HTMLRenderContext(footnotes=FootnoteRenderState(definitions=definitions or {}), root=root)
         return context
 
     def register_directive_renderer(self, directive: DirectiveHtmlRenderer) -> None:

@@ -56,11 +56,7 @@ def test_all_position_rules_have_examples() -> None:
     assert sorted(POSITION_RULE_NAMES - used_rules) == []
 
 
-@pytest.mark.parametrize(
-    'example',
-    load_fixture('positions.json'),
-    ids=lambda example: example['name'],
-)
+@pytest.mark.parametrize('example', load_fixture('positions.json'), ids=lambda example: example['name'])
 def test_position_examples(example: PositionExample) -> None:
     app = configured_app(rules_for_example(example), positions=True)
     assert app.parse(source_for_example(example)).to_ast() == example['ast']
@@ -74,11 +70,7 @@ def test_heading_positions_follow_string_line_endings(line_ending: str) -> None:
 
     second_offset = len(f'# a{line_ending}')
     assert ast['children'][0]['position']['start'] == {'line': 1, 'column': 1, 'offset': 0}
-    assert ast['children'][1]['position']['start'] == {
-        'line': 2,
-        'column': 1,
-        'offset': second_offset,
-    }
+    assert ast['children'][1]['position']['start'] == {'line': 2, 'column': 1, 'offset': second_offset}
     assert ast['position']['end'] == {'line': 3, 'column': 1, 'offset': len(markdown)}
 
 
@@ -201,10 +193,7 @@ def test_shallow_nested_block_positions_stay_absolute_at_depth_limit() -> None:
                 },
             }
         ],
-        'position': {
-            'start': {'line': 1, 'column': 1, 'offset': 0},
-            'end': {'line': 6, 'column': 1, 'offset': 29},
-        },
+        'position': {'start': {'line': 1, 'column': 1, 'offset': 0}, 'end': {'line': 6, 'column': 1, 'offset': 29}},
     }
 
 
@@ -214,11 +203,7 @@ def test_position_eof_with_empty_unterminated_and_mixed_sources() -> None:
     assert app.parse('').to_ast()['position']['end'] == {'line': 1, 'column': 1, 'offset': 0}
 
     unterminated = '# a'
-    assert app.parse(unterminated).to_ast()['position']['end'] == {
-        'line': 1,
-        'column': 4,
-        'offset': len(unterminated),
-    }
+    assert app.parse(unterminated).to_ast()['position']['end'] == {'line': 1, 'column': 4, 'offset': len(unterminated)}
 
     mixed = '# a\n# b\r\n# c\r'
     ast = app.parse(mixed).to_ast()

@@ -70,12 +70,7 @@ class List(BlockRule):
             item_text, source, item_spread = collect_list_item(parser, state, marker, first_nonblank_cache)
             spread = spread or item_spread
             item = ListItem(
-                children=parser.parse_blocks(
-                    item_text,
-                    parent_state=state,
-                    source=source,
-                ),
-                spread=item_spread,
+                children=parser.parse_blocks(item_text, parent_state=state, source=source), spread=item_spread
             )
             item.position = state.source.position_between(item_start_index, state.index)
             if self.task:
@@ -109,18 +104,12 @@ def list_marker_style(marker: re.Match[str]) -> ListMarkerStyle:
     ordered = marker.group('ordered') is not None
     start = int(marker.group('ordered')) if ordered else None
     return ListMarkerStyle(
-        ordered=ordered,
-        start=start,
-        delimiter=marker.group('delimiter'),
-        bullet=marker.group('bullet'),
+        ordered=ordered, start=start, delimiter=marker.group('delimiter'), bullet=marker.group('bullet')
     )
 
 
 def parse_list_item_marker(
-    line: str,
-    style: ListMarkerStyle,
-    has_items: bool,
-    thematic_break: Rule | None,
+    line: str, style: ListMarkerStyle, has_items: bool, thematic_break: Rule | None
 ) -> re.Match[str] | None:
     marker = MARKER_RE.match(line)
     if marker is None:
@@ -143,10 +132,7 @@ def marker_matches_style(marker: re.Match[str], style: ListMarkerStyle) -> bool:
 
 
 def collect_list_item(
-    parser: Parser,
-    state: BlockState,
-    marker: re.Match[str],
-    first_nonblank_cache: dict[int, str | None],
+    parser: Parser, state: BlockState, marker: re.Match[str], first_nonblank_cache: dict[int, str | None]
 ) -> tuple[str, SourceMap | None, bool]:
     marker_indent, content_indent, first_line = first_list_item_line(marker)
     lines = [first_line]
@@ -221,11 +207,7 @@ def consume_blank_list_line(
     if not should_keep_blank_in_item(state, content_indent, marker_indent):
         return item_spread, False
     if not fence_char and blank_belongs_to_item(
-        state,
-        content_indent,
-        marker_indent,
-        item_has_nested_marker,
-        first_nonblank_cache,
+        state, content_indent, marker_indent, item_has_nested_marker, first_nonblank_cache
     ):
         item_spread = True
     lines.append('\n')

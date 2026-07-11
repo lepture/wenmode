@@ -89,7 +89,4 @@ def index() -> str:
 
 @app.post('/streaming')
 def render_streaming(file: UploadFile = File(...)) -> StreamingResponse:
-    return StreamingResponse(
-        stream_uploaded_markdown(file),
-        media_type='text/html; charset=utf-8',
-    )
+    return StreamingResponse(stream_uploaded_markdown(file), media_type='text/html; charset=utf-8')

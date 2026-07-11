@@ -156,26 +156,18 @@ def archive_relative_path(path: str) -> str:
 
 def load_rust_book_case() -> Case:
     return load_archive_case(
-        'rust-book',
-        RUST_BOOK_TARBALL,
-        lambda path: path.startswith('src/') and path.endswith('.md'),
+        'rust-book', RUST_BOOK_TARBALL, lambda path: path.startswith('src/') and path.endswith('.md')
     )
 
 
 def load_progit_case() -> Case:
     return load_archive_case(
-        'progit',
-        PROGIT_TARBALL,
-        lambda path: path.startswith('en/') and path.endswith('.markdown'),
+        'progit', PROGIT_TARBALL, lambda path: path.startswith('en/') and path.endswith('.markdown')
     )
 
 
 def load_cases(selected: str) -> list[Case]:
-    cases = {
-        'docs': load_docs_case,
-        'rust-book': load_rust_book_case,
-        'progit': load_progit_case,
-    }
+    cases = {'docs': load_docs_case, 'rust-book': load_rust_book_case, 'progit': load_progit_case}
     if selected == 'all':
         return [load_case() for load_case in cases.values()]
 
@@ -230,12 +222,7 @@ def make_targets() -> list[Target]:
 
 def make_wenmode_all() -> Wenmode:
     wen = Wenmode(
-        [
-            *github,
-            LeafDirective,
-            ContainerDirective,
-            TextDirective,
-        ],
+        [*github, LeafDirective, ContainerDirective, TextDirective],
         HTMLRenderer(escape=False, sanitize_urls=False),
         plugins=[
             fenced_directive,

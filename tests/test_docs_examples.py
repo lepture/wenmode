@@ -14,10 +14,7 @@ MIGRATION_EXAMPLE_FILES = sorted((ROOT / 'docs' / 'migration').glob('*.md'))
 MYST_EXAMPLE_FILES = [*DOC_EXAMPLE_FILES, *MIGRATION_EXAMPLE_FILES]
 
 PYTHON_BLOCK_RE = re.compile(r'^```python\n(?P<code>.*?)(?:\n)?^```', re.MULTILINE | re.DOTALL)
-MYST_PYTHON_BLOCK_RE = re.compile(
-    r'^```\{code-block\}\s+python\n(?P<body>.*?)(?:\n)?^```',
-    re.MULTILINE | re.DOTALL,
-)
+MYST_PYTHON_BLOCK_RE = re.compile(r'^```\{code-block\}\s+python\n(?P<body>.*?)(?:\n)?^```', re.MULTILINE | re.DOTALL)
 SKIP_SNIPPETS = (
     'from fastapi',
     'from flask',

@@ -14,9 +14,7 @@ from wenmode.nodes import Html, Image, Link, List, ListItem, Literal, Paragraph,
 from wenmode.plugins import html_container, inline_math
 from wenmode.presets import streaming
 from wenmode.renderers import BaseRenderer, RenderContext
-from wenmode.rules import (
-    Footnote,
-)
+from wenmode.rules import Footnote
 
 DEFAULT_RENDERER_RULES = [
     'abbreviation',
@@ -57,12 +55,7 @@ DEFAULT_RENDERER_RULES = [
     'ruby',
     'extended_autolink',
 ]
-HTML_DIRECTIVES = {
-    'admonition': Admonition,
-    'details': Details,
-    'figure': Figure,
-    'toc': TableOfContents,
-}
+HTML_DIRECTIVES = {'admonition': Admonition, 'details': Details, 'figure': Figure, 'toc': TableOfContents}
 DEFAULT_HTML_DIRECTIVES = ['admonition', 'details', 'figure', 'toc']
 
 
@@ -78,8 +71,7 @@ def test_restored_html_cannot_assert_internal_escaping_by_default() -> None:
 
 def test_restored_html_preserves_internal_escaping_for_trusted_ast() -> None:
     node = from_ast(
-        {'type': 'html', 'value': '&lt;em&gt;safe&lt;/em&gt;', 'data': {'escaped': True}},
-        allow_internal_metadata=True,
+        {'type': 'html', 'value': '&lt;em&gt;safe&lt;/em&gt;', 'data': {'escaped': True}}, allow_internal_metadata=True
     )
 
     assert HTMLRenderer().render(node) == '&lt;em&gt;safe&lt;/em&gt;'
@@ -94,11 +86,7 @@ def test_restored_html_container_preserves_internal_escaping_for_trusted_ast() -
         'opening': '&lt;div&gt;',
         'closing': '&lt;/div&gt;',
     }
-    node = from_ast(
-        ast,
-        nodes=html_container.nodes,
-        allow_internal_metadata=True,
-    )
+    node = from_ast(ast, nodes=html_container.nodes, allow_internal_metadata=True)
 
     assert node.to_ast() == ast
     assert configured_app(['html_container']).render_node(node) == '&lt;div&gt;\n&lt;/div&gt;\n'
@@ -157,16 +145,7 @@ def test_text_fixture_parser_rejects_unclosed_case() -> None:
 
 
 def test_text_fixture_parser_rejects_case_closed_after_next_case_start() -> None:
-    text = (
-        '## first\n\n'
-        '````````fixture\n'
-        '.input\nx\n'
-        '````\n\n'
-        '## second\n\n'
-        '````````fixture\n'
-        '.input\ny\n'
-        '````````\n'
-    )
+    text = '## first\n\n````````fixture\n.input\nx\n````\n\n## second\n\n````````fixture\n.input\ny\n````````\n'
 
     with pytest.raises(ValueError, match="missing a closing fence before 'second'"):
         parse_text_fixture(text)
@@ -180,21 +159,9 @@ def test_text_fixture_parser_rejects_duplicate_sections() -> None:
 
 
 def test_text_fixture_parser_unescapes_literal_section_markers() -> None:
-    text = (
-        '## escaped\n\n'
-        '````````fixture\n'
-        '.input\n\\.html\n\\.rst\n'
-        '.html\n<p>.html</p>\n'
-        '````````\n'
-    )
+    text = '## escaped\n\n````````fixture\n.input\n\\.html\n\\.rst\n.html\n<p>.html</p>\n````````\n'
 
-    assert parse_text_fixture(text) == [
-        {
-            'name': 'escaped',
-            'input': '.html\n.rst',
-            'html': '<p>.html</p>',
-        }
-    ]
+    assert parse_text_fixture(text) == [{'name': 'escaped', 'input': '.html\n.rst', 'html': '<p>.html</p>'}]
 
 
 def html_directives_for_example(example: RendererExample):
@@ -206,16 +173,9 @@ def rule_names_for_example(example: RendererExample) -> list[str]:
     return example.get('rules', DEFAULT_RENDERER_RULES)
 
 
-@pytest.mark.parametrize(
-    'example',
-    load_renderer_examples(),
-    ids=lambda example: example['name'],
-)
+@pytest.mark.parametrize('example', load_renderer_examples(), ids=lambda example: example['name'])
 def test_renderer_examples(example: RendererExample) -> None:
-    html_renderer = HTMLRenderer(
-        directives=html_directives_for_example(example),
-        **example.get('html_options', {}),
-    )
+    html_renderer = HTMLRenderer(directives=html_directives_for_example(example), **example.get('html_options', {}))
     rule_names = rule_names_for_example(example)
     html_app = configured_app(rule_names, renderer=html_renderer)
     root = html_app.parse(example['input'])
@@ -314,12 +274,7 @@ def test_rst_root_post_hook_is_safe_to_omit_for_direct_streaming_images() -> Non
     assert app.renderer.streaming_blockers() == []
     assert app.supports_streaming is True
     assert ''.join(app.stream('![alt](https://example.com/img.png "title")\n')) == (
-        '.. image:: https://example.com/img.png\n'
-        '   :alt: alt\n'
-        '   :title: title\n'
-        '\n'
-        '\n'
-        '\n'
+        '.. image:: https://example.com/img.png\n   :alt: alt\n   :title: title\n\n\n\n'
     )
 
 

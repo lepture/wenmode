@@ -194,9 +194,7 @@ def test_wenmode_installs_declarative_delimited_children_with_asymmetric_delimit
 
     wen = Wenmode(plugins=[DelimitedChildrenPlugin])
 
-    assert wen.render('A {+very *important*+} value.\n') == (
-        '<p>A <span>very <em>important</em></span> value.</p>\n'
-    )
+    assert wen.render('A {+very *important*+} value.\n') == ('<p>A <span>very <em>important</em></span> value.</p>\n')
 
 
 def test_wenmode_installs_declarative_block_fenced_literal() -> None:
@@ -204,16 +202,10 @@ def test_wenmode_installs_declarative_block_fenced_literal() -> None:
         nodes = [CustomBlockLiteral]
         rules = [
             BlockFenced(
-                name='custom_block_literal',
-                node=CustomBlockLiteral,
-                opener='%%%',
-                closer='%%%',
-                strip_content=True,
+                name='custom_block_literal', node=CustomBlockLiteral, opener='%%%', closer='%%%', strip_content=True
             )
         ]
-        handlers = {
-            'html': {CustomBlockLiteral.type: lambda renderer, node, context: f'<aside>{node.value}</aside>\n'}
-        }
+        handlers = {'html': {CustomBlockLiteral.type: lambda renderer, node, context: f'<aside>{node.value}</aside>\n'}}
 
         @staticmethod
         def setup(wen: Wenmode, /) -> None:
@@ -230,15 +222,13 @@ def test_wenmode_installs_declarative_block_fenced_children() -> None:
         nodes = [CustomBlockParent]
         rules = [
             BlockFenced(
-                name='custom_block_parent',
-                node=CustomBlockParent,
-                opener='+++',
-                closer='+++',
-                content='children',
+                name='custom_block_parent', node=CustomBlockParent, opener='+++', closer='+++', content='children'
             )
         ]
         handlers = {
-            'html': {CustomBlockParent.type: lambda renderer, node, context: renderer.render_children(node.children, context)}
+            'html': {
+                CustomBlockParent.type: lambda renderer, node, context: renderer.render_children(node.children, context)
+            }
         }
 
         @staticmethod
@@ -267,7 +257,9 @@ def test_declarative_block_fenced_children_respects_max_container_depth() -> Non
             for index, opener in enumerate(openers)
         ]
         handlers = {
-            'html': {CustomBlockParent.type: lambda renderer, node, context: renderer.render_children(node.children, context)}
+            'html': {
+                CustomBlockParent.type: lambda renderer, node, context: renderer.render_children(node.children, context)
+            }
         }
 
         @staticmethod
@@ -357,10 +349,7 @@ def test_wenmode_registers_renderer_handlers_for_current_renderer() -> None:
         return 'other'
 
     wen.register_renderer_handlers(
-        {
-            'html': {'customLiteral': render_custom_literal},
-            'markdown': {'customLiteral': render_other},
-        }
+        {'html': {'customLiteral': render_custom_literal}, 'markdown': {'customLiteral': render_other}}
     )
 
     assert wen.render_node(CustomLiteral(value='<x>')) == '<custom>&lt;x&gt;</custom>'

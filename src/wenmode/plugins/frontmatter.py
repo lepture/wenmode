@@ -44,11 +44,7 @@ class FrontmatterRule(BlockRule):
     name = 'frontmatter'
     pattern = r'---[ \t]*(?:\r?\n)?$'
 
-    def __init__(
-        self,
-        load: FrontmatterLoad | None = None,
-        data_key: str = 'frontmatter',
-    ) -> None:
+    def __init__(self, load: FrontmatterLoad | None = None, data_key: str = 'frontmatter') -> None:
         super().__init__()
         self.load = load or load_simple_frontmatter
         self.root_transforms = [FrontmatterTransform(data_key)]
@@ -191,8 +187,7 @@ def render_asciidoc_frontmatter(value: Any) -> str:
 
 
 def render_markdown_frontmatter_prelude(
-    data_key: str,
-    dump: FrontmatterDump,
+    data_key: str, dump: FrontmatterDump
 ) -> Callable[[MarkdownRenderer, Root, RenderContext], str]:
     def render_frontmatter(renderer: MarkdownRenderer, node: Root, context: RenderContext) -> str:
         value = root_frontmatter(node, data_key)
@@ -203,9 +198,7 @@ def render_markdown_frontmatter_prelude(
     return render_frontmatter
 
 
-def render_rst_frontmatter_prelude(
-    data_key: str,
-) -> Callable[[RSTRenderer, Root, RSTRenderContext], str]:
+def render_rst_frontmatter_prelude(data_key: str) -> Callable[[RSTRenderer, Root, RSTRenderContext], str]:
     def render_frontmatter(renderer: RSTRenderer, node: Root, context: RSTRenderContext) -> str:
         value = root_frontmatter(node, data_key)
         if value is MISSING:
@@ -229,15 +222,9 @@ def render_asciidoc_frontmatter_prelude(
 
 def create_handlers(data_key: str, dump: FrontmatterDump) -> RendererHandlers:
     return {
-        'markdown': {
-            'root:pre': render_markdown_frontmatter_prelude(data_key, dump),
-        },
-        'rst': {
-            'root:pre': render_rst_frontmatter_prelude(data_key),
-        },
-        'asciidoc': {
-            'root:pre': render_asciidoc_frontmatter_prelude(data_key),
-        },
+        'markdown': {'root:pre': render_markdown_frontmatter_prelude(data_key, dump)},
+        'rst': {'root:pre': render_rst_frontmatter_prelude(data_key)},
+        'asciidoc': {'root:pre': render_asciidoc_frontmatter_prelude(data_key)},
     }
 
 
@@ -258,10 +245,7 @@ class FrontmatterPlugin:
 
 
 def configure(
-    *,
-    load: FrontmatterLoad | None = None,
-    dump: FrontmatterDump | None = None,
-    data_key: str = 'frontmatter',
+    *, load: FrontmatterLoad | None = None, dump: FrontmatterDump | None = None, data_key: str = 'frontmatter'
 ) -> FrontmatterPlugin:
     return FrontmatterPlugin(load=load, dump=dump, data_key=data_key)
 
