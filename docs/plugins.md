@@ -77,25 +77,25 @@ supported.
 
 ## Built-In Plugins
 
-| Plugin | Enables | Defined with |
-| --- | --- | --- |
-| `wenmode.plugins.abbr` | Abbreviation definitions and `abbreviation` nodes | `setup()` |
-| `wenmode.plugins.block_spoiler` | Block spoiler containers | `setup()` |
-| `wenmode.plugins.cjk_friendly` | CJK-friendly inline parsing behavior | `setup()` |
-| `wenmode.plugins.definition_list` | Definition list syntax and nodes | `setup()` |
-| `wenmode.plugins.fenced_directive` | MyST-style fenced directives, rendered as `containerDirective` or `literalDirective` nodes | `setup()` |
-| `wenmode.plugins.frontmatter` | Top-level `---` front matter stored on `root.data["frontmatter"]` | `setup()` |
-| `wenmode.plugins.html_container` | Standalone HTML tag pairs whose body is parsed as Markdown blocks | `setup()` |
-| `wenmode.plugins.block_math` | Display math blocks | `spec` + `handlers` |
-| `wenmode.plugins.inline_math` | Inline math spans | `spec` + `handlers` |
-| `wenmode.plugins.inline_role` | MyST-style inline roles, rendered as `textDirective` nodes | `setup()` |
-| `wenmode.plugins.inline_spoiler` | Inline spoiler spans | `spec` |
-| `wenmode.plugins.insert` | `insert` inline nodes | `spec` |
-| `wenmode.plugins.mark` | `mark` inline nodes | `spec` |
-| `wenmode.plugins.ruby` | Ruby annotation nodes | `setup()` |
-| `wenmode.plugins.smartypants` | HTML smart punctuation rendering for quotes, dashes, and ellipses | `setup()` |
-| `wenmode.plugins.subscript` | `subscript` inline nodes | `setup()` |
-| `wenmode.plugins.superscript` | `superscript` inline nodes | `setup()` |
+| Plugin | Enables |
+| --- | --- |
+| `wenmode.plugins.abbr` | Abbreviation definitions and `abbreviation` nodes |
+| `wenmode.plugins.block_spoiler` | Block spoiler containers |
+| `wenmode.plugins.cjk_friendly` | CJK-friendly inline parsing behavior |
+| `wenmode.plugins.definition_list` | Definition list syntax and nodes |
+| `wenmode.plugins.fenced_directive` | MyST-style fenced directives, rendered as `containerDirective` or `literalDirective` nodes |
+| `wenmode.plugins.frontmatter` | Top-level `---` front matter stored on `root.data["frontmatter"]` |
+| `wenmode.plugins.html_container` | Standalone HTML tag pairs whose body is parsed as Markdown blocks |
+| `wenmode.plugins.block_math` | Display math blocks |
+| `wenmode.plugins.inline_math` | Inline math spans |
+| `wenmode.plugins.inline_role` | MyST-style inline roles, rendered as `textDirective` nodes |
+| `wenmode.plugins.inline_spoiler` | Inline spoiler spans |
+| `wenmode.plugins.insert` | `insert` inline nodes |
+| `wenmode.plugins.mark` | `mark` inline nodes |
+| `wenmode.plugins.ruby` | Ruby annotation nodes |
+| `wenmode.plugins.smartypants` | HTML smart punctuation rendering for quotes, dashes, and ellipses |
+| `wenmode.plugins.subscript` | `subscript` inline nodes |
+| `wenmode.plugins.superscript` | `superscript` inline nodes |
 
 Each plugin also registers default HTML, Markdown, RST, or AsciiDoc renderer
 handlers when the feature has a standard representation in Wenmode's built-in
@@ -329,11 +329,10 @@ Implement custom parser behavior through the public rule interfaces in
 `wenmode.rules`. Renderer output stays explicit: expose a `handlers` mapping
 and register it from `setup()`.
 
-Use a command-style plugin when a plugin needs setup options, directive
-renderers, root transforms, or command-style installation logic. A
-command-style plugin is a module or object with a `setup(wen, /)`
-function. Inside `setup()`, register parser rules, renderer handlers, directive
-renderers, or any combination of them.
+A plugin is a module or object with a `setup(wen, /)` function. Inside
+`setup()`, register parser rules, renderer handlers, directive renderers, or any
+combination of them. When callers need options, expose a `configure()` function
+that returns a configured plugin object.
 
 ```python
 from wenmode import Wenmode
@@ -348,6 +347,5 @@ class MyPlugin:
 wen = Wenmode([], plugins=[MyPlugin()])
 ```
 
-For non-trivial command-style syntax, define the node, rule, render handlers,
-and `setup()` together. See {ref}`custom-plugins` for a complete custom plugin
-walkthrough.
+For non-trivial syntax, define the node, rule, render handlers, and `setup()`
+together. See {ref}`custom-plugins` for a complete custom plugin walkthrough.

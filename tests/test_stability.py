@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from wenmode import StreamingUnsupportedError, Wenmode
-from wenmode.plugins import abbr, block_math, block_spoiler, inline_math, inline_spoiler
+from wenmode.plugins import PluginModule, RendererHandlers, abbr, block_math, block_spoiler, inline_math, inline_spoiler
 from wenmode.presets import github, streaming
 from wenmode.rules import Footnote, Link
 
@@ -102,6 +102,7 @@ def test_documented_public_extension_imports_resolve() -> None:
     assert wenmode.Parser is Parser
     assert all(name not in wenmode.__all__ for name in {'Plugin', 'PluginConfig', 'PluginTarget'})
     assert all(name not in wenmode.plugins.__all__ for name in {'Plugin', 'PluginConfig', 'PluginTarget'})
+    assert {'PluginModule', 'RendererHandlers'}.issubset(wenmode.plugins.__all__)
     assert all('_parser' not in name for name in wenmode.__all__)
     assert all(
         name not in wenmode.renderers.__all__
@@ -126,6 +127,7 @@ def test_documented_public_extension_imports_resolve() -> None:
     assert BaseRenderer and DirectiveHtmlRenderer and RenderContext and RenderHandler
     assert BlockRule and ContinueRule and InlineRule and Rule
     assert BlockState and SourceMap and StateKey and StateStore
+    assert PluginModule and RendererHandlers
 
 
 def test_public_state_facade_reexports_private_implementations() -> None:

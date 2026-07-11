@@ -11,6 +11,7 @@ DOC_EXAMPLE_FILES = [
     *[path for path in sorted((ROOT / 'docs').glob('*.md')) if not path.name.startswith('reference')],
 ]
 MIGRATION_EXAMPLE_FILES = sorted((ROOT / 'docs' / 'migration').glob('*.md'))
+MYST_EXAMPLE_FILES = [*DOC_EXAMPLE_FILES, *MIGRATION_EXAMPLE_FILES]
 
 PYTHON_BLOCK_RE = re.compile(r'^```python\n(?P<code>.*?)(?:\n)?^```', re.MULTILINE | re.DOTALL)
 MYST_PYTHON_BLOCK_RE = re.compile(
@@ -55,7 +56,7 @@ def iter_runnable_python_blocks() -> list[object]:
 
 def iter_compilable_myst_python_blocks() -> list[object]:
     params: list[object] = []
-    for path in MIGRATION_EXAMPLE_FILES:
+    for path in MYST_EXAMPLE_FILES:
         text = path.read_text(encoding='utf-8')
         for index, match in enumerate(MYST_PYTHON_BLOCK_RE.finditer(text), start=1):
             code = strip_myst_code_block_options(match.group('body'))
@@ -81,3 +82,14 @@ def test_migration_python_code_blocks_are_discovered() -> None:
     labels = [param.values[0] for param in iter_compilable_myst_python_blocks()]
     assert any(str(label).startswith('docs/migration/mistune.md:') for label in labels)
     assert any(str(label).startswith('docs/migration/python-markdown.md:') for label in labels)
+
+
+def test_plugin_setup_examples_use_unified_protocol() -> None:
+    setup_re = re.compile(r'def setup\((?P<signature>[^)]*)\)')
+    for name in ('plugins.md', 'custom-plugins.md'):
+        path = ROOT / 'docs' / name
+        text = path.read_text(encoding='utf-8')
+        signatures = [match.group('signature') for match in setup_re.finditer(text)]
+        assert signatures
+        assert all(signature.rstrip().endswith('/') for signature in signatures)
+        assert all('**' not in signature for signature in signatures)

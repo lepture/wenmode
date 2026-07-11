@@ -2,8 +2,8 @@
 # Custom Plugins
 
 ```{rst-class} lead
-Create plugins for `Wenmode(..., plugins=[...])` that package declarative rule
-builders, syntax rules, nodes, renderer handlers, and setup options.
+Create plugins for `Wenmode(..., plugins=[...])` that package syntax rules,
+nodes, renderer handlers, and setup options.
 ```
 
 ---
@@ -140,9 +140,8 @@ restore serialized AST data with `wenmode.ast.from_ast()`.
 
 ## Renderer Handlers
 
-Plugins can expose renderer handlers separately from declarative rules. The
-mapping is keyed by renderer name; only handlers for the current renderer are
-installed.
+Plugins can expose renderer handlers separately from parser rules. The mapping
+is keyed by renderer name; only handlers for the current renderer are installed.
 
 ```{code-block} python
 handlers = {
@@ -152,11 +151,11 @@ handlers = {
 }
 ```
 
-For command-style plugins, call `register_renderer_handlers()` inside `setup()`:
+Call `register_renderer_handlers()` inside `setup()`:
 
 ```{code-block} python
 
-def setup(wen: Wenmode, **options: Any) -> None:
+def setup(wen: Wenmode, /) -> None:
     wen.register_rules([PlusMarkRule])
     wen.register_renderer_handlers(handlers)
 ```
@@ -251,11 +250,19 @@ caller-provided configuration.
 
 ## Parsing Nested Content
 
-Declarative parent-node specs parse nested content for you. When a command-style
-rule contains nested Markdown content, call parser helpers so the nested content
-uses the same rule set and, when enabled, the same source-position behavior.
+When a custom rule contains nested Markdown content, call parser helpers so the
+nested content uses the same rule set. Wenmode automatically assigns the outer
+node the complete range consumed by the rule.
 
-Inline rules should pass the source range of the nested label or body:
+Parse an inline label or body directly when nested child positions are not
+needed:
+
+```{code-block} python
+children = parser.parse_inlines(text[value_start:value_end], state)
+```
+
+When nested children need positions mapped to the original document, pass the
+source range explicitly:
 
 ```{code-block} python
 value_start = match.end()
@@ -268,14 +275,20 @@ children = parser.parse_inlines(
 )
 ```
 
-Block rules should collect the original source for generated nested text before
-calling `parser.parse_blocks()`:
+Block rules can call `parser.parse_blocks()` directly for normal nested
+parsing. When nested children need original source positions, collect a source
+map before calling it:
 
 ```{code-block} python
 source = state.source.collect()
-for line in lines:
+
+
+def collect_line(line: str) -> str:
     source.add(state.index, 0, line)
-    state.advance()
+    return line
+
+
+lines = state.consume_until(is_closer, collect_line)
 
 children = parser.parse_blocks(
     ''.join(lines),
@@ -358,10 +371,10 @@ if node.position is not None:
     )
 ```
 
-For nested Markdown in command-style rules, prefer passing a source map instead
-of setting every child manually. `parser.inline_source()` maps child nodes to
-the nested content, while the returned parent node still gets the full consumed
-range from the parser.
+When nested Markdown children need precise positions, prefer passing a source
+map instead of setting every child manually. `parser.inline_source()` maps child
+nodes to the nested content, while the returned parent node still gets the full
+consumed range from the parser.
 
 `Root.to_ast()` converts offsets to unist-style `line` and `column` fields.
 Standalone nodes, including nodes yielded by `Parser.parse_iter()`, do not have

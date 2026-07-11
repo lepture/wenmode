@@ -70,10 +70,10 @@ implementation conflicts with CommonMark, GFM, or documented Wenmode semantics.
 
 Prefer importing public extension APIs from these modules:
 
-- `wenmode` for `Wenmode`, `Parser`, built-in renderers, and plugin protocol
-  types.
+- `wenmode` for `Wenmode`, `Parser`, and built-in renderers.
 - `wenmode.rules` for rule base classes and built-in rule classes.
-- `wenmode.plugins` for built-in plugin modules and plugin protocol types.
+- `wenmode.plugins` for built-in plugin modules, `PluginModule`, and
+  `RendererHandlers`.
 - `wenmode.renderers` for renderer base classes, built-in renderers, contexts,
   and renderer handler hooks.
 - `wenmode.nodes` for documented node dataclasses.

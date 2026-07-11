@@ -21,5 +21,6 @@ feature, see :ref:`Reference <reference>`.
    api/nodes
    api/renderers
    api/rules
+   api/plugins
    api/directives
    api/helpers

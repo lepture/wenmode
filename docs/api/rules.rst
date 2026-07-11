@@ -88,6 +88,5 @@ Plugin Rules
 ------------
 
 Non-standard syntax lives in :mod:`wenmode.plugins`. Each plugin module owns its
-node classes, parser rule classes, declarative rule builders, renderer handlers,
-or ``setup`` function.
+node classes, parser rules, renderer handlers, and ``setup`` function.
 For usage, see :ref:`plugins`.

@@ -188,6 +188,11 @@ queues, and a per-parse `StateStore`. Built-in reference, footnote, and
 abbreviation rules use that store through `StateKey` objects instead of fixed
 fields on `BlockState`.
 
+Block rules consume input with `state.advance()`. Fenced rules can use
+`state.consume_until(is_closer, transform=None)` to collect body lines. It
+consumes the closing line without returning it. `StreamBlockState` inherits the
+same method, so rules do not need separate string and iterable-source paths.
+
 Because a new state and store are created for every top-level parse,
 definitions do not leak between parser calls. Nested block parsing shares the
 same store, so definitions found inside block quotes, lists, directives, or

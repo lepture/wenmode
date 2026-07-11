@@ -69,14 +69,14 @@ The plugin name in the first column is the module you import from
 | `definition_list` | `DefinitionListRule` | continuation | `definitionList`, `definitionTerm`, `definitionDescription` | compatible |
 | `frontmatter` | `FrontmatterRule` | block + transform | stores parsed data on `root.data["frontmatter"]` | compatible |
 | `html_container` | `HtmlContainer` | block | replaces `HtmlBlock`; emits `htmlContainer` for standalone tag pairs and `html` for raw fallback cases | compatible |
-| `block_math` | declarative fenced block | block | `math` | compatible |
-| `inline_math` | declarative inline literal | inline | `inlineMath` | compatible |
+| `block_math` | configured fenced rule | block | `math` | compatible |
+| `inline_math` | configured literal rule | inline | `inlineMath` | compatible |
 | `block_spoiler` | `BlockSpoilerRule` | block | `blockSpoiler` | compatible |
-| `inline_spoiler` | declarative inline delimiter | inline | `inlineSpoiler` | compatible |
+| `inline_spoiler` | configured delimiter rule | inline | `inlineSpoiler` | compatible |
 | `fenced_directive` | `FencedDirectiveRule` | block | `containerDirective`, or `literalDirective` for configured literal-body names such as `code-block` | compatible |
 | `inline_role` | `RoleRule` | inline | `textDirective` | compatible |
-| `mark` | declarative inline delimiter | inline | `mark` | compatible |
-| `insert` | declarative inline delimiter | inline | `insert` | compatible |
+| `mark` | configured delimiter rule | inline | `mark` | compatible |
+| `insert` | configured delimiter rule | inline | `insert` | compatible |
 | `superscript` | `SuperscriptRule` | inline | `superscript` | compatible |
 | `subscript` | `SubscriptRule` | inline | `subscript` | compatible |
 | `ruby` | `RubyRule` | inline | `ruby` | compatible |
