@@ -169,7 +169,19 @@ def test_continuation_rule_can_decline_without_advancing() -> None:
         ) -> Node | None:
             return None
 
-    assert render(Parser([DecliningContinuation]), 'text\n!!\n') == '<p>text\n!!</p>\n'
+    class TransformingContinuation(ContinueRule):
+        name = 'transforming_continuation'
+
+        def matches(self, line: str) -> bool:
+            return line.startswith('!!')
+
+        def parse_paragraph_continuation(
+            self, parser: Parser, state: BlockState, lines: list[str]
+        ) -> Node | None:
+            state.advance()
+            return Paragraph(children=[Text(value='transformed')])
+
+    assert render(Parser([DecliningContinuation, TransformingContinuation]), 'text\n!!\n') == '<p>text\n!!</p>\n'
 
 
 def test_block_rule_can_decline_without_advancing() -> None:

@@ -242,7 +242,7 @@ class BlockParser:
                         f"Continuation rule '{continuation.name}' returned None but declining continuation "
                         f'changed state from index {previous_index} to {state.index}'
                     )
-                continue
+                return None
             if state.index < previous_index:
                 raise RuntimeError(
                     f"Continuation rule '{continuation.name}' moved state backwards "
