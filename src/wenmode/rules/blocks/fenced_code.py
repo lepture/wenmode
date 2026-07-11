@@ -8,7 +8,6 @@ from wenmode.utils import normalize_label_text
 
 from ..._parser.state import BlockState
 from ..base import BlockRule
-from .util import collect_until
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
@@ -57,8 +56,7 @@ class FencedCode(BlockRule):
         state.advance()
 
         closer = re.compile(rf'[ \t]{{0,3}}{re.escape(fence_char)}{{{len(fence)},}}[ \t]*$')
-        lines = collect_until(
-            state,
+        lines = state.consume_until(
             lambda line: closer.match(line.rstrip('\r\n')) is not None,
             lambda line: strip_fence_indent(line, indent),
         )

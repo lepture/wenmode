@@ -139,6 +139,25 @@ class BlockState:
         """
         self.index += count
 
+    def consume_until(
+        self,
+        is_closer: Callable[[str], bool],
+        transform: Callable[[str], str] | None = None,
+    ) -> list[str]:
+        """Consume lines through an optional closing line.
+
+        The closing line is consumed but not returned.
+        """
+        lines: list[str] = []
+        while not self.done:
+            line = self.line
+            if is_closer(line):
+                self.advance()
+                break
+            lines.append(transform(line) if transform is not None else line)
+            self.advance()
+        return lines
+
     def has(self, offset: int = 0) -> bool:
         """Return whether a line exists at an offset from the current index."""
         return self.has_index(self.index + offset)

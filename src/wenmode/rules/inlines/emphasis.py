@@ -8,15 +8,15 @@ from wenmode.nodes import Emphasis as EmphasisNode
 from wenmode.nodes import Node, Parent, Position
 from wenmode.nodes import Strong as StrongNode
 from wenmode.nodes import Text as TextNode
-
-from ..._parser.state import BlockState
-from ..base import InlineRule
-from ..cjk import (
+from wenmode.utils.cjk import (
     is_cjk_character,
     is_ideographic_variation_selector,
     is_non_cjk_punctuation,
     is_punctuation,
 )
+
+from ..._parser.state import BlockState
+from ..base import InlineRule
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser

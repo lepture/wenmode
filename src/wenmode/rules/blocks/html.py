@@ -5,7 +5,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from wenmode.nodes import Html
-from wenmode.utils import compile_disallowed_html_filter, filter_disallowed_html, match_pattern
+from wenmode.utils import compile_disallowed_html_filter, filter_disallowed_html
 
 from ..._parser.state import BlockState
 from ..base import BlockRule
@@ -167,7 +167,7 @@ class HtmlBlock(BlockRule):
 
 
 def html_end_pattern(line: str) -> re.Pattern[str] | None:
-    if match_pattern(HTML_SCRIPT_STYLE_RE, line):
+    if HTML_SCRIPT_STYLE_RE.match(line) is not None:
         tag = HTML_OPEN_TAG_RE.match(line)
         if tag is not None:
             return re.compile(rf'(?i)</{tag.group(1)}\s*>')
@@ -175,7 +175,7 @@ def html_end_pattern(line: str) -> re.Pattern[str] | None:
         return re.compile(r'--!?>')
     if line.startswith('<?'):
         return re.compile(r'\?>')
-    if match_pattern(HTML_DECLARATION_RE, line):
+    if HTML_DECLARATION_RE.match(line) is not None:
         return re.compile(r'>')
     if line.startswith('<![CDATA['):
         return re.compile(r']]>')

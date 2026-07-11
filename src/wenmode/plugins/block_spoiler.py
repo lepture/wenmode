@@ -4,14 +4,13 @@ import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, ClassVar
 
-from wenmode.nodes import Parent
+from wenmode.nodes import Node, Paragraph, Parent
 from wenmode.renderers import MarkdownRenderer, RenderContext
 from wenmode.renderers.asciidoc import AsciiDocRenderContext, AsciiDocRenderer
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.markdown import render_prefixed_block
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer, indent_block
 from wenmode.rules.base import BlockRule, Rule
-from wenmode.rules.blocks.util import parse_shallow_block
 from wenmode.utils import expand_leading_tabs
 
 from .._parser.state import BlockState
@@ -41,7 +40,7 @@ class BlockSpoilerRule(BlockRule):
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> BlockSpoilerNode:
         if state.depth >= parser.max_container_depth - 1:
-            return BlockSpoilerNode(children=parse_shallow_block(parser, BLOCK_SPOILER_RE, state))
+            return BlockSpoilerNode(children=self.parse_shallow(parser, state))
 
         lines: list[str] = []
         source = state.source.collect()
@@ -60,6 +59,20 @@ class BlockSpoilerRule(BlockRule):
 
         text = ''.join(lines)
         return BlockSpoilerNode(children=parser.parse_blocks(text, parent_state=state, source=source.map()))
+
+    @staticmethod
+    def parse_shallow(parser: Parser, state: BlockState) -> list[Node]:
+        lines: list[str] = []
+        while not state.done:
+            spoiler = BLOCK_SPOILER_RE.match(state.line)
+            if spoiler is None:
+                break
+            lines.append(spoiler.group(1).strip())
+            state.advance()
+        text = '\n'.join(line for line in lines if line).strip()
+        if not text:
+            return []
+        return [Paragraph(children=parser.parse_inlines(text, state))]
 
 
 def render_html_block(renderer: HTMLRenderer, node: BlockSpoilerNode, context: HTMLRenderContext) -> str:

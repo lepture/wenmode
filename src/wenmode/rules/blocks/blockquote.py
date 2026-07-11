@@ -4,7 +4,7 @@ import re
 from typing import TYPE_CHECKING
 
 from wenmode.nodes import Blockquote as BlockquoteNode
-from wenmode.utils import expand_leading_tabs, match_pattern
+from wenmode.utils import expand_leading_tabs
 
 from ..._parser.state import BlockState
 from ..base import BlockRule
@@ -41,7 +41,7 @@ class Blockquote(BlockRule):
             quote = BLOCKQUOTE_RE.match(line)
             if quote is None:
                 if paragraph_open and line.strip() != '' and not parser.is_paragraph_interrupt(line, state):
-                    if lazy_used and match_pattern(SETEXT_MARKER_RE, line):
+                    if lazy_used and SETEXT_MARKER_RE.match(line) is not None:
                         prefix = '    '
                     else:
                         prefix = ''
@@ -61,7 +61,7 @@ class Blockquote(BlockRule):
             lines.append(text)
             source.add(state.index, quote.start(1), text)
             paragraph_open = content.strip() != '' and (
-                not starts_nonparagraph_block(parser, content) or match_pattern(NESTED_BLOCKQUOTE_RE, content)
+                not starts_nonparagraph_block(parser, content) or NESTED_BLOCKQUOTE_RE.match(content) is not None
             )
             lazy_used = False
             state.advance()

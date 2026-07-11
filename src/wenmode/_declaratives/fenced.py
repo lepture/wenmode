@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Literal, TypeAlias, cast
 from wenmode.nodes import Literal as LiteralNode
 from wenmode.nodes import Node, Parent
 from wenmode.rules.base import BlockRule
-from wenmode.rules.blocks.util import collect_until
 
 from .._parser.state import BlockState
 
@@ -60,7 +59,7 @@ class BlockFenced(BlockRule):
                 lines.append('\n')
 
         state.advance()
-        lines.extend(collect_until(state, lambda line: self._closer_re.match(line.rstrip('\r\n')) is not None))
+        lines.extend(state.consume_until(lambda line: self._closer_re.match(line.rstrip('\r\n')) is not None))
 
         value = ''.join(lines)
         if self.strip_content:
