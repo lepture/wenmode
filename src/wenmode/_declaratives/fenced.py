@@ -39,7 +39,6 @@ class BlockFenced(BlockRule):
         self.content = content
         self.allow_opener_content = allow_opener_content
         self.strip_content = strip_content
-        self._opener_re = _opener_pattern(self)
         self._closer_re = _closer_pattern(self)
         self._node_factory = _fenced_node_factory(self)
         super().__init__(
@@ -48,7 +47,7 @@ class BlockFenced(BlockRule):
         )
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
-        opener_content = _parse_opener_content(state.line, self, self._opener_re)
+        opener_content = _parse_opener_content(state.line, self, match)
         if opener_content is None:
             return None
 
@@ -67,23 +66,13 @@ class BlockFenced(BlockRule):
         return self._node_factory(parser, state, value)
 
 
-def _parse_opener_content(line: str, syntax: BlockFenced, opener_re: re.Pattern[str]) -> str | None:
-    text = line.rstrip('\r\n')
-    match = opener_re.match(text)
-    if match is None:
-        return None
-
-    rest = match.group('rest')
+def _parse_opener_content(line: str, syntax: BlockFenced, match: re.Match[str]) -> str | None:
+    rest = line[match.end() :].rstrip('\r\n')
     if not syntax.allow_opener_content and rest.strip():
         return None
     if syntax.allow_opener_content:
         return rest.lstrip(' \t')
     return ''
-
-
-def _opener_pattern(syntax: BlockFenced) -> re.Pattern[str]:
-    return re.compile(rf'^[ \t]{{0,3}}{re.escape(syntax.opener)}(?P<rest>.*)$')
-
 
 def _closer_pattern(syntax: BlockFenced) -> re.Pattern[str]:
     closer = syntax.closer or syntax.opener
