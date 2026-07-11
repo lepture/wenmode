@@ -3,10 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from wenmode._declaratives import InlineDelimited
 from wenmode.nodes import Parent
 from wenmode.renderers import BaseRenderer, RenderContext
 
+from .._declaratives import InlineDelimited
 from .types import RendererHandlers
 
 if TYPE_CHECKING:
