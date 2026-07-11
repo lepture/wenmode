@@ -32,6 +32,8 @@ here while preparing a release, then move them under the final version heading.
 
 ### Fixed
 
+- Validate restored ordered-list `start` values and escape rendered list-start
+  attributes through the shared HTML attribute renderer.
 - Reject custom block and paragraph-continuation rules that return a node
   without advancing parser state, with a rule-specific `RuntimeError` instead
   of allowing an infinite parse loop.

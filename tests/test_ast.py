@@ -352,6 +352,24 @@ def test_from_ast_rejects_non_string_literal_value() -> None:
         from_ast({'type': 'text', 'value': 1})
 
 
+@pytest.mark.parametrize('start', [True, 1.5, 'not-a-number', {'value': 2}])
+def test_from_ast_rejects_non_integer_list_start(start: object) -> None:
+    with pytest.raises(TypeError, match='^AST list "start" must be an integer or null$'):
+        from_ast({'type': 'list', 'ordered': True, 'start': start, 'spread': False, 'children': []})
+
+
+@pytest.mark.parametrize('start', [None, 0, 2, -1])
+def test_from_ast_accepts_integer_or_null_list_start(start: int | None) -> None:
+    ast = {'type': 'list', 'ordered': True, 'start': start, 'spread': False, 'children': []}
+    expected = {'type': 'list', 'ordered': True, 'spread': False, 'children': []}
+    if start is not None:
+        expected['start'] = start
+
+    node = from_ast(ast)
+
+    assert node.to_ast() == expected
+
+
 @pytest.mark.parametrize('depth', [True, 1.0, '1'])
 def test_from_ast_rejects_non_integer_heading_depth(depth: object) -> None:
     with pytest.raises(TypeError, match='^AST heading "depth" must be an integer$'):

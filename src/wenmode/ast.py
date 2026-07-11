@@ -13,6 +13,9 @@ from .nodes import (
     Parent,
     Position,
 )
+from .nodes import (
+    List as ListNode,
+)
 
 NodeMatcher: TypeAlias = str | type[Node] | tuple[str | type[Node], ...]
 UnknownNodePolicy: TypeAlias = str
@@ -294,6 +297,8 @@ def _validate_restored_node(
             raise TypeError('AST heading "depth" must be an integer')
         if not 1 <= node.depth <= 6:
             raise ValueError('AST heading "depth" must be between 1 and 6')
+    if isinstance(node, ListNode) and node.start is not None and type(node.start) is not int:
+        raise TypeError('AST list "start" must be an integer or null')
     if (
         node.type in {'html', 'htmlContainer'}
         and node.data is not None

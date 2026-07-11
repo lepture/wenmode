@@ -276,12 +276,11 @@ def render_list(renderer: HTMLRenderer, node: List, context: HTMLRenderContext) 
         tag = 'ol'
     else:
         tag = 'ul'
+    attrs: dict[str, HtmlAttrValue] = {}
     if node.ordered and node.start not in (None, 1):
-        start = f' start="{node.start}"'
-    else:
-        start = ''
+        attrs['start'] = node.start
     return (
-        f'<{tag}{start}>\n'
+        f'<{tag}{renderer.render_attrs(attrs)}>\n'
         + ''.join(render_list_item(renderer, cast(ListItem, child), node.spread, context) for child in node.children)
         + f'</{tag}>\n'
     )

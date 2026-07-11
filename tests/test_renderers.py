@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TypedDict
+from typing import Any, TypedDict, cast
 
 import pytest
 
@@ -10,7 +10,7 @@ from tests.plugin_helpers import configured_app
 from wenmode import AsciiDocRenderer, HTMLRenderer, MarkdownRenderer, RSTRenderer, Wenmode
 from wenmode.ast import from_ast
 from wenmode.directives import Admonition, Details, Figure, TableOfContents
-from wenmode.nodes import Html, Image, Link, Literal, Paragraph, Parent, Root, Text
+from wenmode.nodes import Html, Image, Link, List, ListItem, Literal, Paragraph, Parent, Root, Text
 from wenmode.plugins import html_container, inline_math
 from wenmode.renderers import BaseRenderer, RenderContext
 from wenmode.rules import (
@@ -324,6 +324,32 @@ def test_html_renderer_escapes_attribute_values_and_drops_unsafe_names() -> None
     )
 
     assert attrs == ' title="&quot;&lt;x&gt;&amp;" hidden data-count="3"'
+
+
+def test_html_renderer_escapes_ordered_list_start_attribute() -> None:
+    node = List(
+        ordered=True,
+        start=cast(Any, '2" data-sentinel="safe'),
+        spread=False,
+        children=[ListItem(children=[Paragraph(children=[Text(value='item')])])],
+    )
+
+    assert HTMLRenderer().render(node) == '<ol start="2&quot; data-sentinel=&quot;safe">\n<li>item</li>\n</ol>\n'
+
+
+@pytest.mark.parametrize(
+    ('start', 'expected'),
+    [
+        (1, '<ol>\n</ol>\n'),
+        (2, '<ol start="2">\n</ol>\n'),
+        (0, '<ol start="0">\n</ol>\n'),
+        (-1, '<ol start="-1">\n</ol>\n'),
+    ],
+)
+def test_html_renderer_preserves_ordered_list_start_output(start: int, expected: str) -> None:
+    node = List(ordered=True, start=start, spread=False, children=[])
+
+    assert HTMLRenderer().render(node) == expected
 
 
 def test_html_renderer_sanitizes_obfuscated_unsafe_link_and_image_urls() -> None:

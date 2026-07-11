@@ -38,12 +38,13 @@ Keep these boundaries in mind:
 
 Treat mappings passed to `wenmode.ast.from_ast()` or `node_from_ast()` as input,
 even when they already have an AST shape. The safe default validates common
-structural fields and rejects parser-internal HTML escaping metadata, so an
-external mapping cannot claim that its HTML value was already escaped by
-Wenmode. This applies to concrete core `html` nodes and concrete
-`htmlContainer` nodes, as well as generic nodes using the reserved
-`htmlContainer` type when the plugin node class was not registered. Unrelated
-unknown node types retain their extension data.
+structural fields, including heading depth and ordered-list start values, and
+rejects parser-internal HTML escaping metadata, so an external mapping cannot
+claim that its HTML value was already escaped by Wenmode. This applies to
+concrete core `html` nodes and concrete `htmlContainer` nodes, as well as
+generic nodes using the reserved `htmlContainer` type when the plugin node
+class was not registered. Unrelated unknown node types retain their extension
+data.
 
 If you serialize an AST produced by Wenmode and later restore that data within
 the same trusted pipeline, pass `allow_internal_metadata=True` to preserve the
