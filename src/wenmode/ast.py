@@ -6,6 +6,7 @@ from typing import Any, TypeAlias, cast
 
 from .nodes import (
     BUILTIN_NODES,
+    Heading,
     Image,
     Literal,
     Node,
@@ -34,6 +35,7 @@ def from_ast(
     *,
     nodes: Iterable[type[Node]] | None = None,
     unknown: UnknownNodePolicy = 'generic',
+    allow_internal_metadata: bool = False,
 ) -> Node:
     """Convert a mdast-like mapping into Wenmode nodes.
 
@@ -47,8 +49,17 @@ def from_ast(
     Source positions are restored only when both ``position.start.offset`` and
     ``position.end.offset`` are present. Line and column values alone are not
     enough to reconstruct Wenmode's internal offset ranges.
+
+    ``allow_internal_metadata=True`` preserves parser-internal trust metadata
+    in AST data produced by a trusted Wenmode pipeline. It does not disable
+    structural validation and must not be enabled for external AST input.
     """
-    return node_from_ast(data, nodes=nodes, unknown=unknown)
+    return node_from_ast(
+        data,
+        nodes=nodes,
+        unknown=unknown,
+        allow_internal_metadata=allow_internal_metadata,
+    )
 
 
 def node_from_ast(
@@ -56,15 +67,20 @@ def node_from_ast(
     *,
     nodes: Iterable[type[Node]] | None = None,
     unknown: UnknownNodePolicy = 'generic',
+    allow_internal_metadata: bool = False,
 ) -> Node:
-    """Convert one AST node mapping into a Wenmode node."""
+    """Convert one AST node mapping into a Wenmode node.
+
+    ``allow_internal_metadata`` is a trusted-input setting for AST data
+    produced by Wenmode, not a general validation bypass.
+    """
     if unknown not in {'generic', 'error'}:
         raise ValueError('unknown must be "generic" or "error"')
 
     node_lookup = _node_lookup(BUILTIN_NODES)
     if nodes is not None:
         node_lookup.update(_node_lookup(nodes))
-    return _node_from_ast(data, node_lookup, unknown)
+    return _node_from_ast(data, node_lookup, unknown, allow_internal_metadata)
 
 
 def _node_lookup(
@@ -205,6 +221,7 @@ def _node_from_ast(
     data: Mapping[str, Any],
     node_lookup: dict[str, type[Node]],
     unknown: UnknownNodePolicy,
+    allow_internal_metadata: bool,
 ) -> Node:
     node_type = data.get('type')
     if not isinstance(node_type, str) or not node_type:
@@ -212,6 +229,8 @@ def _node_from_ast(
 
     attrs: dict[str, Any] = {}
     for key, value in data.items():
+        if key.startswith('_'):
+            raise ValueError(f'AST node field "{key}" is private')
         if key == 'type':
             continue
         if key == 'position':
@@ -222,27 +241,69 @@ def _node_from_ast(
         if key == 'children':
             if not isinstance(value, list):
                 raise TypeError('AST node "children" must be a list')
-            attrs[key] = [_ast_value_from_ast(item, node_lookup, unknown) for item in value]
+            children = [
+                _ast_value_from_ast(item, node_lookup, unknown, allow_internal_metadata) for item in value
+            ]
+            if not all(isinstance(child, Node) for child in children):
+                raise TypeError('AST node "children" entries must be nodes')
+            attrs[key] = children
             continue
         if key == 'data':
+            if value is not None and not isinstance(value, Mapping):
+                raise TypeError('AST node "data" must be a mapping')
             attrs[key] = dict(value) if isinstance(value, Mapping) else value
             continue
-        attrs[key] = _ast_value_from_ast(value, node_lookup, unknown)
+        attrs[key] = _ast_value_from_ast(value, node_lookup, unknown, allow_internal_metadata)
 
     node_class = node_lookup.get(node_type)
     if node_class is None:
         if unknown == 'error':
             raise ValueError(f'unsupported AST node type: {node_type}')
-        return _generic_node_from_attrs(node_type, attrs)
-    return _construct_node(node_class, node_type, attrs)
+        node = _generic_node_from_attrs(node_type, attrs)
+    else:
+        node = _construct_node(node_class, node_type, attrs)
+    _validate_restored_node(
+        node,
+        allow_internal_metadata=allow_internal_metadata,
+    )
+    return node
 
 
-def _ast_value_from_ast(value: Any, node_lookup: dict[str, type[Node]], unknown: UnknownNodePolicy) -> Any:
+def _ast_value_from_ast(
+    value: Any,
+    node_lookup: dict[str, type[Node]],
+    unknown: UnknownNodePolicy,
+    allow_internal_metadata: bool,
+) -> Any:
     if isinstance(value, Mapping) and isinstance(value.get('type'), str):
-        return _node_from_ast(value, node_lookup, unknown)
+        return _node_from_ast(value, node_lookup, unknown, allow_internal_metadata)
     if isinstance(value, list):
-        return [_ast_value_from_ast(item, node_lookup, unknown) for item in value]
+        return [_ast_value_from_ast(item, node_lookup, unknown, allow_internal_metadata) for item in value]
     return value
+
+
+def _validate_restored_node(
+    node: Node,
+    *,
+    allow_internal_metadata: bool,
+) -> None:
+    if isinstance(node, Literal) and not isinstance(node.value, str):
+        raise TypeError('AST literal "value" must be a string')
+    if isinstance(node, Heading):
+        if type(node.depth) is not int:
+            raise TypeError('AST heading "depth" must be an integer')
+        if not 1 <= node.depth <= 6:
+            raise ValueError('AST heading "depth" must be between 1 and 6')
+    if (
+        node.type in {'html', 'htmlContainer'}
+        and node.data is not None
+        and 'escaped' in node.data
+        and not allow_internal_metadata
+    ):
+        raise ValueError(
+            f'AST {node.type} "data.escaped" is internal metadata; '
+            'pass allow_internal_metadata=True for trusted Wenmode AST data'
+        )
 
 
 def _position_from_ast(value: Any) -> Position | None:

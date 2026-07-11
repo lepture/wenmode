@@ -8,9 +8,10 @@ import pytest
 from tests.helpers import load_text_fixture, parse_text_fixture
 from tests.plugin_helpers import configured_app
 from wenmode import AsciiDocRenderer, HTMLRenderer, MarkdownRenderer, RSTRenderer, Wenmode
+from wenmode.ast import from_ast
 from wenmode.directives import Admonition, Details, Figure, TableOfContents
 from wenmode.nodes import Html, Image, Link, Literal, Paragraph, Parent, Root, Text
-from wenmode.plugins import inline_math
+from wenmode.plugins import html_container, inline_math
 from wenmode.renderers import BaseRenderer, RenderContext
 from wenmode.rules import (
     Footnote,
@@ -67,6 +68,53 @@ DEFAULT_HTML_DIRECTIVES = ['admonition', 'details', 'figure', 'toc']
 @dataclass
 class CustomLiteral(Literal):
     type: str = 'customLiteral'
+
+
+def test_restored_html_cannot_assert_internal_escaping_by_default() -> None:
+    with pytest.raises(ValueError, match='^AST html "data.escaped" is internal metadata'):
+        from_ast({'type': 'html', 'value': '<em>safe</em>', 'data': {'escaped': True}})
+
+
+def test_restored_html_preserves_internal_escaping_for_trusted_ast() -> None:
+    node = from_ast(
+        {'type': 'html', 'value': '&lt;em&gt;safe&lt;/em&gt;', 'data': {'escaped': True}},
+        allow_internal_metadata=True,
+    )
+
+    assert HTMLRenderer().render(node) == '&lt;em&gt;safe&lt;/em&gt;'
+
+
+def test_restored_html_container_preserves_internal_escaping_for_trusted_ast() -> None:
+    ast = {
+        'type': 'htmlContainer',
+        'data': {'escaped': True},
+        'children': [],
+        'name': 'div',
+        'opening': '&lt;div&gt;',
+        'closing': '&lt;/div&gt;',
+    }
+    node = from_ast(
+        ast,
+        nodes=html_container.nodes,
+        allow_internal_metadata=True,
+    )
+
+    assert node.to_ast() == ast
+    assert configured_app(['html_container']).render_node(node) == '&lt;div&gt;\n&lt;/div&gt;\n'
+
+
+def test_generic_html_container_cannot_assert_escaping_before_plugin_rendering() -> None:
+    with pytest.raises(ValueError, match='^AST htmlContainer "data.escaped" is internal metadata'):
+        node = from_ast(
+            {
+                'type': 'htmlContainer',
+                'data': {'escaped': True},
+                'children': [],
+                'opening': '<script>',
+                'closing': '</script>',
+            }
+        )
+        configured_app(['html_container']).render_node(node)
 
 
 @dataclass

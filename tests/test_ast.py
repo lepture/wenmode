@@ -34,7 +34,7 @@ from wenmode.nodes import (
     Position,
     Text,
 )
-from wenmode.plugins import block_math, definition_list
+from wenmode.plugins import block_math, definition_list, html_container
 from wenmode.presets import github
 
 
@@ -57,7 +57,7 @@ def collect_plugin_nodes(plugins: list[object]) -> list[type[Node]]:
     ids=[node_type for node_type, _node_class, _ast in BUILTIN_NODE_SHAPES],
 )
 def test_from_ast_round_trips_builtin_node_shapes(node_type: str, node_class: type[Node], ast: dict) -> None:
-    node = from_ast(ast)
+    node = from_ast(ast, allow_internal_metadata=True)
 
     assert {node.type: node for node in BUILTIN_NODES}[node_type] is node_class
     assert isinstance(node, node_class)
@@ -71,7 +71,7 @@ def test_from_ast_round_trips_builtin_node_shapes(node_type: str, node_class: ty
 )
 def test_from_ast_round_trips_plugin_node_shapes(node_type: str, node_class: type[Node], ast: dict) -> None:
     nodes = collect_plugin_nodes(PLUGIN_REGISTRY_TARGETS)
-    node = from_ast(ast, nodes=nodes)
+    node = from_ast(ast, nodes=nodes, allow_internal_metadata=True)
 
     assert {node.type: node for node in nodes}[node_type] is node_class
     assert isinstance(node, node_class)
@@ -339,3 +339,116 @@ def test_from_ast_can_reject_unknown_nodes() -> None:
         assert str(exc) == 'unsupported AST node type: unknown'
     else:  # pragma: no cover
         raise AssertionError('from_ast should reject unknown nodes')
+
+
+@pytest.mark.parametrize('child', ['text', {'value': 'missing type'}])
+def test_from_ast_rejects_non_node_children(child: object) -> None:
+    with pytest.raises(TypeError, match='^AST node "children" entries must be nodes$'):
+        from_ast({'type': 'paragraph', 'children': [child]})
+
+
+def test_from_ast_rejects_non_string_literal_value() -> None:
+    with pytest.raises(TypeError, match='^AST literal "value" must be a string$'):
+        from_ast({'type': 'text', 'value': 1})
+
+
+@pytest.mark.parametrize('depth', [True, 1.0, '1'])
+def test_from_ast_rejects_non_integer_heading_depth(depth: object) -> None:
+    with pytest.raises(TypeError, match='^AST heading "depth" must be an integer$'):
+        from_ast({'type': 'heading', 'depth': depth, 'children': []})
+
+
+@pytest.mark.parametrize('depth', [0, 7])
+def test_from_ast_rejects_out_of_range_heading_depth(depth: int) -> None:
+    with pytest.raises(ValueError, match='^AST heading "depth" must be between 1 and 6$'):
+        from_ast({'type': 'heading', 'depth': depth, 'children': []})
+
+
+def test_from_ast_rejects_non_mapping_data() -> None:
+    with pytest.raises(TypeError, match='^AST node "data" must be a mapping$'):
+        from_ast({'type': 'text', 'value': 'safe', 'data': 'untrusted'})
+
+
+def test_from_ast_rejects_private_fields() -> None:
+    with pytest.raises(ValueError, match='^AST node field "_private" is private$'):
+        from_ast({'type': 'text', 'value': 'safe', '_private': 'untrusted'})
+
+
+def test_from_ast_rejects_internal_html_metadata_by_default() -> None:
+    with pytest.raises(
+        ValueError,
+        match=(
+            '^AST html "data.escaped" is internal metadata; '
+            'pass allow_internal_metadata=True for trusted Wenmode AST data$'
+        ),
+    ):
+        from_ast({'type': 'html', 'value': '<em>safe</em>', 'data': {'escaped': True}})
+
+
+def test_from_ast_allows_internal_html_metadata_for_trusted_ast() -> None:
+    ast = {'type': 'html', 'value': '&lt;em&gt;safe&lt;/em&gt;', 'data': {'escaped': True}}
+
+    node = from_ast(ast, allow_internal_metadata=True)
+
+    assert node.to_ast() == ast
+
+
+def test_allow_internal_metadata_does_not_bypass_structural_validation() -> None:
+    with pytest.raises(TypeError, match='^AST heading "depth" must be an integer$'):
+        from_ast(
+            {'type': 'heading', 'depth': True, 'children': []},
+            allow_internal_metadata=True,
+        )
+
+
+def test_from_ast_rejects_internal_html_container_metadata_by_default() -> None:
+    with pytest.raises(
+        ValueError,
+        match=(
+            '^AST htmlContainer "data.escaped" is internal metadata; '
+            'pass allow_internal_metadata=True for trusted Wenmode AST data$'
+        ),
+    ):
+        from_ast(
+            {
+                'type': 'htmlContainer',
+                'data': {'escaped': True},
+                'children': [],
+                'name': 'div',
+                'opening': '&lt;div&gt;',
+                'closing': '&lt;/div&gt;',
+            },
+            nodes=html_container.nodes,
+        )
+
+
+def test_from_ast_rejects_internal_metadata_on_generic_html_container() -> None:
+    with pytest.raises(
+        ValueError,
+        match=(
+            '^AST htmlContainer "data.escaped" is internal metadata; '
+            'pass allow_internal_metadata=True for trusted Wenmode AST data$'
+        ),
+    ):
+        from_ast(
+            {
+                'type': 'htmlContainer',
+                'data': {'escaped': True},
+                'children': [],
+                'opening': '<script>',
+                'closing': '</script>',
+            }
+        )
+
+
+def test_from_ast_preserves_internal_metadata_on_unrelated_unknown_node() -> None:
+    ast = {
+        'type': 'customContainer',
+        'data': {'escaped': True},
+        'children': [],
+    }
+
+    node = from_ast(ast)
+
+    assert type(node) is Parent
+    assert node.to_ast() == ast

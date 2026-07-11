@@ -34,6 +34,22 @@ Keep these boundaries in mind:
 - If your application allows raw HTML from untrusted users, sanitize that HTML
   before or after Wenmode with an HTML sanitizer built for your threat model.
 
+## Restoring serialized AST data
+
+Treat mappings passed to `wenmode.ast.from_ast()` or `node_from_ast()` as input,
+even when they already have an AST shape. The safe default validates common
+structural fields and rejects parser-internal HTML escaping metadata, so an
+external mapping cannot claim that its HTML value was already escaped by
+Wenmode. This applies to concrete core `html` nodes and concrete
+`htmlContainer` nodes, as well as generic nodes using the reserved
+`htmlContainer` type when the plugin node class was not registered. Unrelated
+unknown node types retain their extension data.
+
+If you serialize an AST produced by Wenmode and later restore that data within
+the same trusted pipeline, pass `allow_internal_metadata=True` to preserve the
+internal escaping decision. Do not enable this option for client-supplied AST
+data. It is a trusted-input setting and does not replace HTML sanitization.
+
 ## Default HTML output
 
 `Wenmode()` uses `HTMLRenderer()` by default. That renderer escapes text and raw

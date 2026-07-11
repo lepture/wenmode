@@ -142,6 +142,27 @@ Unknown node types are preserved as generic `Parent`, `Literal`, or `Node`
 instances by default so tools can round-trip data they do not understand. Pass
 `unknown="error"` to reject unsupported node types instead.
 
+Restoration validates the common structural fields used by Wenmode nodes.
+`children` must be a list of node mappings, literal `value` fields must be
+strings, `data` must be a mapping when present, and heading `depth` must be an
+integer from 1 through 6. Serialized field names beginning with `_` are
+rejected because they represent private implementation state.
+
+Parser-produced AST data can contain internal metadata that records an escaping
+decision already made by Wenmode. The safe default rejects that metadata on
+`html` nodes and on the reserved `htmlContainer` node type, including when the
+plugin node class was not registered during restoration. Other unknown node
+types retain extension data normally. For serialized data from a trusted
+Wenmode pipeline, opt into its restoration explicitly:
+
+```python
+node = from_ast(trusted_wenmode_ast, allow_internal_metadata=True)
+```
+
+`allow_internal_metadata=True` is a trusted-input setting. It does not disable
+structural validation and should not be used for AST mappings supplied by an
+external client.
+
 Raw CommonMark HTML remains the mdast-style literal `html` node with a `value`.
 The `htmlContainer` node from `wenmode.plugins.html_container` is a Wenmode
 extension node with `children`, similar in shape to MDX flow elements; it is not

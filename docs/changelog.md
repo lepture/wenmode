@@ -25,6 +25,10 @@ here while preparing a release, then move them under the final version heading.
 - Escape string values from unknown or custom literal nodes in HTML output,
   including with `HTMLRenderer(escape=False)`. Custom literal extensions that
   relied on implicit markup passthrough must register an HTML handler.
+- Validate common structural fields when restoring serialized AST mappings and
+  reject parser-internal escaping metadata on concrete `html` and
+  `htmlContainer` nodes by default. Trusted Wenmode AST round trips can opt in
+  with `allow_internal_metadata=True`.
 
 ## 0.9.1
 
