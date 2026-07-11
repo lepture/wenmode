@@ -137,6 +137,13 @@ EDGE_CASES = {
         commonmark_app,
         (1000, 10000, 100000),
     ),
+    'link-label-long-code-runs': EdgeCase(
+        'link-label-long-code-runs',
+        'inline',
+        lambda size: '[' + '`' * size + 'text' + '`' * (size - 1) + '](/url)\n',
+        commonmark_app,
+        (1000, 10000, 100000),
+    ),
     'nested-text-directives': EdgeCase(
         'nested-text-directives',
         'inline',
@@ -206,6 +213,13 @@ EDGE_CASES = {
         lambda size: '<div>\n' * size + '</div>\n' * size,
         html_container_app,
         (64, 128, 256),
+    ),
+    'long-html-tag-name': EdgeCase(
+        'long-html-tag-name',
+        'html',
+        lambda size: '<' + 'x' * size + '>\ntext\n</' + 'x' * size + '>\n',
+        html_container_app,
+        (1000, 10000, 100000),
     ),
     'wide-table': EdgeCase(
         'wide-table',

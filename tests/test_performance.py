@@ -22,6 +22,7 @@ from wenmode.rules import (
     Footnote,
     HardBreak,
     HtmlBlock,
+    InlineCode,
     LeafDirective,
     Link,
     List,
@@ -79,6 +80,28 @@ def test_failed_footnote_like_links_do_not_rescan_suffixes() -> None:
 
 def test_dense_emphasis_delimiters_scale_nearly_linearly() -> None:
     assert_scales_nearly_linearly(lambda size: '*a' * size + '\n', commonmark)
+
+
+def test_unmatched_code_span_runs_scale_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(
+        lambda size: '`' * size + 'text' + '`' * (size - 1) + '\n',
+        [InlineCode],
+        20000,
+        40000,
+        ratio=2.5,
+        slack=0.005,
+    )
+
+
+def test_link_label_code_span_runs_scale_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(
+        lambda size: '[' + '`' * size + 'text' + '`' * (size - 1) + '](/url)\n',
+        [Link],
+        20000,
+        40000,
+        ratio=2.5,
+        slack=0.005,
+    )
 
 
 def test_deep_blockquotes_scale_nearly_linearly() -> None:

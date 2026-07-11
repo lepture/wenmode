@@ -14,6 +14,7 @@ from ..._parser.state import BlockState
 from ..._parser.store import StateKey
 from ..base import InlineRule
 from ..references import REFERENCES_KEY, ReferenceTransform, resolve_state_reference
+from .code import find_matching_backtick_run
 from .html import EMAIL_RE, HTML_RE, URI_RE
 
 if TYPE_CHECKING:
@@ -202,6 +203,9 @@ def build_closing_bracket_map(text: str) -> dict[int, int]:
             if code_end is not None:
                 index = code_end
                 continue
+            while index < len(text) and text[index] == '`':
+                index += 1
+            continue
         if char == '<':
             angle_end = find_angle_span_end(text, index)
             if angle_end is not None:
@@ -398,8 +402,8 @@ def find_code_span_end(text: str, start: int) -> int | None:
     end = start
     while end < len(text) and text[end] == '`':
         end += 1
-    marker = text[start:end]
-    closer = re.search(rf'(?<!`){re.escape(marker)}(?!`)', text[end:])
+    marker_length = end - start
+    closer = find_matching_backtick_run(text, end, marker_length)
     if closer is None:
         return None
-    return end + closer.start() + len(marker)
+    return closer + marker_length
