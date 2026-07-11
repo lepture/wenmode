@@ -220,12 +220,15 @@ class Parser:
         return self._inline_parser.source_for(text, state, start, end)
 
 
+_LINE_ENDING_CHARACTERS = ('\n', '\r', '\v', '\f', '\x1c', '\x1d', '\x1e', '\x85', '\u2028', '\u2029')
+
+
 def create_line_starts(lines: list[str]) -> list[int]:
     starts = [0]
     offset = 0
     for line in lines:
         length = len(line)
         offset += length
-        if length > 0 and line[length - 1] == '\n':
+        if length > 0 and line[length - 1] in _LINE_ENDING_CHARACTERS:
             starts.append(offset)
     return starts
