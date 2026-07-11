@@ -92,6 +92,28 @@ def test_iterable_source_positions_support_carriage_return_lines() -> None:
     assert ast['position']['end'] == {'line': 3, 'column': 1, 'offset': 8}
 
 
+def test_iterable_setext_heading_maps_trimmed_inline_positions() -> None:
+    markdown = '  **Title**  \n---\n'
+    app = Wenmode(positions=True)
+
+    ast = app.parse(iter(markdown.splitlines(keepends=True))).to_ast()
+
+    assert ast == app.parse(markdown).to_ast()
+    heading = ast['children'][0]
+    assert heading['position'] == {
+        'start': {'line': 1, 'column': 1, 'offset': 0},
+        'end': {'line': 3, 'column': 1, 'offset': len(markdown)},
+    }
+    assert heading['children'][0]['position'] == {
+        'start': {'line': 1, 'column': 3, 'offset': 2},
+        'end': {'line': 1, 'column': 12, 'offset': 11},
+    }
+    assert heading['children'][0]['children'][0]['position'] == {
+        'start': {'line': 1, 'column': 5, 'offset': 4},
+        'end': {'line': 1, 'column': 10, 'offset': 9},
+    }
+
+
 @pytest.mark.parametrize('line_ending', ['\n', '\r\n', '\r'], ids=['lf', 'crlf', 'cr'])
 def test_iterable_source_positions_match_string_line_endings(line_ending: str) -> None:
     markdown = (
