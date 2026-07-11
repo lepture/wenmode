@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from wenmode.parser import Parser
 
 
-BLOCKQUOTE_RE = re.compile(r'[ \t]{0,3}> ?(.*)')
+BLOCKQUOTE_RE = re.compile(r'[ \t]{0,3}> ?')
 NESTED_BLOCKQUOTE_RE = re.compile(r'[ \t]{0,3}(?:[*+-]|\d{1,9}[.)])[ \t]+>')
 SETEXT_MARKER_RE = re.compile(r'[ \t]{0,3}(=+|-+)[ \t]*$')
 
@@ -52,14 +52,10 @@ class Blockquote(BlockRule):
                     state.advance()
                     continue
                 break
-            if line.endswith('\n'):
-                line_end = '\n'
-            else:
-                line_end = ''
-            content = expand_leading_tabs(quote.group(1), 2)
-            text = content + line_end
+            content = expand_leading_tabs(line[quote.end() :], 2)
+            text = content
             lines.append(text)
-            source.add(state.index, quote.start(1), text)
+            source.add(state.index, quote.end(), text)
             paragraph_open = content.strip() != '' and (
                 not starts_nonparagraph_block(parser, content) or NESTED_BLOCKQUOTE_RE.match(content) is not None
             )

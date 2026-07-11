@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from wenmode import Wenmode
     from wenmode.parser import Parser
 
-BLOCK_SPOILER_RE = re.compile(r'[ \t]{0,3}>! ?(.*)')
+BLOCK_SPOILER_RE = re.compile(r'[ \t]{0,3}>! ?')
 
 
 @dataclass
@@ -48,13 +48,9 @@ class BlockSpoilerRule(BlockRule):
             spoiler = BLOCK_SPOILER_RE.match(state.line)
             if spoiler is None:
                 break
-            if state.line.endswith('\n'):
-                line_end = '\n'
-            else:
-                line_end = ''
-            text = expand_leading_tabs(spoiler.group(1), 2) + line_end
+            text = expand_leading_tabs(state.line[spoiler.end() :], 2)
             lines.append(text)
-            source.add(state.index, spoiler.start(1), text)
+            source.add(state.index, spoiler.end(), text)
             state.advance()
 
         text = ''.join(lines)
@@ -67,7 +63,7 @@ class BlockSpoilerRule(BlockRule):
             spoiler = BLOCK_SPOILER_RE.match(state.line)
             if spoiler is None:
                 break
-            lines.append(spoiler.group(1).strip())
+            lines.append(state.line[spoiler.end() :].strip())
             state.advance()
         text = '\n'.join(line for line in lines if line).strip()
         if not text:

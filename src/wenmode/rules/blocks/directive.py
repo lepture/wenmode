@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from wenmode.parser import Parser
 
 
-CONTAINER_DIRECTIVE_RE = re.compile(r'(?P<indent>[ \t]{0,3})(?P<fence>:{3,})(?P<head>.*)$')
+CONTAINER_DIRECTIVE_RE = re.compile(r'(?P<indent>[ \t]{0,3})(?P<fence>:{3,})')
 
 
 class LeafDirective(BlockRule):
@@ -67,13 +67,15 @@ class ContainerDirective(BlockRule):
     pattern = r'[ \t]{0,3}:{3,}(?=[A-Za-z])'
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
-        opener = cast(re.Match[str], CONTAINER_DIRECTIVE_RE.match(state.line.rstrip('\r\n')))
+        line = state.line.rstrip('\r\n')
+        opener = cast(re.Match[str], CONTAINER_DIRECTIVE_RE.match(line))
         fence = opener.group('fence')
-        parsed = parse_directive_head(opener.group('head'), 0)
+        head = line[opener.end() :]
+        parsed = parse_directive_head(head, 0)
         if parsed is None:
             return None
         name, label, attributes, end = parsed
-        if opener.group('head')[end:].strip():
+        if head[end:].strip():
             return None
 
         state.advance()

@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from wenmode.parser import Parser
 
 
-FENCE_OPENER_RE = re.compile(r'(?P<indent>[ \t]{0,3})(`{3,}|~{3,})(.*)$')
+FENCE_OPENER_RE = re.compile(r'(?P<indent>[ \t]{0,3})(?P<fence>`{3,}|~{3,})')
 
 
 class FencedCode(BlockRule):
@@ -34,9 +34,9 @@ class FencedCode(BlockRule):
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node:
         opener = cast(re.Match[str], FENCE_OPENER_RE.match(state.line.rstrip('\r\n')))
         indent = len(opener.group('indent').replace('\t', '    '))
-        fence = opener.group(2)
+        fence = opener.group('fence')
         fence_char = fence[0]
-        info = opener.group(3).strip()
+        info = opener.string[opener.end() :].strip()
         if fence_char == '`' and '`' in info:
             paragraph_lines: list[str] = []
             while not state.done and state.line.strip() != '':
