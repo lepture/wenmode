@@ -4,7 +4,7 @@ import argparse
 import statistics
 import time
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from wenmode import Wenmode
 from wenmode.plugins import block_spoiler, fenced_directive, html_container, inline_math
@@ -26,6 +26,7 @@ class EdgeCase:
 class Result:
     case: str
     source: str
+    positions: bool
     size: int
     bytes: int
     iterations: int
@@ -34,6 +35,7 @@ class Result:
     ns_per_unit: float
     growth: float | None
     normalized_growth: float | None
+    position_overhead: float | None = None
 
 
 def commonmark_app(positions: bool) -> Wenmode:
@@ -401,6 +403,7 @@ def benchmark_case(
             Result(
                 case=edge_case.name,
                 source=source,
+                positions=positions,
                 size=size,
                 bytes=len(text.encode()),
                 iterations=iterations,
@@ -415,6 +418,26 @@ def benchmark_case(
         previous_mean = mean
 
     return results
+
+
+def add_position_overhead(results: list[Result]) -> list[Result]:
+    baselines = {
+        (result.case, result.source, result.size): result.mean
+        for result in results
+        if not result.positions
+    }
+    return [
+        replace(
+            result,
+            position_overhead=(
+                result.mean / baselines[(result.case, result.source, result.size)]
+                if result.positions
+                and (result.case, result.source, result.size) in baselines
+                else None
+            ),
+        )
+        for result in results
+    ]
 
 
 def parse_source(app: Wenmode, text: str, source: str) -> None:
@@ -443,11 +466,25 @@ def format_ratio(value: float | None) -> str:
 
 
 def print_table(results: list[Result]) -> None:
-    headers = ['case', 'source', 'size', 'bytes', 'iters', 'best', 'mean', 'ns/unit', 'growth', 'normalized']
+    headers = [
+        'case',
+        'source',
+        'positions',
+        'size',
+        'bytes',
+        'iters',
+        'best',
+        'mean',
+        'ns/unit',
+        'growth',
+        'normalized',
+        'pos-overhead',
+    ]
     rows = [
         [
             result.case,
             result.source,
+            'on' if result.positions else 'off',
             str(result.size),
             str(result.bytes),
             str(result.iterations),
@@ -456,6 +493,7 @@ def print_table(results: list[Result]) -> None:
             f'{result.ns_per_unit:.1f}',
             format_ratio(result.growth),
             format_ratio(result.normalized_growth),
+            format_ratio(result.position_overhead),
         ]
         for result in results
     ]
@@ -490,7 +528,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--sizes', type=parse_sizes, help='override comma-separated case sizes')
     parser.add_argument('--iterations', type=int, default=5)
     parser.add_argument('--warmup', type=int, default=1)
-    parser.add_argument('--positions', action='store_true', help='enable source position tracking')
+    parser.add_argument(
+        '--positions',
+        choices=['off', 'on', 'both'],
+        default='both',
+        help='source position benchmark mode',
+    )
     parser.add_argument('--source', choices=['string', 'iterable', 'stream'], default='string')
     return parser.parse_args()
 
@@ -515,19 +558,27 @@ def main() -> None:
         if args.case != 'all' and unsupported:
             raise SystemExit(f'{unsupported[0]} requires full-document parsing and cannot use --source stream')
         cases = [edge_case for edge_case in cases if edge_case.make_stream_app is not None]
+    position_modes = {
+        'off': [False],
+        'on': [True],
+        'both': [False, True],
+    }[args.positions]
     results = [
         result
         for edge_case in cases
+        for positions in position_modes
         for result in benchmark_case(
             edge_case,
             args.sizes or list(edge_case.sizes),
             args.iterations,
             args.warmup,
-            args.positions,
+            positions,
             args.source,
         )
     ]
-    print_table(results)
+    case_order = {edge_case.name: index for index, edge_case in enumerate(cases)}
+    results.sort(key=lambda result: (case_order[result.case], result.size, result.positions))
+    print_table(add_position_overhead(results))
 
 
 if __name__ == '__main__':

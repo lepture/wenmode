@@ -52,12 +52,17 @@ omitted from an all-case streaming run.
 
 ```bash
 uv run --group benchmark python scripts/benchmark_edges.py \
-  --category blocks --source stream --positions
+  --category blocks --source stream --positions both
 ```
 
-Pass `--positions` to include source-position tracking. The report includes
-total time, nanoseconds per generated unit, growth between adjacent sizes, and
-normalized growth. A normalized value near `1.0x` indicates approximately
+By default, each case runs both without and with source-position tracking. The
+`pos-overhead` column is the enabled mean divided by the disabled mean for the
+same case, source mode, and size. Use `--positions off` or `--positions on` to
+run only one mode; in that case no position-overhead ratio is available.
+
+The report also includes total time, nanoseconds per generated unit, growth
+between adjacent sizes, and normalized growth. A normalized value near `1.0x`
+indicates approximately
 linear scaling; it is a diagnostic signal rather than a stable CI threshold.
 
 These synthetic cases are intentionally separate from the cross-library
