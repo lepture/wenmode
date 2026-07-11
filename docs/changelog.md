@@ -13,6 +13,11 @@ here while preparing a release, then move them under the final version heading.
 
 ## Unreleased
 
+### Breaking Changes
+
+- Remove `NodeSpec` and `Node.to_spec()`. Use `wenmode.nodes.BUILTIN_NODES`
+  and plugin `nodes` lists when iterating over available node classes.
+
 ## 0.9.1
 
 Released **Jul 9, 2026**.

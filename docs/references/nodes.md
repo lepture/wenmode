@@ -25,7 +25,7 @@ Wenmode nodes are mdast-compatible data objects. Core Markdown, GFM, and shared
 directive nodes live in `wenmode.nodes`. Plugin-specific nodes live in their
 plugin modules and follow the same `Node.to_ast()` conventions.
 Use `wenmode.nodes.BUILTIN_NODES` when you need the concrete core node class
-list, for example when deriving node specs or comparing built-in node shapes.
+list, for example when iterating over or comparing built-in node classes.
 
 Renderers dispatch on the string stored in each node's `type` field. When a
 custom renderer or plugin handler is not being called, check this value in the
