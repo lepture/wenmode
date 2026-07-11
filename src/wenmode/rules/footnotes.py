@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from .._parser.state import BlockState
 
 
-FOOTNOTE_DEFINITION_RE = re.compile(r'^[ \t]{0,3}\[\^(?P<label>(?:\\\S|[^\s\[\]\\]){1,999})\]:[ \t]*(?P<rest>.*)$')
+FOOTNOTE_DEFINITION_RE = re.compile(r'^[ \t]{0,3}\[\^(?P<label>(?:\\\S|[^\s\[\]\\]){1,999})\]:[ \t]*')
 FOOTNOTE_REFERENCE_RE = r'\[\^(?P<label>(?:\\[^\s]|[^\s\[\]\\]){1,999})]'
 
 
@@ -81,7 +81,8 @@ class FootnoteDefinition(BlockRule):
     pattern = r'[ \t]{0,3}\[\^'
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> FootnoteDefinitionNode | None:
-        parsed = FOOTNOTE_DEFINITION_RE.match(state.line.rstrip('\r\n'))
+        line = state.line.rstrip('\r\n')
+        parsed = FOOTNOTE_DEFINITION_RE.match(line)
         if parsed is None:
             return None
 
@@ -91,7 +92,8 @@ class FootnoteDefinition(BlockRule):
             return None
 
         source = state.source.collect()
-        content_lines = collect_definition_lines(state, parsed.start('rest'), parsed.group('rest'), source)
+        rest_start = parsed.end()
+        content_lines = collect_definition_lines(state, rest_start, line[rest_start:], source)
         if content_lines:
             children = parser.parse_blocks(''.join(content_lines), parent_state=state, source=source.map())
         else:

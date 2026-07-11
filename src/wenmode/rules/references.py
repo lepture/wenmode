@@ -17,10 +17,10 @@ if TYPE_CHECKING:
     from .._parser.state import BlockState
 
 
-REFERENCE_START_RE = re.compile(r'^[ \t]{0,3}\[(?P<label>(?:\\.|[^\[\]\\\n]){1,999})\]:[ \t]*(?P<rest>.*)$')
+REFERENCE_START_RE = re.compile(r'^[ \t]{0,3}\[(?P<label>(?:\\.|[^\[\]\\\n]){1,999})\]:[ \t]*')
 REFERENCE_DESTINATION_RE = re.compile(r'(?:\\.|[^\s()\\]|[(](?:\\.|[^()\s\\])*[)])+')
 MULTILINE_LABEL_START_RE = re.compile(r'^[ \t]{0,3}\[[^\]\n]*$')
-MULTILINE_LABEL_END_RE = re.compile(r'^(?P<label_end>[^\]]*)\]:[ \t]*(?P<rest>.*)$')
+MULTILINE_LABEL_END_RE = re.compile(r'^(?P<label_end>[^\]]*)\]:[ \t]*')
 
 
 @dataclass
@@ -75,14 +75,15 @@ def resolve_state_reference(state: BlockState, label: str) -> ReferenceState | N
 
 
 def parse_reference(state: BlockState, index: int) -> tuple[int, str, str, str | None] | None:
-    match = REFERENCE_START_RE.match(state.line_at(index).rstrip('\r\n'))
+    line = state.line_at(index).rstrip('\r\n')
+    match = REFERENCE_START_RE.match(line)
     if match is None:
         return None
 
     label = normalize_label_text(match.group('label'))
     if label.startswith('^'):
         return None
-    rest = match.group('rest')
+    rest = line[match.end() :]
     index += 1
 
     while rest == '' and state.has_index(index):
@@ -209,7 +210,7 @@ def parse_multiline_label_reference(state: BlockState, index: int) -> tuple[int,
             label = normalize_label_text('\n'.join(label_lines))
             if label.startswith('^') or normalize_label(label) == '':
                 return None
-            destination, rest_after_destination = parse_reference_destination(end.group('rest'))
+            destination, rest_after_destination = parse_reference_destination(line[end.end() :])
             if destination is None:
                 return None
             title: str | None = None
