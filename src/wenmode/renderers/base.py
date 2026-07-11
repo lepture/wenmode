@@ -6,6 +6,8 @@ from typing import ClassVar, cast
 
 from wenmode.nodes import Node
 
+from .._streaming import assert_streaming_supported
+
 
 @dataclass
 class RenderContext:
@@ -111,7 +113,7 @@ class BaseRenderer:
         :param nodes: Nodes to render.
         :returns: Iterator of rendered chunks.
         """
-        self._assert_streaming_supported()
+        assert_streaming_supported(self.streaming_blockers(), blocked_by='root render hooks')
         context = self.create_context()
         for node in nodes:
             yield self.render_node(node, context)
@@ -159,15 +161,6 @@ class BaseRenderer:
             self._dynamic_root_hook_blockers.add(ROOT_POST_HANDLER)
             return
         self._handlers[node_type] = handler
-
-    def _assert_streaming_supported(self) -> None:
-        blockers = self.streaming_blockers()
-        if not blockers:
-            return
-        from wenmode.parser import StreamingUnsupportedError
-
-        names = ', '.join(blockers)
-        raise StreamingUnsupportedError(f'streaming output is blocked by root render hooks: {names}')
 
     def render_unknown(self, node: Node, context: RenderContext) -> str:
         """Render a node without a registered handler.

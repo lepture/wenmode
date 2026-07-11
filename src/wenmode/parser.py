@@ -8,13 +8,11 @@ from ._parser.inlines import InlineParser
 from ._parser.ruleset import RuleSet, resolve_rule
 from ._parser.source import LineSource, NullSourceTracker, PositionSourceTracker, SourceMap, StreamPositionSourceTracker
 from ._parser.state import BlockState, StreamBlockState, StreamLineBuffer
+from ._streaming import StreamingUnsupportedError as StreamingUnsupportedError
+from ._streaming import assert_streaming_supported
 from .nodes import Node, Root
 from .rules.base import BlockRule, InlineRule, Rule
 from .rules.transforms import RootTransform
-
-
-class StreamingUnsupportedError(ValueError):
-    """Raised when a rule set cannot be used for streaming output."""
 
 
 class Parser:
@@ -131,7 +129,11 @@ class Parser:
         :raises StreamingUnsupportedError: If enabled rules require
             document-wide transforms.
         """
-        self._assert_streaming_supported()
+        assert_streaming_supported(
+            self.streaming_blockers(),
+            blocked_by='document-wide transforms',
+            guidance='use the streaming preset',
+        )
         state = self._create_block_state(source, defer_inlines=False)
         while not state.done:
             node = self._block_parser.parse_next_node(state)
@@ -180,15 +182,6 @@ class Parser:
             line_buffer,
             source=source_tracker,
             defer_inlines=defer_inlines,
-        )
-
-    def _assert_streaming_supported(self) -> None:
-        blockers = self.streaming_blockers()
-        if not blockers:
-            return
-        names = ', '.join(blockers)
-        raise StreamingUnsupportedError(
-            f'streaming output is blocked by document-wide transforms: {names}; use the streaming preset'
         )
 
     def parse_inlines(self, text: str, state: BlockState, source: SourceMap | None = None) -> list[Node]:

@@ -29,7 +29,6 @@ __all__ = [
     'find_all',
     'from_ast',
     'iter_children',
-    'node_from_ast',
     'plain_text',
     'walk',
 ]
@@ -57,49 +56,11 @@ def from_ast(
 ) -> Node:
     """Convert a mdast-like mapping into Wenmode nodes.
 
-    Built-in mdast-compatible node types are restored as their concrete Wenmode
-    node classes. Pass ``nodes`` as an iterable of node classes to restore
-    plugin node types. Unknown nodes are preserved as generic
-    :class:`~wenmode.nodes.Parent`,
-    :class:`~wenmode.nodes.Literal`, or :class:`~wenmode.nodes.Node` instances by
-    default; pass ``unknown="error"`` to reject them.
+    Pass plugin node classes with ``nodes``. Unknown node types are preserved as
+    generic nodes by default; use ``unknown="error"`` to reject them.
 
-    Source positions are restored only when both ``position.start.offset`` and
-    ``position.end.offset`` are present. Line and column values alone are not
-    enough to reconstruct Wenmode's internal offset ranges.
-
-    ``allow_internal_metadata=True`` preserves parser-internal trust metadata
-    in AST data produced by a trusted Wenmode pipeline. It does not disable
-    structural validation and must not be enabled for external AST input.
-
-    Restoration is bounded by ``max_depth`` node levels and ``max_nodes`` total
-    restored nodes by default. Pass ``None`` for one budget only after the
-    caller has established a trusted input boundary. Cycle detection and
-    structural validation cannot be disabled.
-    """
-    return node_from_ast(
-        data,
-        nodes=nodes,
-        unknown=unknown,
-        allow_internal_metadata=allow_internal_metadata,
-        max_depth=max_depth,
-        max_nodes=max_nodes,
-    )
-
-
-def node_from_ast(
-    data: Mapping[str, Any],
-    *,
-    nodes: Iterable[type[Node]] | None = None,
-    unknown: UnknownNodePolicy = 'generic',
-    allow_internal_metadata: bool = False,
-    max_depth: int | None = _DEFAULT_MAX_DEPTH,
-    max_nodes: int | None = _DEFAULT_MAX_NODES,
-) -> Node:
-    """Convert one AST node mapping into a Wenmode node.
-
-    ``allow_internal_metadata`` is a trusted-input setting for AST data
-    produced by Wenmode, not a general validation bypass.
+    Restoration validates structure, applies depth and node-count limits, and
+    only preserves internal metadata when ``allow_internal_metadata=True``.
     """
     if unknown not in {'generic', 'error'}:
         raise ValueError('unknown must be "generic" or "error"')
@@ -116,7 +77,7 @@ def node_from_ast(
         max_depth=max_depth,
         max_nodes=max_nodes,
     )
-    return _node_from_ast(data, context, 1)
+    return _restore_ast_node(data, context, 1)
 
 
 def _validate_restoration_limit(name: str, value: int | None) -> int | None:
@@ -263,7 +224,7 @@ def _matches(node: Node, matcher: NodeMatcher | None) -> bool:
     return isinstance(node, matcher)
 
 
-def _node_from_ast(
+def _restore_ast_node(
     data: Mapping[str, Any],
     context: _RestorationContext,
     depth: int,
@@ -328,7 +289,7 @@ def _ast_value_from_ast(
     depth: int,
 ) -> Any:
     if isinstance(value, Mapping) and isinstance(value.get('type'), str):
-        return _node_from_ast(value, context, depth + 1)
+        return _restore_ast_node(value, context, depth + 1)
     if isinstance(value, Mapping):
         return _ast_mapping_from_ast(value, context, depth)
     if isinstance(value, list):

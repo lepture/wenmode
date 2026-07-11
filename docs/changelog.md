@@ -29,12 +29,14 @@ here while preparing a release, then move them under the final version heading.
   reject parser-internal escaping metadata on concrete `html` and
   `htmlContainer` nodes by default. Trusted Wenmode AST round trips can opt in
   with `allow_internal_metadata=True`.
+- Remove `wenmode.ast.node_from_ast()`. Use `wenmode.ast.from_ast()` for AST
+  restoration.
 
 ### Fixed
 
-- Bound `from_ast()` and `node_from_ast()` restoration with default node-depth
-  and node-count budgets, and reject active reference cycles before recursive
-  restoration can hit Python recursion limits.
+- Bound `from_ast()` restoration with default node-depth and node-count
+  budgets, and reject active reference cycles before recursive restoration can
+  hit Python recursion limits.
 - Enforce `Parser.max_container_depth` for all nested `parse_blocks()` callers,
   preserving boundary content as shallow paragraphs instead of recursing
   through directive or custom container rules without a shared limit.

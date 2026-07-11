@@ -19,7 +19,6 @@ from wenmode.ast import (
     find_all,
     from_ast,
     iter_children,
-    node_from_ast,
     plain_text,
     walk,
 )
@@ -297,13 +296,6 @@ def test_from_ast_enforces_max_depth_boundary() -> None:
 
     with pytest.raises(ValueError, match='^AST exceeds maximum depth of 4$'):
         from_ast(node_chain(5), max_depth=4)
-
-
-def test_node_from_ast_enforces_max_depth_boundary() -> None:
-    assert node_from_ast(node_chain(3), max_depth=3).to_ast() == node_chain(3)
-
-    with pytest.raises(ValueError, match='^AST exceeds maximum depth of 3$'):
-        node_from_ast(node_chain(4), max_depth=3)
 
 
 def test_from_ast_enforces_max_node_count_boundary() -> None:

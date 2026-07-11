@@ -36,7 +36,7 @@ Keep these boundaries in mind:
 
 ## Restoring serialized AST data
 
-Treat mappings passed to `wenmode.ast.from_ast()` or `node_from_ast()` as input,
+Treat mappings passed to `wenmode.ast.from_ast()` as input,
 even when they already have an AST shape. The safe default validates common
 structural fields, including heading depth and ordered-list start values, and
 rejects parser-internal HTML escaping metadata, so an external mapping cannot

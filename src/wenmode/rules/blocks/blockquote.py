@@ -8,7 +8,6 @@ from wenmode.utils import expand_leading_tabs, match_pattern
 
 from ..._parser.state import BlockState
 from ..base import BlockRule
-from .util import parse_shallow_block
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
@@ -33,9 +32,6 @@ class Blockquote(BlockRule):
     pattern = r'[ \t]{0,3}>'
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> BlockquoteNode:
-        if state.depth >= parser.max_container_depth - 1:
-            return BlockquoteNode(children=parse_shallow_block(parser, BLOCKQUOTE_RE, state))
-
         lines: list[str] = []
         source = state.source.collect()
         paragraph_open = False

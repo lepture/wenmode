@@ -75,23 +75,12 @@ class BlockParser:
 
     def _parse_plain_shallow_paragraph(self, state: BlockState) -> Node:
         lines = self._read_shallow_paragraph_lines(state)
-        text = ''.join(lines).strip()
-        return Paragraph(children=self._parser.parse_inlines(text, state))
+        return self._paragraph_from_lines(state, lines)
 
     def _parse_positioned_shallow_paragraph(self, state: BlockState) -> Node:
         source = state.source.collect()
         lines = self._read_shallow_paragraph_lines(state, source)
-        inline_source = source.map()
-        if inline_source is None:
-            text = ''.join(lines).strip()
-            return Paragraph(children=self._parser.parse_inlines(text, state))
-
-        raw_text = inline_source.text
-        start = len(raw_text) - len(raw_text.lstrip())
-        end = len(raw_text.rstrip())
-        inline_source = inline_source.slice(start, end)
-        text = inline_source.text
-        return Paragraph(children=self._parser.parse_inlines(text, state, source=inline_source))
+        return self._paragraph_from_lines(state, lines, source)
 
     @staticmethod
     def _read_shallow_paragraph_lines(
@@ -193,14 +182,25 @@ class BlockParser:
         lines, parsed = self._read_paragraph_lines(state)
         if parsed is not None:
             return parsed
-        text = ''.join(lines).strip()
-        return Paragraph(children=self._parser.parse_inlines(text, state))
+        return self._paragraph_from_lines(state, lines)
 
     def _parse_positioned_paragraph(self, state: BlockState) -> Node:
         source = state.source.collect()
         lines, parsed = self._read_paragraph_lines(state, source)
         if parsed is not None:
             return parsed
+        return self._paragraph_from_lines(state, lines, source)
+
+    def _paragraph_from_lines(
+        self,
+        state: BlockState,
+        lines: list[str],
+        source: SourceCollector | None = None,
+    ) -> Paragraph:
+        if source is None:
+            text = ''.join(lines).strip()
+            return Paragraph(children=self._parser.parse_inlines(text, state))
+
         inline_source = source.map()
         if inline_source is None:
             text = ''.join(lines).strip()

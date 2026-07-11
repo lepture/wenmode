@@ -5,8 +5,9 @@ from typing import Any, cast
 
 from ._declarative import DeclarativePluginSpec, install_declarative
 from ._parser.source import LineSource
+from ._streaming import assert_streaming_supported, unique_blockers
 from .nodes import Node, Root
-from .parser import Parser, StreamingUnsupportedError
+from .parser import Parser
 from .plugins import RendererHandlers
 from .plugins.types import PluginConfig, PluginLike, PluginSetupCall, PluginTarget
 from .presets import commonmark
@@ -93,11 +94,13 @@ class Wenmode:
             when parser transforms or renderer root hooks require a complete
             root.
         """
-        def iterator() -> Iterator[str]:
-            self._assert_streaming_supported()
-            yield from self.renderer.render_iter(self.parser.parse_iter(source))
-
-        return iterator()
+        assert_streaming_supported(
+            self.streaming_blockers(),
+            blocked_by='document-wide transforms or root render hooks',
+            guidance='deferred inline transforms are included, but complete-root work also blocks streaming; '
+            'use the streaming preset',
+        )
+        yield from self.renderer.render_iter(self.parser.parse_iter(source))
 
     def register_rule(self, rule: type[Rule] | Rule) -> None:
         """Register or replace one parser rule.
@@ -144,22 +147,7 @@ class Wenmode:
 
     def streaming_blockers(self) -> list[str]:
         """Return transform and root hook labels that prevent streaming output."""
-        blockers: list[str] = []
-        for blocker in [*self.parser.streaming_blockers(), *self.renderer.streaming_blockers()]:
-            if blocker not in blockers:
-                blockers.append(blocker)
-        return blockers
-
-    def _assert_streaming_supported(self) -> None:
-        blockers = self.streaming_blockers()
-        if not blockers:
-            return
-        names = ', '.join(blockers)
-        raise StreamingUnsupportedError(
-            f'streaming output is blocked by document-wide transforms or root render hooks: {names}; '
-            'deferred inline transforms are included, but complete-root work also blocks streaming; '
-            'use the streaming preset'
-        )
+        return unique_blockers([*self.parser.streaming_blockers(), *self.renderer.streaming_blockers()])
 
     def use(self, plugin: PluginTarget, **options: Any) -> Wenmode:
         """Install a plugin module or plugin object on this parser and renderer."""
