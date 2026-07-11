@@ -80,6 +80,16 @@ def test_heading_positions_follow_string_line_endings(line_ending: str) -> None:
     assert ast['position']['end'] == {'line': 3, 'column': 1, 'offset': len(markdown)}
 
 
+def test_iterable_source_positions_support_carriage_return_lines() -> None:
+    ast = Wenmode(positions=True).parse(iter(['# a\r', '# b\r'])).to_ast()
+
+    assert [child['position']['start'] for child in ast['children']] == [
+        {'line': 1, 'column': 1, 'offset': 0},
+        {'line': 2, 'column': 1, 'offset': 4},
+    ]
+    assert ast['position']['end'] == {'line': 3, 'column': 1, 'offset': 8}
+
+
 def test_position_eof_with_empty_unterminated_and_mixed_sources() -> None:
     app = Wenmode(positions=True)
 
