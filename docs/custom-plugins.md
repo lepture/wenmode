@@ -257,6 +257,11 @@ If a rule decides not to handle a match, return `None` without consuming input.
 For inline rules, return `(None, match.start())`. The parser will continue with
 the normal fallback behavior.
 
+When a `BlockRule` or `ContinueRule` returns a node, it must advance `state` past
+the input it accepted. The parser raises `RuntimeError` identifying the rule if
+it returns a node without advancing state. A block rule may also advance state
+and return `None` when it consumes input without producing a node.
+
 ## Source Positions
 
 Most rules should not set the outer node position. If `positions=True` and the

@@ -13,6 +13,7 @@ from wenmode.rules import (
     AtxHeading,
     Blockquote,
     BlockRule,
+    ContinueRule,
     Emphasis,
     Footnote,
     HtmlBlock,
@@ -122,6 +123,76 @@ def test_rule_subclasses_can_define_identity_as_class_attributes() -> None:
     app = Wenmode([BangBlock, BangInline])
 
     assert app.render('!!\n\nhi !!\n') == '<p>bang</p>\n<p>hi inline</p>\n'
+
+
+def test_block_rule_returning_node_must_advance_state() -> None:
+    class NonProgressingBlock(BlockRule):
+        name = 'non_progressing_block'
+        pattern = r'!!'
+
+        def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
+            return Paragraph(children=[])
+
+    parser = Parser([NonProgressingBlock])
+
+    with pytest.raises(RuntimeError, match=r"non_progressing_block.*state did not advance"):
+        parser.parse('!!\n')
+
+
+def test_block_rule_cannot_move_state_backwards() -> None:
+    class BackwardsBlock(BlockRule):
+        name = 'backwards_block'
+        pattern = r'!!'
+
+        def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
+            state.advance(-1)
+            return None
+
+    parser = Parser([BackwardsBlock])
+
+    with pytest.raises(RuntimeError, match=r"backwards_block.*state backwards"):
+        parser.parse('!!\n')
+
+
+def test_continuation_rule_returning_node_must_advance_state() -> None:
+    class NonProgressingContinuation(ContinueRule):
+        name = 'non_progressing_continuation'
+
+        def matches(self, line: str) -> bool:
+            return line.startswith('!!')
+
+        def parse_paragraph_continuation(
+            self, parser: Parser, state: BlockState, lines: list[str]
+        ) -> Node | None:
+            return Paragraph(children=[])
+
+    parser = Parser([NonProgressingContinuation])
+
+    with pytest.raises(RuntimeError, match=r"non_progressing_continuation.*state did not advance"):
+        parser.parse('text\n!!\n')
+
+
+def test_block_rule_can_decline_without_advancing() -> None:
+    class DecliningBlock(BlockRule):
+        name = 'declining_block'
+        pattern = r'!!'
+
+        def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
+            return None
+
+    assert render(Parser([DecliningBlock]), '!!\n') == '<p>!!</p>\n'
+
+
+def test_block_rule_can_consume_without_returning_node() -> None:
+    class ConsumingBlock(BlockRule):
+        name = 'consuming_block'
+        pattern = r'!!'
+
+        def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
+            state.advance()
+            return None
+
+    assert render(Parser([ConsumingBlock]), '!!\ntext\n') == '<p>text</p>\n'
 
 
 def test_parser_reuses_reference_state_per_parse() -> None:

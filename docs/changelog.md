@@ -30,6 +30,12 @@ here while preparing a release, then move them under the final version heading.
   `htmlContainer` nodes by default. Trusted Wenmode AST round trips can opt in
   with `allow_internal_metadata=True`.
 
+### Fixed
+
+- Reject custom block and paragraph-continuation rules that return a node
+  without advancing parser state, with a rule-specific `RuntimeError` instead
+  of allowing an infinite parse loop.
+
 ## 0.9.1
 
 Released **Jul 9, 2026**.

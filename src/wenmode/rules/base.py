@@ -42,7 +42,8 @@ class BlockRule(Rule):
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
         """Parse a matched block opener.
 
-        Implementations must advance ``state`` when they consume input.
+        Implementations must advance ``state`` when they consume input. Returning
+        a node without advancing state raises :exc:`RuntimeError`.
 
         :param parser: Active parser.
         :param state: Current block state.
@@ -61,6 +62,9 @@ class ContinueRule(Rule):
 
     def parse_paragraph_continuation(self, parser: Parser, state: BlockState, lines: list[str]) -> Node | None:
         """Parse a paragraph continuation.
+
+        Returning a replacement node requires advancing ``state``. Returning a
+        node without advancing state raises :exc:`RuntimeError`.
 
         :param parser: Active parser.
         :param state: Current block state positioned at the continuation line.
