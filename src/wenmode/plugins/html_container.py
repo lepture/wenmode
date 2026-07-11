@@ -15,7 +15,7 @@ from wenmode.rules.blocks.html import (
     HTML_SCRIPT_STYLE_RE,
     HtmlBlock,
 )
-from wenmode.utils import compile_disallowed_html_filter, filter_disallowed_html
+from wenmode.utils import compile_disallowed_html_filter, filter_disallowed_html, unquote_attribute_value
 
 from .._parser.source import SourceCollector
 from .._parser.state import BlockState
@@ -155,15 +155,9 @@ def parse_html_attributes(text: str) -> dict[str, HtmlContainerAttributeValue] |
         if value is None:
             attributes[match.group('name')] = True
         else:
-            attributes[match.group('name')] = unquote_html_attribute_value(value)
+            attributes[match.group('name')] = unquote_attribute_value(value)
         index = match.end()
     return attributes or None
-
-
-def unquote_html_attribute_value(value: str) -> str:
-    if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
-        return value[1:-1].replace('\\' + value[0], value[0]).replace('\\\\', '\\')
-    return value
 
 
 def find_matching_close_index(state: BlockState, name: str) -> int | None:

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import re
 
+from wenmode.utils import unquote_attribute_value
+
 NAME_RE = re.compile(r'[A-Za-z][A-Za-z0-9_-]*')
 
 
@@ -128,9 +130,3 @@ def parse_shortcuts(token: str, attributes: dict[str, str], classes: list[str]) 
             attributes['id'] = value
         else:
             classes.append(value)
-
-
-def unquote_attribute_value(value: str) -> str:
-    if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
-        return value[1:-1].replace('\\' + value[0], value[0]).replace('\\\\', '\\')
-    return value

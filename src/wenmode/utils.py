@@ -110,3 +110,9 @@ def filter_disallowed_html(value: str, pattern: re.Pattern[str] | None) -> str:
 
 def match_pattern(pattern: re.Pattern[str], line: str) -> bool:
     return pattern.match(line) is not None
+
+
+def unquote_attribute_value(value: str) -> str:
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
+        return value[1:-1].replace('\\' + value[0], value[0]).replace('\\\\', '\\')
+    return value
