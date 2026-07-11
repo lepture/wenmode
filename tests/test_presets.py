@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from wenmode import Wenmode
-from wenmode.presets import commonmark, create_preset
+from wenmode.presets import GFM_DISALLOWED_HTML_TAGS, commonmark, create_preset, github, streaming
 from wenmode.rules import AtxHeading, HtmlBlock, Image, Link, RawHtml, Strikethrough
 
 
@@ -45,3 +45,20 @@ def test_create_preset_rejects_missing_replacements() -> None:
 def test_create_preset_rejects_duplicate_replacements() -> None:
     with pytest.raises(ValueError, match='duplicate replacement rule: link'):
         create_preset(commonmark, replace=[Link, Link(references=False)])
+
+
+@pytest.mark.parametrize('preset', [GFM_DISALLOWED_HTML_TAGS, commonmark, streaming, github])
+def test_builtin_presets_are_read_only(preset: tuple[object, ...]) -> None:
+    with pytest.raises(AttributeError):
+        preset.append(object())
+    with pytest.raises(TypeError):
+        preset[0] = object()
+
+
+def test_create_preset_returns_a_mutable_copy() -> None:
+    preset = create_preset(commonmark)
+
+    preset.append(Strikethrough)
+
+    assert preset[-1] is Strikethrough
+    assert Strikethrough not in commonmark

@@ -104,8 +104,13 @@ missing document-wide context.
 
 ## Custom preset
 
-A preset is a reusable rule list. Create a custom one when your product needs a
+A preset is a reusable rule sequence. Create a custom one when your product needs a
 smaller or stricter dialect than `commonmark`, `github`, or `streaming`.
+
+The built-in presets are read-only. Use `create_preset()` to derive a mutable
+rule list instead of changing a built-in preset in place. Pass the derived list
+to `Wenmode()`, or use `Parser.register_rule()` and `Parser.register_rules()` to
+update an existing parser explicitly.
 
 Keep custom dialects in one module so the editor preview, API renderer,
 background jobs, and tests all use the same Markdown behavior.

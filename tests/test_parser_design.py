@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from io import StringIO
 
 import pytest
@@ -140,6 +141,38 @@ def test_parser_registers_rules_dynamically() -> None:
     parser.register_rule(AtxHeading)
 
     assert render(parser, '# Title\n') == '<h1>Title</h1>\n'
+
+
+def test_parser_rule_collections_are_read_only() -> None:
+    parser = Parser([AtxHeading, InlineCode, Link])
+
+    assert isinstance(parser.rules, Mapping)
+    with pytest.raises(TypeError):
+        parser.rules['heading'] = AtxHeading()
+    with pytest.raises(TypeError):
+        del parser.rules['atx_heading']
+
+    for rules in (parser.block_rules, parser.inline_rules, parser.root_transforms):
+        with pytest.raises(AttributeError):
+            rules.append(AtxHeading())
+
+
+def test_parser_registration_rebuilds_read_only_rule_views() -> None:
+    parser = Parser([])
+
+    parser.register_rule(AtxHeading)
+
+    assert list(parser.rules) == ['atx_heading']
+    assert [rule.name for rule in parser.block_rules] == ['atx_heading']
+    assert parser.inline_rules == ()
+    assert parser.root_transforms == ()
+
+    parser.register_rules([InlineCode, Link])
+
+    assert list(parser.rules) == ['atx_heading', 'inline_code', 'link', 'reference_definition']
+    assert [rule.name for rule in parser.block_rules] == ['atx_heading', 'reference_definition']
+    assert [rule.name for rule in parser.inline_rules] == ['inline_code', 'link']
+    assert [transform.name for transform in parser.root_transforms] == ['reference']
 
 
 def test_parser_dynamic_rule_registration_updates_rule_dependencies() -> None:
@@ -344,7 +377,7 @@ def test_reference_definitions_are_plain_text_without_reference_consumers() -> N
     app = Wenmode([AtxHeading])
 
     assert app.render('[x]: /url\n\n[x]\n') == '<p>[x]: /url</p>\n<p>[x]</p>\n'
-    assert isinstance(app.parser.rules, dict)
+    assert isinstance(app.parser.rules, Mapping)
 
 
 def test_fence_like_text_is_not_protected_without_fenced_code_rule() -> None:
@@ -440,7 +473,7 @@ def test_html_block_preserves_nested_pre_across_blank_lines() -> None:
 def test_link_and_image_can_disable_references() -> None:
     app = Wenmode([Image(references=False), Link(references=False)])
 
-    assert app.parser.root_transforms == []
+    assert app.parser.root_transforms == ()
     assert app.render('[x](/url) and ![alt](/img.png)\n') == (
         '<p><a href="/url">x</a> and <img src="/img.png" alt="alt" /></p>\n'
     )

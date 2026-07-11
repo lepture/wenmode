@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable, Iterator, Mapping
+from types import MappingProxyType
 from typing import cast
 
 from ._parser.blocks import BlockParser
@@ -41,25 +42,29 @@ class Parser:
         self.positions = positions
         self._registered_rules: list[Rule] = []
         self._ruleset = RuleSet.from_rules([])
+        self._rules: Mapping[str, Rule] = MappingProxyType(self._ruleset.rules)
+        self._block_rules: tuple[BlockRule, ...] = tuple(self._ruleset.block_rules)
+        self._inline_rules: tuple[InlineRule, ...] = tuple(self._ruleset.inline_rules)
+        self._root_transforms: tuple[RootTransform, ...] = tuple(self._ruleset.root_transforms)
         self._inline_parser = InlineParser(self, self._ruleset)
         self._block_parser = BlockParser(self, self._ruleset)
         self.register_rules(rules)
 
     @property
-    def rules(self) -> dict[str, Rule]:
-        return self._ruleset.rules
+    def rules(self) -> Mapping[str, Rule]:
+        return self._rules
 
     @property
-    def block_rules(self) -> list[BlockRule]:
-        return self._ruleset.block_rules
+    def block_rules(self) -> tuple[BlockRule, ...]:
+        return self._block_rules
 
     @property
-    def inline_rules(self) -> list[InlineRule]:
-        return self._ruleset.inline_rules
+    def inline_rules(self) -> tuple[InlineRule, ...]:
+        return self._inline_rules
 
     @property
-    def root_transforms(self) -> list[RootTransform]:
-        return self._ruleset.root_transforms
+    def root_transforms(self) -> tuple[RootTransform, ...]:
+        return self._root_transforms
 
     @property
     def supports_streaming(self) -> bool:
@@ -96,6 +101,10 @@ class Parser:
 
     def _rebuild_rules(self) -> None:
         self._ruleset = RuleSet.from_rules(self._registered_rules)
+        self._rules = MappingProxyType(self._ruleset.rules)
+        self._block_rules = tuple(self._ruleset.block_rules)
+        self._inline_rules = tuple(self._ruleset.inline_rules)
+        self._root_transforms = tuple(self._ruleset.root_transforms)
         self._inline_parser.update_rule_set(self._ruleset)
         self._block_parser.update_rule_set(self._ruleset)
 

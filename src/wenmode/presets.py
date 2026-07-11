@@ -30,7 +30,7 @@ from .rules.base import Rule
 
 RuleSpec = type[Rule] | Rule
 
-GFM_DISALLOWED_HTML_TAGS = [
+GFM_DISALLOWED_HTML_TAGS: tuple[str, ...] = (
     'title',
     'textarea',
     'style',
@@ -40,9 +40,9 @@ GFM_DISALLOWED_HTML_TAGS = [
     'noframes',
     'script',
     'plaintext',
-]
+)
 
-commonmark = [
+commonmark: tuple[RuleSpec, ...] = (
     ThematicBreak,
     FencedCode,
     IndentedCode,
@@ -60,9 +60,9 @@ commonmark = [
     Link,
     InlineCode,
     Emphasis,
-]
+)
 
-streaming = [
+streaming: tuple[RuleSpec, ...] = (
     Table(require_body_pipe=False),
     ThematicBreak,
     FencedCode,
@@ -82,9 +82,9 @@ streaming = [
     InlineCode,
     Strikethrough,
     Emphasis,
-]
+)
 
-github = [
+github: tuple[RuleSpec, ...] = (
     Table(require_body_pipe=False),
     ThematicBreak,
     FencedCode,
@@ -106,7 +106,7 @@ github = [
     Strikethrough,
     Emphasis,
     ExtendedAutolink,
-]
+)
 
 
 def create_preset(

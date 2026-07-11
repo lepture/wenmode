@@ -17,6 +17,9 @@ here while preparing a release, then move them under the final version heading.
 
 - Remove `NodeSpec` and `Node.to_spec()`. Use `wenmode.nodes.BUILTIN_NODES`
   and plugin `nodes` lists when iterating over available node classes.
+- Expose built-in presets and parser rule collections as read-only sequences
+  and mappings. Use `create_preset()` or `Parser.register_rule(s)` to derive or
+  update rule configurations.
 
 ## 0.9.1
 
