@@ -117,6 +117,11 @@ features that need document-wide state.
 they are parsed. It rejects rule sets that require deferred inline transforms.
 Because it does not build a root node, position-aware `parse_iter()` output
 keeps offset-only position data unless a caller supplies its own line mapping.
+For iterable input, completed top-level source prefixes are released before the
+corresponding node is yielded. Retained source is proportional to the current
+unfinished block and any required parser lookahead; syntax that cannot emit a
+block until it is complete may still retain that unfinished block. String input
+is already resident and is not the bounded-memory streaming path.
 
 `Parser` delegates most parsing work to private modules under `wenmode._parser`.
 Those modules compile rule sets, dispatch block and inline rules, and decide
@@ -171,7 +176,12 @@ same store, so definitions found inside block quotes, lists, directives, or
 footnotes remain visible to document-level transforms.
 
 `StreamBlockState` wraps a line buffer for iterable sources. It supports
-lookahead without forcing the entire input to be read immediately.
+lookahead without forcing the entire input to be read immediately. Its
+`index`, `line_at()`, `has_index()`, `peek()`, and source positions use
+absolute source indexes and offsets. `StreamBlockState.lines` is only the
+currently buffered active window, not the full consumed source history. Custom
+rules should use the state accessors instead of indexing `lines` directly when
+they need absolute source positions or lookahead.
 
 `state.source` is a source tracker. When positions are disabled it is a no-op;
 when positions are enabled it maps line indexes and generated nested text back

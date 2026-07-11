@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 from wenmode.nodes import Position
 
 if TYPE_CHECKING:
-    from .state import BlockState
+    from .state import BlockState, StreamLineBuffer
 
 LineSource = str | Iterable[str]
 
@@ -299,3 +299,31 @@ class PositionSourceTracker(NullSourceTracker):
 
     def collect(self) -> SourceCollector:
         return PositionSourceCollector(self)
+
+
+class StreamPositionSourceTracker(PositionSourceTracker):
+    """Position tracker backed by a compactable stream line buffer."""
+
+    __slots__ = ('line_buffer',)
+
+    def __init__(self, line_buffer: StreamLineBuffer) -> None:
+        super().__init__([])
+        self.line_buffer = line_buffer
+
+    def offset_at_index(self, index: int) -> int | None:
+        return self.line_buffer.offset_at_index(index)
+
+    def paragraph(self, lines: list[str], start_index: int) -> SourceMap | None:
+        collector = self.collect()
+        for offset, text in enumerate(lines):
+            index = start_index + offset
+            raw_line = self.line_buffer.get(index)
+            collector.add(index, len(raw_line) - len(text), text)
+
+        source = collector.map()
+        if source is None:
+            return None
+        raw_text = ''.join(lines)
+        start = len(raw_text) - len(raw_text.lstrip())
+        end = len(raw_text.rstrip())
+        return source.slice(start, end)

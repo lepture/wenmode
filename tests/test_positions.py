@@ -8,6 +8,7 @@ import pytest
 from tests.helpers import load_fixture
 from tests.plugin_helpers import STANDARD_RULES, configured_app
 from wenmode import Wenmode
+from wenmode.presets import github, streaming
 
 POSITION_RULE_NAMES = {
     *(name for name in STANDARD_RULES if name not in {'atx_heading_id', 'link_no_references'}),
@@ -88,6 +89,40 @@ def test_iterable_source_positions_support_carriage_return_lines() -> None:
         {'line': 2, 'column': 1, 'offset': 4},
     ]
     assert ast['position']['end'] == {'line': 3, 'column': 1, 'offset': 8}
+
+
+@pytest.mark.parametrize('line_ending', ['\n', '\r\n', '\r'], ids=['lf', 'crlf', 'cr'])
+def test_iterable_source_positions_match_string_line_endings(line_ending: str) -> None:
+    markdown = (
+        f'# a{line_ending}'
+        f'{line_ending}'
+        f'| a | b |{line_ending}'
+        f'| --- | --- |{line_ending}'
+        f'| c | d |{line_ending}'
+        f'{line_ending}'
+        f'- one{line_ending}'
+        f'- two{line_ending}'
+    )
+    app = Wenmode(github, positions=True)
+
+    assert app.parse(iter(markdown.splitlines(keepends=True))).to_ast() == app.parse(markdown).to_ast()
+
+
+def test_parse_iter_positions_stay_absolute_after_table_and_list_lookahead() -> None:
+    markdown = '| a | b |\n| --- | --- |\n| c | d |\n\n- one\n- two\n'
+    nodes = list(Wenmode(streaming, positions=True).parser.parse_iter(iter(markdown.splitlines(keepends=True))))
+
+    assert [node.type for node in nodes] == ['table', 'list']
+    assert nodes[0].to_ast()['position'] == {'start': {'offset': 0}, 'end': {'offset': 34}}
+    assert nodes[1].to_ast()['position'] == {'start': {'offset': 35}, 'end': {'offset': len(markdown)}}
+    assert nodes[0].to_ast()['children'][0]['children'][0]['children'][0]['position'] == {
+        'start': {'offset': 2},
+        'end': {'offset': 3},
+    }
+    assert nodes[1].to_ast()['children'][1]['children'][0]['children'][0]['position'] == {
+        'start': {'offset': 43},
+        'end': {'offset': 46},
+    }
 
 
 def test_position_eof_with_empty_unterminated_and_mixed_sources() -> None:

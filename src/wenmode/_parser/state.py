@@ -20,20 +20,66 @@ class StreamLineBuffer:
             self.line_offsets = None
         self._iterator: Iterator[str] = iter(source)
         self._exhausted = False
+        self._start_index = 0
         self._next_offset = 0
+
+    @property
+    def start_index(self) -> int:
+        """Absolute index of the first buffered line."""
+        return self._start_index
+
+    @property
+    def end_index(self) -> int:
+        """Absolute index immediately after the buffered line window."""
+        return self._start_index + len(self.lines)
 
     def has(self, index: int) -> bool:
         """Return whether a line index can be read."""
+        if index < self._start_index:
+            return False
         self._fill(index)
-        return index < len(self.lines)
+        return index < self.end_index
 
     def get(self, index: int) -> str:
         """Return a buffered line by absolute index."""
+        if index < self._start_index:
+            raise IndexError(f'line index {index} has been discarded')
         self._fill(index)
-        return self.lines[index]
+        relative_index = index - self._start_index
+        if relative_index >= len(self.lines):
+            raise IndexError(f'line index {index} is not available')
+        return self.lines[relative_index]
+
+    def offset_at_index(self, index: int) -> int:
+        """Return the absolute source offset for a buffered line boundary."""
+        if index < self._start_index:
+            raise IndexError(f'line index {index} has been discarded')
+        if index == self.end_index:
+            return self._next_offset
+        self._fill(index)
+        if index == self.end_index:
+            return self._next_offset
+        if self.line_offsets is None:
+            raise RuntimeError('line offsets are not tracked')
+        relative_index = index - self._start_index
+        if relative_index >= len(self.line_offsets):
+            raise IndexError(f'line index {index} is not available')
+        return self.line_offsets[relative_index]
+
+    def discard_before(self, index: int) -> None:
+        """Discard buffered lines strictly before an absolute boundary."""
+        if index <= self._start_index:
+            return
+        discard_count = min(index, self.end_index) - self._start_index
+        if discard_count <= 0:
+            return
+        del self.lines[:discard_count]
+        if self.line_offsets is not None:
+            del self.line_offsets[:discard_count]
+        self._start_index += discard_count
 
     def _fill(self, index: int) -> None:
-        while not self._exhausted and index >= len(self.lines):
+        while not self._exhausted and index >= self.end_index:
             try:
                 line = next(self._iterator)
             except StopIteration:
@@ -167,3 +213,7 @@ class StreamBlockState(BlockState):
 
     def line_at(self, index: int) -> str:
         return self.line_buffer.get(index)
+
+    def discard_consumed(self) -> None:
+        """Release buffered lines before the current absolute state index."""
+        self.line_buffer.discard_before(self.index)

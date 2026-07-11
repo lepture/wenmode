@@ -215,6 +215,25 @@ provide line-start context.
 Enable positions only for tooling that needs source ranges. Leave them disabled
 for ordinary HTML rendering.
 
+### Streaming output
+
+Use `Wenmode.stream()` or `Parser.parse_iter()` when a renderer can consume
+completed top-level blocks incrementally. Pass a line iterator for large files
+or uploads; string input has already been loaded into memory and is not the
+bounded-memory path.
+
+Iterable input is consumed lazily. Completed top-level source prefixes are
+released before their rendered chunks or parsed nodes are yielded, while unread
+lookahead remains available to the parser. Retained source is proportional to
+the current unfinished block and required lookahead. A syntax that needs an
+entire unfinished block before it can emit a node may still retain that block.
+
+Custom streaming rules should treat `StreamBlockState.index`,
+`StreamBlockState.line_at()`, `StreamBlockState.has_index()`, and
+`StreamBlockState.peek()` as absolute source-index APIs. `StreamBlockState.lines`
+is the active buffered window only; it must not be treated as complete parse
+history.
+
 ## Rendering
 
 `Wenmode()` uses `HTMLRenderer` by default. Pass a different renderer when you

@@ -2,12 +2,11 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Iterator, Mapping
 from types import MappingProxyType
-from typing import cast
 
 from ._parser.blocks import BlockParser
 from ._parser.inlines import InlineParser
 from ._parser.ruleset import RuleSet, resolve_rule
-from ._parser.source import LineSource, NullSourceTracker, PositionSourceTracker, SourceMap
+from ._parser.source import LineSource, NullSourceTracker, PositionSourceTracker, SourceMap, StreamPositionSourceTracker
 from ._parser.state import BlockState, StreamBlockState, StreamLineBuffer
 from .nodes import Node, Root
 from .rules.base import BlockRule, InlineRule, Rule
@@ -136,6 +135,8 @@ class Parser:
         state = self._create_block_state(source, defer_inlines=False)
         while not state.done:
             node = self._block_parser.parse_next_node(state)
+            if isinstance(state, StreamBlockState):
+                state.discard_consumed()
             if node is not None:
                 yield node
 
@@ -170,7 +171,7 @@ class Parser:
 
         line_buffer = StreamLineBuffer(source, track_positions=self.positions)
         if self.positions:
-            source_tracker = PositionSourceTracker(cast(list[int], line_buffer.line_offsets))
+            source_tracker = StreamPositionSourceTracker(line_buffer)
         else:
             source_tracker = NullSourceTracker()
         return StreamBlockState(
