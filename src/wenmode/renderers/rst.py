@@ -28,17 +28,15 @@ from wenmode.nodes import (
     Root,
     Strong,
     Table,
-    TableCell,
-    TableRow,
     Text,
     TextDirective,
     ThematicBreak,
 )
 
+from ._shared import footnote_label, render_table_cell_content, table_rows
 from .base import BaseRenderer, RenderContext
 
 ESCAPABLE_TEXT_RE = re.compile(r'([\\`*|])')
-FOOTNOTE_LABEL_RE = re.compile(r'[^A-Za-z0-9_.:-]+')
 
 
 @dataclass
@@ -303,10 +301,6 @@ def render_table(renderer: RSTRenderer, node: Table, context: RSTRenderContext) 
     return '\n'.join(lines) + '\n\n'
 
 
-def render_table_cell_content(renderer: RSTRenderer, cell: TableCell, context: RSTRenderContext) -> str:
-    return renderer.render_children(cell.children, context).replace('\n', ' ').strip()
-
-
 @RSTRenderer.register('code')
 def render_code(renderer: RSTRenderer, node: Code, context: RSTRenderContext) -> str:
     if node.value.endswith('\n'):
@@ -419,22 +413,9 @@ def render_indented_block(renderer: RSTRenderer, node: Parent, context: RSTRende
     return indent_block(body, '   ') + '\n\n'
 
 
-def table_rows(node: Table) -> list[list[TableCell]]:
-    return [
-        [cell for cell in row.children if isinstance(cell, TableCell)]
-        for row in node.children
-        if isinstance(row, TableRow)
-    ]
-
-
 def render_table_delimiter(widths: list[int]) -> str:
     return '  '.join('=' * width for width in widths)
 
 
 def render_table_line(cells: list[str], widths: list[int]) -> str:
     return '  '.join(cell.ljust(widths[index]) for index, cell in enumerate(cells)).rstrip()
-
-
-def footnote_label(value: str) -> str:
-    label = FOOTNOTE_LABEL_RE.sub('-', value).strip('-')
-    return label or 'footnote'

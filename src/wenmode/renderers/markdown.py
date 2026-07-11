@@ -33,6 +33,7 @@ from wenmode.nodes import (
     ThematicBreak,
 )
 
+from ._shared import render_table_cell_content
 from .base import BaseRenderer, RenderContext
 
 ESCAPABLE_TEXT_RE = re.compile(r'([\\`*_{}\[\]<>()#+\-.!|])')
@@ -278,10 +279,6 @@ def _normalize_table_row(row: Node, size: int) -> list[TableCell]:
     if len(cells) < size:
         cells.extend(TableCell() for _ in range(size - len(cells)))
     return cells[:size]
-
-
-def render_table_cell_content(renderer: MarkdownRenderer, cell: TableCell, context: RenderContext) -> str:
-    return renderer.render_children(cell.children, context).replace('\n', ' ').strip()
 
 
 def _delimiter_for_align(align: str | None) -> str:

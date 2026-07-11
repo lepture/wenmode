@@ -29,17 +29,15 @@ from wenmode.nodes import (
     Root,
     Strong,
     Table,
-    TableCell,
-    TableRow,
     Text,
     TextDirective,
     ThematicBreak,
 )
 
+from ._shared import footnote_label, render_table_cell_content, table_rows
 from .base import BaseRenderer, RenderContext
 
 ESCAPABLE_TEXT_RE = re.compile(r'([\\*_`#\[\]|])')
-FOOTNOTE_LABEL_RE = re.compile(r'[^A-Za-z0-9_.:-]+')
 
 
 @dataclass
@@ -240,10 +238,6 @@ def render_table_columns(align: list[str | None]) -> str:
     return ','.join(markers).strip(',')
 
 
-def render_table_cell_content(renderer: AsciiDocRenderer, cell: TableCell, context: AsciiDocRenderContext) -> str:
-    return renderer.render_children(cell.children, context).replace('\n', ' ').strip()
-
-
 @AsciiDocRenderer.register('code')
 def render_code(renderer: AsciiDocRenderer, node: Code, context: AsciiDocRenderContext) -> str:
     return render_source_block(node.value, node.lang)
@@ -345,16 +339,3 @@ def render_footnote_definition(
     renderer: AsciiDocRenderer, node: FootnoteDefinition, context: AsciiDocRenderContext
 ) -> str:
     return ''
-
-
-def table_rows(node: Table) -> list[list[TableCell]]:
-    return [
-        [cell for cell in row.children if isinstance(cell, TableCell)]
-        for row in node.children
-        if isinstance(row, TableRow)
-    ]
-
-
-def footnote_label(value: str) -> str:
-    label = FOOTNOTE_LABEL_RE.sub('-', value).strip('-')
-    return label or 'footnote'
