@@ -4,9 +4,9 @@ import re
 from typing import TYPE_CHECKING
 
 from wenmode.nodes import Delete, Node
-from wenmode.state import BlockState
 from wenmode.utils import is_escaped
 
+from ..._parser.state import BlockState
 from ..base import InlineRule
 
 if TYPE_CHECKING:

@@ -5,9 +5,10 @@ from typing import TYPE_CHECKING, cast
 
 from wenmode.nodes import Node, Text
 from wenmode.rules.base import InlineRule
-from wenmode.state import BlockState, SourceMap
 
 from .ruleset import RuleSet
+from .source import SourceMap
+from .state import BlockState
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser

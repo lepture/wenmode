@@ -7,18 +7,11 @@ from typing import cast
 from ._parser.blocks import BlockParser
 from ._parser.inlines import InlineParser
 from ._parser.ruleset import RuleSet, resolve_rule
+from ._parser.source import LineSource, NullSourceTracker, PositionSourceTracker, SourceMap
+from ._parser.state import BlockState, StreamBlockState, StreamLineBuffer
 from .nodes import Node, Root
 from .rules.base import BlockRule, InlineRule, Rule
 from .rules.transforms import RootTransform
-from .state import (
-    BlockState,
-    LineSource,
-    NullSourceTracker,
-    PositionSourceTracker,
-    SourceMap,
-    StreamBlockState,
-    StreamLineBuffer,
-)
 
 
 class StreamingUnsupportedError(ValueError):

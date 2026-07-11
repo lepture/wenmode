@@ -10,8 +10,8 @@ from wenmode.renderers.asciidoc import AsciiDocRenderContext, AsciiDocRenderer
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer
 from wenmode.rules.base import InlineRule, Rule
-from wenmode.state import BlockState
 
+from .._parser.state import BlockState
 from .types import RendererHandlers
 
 if TYPE_CHECKING:

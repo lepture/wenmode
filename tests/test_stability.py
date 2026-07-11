@@ -112,6 +112,44 @@ def test_documented_public_extension_imports_resolve() -> None:
     assert BlockState and SourceMap and StateKey and StateStore
 
 
+def test_public_state_facade_reexports_private_implementations() -> None:
+    import wenmode.state as state
+    from wenmode._parser.source import (
+        NULL_SOURCE_COLLECTOR,
+        LineSource,
+        NullSourceCollector,
+        NullSourceTracker,
+        PositionSourceCollector,
+        PositionSourceTracker,
+        SourceCollector,
+        SourceMap,
+        SourceSegment,
+    )
+    from wenmode._parser.state import BlockState, StreamBlockState, StreamLineBuffer
+    from wenmode._parser.store import StateKey, StateStore
+
+    expected = {
+        'NULL_SOURCE_COLLECTOR': NULL_SOURCE_COLLECTOR,
+        'BlockState': BlockState,
+        'LineSource': LineSource,
+        'NullSourceCollector': NullSourceCollector,
+        'NullSourceTracker': NullSourceTracker,
+        'PositionSourceCollector': PositionSourceCollector,
+        'PositionSourceTracker': PositionSourceTracker,
+        'SourceCollector': SourceCollector,
+        'SourceMap': SourceMap,
+        'SourceSegment': SourceSegment,
+        'StateKey': StateKey,
+        'StateStore': StateStore,
+        'StreamBlockState': StreamBlockState,
+        'StreamLineBuffer': StreamLineBuffer,
+    }
+
+    assert state.__all__ == list(expected)
+    assert all(getattr(state, name) is implementation for name, implementation in expected.items())
+    assert all('_parser' not in name for name in state.__all__)
+
+
 def test_public_docs_and_examples_do_not_import_private_parser_modules() -> None:
     paths = [
         ROOT / 'README.md',

@@ -3,9 +3,8 @@ from __future__ import annotations
 import re
 import string
 
-from wenmode.state import BlockState
-
 from .ruleset import RuleSet
+from .state import BlockState
 
 ListMarker = tuple[str | None, str]
 

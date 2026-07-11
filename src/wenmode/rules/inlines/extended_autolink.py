@@ -4,8 +4,8 @@ import re
 from typing import TYPE_CHECKING
 
 from wenmode.nodes import Link, Node, Text
-from wenmode.state import BlockState
 
+from ..._parser.state import BlockState
 from ..base import InlineRule
 from ..cjk import is_cjk_punctuation
 from .html import normalize_uri

@@ -4,16 +4,11 @@ import re
 from typing import TYPE_CHECKING, cast
 
 from wenmode.nodes import Node, Paragraph
-from wenmode.state import (
-    BlockState,
-    NullSourceTracker,
-    PositionSourceTracker,
-    SourceCollector,
-    SourceMap,
-)
 
 from . import interrupts
 from .ruleset import RuleSet
+from .source import NullSourceTracker, PositionSourceTracker, SourceCollector, SourceMap
+from .state import BlockState
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser

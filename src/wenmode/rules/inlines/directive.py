@@ -6,8 +6,10 @@ from typing import TYPE_CHECKING
 from wenmode.nodes import Node
 from wenmode.nodes import Text as TextNode
 from wenmode.nodes import TextDirective as TextDirectiveNode
-from wenmode.state import BlockState, SourceMap, StateKey
 
+from ..._parser.source import SourceMap
+from ..._parser.state import BlockState
+from ..._parser.store import StateKey
 from ..base import InlineRule
 from ..directives import parse_attributes, parse_directive_head
 

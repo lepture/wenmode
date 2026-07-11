@@ -7,9 +7,11 @@ from typing import TYPE_CHECKING
 from wenmode.nodes import Break, InlineCode, Node, Parent, Text
 from wenmode.nodes import Image as ImageNode
 from wenmode.nodes import Link as LinkNode
-from wenmode.state import BlockState, SourceMap, StateKey
 from wenmode.utils import is_escaped, normalize_label_text, normalize_uri_text
 
+from ..._parser.source import SourceMap
+from ..._parser.state import BlockState
+from ..._parser.store import StateKey
 from ..base import InlineRule
 from ..references import REFERENCES_KEY, ReferenceTransform, resolve_state_reference
 from .html import EMAIL_RE, HTML_RE, URI_RE

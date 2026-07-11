@@ -6,9 +6,10 @@ from typing import TYPE_CHECKING, cast
 
 from wenmode.nodes import List as ListNode
 from wenmode.nodes import ListItem, Node, Paragraph, Position, Text
-from wenmode.state import BlockState, SourceCollector, SourceMap
 from wenmode.utils import count_indent, count_indent_from, expand_leading_tabs
 
+from ..._parser.source import SourceCollector, SourceMap
+from ..._parser.state import BlockState
 from ..base import BlockRule, Rule
 
 if TYPE_CHECKING:

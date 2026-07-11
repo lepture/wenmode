@@ -7,8 +7,9 @@ from typing import TYPE_CHECKING, cast
 from wenmode.nodes import ContainerDirective as ContainerDirectiveNode
 from wenmode.nodes import LeafDirective as LeafDirectiveNode
 from wenmode.nodes import Node, Paragraph
-from wenmode.state import BlockState, SourceCollector
 
+from ..._parser.source import SourceCollector
+from ..._parser.state import BlockState
 from ..base import BlockRule
 from ..directives import parse_directive_head
 

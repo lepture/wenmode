@@ -18,8 +18,8 @@ from wenmode.rules.inlines.link import (
     parse_direct_destination,
 )
 from wenmode.rules.references import resolve_state_reference
-from wenmode.state import BlockState
 
+from .._parser.state import BlockState
 from .types import RendererHandlers
 
 if TYPE_CHECKING:

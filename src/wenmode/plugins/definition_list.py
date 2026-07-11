@@ -10,8 +10,9 @@ from wenmode.renderers.asciidoc import AsciiDocRenderContext, AsciiDocRenderer
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer, indent_block
 from wenmode.rules.base import ContinueRule, Rule
-from wenmode.state import BlockState, SourceCollector
 
+from .._parser.source import SourceCollector
+from .._parser.state import BlockState
 from .types import RendererHandlers
 
 if TYPE_CHECKING:

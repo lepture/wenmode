@@ -15,9 +15,10 @@ from wenmode.rules.blocks.html import (
     HTML_SCRIPT_STYLE_RE,
     HtmlBlock,
 )
-from wenmode.state import BlockState, SourceCollector
 from wenmode.utils import compile_disallowed_html_filter, filter_disallowed_html
 
+from .._parser.source import SourceCollector
+from .._parser.state import BlockState
 from .types import RendererHandlers
 
 if TYPE_CHECKING:

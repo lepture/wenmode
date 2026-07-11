@@ -8,8 +8,8 @@ from wenmode.nodes import Literal as LiteralNode
 from wenmode.nodes import Node, Parent
 from wenmode.rules.base import BlockRule
 from wenmode.rules.blocks.util import collect_until
-from wenmode.state import BlockState
 
+from .._parser.state import BlockState
 from .spec import BlockFenced
 
 if TYPE_CHECKING:

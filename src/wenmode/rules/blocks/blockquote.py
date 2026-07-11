@@ -4,9 +4,9 @@ import re
 from typing import TYPE_CHECKING
 
 from wenmode.nodes import Blockquote as BlockquoteNode
-from wenmode.state import BlockState
 from wenmode.utils import expand_leading_tabs, match_pattern
 
+from ..._parser.state import BlockState
 from ..base import BlockRule
 from .util import parse_shallow_block
 

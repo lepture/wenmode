@@ -8,8 +8,8 @@ from wenmode.nodes import Emphasis as EmphasisNode
 from wenmode.nodes import Node, Parent, Position
 from wenmode.nodes import Strong as StrongNode
 from wenmode.nodes import Text as TextNode
-from wenmode.state import BlockState
 
+from ..._parser.state import BlockState
 from ..base import InlineRule
 from ..cjk import (
     is_cjk_character,

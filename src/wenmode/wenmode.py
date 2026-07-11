@@ -4,6 +4,7 @@ from collections.abc import Iterable, Iterator
 from typing import Any, cast
 
 from ._declarative import DeclarativePluginSpec, install_declarative
+from ._parser.source import LineSource
 from .nodes import Node, Root
 from .parser import Parser
 from .plugins import RendererHandlers
@@ -11,7 +12,6 @@ from .plugins.types import PluginConfig, PluginLike, PluginSetupCall, PluginTarg
 from .presets import commonmark
 from .renderers import BaseRenderer, DirectiveHtmlRenderer, HTMLRenderer
 from .rules.base import Rule
-from .state import LineSource
 
 
 class Wenmode:

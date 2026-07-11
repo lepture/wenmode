@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING
 
 from wenmode.nodes import InlineCode as InlineCodeNode
 from wenmode.nodes import Node
-from wenmode.state import BlockState
 
+from ..._parser.state import BlockState
 from ..base import InlineRule
 
 if TYPE_CHECKING:

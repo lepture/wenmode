@@ -6,9 +6,9 @@ from typing import TYPE_CHECKING, Literal
 from urllib.parse import quote
 
 from wenmode.nodes import Html, Link, Node, Text
-from wenmode.state import BlockState
 from wenmode.utils import compile_disallowed_html_filter, filter_disallowed_html
 
+from ..._parser.state import BlockState
 from ..base import InlineRule
 
 if TYPE_CHECKING:

@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from wenmode.nodes import Root
     from wenmode.parser import Parser
-    from wenmode.state import BlockState
 
+    from .._parser.state import BlockState
     from .base import Rule
 
 

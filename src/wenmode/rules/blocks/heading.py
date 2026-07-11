@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING, cast
 
 from wenmode.headings import Slugger, add_heading_ids
 from wenmode.nodes import Heading, Node
-from wenmode.state import BlockState
 
+from ..._parser.state import BlockState
 from ..base import BlockRule, ContinueRule
 from ..transforms import RootTransform
 

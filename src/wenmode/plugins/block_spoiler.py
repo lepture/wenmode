@@ -12,9 +12,9 @@ from wenmode.renderers.markdown import render_prefixed_block
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer, indent_block
 from wenmode.rules.base import BlockRule, Rule
 from wenmode.rules.blocks.util import parse_shallow_block
-from wenmode.state import BlockState
 from wenmode.utils import expand_leading_tabs
 
+from .._parser.state import BlockState
 from .types import RendererHandlers
 
 if TYPE_CHECKING:

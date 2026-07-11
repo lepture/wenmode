@@ -9,9 +9,11 @@ from wenmode.nodes import Literal as LiteralNode
 from wenmode.nodes import Node, Parent
 from wenmode.nodes import Text as TextNode
 from wenmode.rules.base import InlineRule
-from wenmode.state import BlockState, SourceMap, StateKey
 from wenmode.utils import is_escaped
 
+from .._parser.source import SourceMap
+from .._parser.state import BlockState
+from .._parser.store import StateKey
 from .spec import InlineDelimited, InlineLiteral
 
 if TYPE_CHECKING:

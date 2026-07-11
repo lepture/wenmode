@@ -5,7 +5,8 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from wenmode.nodes import Node, Paragraph
-from wenmode.state import BlockState
+
+from ..._parser.state import BlockState
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser

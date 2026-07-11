@@ -4,9 +4,9 @@ import re
 from typing import TYPE_CHECKING, cast
 
 from wenmode.nodes import Code, Node, Paragraph
-from wenmode.state import BlockState
 from wenmode.utils import normalize_label_text
 
+from ..._parser.state import BlockState
 from ..base import BlockRule
 from .util import collect_until
 

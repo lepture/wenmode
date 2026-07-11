@@ -5,15 +5,16 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from wenmode.state import StateKey
 from wenmode.utils import normalize_label, normalize_label_text, normalize_uri_text
 
+from .._parser.store import StateKey
 from .base import BlockRule, Rule
 from .transforms import RootTransform
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
-    from wenmode.state import BlockState
+
+    from .._parser.state import BlockState
 
 
 REFERENCE_START_RE = re.compile(r'^[ \t]{0,3}\[(?P<label>(?:\\.|[^\[\]\\\n]){1,999})\]:[ \t]*(?P<rest>.*)$')

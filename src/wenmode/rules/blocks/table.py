@@ -5,9 +5,9 @@ from typing import TYPE_CHECKING
 
 from wenmode.nodes import Node, TableCell, TableRow
 from wenmode.nodes import Table as TableNode
-from wenmode.state import BlockState
 from wenmode.utils import is_escaped
 
+from ..._parser.state import BlockState
 from ..base import BlockRule
 
 if TYPE_CHECKING:

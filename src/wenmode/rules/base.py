@@ -4,8 +4,8 @@ import re
 from typing import TYPE_CHECKING, ClassVar
 
 from wenmode.nodes import Node
-from wenmode.state import BlockState
 
+from .._parser.state import BlockState
 from .transforms import RootTransform
 
 if TYPE_CHECKING:
