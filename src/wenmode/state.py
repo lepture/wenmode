@@ -10,6 +10,7 @@ from ._parser.source import (
     SourceCollector,
     SourceMap,
     SourceSegment,
+    StreamPositionSourceTracker,
 )
 from ._parser.state import BlockState, StreamBlockState, StreamLineBuffer
 from ._parser.store import StateKey, StateStore
@@ -25,6 +26,7 @@ __all__ = [
     'SourceCollector',
     'SourceMap',
     'SourceSegment',
+    'StreamPositionSourceTracker',
     'StateKey',
     'StateStore',
     'StreamBlockState',

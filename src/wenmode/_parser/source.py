@@ -25,12 +25,26 @@ class SourceSegment:
 class SourceMap:
     """Map parser text offsets back to source offsets."""
 
-    __slots__ = ('_direct_slice_offsets', '_segment_ends', '_segment_starts', '_text_length', 'segments', 'text')
+    __slots__ = (
+        '_contiguous_segments',
+        '_direct_slice_offsets',
+        '_segment_ends',
+        '_segment_starts',
+        '_text_length',
+        'segments',
+        'text',
+    )
 
     def __init__(self, text: str, segments: list[SourceSegment]) -> None:
         self.text = text
         self._text_length = len(text)
         self.segments = segments
+        if len(segments) < 2:
+            self._direct_slice_offsets = True
+            self._contiguous_segments = True
+            self._segment_starts = tuple(segment.start for segment in segments)
+            self._segment_ends = tuple(segment.end for segment in segments)
+            return
         starts = tuple(segment.start for segment in segments)
         ends = tuple(segment.end for segment in segments)
         ordered = all(left <= right for left, right in zip(starts, starts[1:])) and all(
@@ -38,6 +52,9 @@ class SourceMap:
         )
         self._direct_slice_offsets = ordered and all(
             left.end <= right.start for left, right in zip(segments, segments[1:])
+        )
+        self._contiguous_segments = ordered and all(
+            left.end == right.start for left, right in zip(segments, segments[1:])
         )
         if ordered:
             self._segment_starts: tuple[int, ...] | None = starts
@@ -52,6 +69,10 @@ class SourceMap:
 
     @classmethod
     def from_parts(cls, parts: list[tuple[str, int]]) -> SourceMap:
+        if len(parts) == 1:
+            text, source_offset = parts[0]
+            return cls.contiguous(text, source_offset)
+
         text_parts: list[str] = []
         segments: list[SourceSegment] = []
         offset = 0
@@ -117,6 +138,11 @@ class SourceMap:
             return self
 
         text = self.text[start:end]
+        if len(self.segments) == 1:
+            segment = self.segments[0]
+            if segment.start == 0 and segment.end == self._text_length:
+                return SourceMap.contiguous(text, segment.offset + start)
+
         segments: list[SourceSegment] = []
         for segment in self.segments:
             if segment.end < start or segment.start > end:
@@ -137,10 +163,31 @@ class SourceMap:
         return SourceMap(text, segments)
 
     def line_offsets(self, lines: list[str]) -> list[int]:
+        if self._contiguous_segments and self.segments:
+            return self._contiguous_line_offsets(lines)
+
         offsets: list[int] = []
         offset = 0
         for line in lines:
             offsets.append(self.source_offset(offset))
+            offset += len(line)
+        return offsets
+
+    def _contiguous_line_offsets(self, lines: list[str]) -> list[int]:
+        offsets: list[int] = []
+        source_index = 0
+        segments = self.segments
+        offset = 0
+        for line in lines:
+            while source_index + 1 < len(segments) and offset >= segments[source_index + 1].start:
+                source_index += 1
+            segment = segments[source_index]
+            if offset <= segment.start:
+                offsets.append(segment.offset)
+            elif offset <= segment.end:
+                offsets.append(segment.offset + offset - segment.start)
+            else:
+                offsets.append(self.source_offset(offset))
             offset += len(line)
         return offsets
 
@@ -169,21 +216,37 @@ NULL_SOURCE_COLLECTOR = NullSourceCollector()
 class PositionSourceCollector(SourceCollector):
     """Source collector backed by a position-aware tracker."""
 
-    __slots__ = ('parts', 'tracker')
+    __slots__ = ('_source_ends', '_source_offsets', '_text_parts', 'tracker')
 
     def __init__(self, tracker: PositionSourceTracker) -> None:
         self.tracker = tracker
-        self.parts: list[tuple[str, int]] = []
+        self._text_parts: list[list[str]] = []
+        self._source_offsets: list[int] = []
+        self._source_ends: list[int] = []
 
     def add(self, index: int, offset: int, text: str) -> None:
-        source_offset = self.tracker.offset_at_line_offset(index, offset)
+        source_offset = self.tracker.collect_offset_at_line_offset(index, offset)
         if source_offset is not None:
-            self.parts.append((text, source_offset))
+            source_end = source_offset + len(text)
+            if self._source_ends and self._source_ends[-1] == source_offset:
+                self._text_parts[-1].append(text)
+                self._source_ends[-1] = source_end
+            else:
+                self._text_parts.append([text])
+                self._source_offsets.append(source_offset)
+                self._source_ends.append(source_end)
 
     def map(self) -> SourceMap | None:
-        if not self.parts:
+        if not self._text_parts:
             return None
-        return SourceMap.from_parts(self.parts)
+        if len(self._text_parts) == 1:
+            return SourceMap.contiguous(''.join(self._text_parts[0]), self._source_offsets[0])
+        return SourceMap.from_parts(
+            [
+                (''.join(text_parts), source_offset)
+                for text_parts, source_offset in zip(self._text_parts, self._source_offsets)
+            ]
+        )
 
 
 class NullSourceTracker:
@@ -201,6 +264,9 @@ class NullSourceTracker:
     def offset_at_line_offset(self, index: int, offset: int) -> int | None:
         return None
 
+    def collect_offset_at_line_offset(self, index: int, offset: int) -> int | None:
+        return self.offset_at_line_offset(index, offset)
+
     def position_between(self, start_index: int, end_index: int) -> Position | None:
         return None
 
@@ -215,6 +281,42 @@ class NullSourceTracker:
 
     def collect(self) -> SourceCollector:
         return NULL_SOURCE_COLLECTOR
+
+
+def _paragraph_source_from_parts(parts: list[tuple[str, int]]) -> SourceMap | None:
+    if not parts:
+        return None
+
+    raw_text = ''.join(text for text, _source_offset in parts)
+    start = len(raw_text) - len(raw_text.lstrip())
+    end = len(raw_text.rstrip())
+    text = raw_text[start:end]
+    if len(parts) == 1:
+        return SourceMap.contiguous(text, parts[0][1] + start)
+
+    segments: list[SourceSegment] = []
+    offset = 0
+    for part_text, source_offset in parts:
+        part_start = offset
+        part_end = offset + len(part_text)
+        offset = part_end
+        if part_end < start or part_start > end:
+            continue
+        segment_start = max(part_start, start)
+        segment_end = min(part_end, end)
+        if segment_start > segment_end:
+            continue
+        segments.append(
+            SourceSegment(
+                start=segment_start - start,
+                end=segment_end - start,
+                offset=source_offset + segment_start - part_start,
+            )
+        )
+
+    if not segments:
+        segments.append(SourceSegment(0, 0, parts[0][1]))
+    return SourceMap(text, segments)
 
 
 class PositionSourceTracker(NullSourceTracker):
@@ -253,6 +355,14 @@ class PositionSourceTracker(NullSourceTracker):
             return source_offset
         return source_offset + offset
 
+    def collect_offset_at_line_offset(self, index: int, offset: int) -> int | None:
+        if 0 <= index < len(self.line_offsets):
+            source_offset = self.line_offsets[index]
+            if offset > 0:
+                source_offset += offset
+            return source_offset
+        return self.offset_at_line_offset(index, offset)
+
     def position_between(self, start_index: int, end_index: int) -> Position | None:
         start = self.offset_at_index(start_index)
         end = self.offset_at_index(end_index)
@@ -275,21 +385,16 @@ class PositionSourceTracker(NullSourceTracker):
 
     def paragraph(self, lines: list[str], start_index: int) -> SourceMap | None:
         state = self._require_state()
-        collector = self.collect()
+        parts: list[tuple[str, int]] = []
         for offset, text in enumerate(lines):
             index = start_index + offset
             if index < 0 or index >= len(state.lines):
                 return None
             raw_line = state.line_at(index)
-            collector.add(index, len(raw_line) - len(text), text)
-
-        source = collector.map()
-        if source is None:
-            return None
-        raw_text = ''.join(lines)
-        start = len(raw_text) - len(raw_text.lstrip())
-        end = len(raw_text.rstrip())
-        return source.slice(start, end)
+            source_offset = self.offset_at_line_offset(index, len(raw_line) - len(text))
+            if source_offset is not None:
+                parts.append((text, source_offset))
+        return _paragraph_source_from_parts(parts)
 
     def collect(self) -> SourceCollector:
         return PositionSourceCollector(self)
@@ -307,17 +412,18 @@ class StreamPositionSourceTracker(PositionSourceTracker):
     def offset_at_index(self, index: int) -> int | None:
         return self.line_buffer.offset_at_index(index)
 
+    def collect_offset_at_line_offset(self, index: int, offset: int) -> int | None:
+        source_offset = self.line_buffer.offset_at_index(index)
+        if offset > 0:
+            source_offset += offset
+        return source_offset
+
     def paragraph(self, lines: list[str], start_index: int) -> SourceMap | None:
-        collector = self.collect()
+        parts: list[tuple[str, int]] = []
         for offset, text in enumerate(lines):
             index = start_index + offset
             raw_line = self.line_buffer.get(index)
-            collector.add(index, len(raw_line) - len(text), text)
-
-        source = collector.map()
-        if source is None:
-            return None
-        raw_text = ''.join(lines)
-        start = len(raw_text) - len(raw_text.lstrip())
-        end = len(raw_text.rstrip())
-        return source.slice(start, end)
+            source_offset = self.offset_at_line_offset(index, len(raw_line) - len(text))
+            if source_offset is not None:
+                parts.append((text, source_offset))
+        return _paragraph_source_from_parts(parts)
