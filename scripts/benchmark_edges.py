@@ -7,8 +7,8 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from wenmode import Wenmode
-from wenmode.plugins import block_spoiler, html_container, inline_math
-from wenmode.presets import commonmark
+from wenmode.plugins import block_spoiler, fenced_directive, html_container, inline_math
+from wenmode.presets import commonmark, github, streaming
 from wenmode.rules import ContainerDirective, Footnote, Table, TextDirective
 
 
@@ -19,11 +19,13 @@ class EdgeCase:
     generate: Callable[[int], str]
     make_app: Callable[[bool], Wenmode]
     sizes: tuple[int, ...]
+    make_stream_app: Callable[[bool], Wenmode] | None = None
 
 
 @dataclass(frozen=True)
 class Result:
     case: str
+    source: str
     size: int
     bytes: int
     iterations: int
@@ -38,12 +40,24 @@ def commonmark_app(positions: bool) -> Wenmode:
     return Wenmode(commonmark, positions=positions)
 
 
+def github_app(positions: bool) -> Wenmode:
+    return Wenmode(github, positions=positions)
+
+
+def streaming_app(positions: bool) -> Wenmode:
+    return Wenmode(streaming, positions=positions)
+
+
 def directive_app(positions: bool) -> Wenmode:
     return Wenmode([ContainerDirective], positions=positions)
 
 
 def block_spoiler_app(positions: bool) -> Wenmode:
     return Wenmode(commonmark, plugins=[block_spoiler], positions=positions)
+
+
+def streaming_block_spoiler_app(positions: bool) -> Wenmode:
+    return Wenmode(streaming, plugins=[block_spoiler], positions=positions)
 
 
 def inline_math_app(positions: bool) -> Wenmode:
@@ -62,6 +76,14 @@ def html_container_app(positions: bool) -> Wenmode:
     return Wenmode(commonmark, plugins=[html_container], positions=positions)
 
 
+def streaming_html_container_app(positions: bool) -> Wenmode:
+    return Wenmode(streaming, plugins=[html_container], positions=positions)
+
+
+def fenced_directive_app(positions: bool) -> Wenmode:
+    return Wenmode([], plugins=[fenced_directive], positions=positions)
+
+
 def table_app(positions: bool) -> Wenmode:
     return Wenmode([Table], positions=positions)
 
@@ -73,6 +95,7 @@ EDGE_CASES = {
         lambda size: '> ' * size + 'text\n',
         commonmark_app,
         (100, 1000, 10000),
+        streaming_app,
     ),
     'deep-list': EdgeCase(
         'deep-list',
@@ -80,6 +103,7 @@ EDGE_CASES = {
         lambda size: '- ' * size + 'text\n',
         commonmark_app,
         (100, 1000, 10000),
+        streaming_app,
     ),
     'blockquote-depth-boundary': EdgeCase(
         'blockquote-depth-boundary',
@@ -87,6 +111,7 @@ EDGE_CASES = {
         lambda size: '> ' * size + 'text\n',
         commonmark_app,
         (99, 100, 101, 1000),
+        streaming_app,
     ),
     'alternating-containers': EdgeCase(
         'alternating-containers',
@@ -94,6 +119,7 @@ EDGE_CASES = {
         lambda size: '> - ' * size + 'text\n',
         commonmark_app,
         (64, 128, 256),
+        streaming_app,
     ),
     'deep-block-spoiler': EdgeCase(
         'deep-block-spoiler',
@@ -101,6 +127,7 @@ EDGE_CASES = {
         lambda size: '>! ' * size + 'text\n',
         block_spoiler_app,
         (100, 1000, 10000),
+        streaming_block_spoiler_app,
     ),
     'unmatched-links': EdgeCase(
         'unmatched-links',
@@ -108,6 +135,7 @@ EDGE_CASES = {
         lambda size: '[' * size + '\n',
         commonmark_app,
         (1000, 10000, 100000),
+        streaming_app,
     ),
     'nested-link-labels': EdgeCase(
         'nested-link-labels',
@@ -115,6 +143,7 @@ EDGE_CASES = {
         lambda size: '[' * size + 'text' + ']' * size + '(/url)\n',
         commonmark_app,
         (200, 1000, 5000),
+        streaming_app,
     ),
     'nested-image-labels': EdgeCase(
         'nested-image-labels',
@@ -122,6 +151,7 @@ EDGE_CASES = {
         lambda size: '![' * size + 'text' + '](/url)' * size + '\n',
         commonmark_app,
         (200, 1000, 5000),
+        streaming_app,
     ),
     'dense-emphasis': EdgeCase(
         'dense-emphasis',
@@ -129,6 +159,7 @@ EDGE_CASES = {
         lambda size: '*a' * size + '\n',
         commonmark_app,
         (1000, 10000, 100000),
+        streaming_app,
     ),
     'long-code-span-runs': EdgeCase(
         'long-code-span-runs',
@@ -136,6 +167,23 @@ EDGE_CASES = {
         lambda size: '`' * size + 'text' + '`' * (size - 1) + '\n',
         commonmark_app,
         (1000, 10000, 100000),
+        streaming_app,
+    ),
+    'successful-long-code-span': EdgeCase(
+        'successful-long-code-span',
+        'inline',
+        lambda size: '`' * size + 'text' + '`' * size + '\n',
+        commonmark_app,
+        (1000, 10000, 100000),
+        streaming_app,
+    ),
+    'many-wrong-code-runs': EdgeCase(
+        'many-wrong-code-runs',
+        'inline',
+        lambda size: '``start ' + '`x' * size + ' ``\n',
+        commonmark_app,
+        (1000, 10000, 100000),
+        streaming_app,
     ),
     'link-label-long-code-runs': EdgeCase(
         'link-label-long-code-runs',
@@ -143,6 +191,7 @@ EDGE_CASES = {
         lambda size: '[' + '`' * size + 'text' + '`' * (size - 1) + '](/url)\n',
         commonmark_app,
         (1000, 10000, 100000),
+        streaming_app,
     ),
     'nested-text-directives': EdgeCase(
         'nested-text-directives',
@@ -150,6 +199,7 @@ EDGE_CASES = {
         lambda size: ':x[' * size + 'text' + ']' * size + '\n',
         text_directive_app,
         (100, 500, 1000),
+        text_directive_app,
     ),
     'invalid-inline-math-closers': EdgeCase(
         'invalid-inline-math-closers',
@@ -157,6 +207,7 @@ EDGE_CASES = {
         lambda size: '$x' + '$5' * size + '\n',
         inline_math_app,
         (1000, 5000, 10000),
+        inline_math_app,
     ),
     'long-list-spacing': EdgeCase(
         'long-list-spacing',
@@ -164,6 +215,7 @@ EDGE_CASES = {
         lambda size: '- ' + ' ' * size + 'text\n',
         commonmark_app,
         (1000, 10000, 100000),
+        streaming_app,
     ),
     'blank-list-continuations': EdgeCase(
         'blank-list-continuations',
@@ -171,6 +223,7 @@ EDGE_CASES = {
         lambda size: '- first\n' + '\n' * size + '  last\n',
         commonmark_app,
         (1000, 5000, 10000),
+        streaming_app,
     ),
     'list-marker-interrupt': EdgeCase(
         'list-marker-interrupt',
@@ -178,6 +231,7 @@ EDGE_CASES = {
         lambda size: 'paragraph\n1. ' + ' ' * size + '\n',
         commonmark_app,
         (1000, 10000, 100000),
+        streaming_app,
     ),
     'unclosed-fence': EdgeCase(
         'unclosed-fence',
@@ -185,6 +239,39 @@ EDGE_CASES = {
         lambda size: '```\n' + 'line\n' * size,
         commonmark_app,
         (1000, 5000, 10000),
+        streaming_app,
+    ),
+    'lazy-blockquote-lines': EdgeCase(
+        'lazy-blockquote-lines',
+        'blocks',
+        lambda size: '> first\n' + 'lazy continuation\n' * size,
+        commonmark_app,
+        (1000, 5000, 10000),
+        streaming_app,
+    ),
+    'many-empty-blockquotes': EdgeCase(
+        'many-empty-blockquotes',
+        'blocks',
+        lambda size: '>\n' * size,
+        commonmark_app,
+        (1000, 5000, 10000),
+        streaming_app,
+    ),
+    'task-list-lines': EdgeCase(
+        'task-list-lines',
+        'blocks',
+        lambda size: '- [x] item\n' * size,
+        github_app,
+        (1000, 5000, 10000),
+        streaming_app,
+    ),
+    'ordered-list-markers': EdgeCase(
+        'ordered-list-markers',
+        'blocks',
+        lambda size: '123456789. item\n' * size,
+        commonmark_app,
+        (1000, 5000, 10000),
+        streaming_app,
     ),
     'nested-directives': EdgeCase(
         'nested-directives',
@@ -192,6 +279,15 @@ EDGE_CASES = {
         lambda size: ':::note\n' * size + 'text\n' + ':::\n' * size,
         directive_app,
         (64, 128, 256),
+        directive_app,
+    ),
+    'fenced-directive-attributes': EdgeCase(
+        'fenced-directive-attributes',
+        'blocks',
+        lambda size: '```{note}\n' + ':key: value\n' * size + '```\n',
+        fenced_directive_app,
+        (1000, 5000, 10000),
+        fenced_directive_app,
     ),
     'unclosed-reference-title': EdgeCase(
         'unclosed-reference-title',
@@ -199,6 +295,7 @@ EDGE_CASES = {
         lambda size: '[x]: /url "\n' + 'line\n' * size + '\n[x]\n',
         commonmark_app,
         (1000, 5000, 10000),
+        None,
     ),
     'footnote-blank-continuations': EdgeCase(
         'footnote-blank-continuations',
@@ -206,6 +303,23 @@ EDGE_CASES = {
         lambda size: '[^x]: first\n' + '\n' * size + '  second\n\n[^x]\n',
         footnote_app,
         (1000, 5000, 10000),
+        None,
+    ),
+    'multiline-reference-label': EdgeCase(
+        'multiline-reference-label',
+        'references',
+        lambda size: '[label\n' + 'part\n' * size + ']: /url\n',
+        commonmark_app,
+        (1000, 5000, 10000),
+        None,
+    ),
+    'many-reference-definitions': EdgeCase(
+        'many-reference-definitions',
+        'references',
+        lambda size: ''.join(f'[x{index}]: /url\n' for index in range(size)),
+        commonmark_app,
+        (1000, 5000, 10000),
+        None,
     ),
     'nested-html-containers': EdgeCase(
         'nested-html-containers',
@@ -213,6 +327,7 @@ EDGE_CASES = {
         lambda size: '<div>\n' * size + '</div>\n' * size,
         html_container_app,
         (64, 128, 256),
+        streaming_html_container_app,
     ),
     'long-html-tag-name': EdgeCase(
         'long-html-tag-name',
@@ -220,6 +335,17 @@ EDGE_CASES = {
         lambda size: '<' + 'x' * size + '>\ntext\n</' + 'x' * size + '>\n',
         html_container_app,
         (1000, 10000, 100000),
+        streaming_html_container_app,
+    ),
+    'html-many-attributes': EdgeCase(
+        'html-many-attributes',
+        'html',
+        lambda size: (
+            '<div ' + ' '.join(f'data-x{index}="v"' for index in range(size)) + '>\ntext\n</div>\n'
+        ),
+        html_container_app,
+        (100, 1000, 5000),
+        streaming_html_container_app,
     ),
     'wide-table': EdgeCase(
         'wide-table',
@@ -229,12 +355,25 @@ EDGE_CASES = {
         ),
         table_app,
         (100, 1000, 5000),
+        table_app,
     ),
 }
 
 
-def benchmark_case(edge_case: EdgeCase, sizes: list[int], iterations: int, warmup: int, positions: bool) -> list[Result]:
-    app = edge_case.make_app(positions)
+def benchmark_case(
+    edge_case: EdgeCase,
+    sizes: list[int],
+    iterations: int,
+    warmup: int,
+    positions: bool,
+    source: str,
+) -> list[Result]:
+    if source == 'stream':
+        if edge_case.make_stream_app is None:
+            raise ValueError(f'{edge_case.name} requires full-document parsing')
+        app = edge_case.make_stream_app(positions)
+    else:
+        app = edge_case.make_app(positions)
     results: list[Result] = []
     previous_size: int | None = None
     previous_mean: float | None = None
@@ -242,12 +381,12 @@ def benchmark_case(edge_case: EdgeCase, sizes: list[int], iterations: int, warmu
     for size in sizes:
         text = edge_case.generate(size)
         for _ in range(warmup):
-            app.parse(text)
+            parse_source(app, text, source)
 
         timings: list[float] = []
         for _ in range(iterations):
             started = time.perf_counter()
-            app.parse(text)
+            parse_source(app, text, source)
             timings.append(time.perf_counter() - started)
 
         best = min(timings)
@@ -261,6 +400,7 @@ def benchmark_case(edge_case: EdgeCase, sizes: list[int], iterations: int, warmu
         results.append(
             Result(
                 case=edge_case.name,
+                source=source,
                 size=size,
                 bytes=len(text.encode()),
                 iterations=iterations,
@@ -275,6 +415,17 @@ def benchmark_case(edge_case: EdgeCase, sizes: list[int], iterations: int, warmu
         previous_mean = mean
 
     return results
+
+
+def parse_source(app: Wenmode, text: str, source: str) -> None:
+    if source == 'string':
+        app.parse(text)
+        return
+    lines = text.splitlines(keepends=True)
+    if source == 'iterable':
+        app.parse(iter(lines))
+        return
+    list(app.parser.parse_iter(iter(lines)))
 
 
 def format_duration(seconds: float) -> str:
@@ -292,10 +443,11 @@ def format_ratio(value: float | None) -> str:
 
 
 def print_table(results: list[Result]) -> None:
-    headers = ['case', 'size', 'bytes', 'iters', 'best', 'mean', 'ns/unit', 'growth', 'normalized']
+    headers = ['case', 'source', 'size', 'bytes', 'iters', 'best', 'mean', 'ns/unit', 'growth', 'normalized']
     rows = [
         [
             result.case,
+            result.source,
             str(result.size),
             str(result.bytes),
             str(result.iterations),
@@ -339,6 +491,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--iterations', type=int, default=5)
     parser.add_argument('--warmup', type=int, default=1)
     parser.add_argument('--positions', action='store_true', help='enable source position tracking')
+    parser.add_argument('--source', choices=['string', 'iterable', 'stream'], default='string')
     return parser.parse_args()
 
 
@@ -357,6 +510,11 @@ def main() -> None:
         cases = [edge_case for edge_case in EDGE_CASES.values() if edge_case.category == args.category]
     else:
         cases = list(EDGE_CASES.values())
+    if args.source == 'stream':
+        unsupported = [edge_case.name for edge_case in cases if edge_case.make_stream_app is None]
+        if args.case != 'all' and unsupported:
+            raise SystemExit(f'{unsupported[0]} requires full-document parsing and cannot use --source stream')
+        cases = [edge_case for edge_case in cases if edge_case.make_stream_app is not None]
     results = [
         result
         for edge_case in cases
@@ -366,6 +524,7 @@ def main() -> None:
             args.iterations,
             args.warmup,
             args.positions,
+            args.source,
         )
     ]
     print_table(results)

@@ -45,6 +45,16 @@ Run one category when narrowing a parser layer:
 uv run --group benchmark python scripts/benchmark_edges.py --category inline
 ```
 
+Use `--source iterable` to parse generated line iterators instead of strings.
+Use `--source stream` to benchmark incremental `Parser.parse_iter()` paths with
+streaming-compatible cases; cases that require full-document transforms are
+omitted from an all-case streaming run.
+
+```bash
+uv run --group benchmark python scripts/benchmark_edges.py \
+  --category blocks --source stream --positions
+```
+
 Pass `--positions` to include source-position tracking. The report includes
 total time, nanoseconds per generated unit, growth between adjacent sizes, and
 normalized growth. A normalized value near `1.0x` indicates approximately
