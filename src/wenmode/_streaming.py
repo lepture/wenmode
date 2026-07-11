@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-class StreamingUnsupportedError(ValueError):
+class StreamingUnsupportedError(RuntimeError):
     """Raised when a rule set or renderer cannot be used for streaming output."""
 
 
