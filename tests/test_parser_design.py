@@ -28,7 +28,7 @@ from wenmode.rules import (
     Table,
     ThematicBreak,
 )
-from wenmode.state import BlockState, SourceMap, StateKey, StateStore
+from wenmode.state import BlockState, SourceMap, SourceSegment, StateKey, StateStore
 
 TERMS = StateKey('tests.terms', lambda: {})
 TERM_RE = re.compile(r'^[ \t]{0,3}@term\[(?P<label>[^\]]+)]:[ \t]*(?P<title>.*)$')
@@ -77,6 +77,97 @@ def lines(markdown: str):
 
 def parse_inlines(parser: Parser, markdown: str) -> list[Node]:
     return parser.parse_inlines(markdown, BlockState([]))
+
+
+def test_source_map_preserves_boundary_and_line_offset_semantics() -> None:
+    source = SourceMap(
+        'abcdef',
+        [
+            SourceSegment(0, 2, 10),
+            SourceSegment(2, 4, 30),
+            SourceSegment(4, 6, 80),
+        ],
+    )
+
+    assert [source.source_offset(offset) for offset in (-1, 0, 1, 2, 6, 99)] == [10, 10, 11, 30, 82, 82]
+    assert source.line_offsets(['ab', 'cd', 'ef']) == [10, 30, 80]
+
+
+def test_source_map_preserves_duplicate_and_zero_length_segment_semantics() -> None:
+    source = SourceMap(
+        'ab',
+        [
+            SourceSegment(0, 0, 5),
+            SourceSegment(0, 1, 10),
+            SourceSegment(1, 1, 20),
+            SourceSegment(1, 2, 30),
+        ],
+    )
+
+    assert source.source_offset(0) == 5
+    assert source.source_offset(1) == 20
+    assert source.source_offset(2) == 31
+
+
+def test_source_map_preserves_first_match_order_for_arbitrary_segments() -> None:
+    source = SourceMap(
+        'abcdefgh',
+        [
+            SourceSegment(0, 8, 100),
+            SourceSegment(4, 6, 20),
+            SourceSegment(2, 7, 60),
+        ],
+    )
+
+    assert source.source_offset(3) == 103
+    assert source.source_offset(4) == 20
+    assert source.source_offset(5) == 105
+
+    decreasing_ends = SourceMap(
+        'abcdefgh',
+        [SourceSegment(0, 8, 100), SourceSegment(4, 6, 20)],
+    )
+    assert decreasing_ends.source_offset(4) == 20
+    assert decreasing_ends.source_offset(5) == 105
+
+    overlapping_slice = decreasing_ends.slice(5, 6)
+    assert overlapping_slice.segments == [
+        SourceSegment(0, 1, 105),
+        SourceSegment(0, 1, 105),
+    ]
+
+
+def test_source_map_preserves_partial_empty_and_missing_segment_slices() -> None:
+    source = SourceMap(
+        'abcdef',
+        [
+            SourceSegment(0, 2, 10),
+            SourceSegment(2, 4, 30),
+            SourceSegment(4, 6, 80),
+        ],
+    )
+
+    partial = source.slice(1, 5)
+    assert partial.text == 'bcde'
+    assert partial.segments == [
+        SourceSegment(0, 1, 11),
+        SourceSegment(1, 3, 30),
+        SourceSegment(3, 4, 80),
+    ]
+    empty = source.slice(3, 3)
+    assert empty.text == ''
+    assert empty.source_offset(0) == 31
+    shared_boundary = source.slice(2, 2)
+    assert shared_boundary.segments == [
+        SourceSegment(0, 0, 30),
+        SourceSegment(0, 0, 30),
+    ]
+
+    empty_map = SourceMap('abc', [])
+    assert empty_map.source_offset(99) == 0
+    missing = empty_map.slice(1, 2)
+    assert missing.text == 'b'
+    assert missing.segments == [SourceSegment(0, 0, 0)]
 
 
 def test_rule_base_state_is_instance_local() -> None:

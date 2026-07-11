@@ -20,6 +20,7 @@ from wenmode.rules import (
     AtxHeading,
     ExtendedAutolink,
     Footnote,
+    HardBreak,
     HtmlBlock,
     LeafDirective,
     Link,
@@ -29,8 +30,13 @@ from wenmode.rules import (
 )
 
 
-def parse_time(markdown: str, rules: list[type[Rule] | Rule], plugins: Iterable[Any] = ()) -> float:
-    parser = Wenmode(rules)
+def parse_time(
+    markdown: str,
+    rules: list[type[Rule] | Rule],
+    plugins: Iterable[Any] = (),
+    positions: bool = False,
+) -> float:
+    parser = Wenmode(rules, positions=positions)
     for plugin in plugins:
         parser.use(plugin)
     started = time.perf_counter()
@@ -46,9 +52,10 @@ def assert_scales_nearly_linearly(
     plugins: Iterable[Any] = (),
     ratio: float = 3.5,
     slack: float = 0.02,
+    positions: bool = False,
 ) -> None:
-    small = parse_time(factory(small_size), rules, plugins)
-    large = parse_time(factory(large_size), rules, plugins)
+    small = parse_time(factory(small_size), rules, plugins, positions=positions)
+    large = parse_time(factory(large_size), rules, plugins, positions=positions)
 
     assert large < small * ratio + slack
 
@@ -89,6 +96,16 @@ def test_repeated_hard_break_dispatch_scales_nearly_linearly() -> None:
         8000,
         ratio=3.0,
         slack=0.01,
+    )
+
+
+def test_positioned_hard_breaks_scale_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(
+        lambda size: 'a  \n' * size,
+        [HardBreak],
+        2000,
+        4000,
+        positions=True,
     )
 
 

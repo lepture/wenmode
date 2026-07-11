@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from bisect import bisect_left
 from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
@@ -24,12 +25,26 @@ class SourceSegment:
 class SourceMap:
     """Map parser text offsets back to source offsets."""
 
-    __slots__ = ('_text_length', 'segments', 'text')
+    __slots__ = ('_direct_slice_offsets', '_segment_ends', '_segment_starts', '_text_length', 'segments', 'text')
 
     def __init__(self, text: str, segments: list[SourceSegment]) -> None:
         self.text = text
         self._text_length = len(text)
         self.segments = segments
+        starts = tuple(segment.start for segment in segments)
+        ends = tuple(segment.end for segment in segments)
+        ordered = all(left <= right for left, right in zip(starts, starts[1:])) and all(
+            left <= right for left, right in zip(ends, ends[1:])
+        )
+        self._direct_slice_offsets = ordered and all(
+            left.end <= right.start for left, right in zip(segments, segments[1:])
+        )
+        if ordered:
+            self._segment_starts: tuple[int, ...] | None = starts
+            self._segment_ends: tuple[int, ...] | None = ends
+        else:
+            self._segment_starts = None
+            self._segment_ends = None
 
     @classmethod
     def contiguous(cls, text: str, offset: int) -> SourceMap:
@@ -58,6 +73,23 @@ class SourceMap:
         if offset <= self.segments[0].start:
             return self.segments[0].offset
 
+        if self._segment_starts is None or self._segment_ends is None:
+            return self._linear_source_offset(offset)
+
+        index = bisect_left(self._segment_starts, offset)
+        if index < len(self.segments) and self._segment_starts[index] == offset:
+            return self.segments[index].offset
+
+        index = bisect_left(self._segment_ends, offset)
+        if index < len(self.segments):
+            segment = self.segments[index]
+            if segment.start < offset <= segment.end:
+                return segment.offset + offset - segment.start
+
+        segment = self.segments[-1]
+        return segment.offset + segment.end - segment.start
+
+    def _linear_source_offset(self, offset: int) -> int:
         for segment in self.segments:
             if offset == segment.start:
                 return segment.offset
@@ -95,6 +127,8 @@ class SourceMap:
                 continue
             if segment_start == segment.start:
                 source_offset = segment.offset
+            elif self._direct_slice_offsets and segment_start < segment.end:
+                source_offset = segment.offset + segment_start - segment.start
             else:
                 source_offset = self.source_offset(segment_start)
             segments.append(
