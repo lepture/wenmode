@@ -18,6 +18,42 @@ The script compares Markdown-to-HTML throughput across Wenmode and the parser
 libraries covered by the migration guides. It reports best time, mean time,
 throughput, and relative speed versus `wenmode-core`.
 
+## Edge cases
+
+Use the parser-only edge benchmark for deeply nested, unmatched, or unusually
+long syntax:
+
+```bash
+uv run --group benchmark python scripts/benchmark_edges.py
+```
+
+Each case uses sizes appropriate to its structure. The suite includes deep and
+alternating containers, nested link and image labels, long code-span runs,
+invalid inline closers, list interruption and continuation candidates,
+references, footnotes, nested HTML containers, and wide tables. Select one case
+or custom sizes when investigating a regression:
+
+```bash
+uv run --group benchmark python scripts/benchmark_edges.py \
+  --case deep-blockquote --sizes 1000,2000,4000
+```
+
+Run one category when narrowing a parser layer:
+
+```bash
+uv run --group benchmark python scripts/benchmark_edges.py --category inline
+```
+
+Pass `--positions` to include source-position tracking. The report includes
+total time, nanoseconds per generated unit, growth between adjacent sizes, and
+normalized growth. A normalized value near `1.0x` indicates approximately
+linear scaling; it is a diagnostic signal rather than a stable CI threshold.
+
+These synthetic cases are intentionally separate from the cross-library
+throughput results below. Parser recursion limits and extension semantics differ
+across libraries, and MB/s is not a useful primary metric for deeply nested
+structures.
+
 ## Cases
 
 | Case | Source | What it represents |
