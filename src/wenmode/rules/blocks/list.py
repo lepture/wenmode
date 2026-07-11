@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 MARKER_RE = re.compile(
-    r'^(?P<indent>[ \t]{0,3})(?P<marker>(?P<bullet>[*+-])|(?P<ordered>\d{1,9})(?P<delimiter>[.)]))(?P<spaces>[ \t]+|$)(?P<rest>.*)$'
+    r'^(?P<indent>[ \t]{0,3})(?P<marker>(?P<bullet>[*+-])|(?P<ordered>\d{1,9})(?P<delimiter>[.)]))(?P<spaces>[ \t]+|$)'
 )
 TASK_MARKER_RE = re.compile(r'^\[([ xX])][ \t]+')
 
@@ -137,7 +137,7 @@ def collect_list_item(
     marker_indent, content_indent, first_line = first_list_item_line(marker)
     lines = [first_line]
     source = state.source.collect()
-    source.add(state.index, marker.start('rest'), first_line)
+    source.add(state.index, marker.end(), first_line)
     state.advance()
     item_spread = False
     item_has_nested_marker = line_has_list_marker(first_line)
@@ -219,7 +219,7 @@ def first_list_item_line(marker: re.Match[str]) -> tuple[int, int, str]:
     marker_indent = count_indent(marker.group('indent'))
     marker_width = len(marker.group('marker'))
     content_indent = marker_indent + marker_width + 1
-    rest = marker.group('rest')
+    rest = marker.string[marker.end() :]
     if rest.strip() == '':
         return marker_indent, marker_indent + 2, rest + '\n'
 
@@ -237,7 +237,7 @@ def first_list_item_line(marker: re.Match[str]) -> tuple[int, int, str]:
 
 
 def collect_shallow_item_text(state: BlockState, marker: re.Match[str]) -> str:
-    text_lines = [marker.group('rest')]
+    text_lines = [marker.string[marker.end() :]]
     marker_indent = count_indent(marker.group('indent'))
     state.advance()
     while not state.done and not is_same_indent_list_marker(state.line, marker_indent):
