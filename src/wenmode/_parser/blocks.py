@@ -26,12 +26,23 @@ class BlockParser:
 
     def parse_blocks(self, text: str, parent_state: BlockState, source: SourceMap | None = None) -> list[Node]:
         lines = text.splitlines(keepends=True)
+        state = self._create_nested_state(lines, parent_state, source)
+        if parent_state.depth >= self._parser.max_container_depth - 1:
+            return self._parse_shallow_blocks(state)
+        return self.parse_nodes(state)
+
+    def _create_nested_state(
+        self,
+        lines: list[str],
+        parent_state: BlockState,
+        source: SourceMap | None = None,
+    ) -> BlockState:
         source_tracker: NullSourceTracker
         if self._parser.positions and source is not None:
             source_tracker = PositionSourceTracker(source.line_offsets(lines))
         else:
             source_tracker = NullSourceTracker()
-        state = BlockState(
+        return BlockState(
             lines,
             source=source_tracker,
             store=parent_state.store,
@@ -41,7 +52,55 @@ class BlockParser:
             defer_inlines=parent_state.defer_inlines,
             inline_sources=parent_state.inline_sources,
         )
-        return self.parse_nodes(state)
+
+    def _parse_shallow_blocks(self, state: BlockState) -> list[Node]:
+        children: list[Node] = []
+
+        while not state.done:
+            while not state.done and state.line.strip() == '':
+                state.advance()
+            if state.done:
+                break
+
+            start_index = state.index
+            node = self._parse_shallow_paragraph(state)
+            children.append(self._with_position(node, state, start_index) if self._parser.positions else node)
+
+        return children
+
+    def _parse_shallow_paragraph(self, state: BlockState) -> Node:
+        if self._parser.positions:
+            return self._parse_positioned_shallow_paragraph(state)
+        return self._parse_plain_shallow_paragraph(state)
+
+    def _parse_plain_shallow_paragraph(self, state: BlockState) -> Node:
+        lines = self._read_shallow_paragraph_lines(state)
+        text = ''.join(lines).strip()
+        return Paragraph(children=self._parser.parse_inlines(text, state))
+
+    def _parse_positioned_shallow_paragraph(self, state: BlockState) -> Node:
+        source = state.source.collect()
+        lines = self._read_shallow_paragraph_lines(state, source)
+        inline_source = source.map()
+        if inline_source is None:
+            text = ''.join(lines).strip()
+            return Paragraph(children=self._parser.parse_inlines(text, state))
+
+        raw_text = inline_source.text
+        start = len(raw_text) - len(raw_text.lstrip())
+        end = len(raw_text.rstrip())
+        inline_source = inline_source.slice(start, end)
+        text = inline_source.text
+        return Paragraph(children=self._parser.parse_inlines(text, state, source=inline_source))
+
+    @staticmethod
+    def _read_shallow_paragraph_lines(
+        state: BlockState, source: SourceCollector | None = None
+    ) -> list[str]:
+        lines: list[str] = []
+        while not state.done and state.line.strip() != '':
+            _append_paragraph_line(state, source, lines, state.line)
+        return lines
 
     def parse_nodes(self, state: BlockState) -> list[Node]:
         children: list[Node] = []

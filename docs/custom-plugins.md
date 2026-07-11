@@ -253,6 +253,13 @@ children = parser.parse_blocks(
 )
 ```
 
+`parser.parse_blocks()` enforces `Parser.max_container_depth` for all nested
+block callers. When the boundary is reached, it does not recurse into block
+rules again; it returns shallow blank-separated paragraphs that preserve the
+collected source text and source positions. Do not bypass this helper with a
+custom recursive parser, or deeply nested untrusted input can evade Wenmode's
+container-depth limit.
+
 If a rule decides not to handle a match, return `None` without consuming input.
 For inline rules, return `(None, match.start())`. The parser will continue with
 the normal fallback behavior.

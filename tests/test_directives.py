@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from typing import Any, TypedDict
 
 import pytest
@@ -133,6 +134,68 @@ def test_text_directive_respects_max_container_depth() -> None:
             }
         ],
     }
+
+
+def _nested_colon_directives(depth: int) -> str:
+    return ''.join(':::note\n' for _ in range(depth)) + 'deepest source\n' + ''.join(':::\n' for _ in range(depth))
+
+
+def _nested_fenced_directives(depth: int) -> str:
+    fences = ['`' * length for length in range(depth + 3, 3, -1)]
+    return (
+        ''.join(f'{fence}{{note}}\n' for fence in fences)
+        + 'deepest source\n'
+        + ''.join(f'{fence}\n' for fence in reversed(fences))
+    )
+
+
+def _max_type_depth(node: object, node_type: str) -> int:
+    if not isinstance(node, dict):
+        return 0
+    child_depth = max((_max_type_depth(child, node_type) for child in _children(node)), default=0)
+    if node.get('type') == node_type:
+        return 1 + child_depth
+    return child_depth
+
+
+def _children(node: dict[str, object]) -> Iterable[object]:
+    children = node.get('children')
+    if isinstance(children, list):
+        return children
+    return ()
+
+
+def _text_values(node: object) -> list[str]:
+    if not isinstance(node, dict):
+        return []
+    values: list[str] = []
+    if node.get('type') == 'text':
+        value = node.get('value')
+        if isinstance(value, str):
+            values.append(value)
+    for child in _children(node):
+        values.extend(_text_values(child))
+    return values
+
+
+def test_container_directive_block_recursion_respects_max_container_depth() -> None:
+    app = Wenmode([ContainerDirective])
+    app.parser.max_container_depth = 2
+
+    ast = app.parse(_nested_colon_directives(8)).to_ast()
+
+    assert _max_type_depth(ast, 'containerDirective') <= app.parser.max_container_depth
+    assert any('deepest source' in value for value in _text_values(ast))
+
+
+def test_fenced_directive_block_recursion_respects_max_container_depth() -> None:
+    app = Wenmode([]).use(fenced_directive)
+    app.parser.max_container_depth = 2
+
+    ast = app.parse(_nested_fenced_directives(8)).to_ast()
+
+    assert _max_type_depth(ast, 'containerDirective') <= app.parser.max_container_depth
+    assert any('deepest source' in value for value in _text_values(ast))
 
 
 def test_builtin_directives_drop_event_and_style_attributes() -> None:

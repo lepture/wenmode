@@ -32,6 +32,9 @@ here while preparing a release, then move them under the final version heading.
 
 ### Fixed
 
+- Enforce `Parser.max_container_depth` for all nested `parse_blocks()` callers,
+  preserving boundary content as shallow paragraphs instead of recursing
+  through directive or custom container rules without a shared limit.
 - Validate restored ordered-list `start` values and escape rendered list-start
   attributes through the shared HTML attribute renderer.
 - Reject custom block and paragraph-continuation rules that return a node

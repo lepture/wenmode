@@ -9,6 +9,7 @@ from tests.helpers import load_fixture
 from tests.plugin_helpers import STANDARD_RULES, configured_app
 from wenmode import Wenmode
 from wenmode.presets import github, streaming
+from wenmode.rules import ContainerDirective
 
 POSITION_RULE_NAMES = {
     *(name for name in STANDARD_RULES if name not in {'atx_heading_id', 'link_no_references'}),
@@ -122,6 +123,66 @@ def test_parse_iter_positions_stay_absolute_after_table_and_list_lookahead() -> 
     assert nodes[1].to_ast()['children'][1]['children'][0]['children'][0]['position'] == {
         'start': {'offset': 43},
         'end': {'offset': 46},
+    }
+
+
+def test_shallow_nested_block_positions_stay_absolute_at_depth_limit() -> None:
+    markdown = ':::note\n  *deep*\n\n  tail\n:::\n'
+    app = Wenmode([ContainerDirective], positions=True)
+    app.parser.max_container_depth = 1
+
+    assert app.parse(markdown).to_ast() == {
+        'type': 'root',
+        'children': [
+            {
+                'type': 'containerDirective',
+                'children': [
+                    {
+                        'type': 'paragraph',
+                        'children': [
+                            {
+                                'type': 'text',
+                                'value': '*deep*',
+                                'position': {
+                                    'start': {'line': 2, 'column': 3, 'offset': 10},
+                                    'end': {'line': 2, 'column': 9, 'offset': 16},
+                                },
+                            }
+                        ],
+                        'position': {
+                            'start': {'line': 2, 'column': 1, 'offset': 8},
+                            'end': {'line': 3, 'column': 1, 'offset': 17},
+                        },
+                    },
+                    {
+                        'type': 'paragraph',
+                        'children': [
+                            {
+                                'type': 'text',
+                                'value': 'tail',
+                                'position': {
+                                    'start': {'line': 4, 'column': 3, 'offset': 20},
+                                    'end': {'line': 4, 'column': 7, 'offset': 24},
+                                },
+                            }
+                        ],
+                        'position': {
+                            'start': {'line': 4, 'column': 1, 'offset': 18},
+                            'end': {'line': 5, 'column': 1, 'offset': 25},
+                        },
+                    },
+                ],
+                'name': 'note',
+                'position': {
+                    'start': {'line': 1, 'column': 1, 'offset': 0},
+                    'end': {'line': 6, 'column': 1, 'offset': 29},
+                },
+            }
+        ],
+        'position': {
+            'start': {'line': 1, 'column': 1, 'offset': 0},
+            'end': {'line': 6, 'column': 1, 'offset': 29},
+        },
     }
 
 

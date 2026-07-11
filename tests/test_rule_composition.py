@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping
+from dataclasses import dataclass
+from typing import Any
 
 from wenmode import HTMLRenderer, Wenmode
+from wenmode.nodes import Node, Parent
 from wenmode.presets import github
 from wenmode.rules import (
     AtxHeading,
@@ -16,6 +20,72 @@ from wenmode.rules import (
     SetextHeading,
     ThematicBreak,
 )
+from wenmode.rules.base import BlockRule
+
+
+@dataclass
+class CustomRecursiveBlock(Parent):
+    type: str = 'customRecursiveBlock'
+
+
+class RecursiveBlockRule(BlockRule):
+    name = 'recursive_block'
+    pattern = r'@@[A-Z]'
+
+    def parse(self, parser: Any, state: Any, match: re.Match[str]) -> Node | None:
+        marker = state.line.rstrip('\r\n')[2:]
+        if len(marker) != 1:
+            return None
+
+        state.advance()
+        closer = f'@@/{marker}'
+        source = state.source.collect()
+        lines: list[str] = []
+        while not state.done:
+            line = state.line
+            if line.rstrip('\r\n') == closer:
+                state.advance()
+                break
+            lines.append(line)
+            source.add(state.index, 0, line)
+            state.advance()
+        return CustomRecursiveBlock(children=parser.parse_blocks(''.join(lines), state, source=source.map()))
+
+
+def _recursive_block_markdown(depth: int) -> str:
+    markers = [chr(ord('A') + index) for index in range(depth)]
+    return (
+        ''.join(f'@@{marker}\n' for marker in markers)
+        + 'deepest source\n'
+        + ''.join(f'@@/{marker}\n' for marker in reversed(markers))
+    )
+
+
+def _max_type_depth(node: object, node_type: str) -> int:
+    if not isinstance(node, dict):
+        return 0
+    children = node.get('children')
+    child_depth = 0
+    if isinstance(children, list):
+        child_depth = max((_max_type_depth(child, node_type) for child in children), default=0)
+    if node.get('type') == node_type:
+        return 1 + child_depth
+    return child_depth
+
+
+def _text_values(node: object) -> list[str]:
+    if not isinstance(node, dict):
+        return []
+    values: list[str] = []
+    if node.get('type') == 'text':
+        value = node.get('value')
+        if isinstance(value, str):
+            values.append(value)
+    children = node.get('children')
+    if isinstance(children, list):
+        for child in children:
+            values.extend(_text_values(child))
+    return values
 
 
 def test_reference_definitions_are_plain_text_without_reference_consumers() -> None:
@@ -52,6 +122,16 @@ def test_deep_list_fast_path_at_depth_limit() -> None:
 
     markdown = ''.join('  ' * index + '- a\n' for index in range(1000))
     assert 'a' in app.render(markdown)
+
+
+def test_custom_block_rule_parse_blocks_respects_max_container_depth() -> None:
+    app = Wenmode([RecursiveBlockRule])
+    app.parser.max_container_depth = 2
+
+    ast = app.parse(_recursive_block_markdown(8)).to_ast()
+
+    assert _max_type_depth(ast, CustomRecursiveBlock.type) <= app.parser.max_container_depth
+    assert any('deepest source' in value for value in _text_values(ast))
 
 
 def test_emphasis_rule_enables_strong_and_emphasis() -> None:

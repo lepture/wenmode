@@ -44,6 +44,33 @@ class CustomBlockParent(Parent):
     type: str = 'customBlockParent'
 
 
+def _max_type_depth(node: object, node_type: str) -> int:
+    if not isinstance(node, dict):
+        return 0
+    children = node.get('children')
+    child_depth = 0
+    if isinstance(children, list):
+        child_depth = max((_max_type_depth(child, node_type) for child in children), default=0)
+    if node.get('type') == node_type:
+        return 1 + child_depth
+    return child_depth
+
+
+def _text_values(node: object) -> list[str]:
+    if not isinstance(node, dict):
+        return []
+    values: list[str] = []
+    if node.get('type') == 'text':
+        value = node.get('value')
+        if isinstance(value, str):
+            values.append(value)
+    children = node.get('children')
+    if isinstance(children, list):
+        for child in children:
+            values.extend(_text_values(child))
+    return values
+
+
 def test_wenmode_contains_parser_and_renderer() -> None:
     wen = Wenmode()
 
@@ -170,6 +197,42 @@ def test_wenmode_installs_declarative_block_fenced_children() -> None:
     wen = Wenmode(plugins=[BlockParentPlugin])
 
     assert wen.render('+++\n# Nested\n+++\n') == '<h1>Nested</h1>\n'
+
+
+def test_declarative_block_fenced_children_respects_max_container_depth() -> None:
+    openers = ['+++', '===', '%%%', '$$$', '???', '!!!', '&&&', ';;;']
+
+    class BlockParentPlugin:
+        spec = DeclarativePluginSpec(
+            name='bounded_custom_block_parent',
+            nodes=[CustomBlockParent],
+            syntax=[
+                BlockFenced(
+                    name=f'custom_block_parent_{index}',
+                    node=CustomBlockParent,
+                    opener=opener,
+                    closer=f'/{opener}',
+                    content='children',
+                )
+                for index, opener in enumerate(openers)
+            ],
+            renderers={'html': {CustomBlockParent.type: RendererFallback('children')}},
+        )
+
+        nodes = spec.nodes
+
+    markdown = (
+        ''.join(f'{opener}\n' for opener in openers)
+        + 'deepest source\n'
+        + ''.join(f'/{opener}\n' for opener in reversed(openers))
+    )
+    wen = Wenmode(plugins=[BlockParentPlugin])
+    wen.parser.max_container_depth = 2
+
+    ast = wen.parse(markdown).to_ast()
+
+    assert _max_type_depth(ast, CustomBlockParent.type) <= wen.parser.max_container_depth
+    assert any('deepest source' in value for value in _text_values(ast))
 
 
 def test_wenmode_rejects_declarative_plugin_options() -> None:

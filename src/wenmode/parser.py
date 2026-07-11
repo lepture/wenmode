@@ -145,7 +145,9 @@ class Parser:
 
         Custom block rules should use this helper for nested Markdown content so
         extension state and deferred inline queues are shared with the enclosing
-        parse.
+        parse. This helper centrally enforces ``max_container_depth``; at the
+        boundary it returns shallow paragraph content instead of recursively
+        running block rules again.
 
         :param text: Markdown block content.
         :param parent_state: Current block state from the outer parse.

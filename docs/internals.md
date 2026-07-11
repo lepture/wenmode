@@ -131,6 +131,15 @@ rules should use `Parser.parse_blocks()`, `Parser.parse_inlines()`,
 `Parser.inline_source()`, and `Parser.is_paragraph_interrupt()` rather than
 importing `_parser` classes directly.
 
+`Parser.parse_blocks()` is also the central container-depth boundary for nested
+block parsing. It shares the enclosing parse store, deferred-inline queues,
+callbacks, and inline source stack with the child state. While the parent state
+is below `Parser.max_container_depth`, nested content runs through the normal
+block parser. At the limit, the parser preserves the nested source as shallow
+blank-separated paragraphs and still parses inline content with the supplied
+source map. Extension rules should call this helper for nested block content
+instead of instantiating their own recursive parser.
+
 ## Rules
 
 All rules inherit from `Rule` and have a stable `name`. Enabled rules are
