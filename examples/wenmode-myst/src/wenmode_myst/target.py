@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 from wenmode import RSTRenderer
 from wenmode.nodes import Node
-from wenmode.rules.base import BlockRule
+from wenmode.rules import BlockRule
 from wenmode.state import BlockState
 
 if TYPE_CHECKING:
