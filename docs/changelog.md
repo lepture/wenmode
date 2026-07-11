@@ -11,7 +11,7 @@ releases.
 This page records notable changes for released versions. Add unreleased entries
 here while preparing a release, then move them under the final version heading.
 
-## Unreleased
+## 0.10.0
 
 ### Breaking Changes
 
@@ -37,8 +37,12 @@ here while preparing a release, then move them under the final version heading.
 - Remove `DeclarativePluginSpec` and `install_declarative()`. Configurable rule
   experiments remain private under `wenmode._declaratives` while their API
   evolves.
+- Rename the plugin module protocol to `PluginModule`, with optional `name`,
+  `nodes`, and renderer `handlers` metadata next to `setup(wen, /)`.
+- Move shared CJK, block, and parser utility helpers under `wenmode.utils` and
+  keep parser-state-specific helpers out of generic utility modules.
 
-### Fixed
+### Fixes
 
 - Bound `from_ast()` restoration with default node-depth and node-count
   budgets, and reject active reference cycles before recursive restoration can
@@ -60,6 +64,20 @@ here while preparing a release, then move them under the final version heading.
 - Reject streaming before the first chunk when parser root transforms or
   renderer root hooks require complete-root work that incremental parsing would
   otherwise skip.
+
+### Performance
+
+- Avoid capturing trailing `.*` regex groups in blockquote, list, reference,
+  footnote, spoiler, and related block rules when the rest of the line can be
+  derived from the match end.
+- Improve source-position tracking for nested parses by coalescing contiguous
+  collected source spans, adding single-segment `SourceMap` fast paths, and
+  avoiding repeated offset lookups for common collector paths.
+- Reduce position overhead for nested directives, HTML containers, list
+  continuations, reference titles, footnotes, lazy blockquotes, and tables in
+  edge-case benchmarks.
+- Keep inline code delimiter stress cases near-linear, including long successful
+  code spans and many wrong-length backtick runs.
 
 ## 0.9.1
 
