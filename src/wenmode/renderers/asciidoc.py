@@ -25,7 +25,6 @@ from wenmode.nodes import (
     LiteralDirective,
     Node,
     Paragraph,
-    Parent,
     Root,
     Strong,
     Table,

@@ -11,7 +11,7 @@ from ..._parser.source import SourceMap
 from ..._parser.state import BlockState
 from ..._parser.store import StateKey
 from ..base import InlineRule
-from ..directives import parse_attributes, parse_directive_head
+from ..directives import parse_attributes
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser

@@ -108,6 +108,7 @@ line-length = 120
 [tool.ruff.lint]
 select = [
     "I", # isort
+    "F",
 ]
 
 [tool.ruff.format]
