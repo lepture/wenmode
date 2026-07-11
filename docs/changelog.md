@@ -40,6 +40,9 @@ here while preparing a release, then move them under the final version heading.
 - Reject custom block and paragraph-continuation rules that return a node
   without advancing parser state, with a rule-specific `RuntimeError` instead
   of allowing an infinite parse loop.
+- Reject custom paragraph-continuation rules that mutate parser state while
+  returning `None`, preserving the documented decline behavior of continuing the
+  paragraph unchanged.
 - Release completed iterable-stream source prefixes before yielding parsed
   blocks, while preserving absolute positions and clarifying that
   `StreamBlockState.lines` is the active buffered window.

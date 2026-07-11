@@ -154,6 +154,9 @@ They receive the parser, current block state, and the matched opener.
 
 `ContinueRule` instances can inspect paragraph continuation lines. This is used
 for syntax where a paragraph can become another block, such as setext headings.
+Returning `None` declines the continuation and must leave `BlockState.index`
+unchanged. Returning a replacement node must advance the state past the accepted
+input.
 
 `InlineRule` instances provide a regex pattern and `parse()` method. They return
 `(node, end_index)`. If the rule does not accept a match, it returns

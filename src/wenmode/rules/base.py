@@ -63,8 +63,10 @@ class ContinueRule(Rule):
     def parse_paragraph_continuation(self, parser: Parser, state: BlockState, lines: list[str]) -> Node | None:
         """Parse a paragraph continuation.
 
-        Returning a replacement node requires advancing ``state``. Returning a
-        node without advancing state raises :exc:`RuntimeError`.
+        Returning ``None`` declines the continuation and must leave ``state``
+        unchanged. Returning a replacement node requires advancing ``state``.
+        Mutating ``state`` while declining, or returning a node without
+        advancing state, raises :exc:`RuntimeError`.
 
         :param parser: Active parser.
         :param state: Current block state positioned at the continuation line.

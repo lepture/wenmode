@@ -273,8 +273,10 @@ the normal fallback behavior.
 
 When a `BlockRule` or `ContinueRule` returns a node, it must advance `state` past
 the input it accepted. The parser raises `RuntimeError` identifying the rule if
-it returns a node without advancing state. A block rule may also advance state
-and return `None` when it consumes input without producing a node.
+it returns a node without advancing state. A `ContinueRule` that returns `None`
+is declining the continuation and must leave `state` unchanged so paragraph
+parsing can keep the marker as normal text. A block rule may advance state and
+return `None` when it consumes input without producing a node.
 
 ## Source Positions
 

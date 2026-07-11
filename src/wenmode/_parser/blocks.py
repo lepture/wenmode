@@ -236,17 +236,23 @@ class BlockParser:
                 continue
             previous_index = state.index
             parsed = continuation.parse_paragraph_continuation(self._parser, state, lines)
-            if parsed is not None:
-                if state.index < previous_index:
+            if parsed is None:
+                if state.index != previous_index:
                     raise RuntimeError(
-                        f"Continuation rule '{continuation.name}' moved state backwards "
-                        f'from index {previous_index} to {state.index}'
+                        f"Continuation rule '{continuation.name}' returned None but declining continuation "
+                        f'changed state from index {previous_index} to {state.index}'
                     )
-                if state.index == previous_index:
-                    raise RuntimeError(
-                        f"Continuation rule '{continuation.name}' returned a node but state did not advance"
-                    )
-                return parsed
+                continue
+            if state.index < previous_index:
+                raise RuntimeError(
+                    f"Continuation rule '{continuation.name}' moved state backwards "
+                    f'from index {previous_index} to {state.index}'
+                )
+            if state.index == previous_index:
+                raise RuntimeError(
+                    f"Continuation rule '{continuation.name}' returned a node but state did not advance"
+                )
+            return parsed
         return None
 
 

@@ -113,6 +113,65 @@ def test_continuation_rule_returning_node_must_advance_state() -> None:
         parser.parse('text\n!!\n')
 
 
+def test_continuation_rule_decline_must_not_advance_state() -> None:
+    class ForwardDecliningContinuation(ContinueRule):
+        name = 'forward_declining_continuation'
+
+        def matches(self, line: str) -> bool:
+            return line.startswith('!!')
+
+        def parse_paragraph_continuation(
+            self, parser: Parser, state: BlockState, lines: list[str]
+        ) -> Node | None:
+            state.advance()
+            return None
+
+    parser = Parser([ForwardDecliningContinuation])
+
+    with pytest.raises(RuntimeError, match=r"forward_declining_continuation.*declining continuation changed state"):
+        parser.parse('text\n!!\ntail\n')
+
+
+def test_continuation_rule_decline_must_not_move_state_backwards() -> None:
+    class BackwardDecliningContinuation(ContinueRule):
+        name = 'backward_declining_continuation'
+
+        def __init__(self) -> None:
+            super().__init__()
+            self.moved = False
+
+        def matches(self, line: str) -> bool:
+            return line.startswith('!!')
+
+        def parse_paragraph_continuation(
+            self, parser: Parser, state: BlockState, lines: list[str]
+        ) -> Node | None:
+            if not self.moved:
+                self.moved = True
+                state.advance(-1)
+            return None
+
+    parser = Parser([BackwardDecliningContinuation])
+
+    with pytest.raises(RuntimeError, match=r"backward_declining_continuation.*declining continuation changed state"):
+        parser.parse('text\n!!\n')
+
+
+def test_continuation_rule_can_decline_without_advancing() -> None:
+    class DecliningContinuation(ContinueRule):
+        name = 'declining_continuation'
+
+        def matches(self, line: str) -> bool:
+            return line.startswith('!!')
+
+        def parse_paragraph_continuation(
+            self, parser: Parser, state: BlockState, lines: list[str]
+        ) -> Node | None:
+            return None
+
+    assert render(Parser([DecliningContinuation]), 'text\n!!\n') == '<p>text\n!!</p>\n'
+
+
 def test_block_rule_can_decline_without_advancing() -> None:
     class DecliningBlock(BlockRule):
         name = 'declining_block'
