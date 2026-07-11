@@ -61,10 +61,10 @@ class Parser:
     @property
     def supports_streaming(self) -> bool:
         """Return whether this parser can yield nodes incrementally."""
-        return not self._ruleset.defer_inlines
+        return not self._ruleset.streaming_blockers
 
     def streaming_blockers(self) -> list[str]:
-        """Return deferred transform names that prevent streaming output."""
+        """Return document-wide transform names that prevent streaming output."""
         return list(self._ruleset.streaming_blockers)
 
     def register_rule(self, rule: type[Rule] | Rule) -> None:
@@ -121,15 +121,15 @@ class Parser:
     def parse_iter(self, source: LineSource) -> Iterator[Node]:
         """Yield top-level block nodes as they are parsed.
 
-        This API is intended for streaming renderers and rejects rule sets that
-        need deferred inline resolution. With ``positions=True``, yielded nodes
-        store source offsets, but they do not have root-level line-start context;
+        This API is intended for streaming renderers and rejects rule sets with
+        document-wide transforms. With ``positions=True``, yielded nodes store
+        source offsets, but they do not have root-level line-start context;
         calling ``to_ast()`` on them emits offset-only positions.
 
         :param source: Markdown source as a string or an iterable of lines.
         :returns: Iterator of parsed block nodes.
-        :raises StreamingUnsupportedError: If enabled rules require deferred
-            inline transforms.
+        :raises StreamingUnsupportedError: If enabled rules require
+            document-wide transforms.
         """
         self._assert_streaming_supported()
         state = self._create_block_state(source, defer_inlines=False)
@@ -188,7 +188,7 @@ class Parser:
             return
         names = ', '.join(blockers)
         raise StreamingUnsupportedError(
-            f'streaming output is blocked by deferred inline transforms: {names}; use the streaming preset'
+            f'streaming output is blocked by document-wide transforms: {names}; use the streaming preset'
         )
 
     def parse_inlines(self, text: str, state: BlockState, source: SourceMap | None = None) -> list[Node]:

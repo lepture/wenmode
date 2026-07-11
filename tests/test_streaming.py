@@ -7,9 +7,11 @@ import pytest
 
 from wenmode import StreamingUnsupportedError, Wenmode
 from wenmode.nodes import Node, Position
+from wenmode.parser import Parser
 from wenmode.presets import commonmark, github, streaming
-from wenmode.rules import Footnote, Link, List, Table
-from wenmode.rules.base import BlockRule
+from wenmode.rules import AtxHeading, Footnote, Link, List, Table
+from wenmode.rules.base import BlockRule, Rule
+from wenmode.rules.transforms import RootTransform
 from wenmode.state import StreamBlockState, StreamLineBuffer
 
 
@@ -47,6 +49,18 @@ class LookaheadProbeRule(BlockRule):
             state.peek(1)
         state.advance()
         return Node(type='lookaheadProbe')
+
+
+class LocalRootTransform(RootTransform):
+    name = 'local_root'
+
+
+class LocalRootTransformRule(Rule):
+    name = 'local_root_rule'
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.root_transforms = [LocalRootTransform()]
 
 
 def large_probe_lines(count: int):
@@ -232,6 +246,24 @@ def test_wenmode_stream_rejects_unsupported_rules() -> None:
 
     with pytest.raises(StreamingUnsupportedError, match='footnote'):
         next(Wenmode([Footnote]).stream('a[^one]\n\n[^one]: note\n'))
+
+
+def test_parse_iter_rejects_heading_id_root_transform() -> None:
+    parser = Parser([AtxHeading(id_transform=True)])
+
+    assert parser.supports_streaming is False
+    assert parser.streaming_blockers() == ['heading_id:default']
+    with pytest.raises(StreamingUnsupportedError, match='document-wide transforms: heading_id:default'):
+        next(parser.parse_iter('# Title\n'))
+
+
+def test_parse_iter_rejects_custom_non_deferred_root_transform() -> None:
+    parser = Parser([LocalRootTransformRule])
+
+    assert parser.supports_streaming is False
+    assert parser.streaming_blockers() == ['local_root']
+    with pytest.raises(StreamingUnsupportedError, match='document-wide transforms: local_root'):
+        next(parser.parse_iter('Body\n'))
 
 
 def test_parser_and_wenmode_report_streaming_support() -> None:

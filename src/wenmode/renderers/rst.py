@@ -60,6 +60,7 @@ class RSTRenderer(BaseRenderer):
     """Render Wenmode nodes as reStructuredText."""
 
     name = 'rst'
+    streaming_safe_to_omit_class_root_hooks = True
     heading_markers = ('=', '-', '~', '^', '"', '#')
 
     def create_context(self, node: Node | None = None) -> RSTRenderContext:

@@ -88,6 +88,7 @@ class HTMLRenderer(BaseRenderer):
     """
 
     name = 'html'
+    streaming_safe_to_omit_class_root_hooks = True
     allowed_url_schemes = frozenset({'http', 'https', 'irc', 'ircs', 'mailto', 'tel'})
 
     def __init__(

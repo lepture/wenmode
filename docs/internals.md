@@ -114,7 +114,7 @@ tree shape, inline parsing fills span-level children, and root transforms handle
 features that need document-wide state.
 
 `Parser.parse_iter()` follows the block parser incrementally and yields nodes as
-they are parsed. It rejects rule sets that require deferred inline transforms.
+they are parsed. It rejects rule sets that attach document-wide root transforms.
 Because it does not build a root node, position-aware `parse_iter()` output
 keeps offset-only position data unless a caller supplies its own line mapping.
 For iterable input, completed top-level source prefixes are released before the
@@ -171,6 +171,12 @@ Transforms can:
 
 Reference links, footnotes, abbreviations, and heading ID generation use this
 mechanism.
+
+Streaming never builds a complete `Root`, so every root transform blocks
+`Parser.parse_iter()` unless a future transform API explicitly defines
+incremental behavior. This is separate from `defer_inlines`: full parsing
+defers inline parsing only for transforms that request it, while streaming
+rejects all current root transforms.
 
 ## Parser state
 
@@ -233,3 +239,10 @@ types and falls back to the same child/value behavior for unknown nodes.
 Register handlers on a renderer subclass when the behavior is application
 specific. Register handlers through a plugin when the behavior belongs to a
 syntax extension that other applications may reuse.
+
+Renderer `root:pre` and `root:post` hooks run only when rendering a complete
+root node. Incremental rendering does not synthesize an empty root or call hooks
+with partial children. Class root hooks block streaming by default; the built-in
+HTML and RST hooks are narrowly marked safe to omit because their supported
+streaming fallbacks do not lose output. Instance hooks registered through
+`register_handler()` always block streaming.

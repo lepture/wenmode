@@ -40,17 +40,41 @@ class BaseRenderer:
     handlers: ClassVar[dict[str, RenderHandler]] = {}
     root_pre_renderers: ClassVar[list[RootRenderHook]] = []
     root_post_renderers: ClassVar[list[RootRenderHook]] = []
+    streaming_safe_to_omit_class_root_hooks: ClassVar[bool] = False
 
     def __init__(self) -> None:
         self._handlers: dict[str, RenderHandler] = dict(self.handlers)
         self._root_pre_renderers = list(self.root_pre_renderers)
         self._root_post_renderers = list(self.root_post_renderers)
+        self._class_root_pre_count = len(self._root_pre_renderers)
+        self._class_root_post_count = len(self._root_post_renderers)
+        self._dynamic_root_hook_blockers: set[str] = set()
 
     def __init_subclass__(cls) -> None:
         super().__init_subclass__()
         cls.handlers = dict(cls.handlers)
         cls.root_pre_renderers = list(cls.root_pre_renderers)
         cls.root_post_renderers = list(cls.root_post_renderers)
+        if 'streaming_safe_to_omit_class_root_hooks' not in cls.__dict__:
+            cls.streaming_safe_to_omit_class_root_hooks = False
+
+    @property
+    def supports_streaming(self) -> bool:
+        """Return whether this renderer can omit root hooks during streaming."""
+        return not self.streaming_blockers()
+
+    def streaming_blockers(self) -> list[str]:
+        """Return root hook labels that prevent streaming output."""
+        blockers: list[str] = []
+        if not self.streaming_safe_to_omit_class_root_hooks:
+            if self._class_root_pre_count:
+                blockers.append(ROOT_PRE_HANDLER)
+            if self._class_root_post_count:
+                blockers.append(ROOT_POST_HANDLER)
+        for label in (ROOT_PRE_HANDLER, ROOT_POST_HANDLER):
+            if label in self._dynamic_root_hook_blockers and label not in blockers:
+                blockers.append(label)
+        return blockers
 
     def create_context(self, node: Node | None = None) -> RenderContext:
         """Create a render context for one render call.
@@ -87,6 +111,7 @@ class BaseRenderer:
         :param nodes: Nodes to render.
         :returns: Iterator of rendered chunks.
         """
+        self._assert_streaming_supported()
         context = self.create_context()
         for node in nodes:
             yield self.render_node(node, context)
@@ -127,11 +152,22 @@ class BaseRenderer:
         """Register a render handler or root-level hook on this renderer instance."""
         if node_type == ROOT_PRE_HANDLER:
             self._root_pre_renderers.append(handler)
+            self._dynamic_root_hook_blockers.add(ROOT_PRE_HANDLER)
             return
         if node_type == ROOT_POST_HANDLER:
             self._root_post_renderers.append(handler)
+            self._dynamic_root_hook_blockers.add(ROOT_POST_HANDLER)
             return
         self._handlers[node_type] = handler
+
+    def _assert_streaming_supported(self) -> None:
+        blockers = self.streaming_blockers()
+        if not blockers:
+            return
+        from wenmode.parser import StreamingUnsupportedError
+
+        names = ', '.join(blockers)
+        raise StreamingUnsupportedError(f'streaming output is blocked by root render hooks: {names}')
 
     def render_unknown(self, node: Node, context: RenderContext) -> str:
         """Render a node without a registered handler.

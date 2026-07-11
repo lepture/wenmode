@@ -7,11 +7,12 @@ import pytest
 
 from tests.helpers import load_text_fixture, parse_text_fixture
 from tests.plugin_helpers import configured_app
-from wenmode import AsciiDocRenderer, HTMLRenderer, MarkdownRenderer, RSTRenderer, Wenmode
+from wenmode import AsciiDocRenderer, HTMLRenderer, MarkdownRenderer, RSTRenderer, StreamingUnsupportedError, Wenmode
 from wenmode.ast import from_ast
 from wenmode.directives import Admonition, Details, Figure, TableOfContents
 from wenmode.nodes import Html, Image, Link, List, ListItem, Literal, Paragraph, Parent, Root, Text
 from wenmode.plugins import html_container, inline_math
+from wenmode.presets import streaming
 from wenmode.renderers import BaseRenderer, RenderContext
 from wenmode.rules import (
     Footnote,
@@ -263,6 +264,63 @@ def test_renderer_class_root_hooks_wrap_root_rendering() -> None:
         return ':after'
 
     assert LocalRenderer().render(Root(children=[Text(value='body')])) == 'before:body:after'
+
+
+def test_renderer_class_root_hooks_block_streaming_by_default() -> None:
+    class LocalRenderer(BaseRenderer):
+        pass
+
+    @LocalRenderer.register('root:post')
+    def render_after(renderer: LocalRenderer, node: Root, context: RenderContext) -> str:
+        return ':after'
+
+    renderer = LocalRenderer()
+    app = Wenmode(streaming, renderer=renderer)
+
+    assert renderer.supports_streaming is False
+    assert renderer.streaming_blockers() == ['root:post']
+    assert app.supports_streaming is False
+    assert app.streaming_blockers() == ['root:post']
+    with pytest.raises(StreamingUnsupportedError, match='root:post'):
+        next(app.stream('Body\n'))
+
+
+@pytest.mark.parametrize('hook_name', ['root:pre', 'root:post'])
+def test_renderer_dynamic_root_hooks_block_streaming(hook_name: str) -> None:
+    renderer = HTMLRenderer()
+    renderer.register_handler(hook_name, lambda renderer, node, context: '')
+    app = Wenmode(streaming, renderer=renderer)
+
+    assert renderer.supports_streaming is False
+    assert renderer.streaming_blockers() == [hook_name]
+    assert app.supports_streaming is False
+    assert app.streaming_blockers() == [hook_name]
+    with pytest.raises(StreamingUnsupportedError, match=hook_name):
+        next(app.stream('Body\n'))
+
+
+def test_html_root_post_hook_is_safe_to_omit_during_supported_streaming() -> None:
+    app = Wenmode(streaming, renderer=HTMLRenderer())
+    markdown = '# Title\n\nBody with ![alt](/img.png).\n'
+
+    assert app.renderer.streaming_blockers() == []
+    assert app.supports_streaming is True
+    assert ''.join(app.stream(markdown)) == app.render(markdown)
+
+
+def test_rst_root_post_hook_is_safe_to_omit_for_direct_streaming_images() -> None:
+    app = Wenmode(streaming, renderer=RSTRenderer())
+
+    assert app.renderer.streaming_blockers() == []
+    assert app.supports_streaming is True
+    assert ''.join(app.stream('![alt](https://example.com/img.png "title")\n')) == (
+        '.. image:: https://example.com/img.png\n'
+        '   :alt: alt\n'
+        '   :title: title\n'
+        '\n'
+        '\n'
+        '\n'
+    )
 
 
 def test_base_renderer_unknown_nodes_fall_back_to_children_or_value() -> None:

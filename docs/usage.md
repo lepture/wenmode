@@ -222,6 +222,17 @@ completed top-level blocks incrementally. Pass a line iterator for large files
 or uploads; string input has already been loaded into memory and is not the
 bounded-memory path.
 
+Streaming is rejected when enabled rules attach complete-root transforms, such
+as reference collection, footnotes, front matter, or heading ID generation.
+`Wenmode.supports_streaming` and `Wenmode.streaming_blockers()` report the
+combined parser and renderer compatibility before you call `stream()`.
+
+Renderer `root:pre` and `root:post` hooks are full-root hooks. Ordinary hooks
+block streaming rather than receiving an incomplete or synthetic root. Wenmode's
+built-in HTML footnote hook and RST image-definition hook are explicitly safe to
+omit for supported streaming configurations; they are not invoked with partial
+root data.
+
 Iterable input is consumed lazily. Completed top-level source prefixes are
 released before their rendered chunks or parsed nodes are yielded, while unread
 lookahead remains available to the parser. Retained source is proportional to

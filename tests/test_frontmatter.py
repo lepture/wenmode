@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from wenmode import AsciiDocRenderer, MarkdownRenderer, RSTRenderer, Wenmode
+import pytest
+
+from wenmode import AsciiDocRenderer, MarkdownRenderer, RSTRenderer, StreamingUnsupportedError, Wenmode
 from wenmode.plugins import frontmatter
-from wenmode.presets import github
+from wenmode.presets import github, streaming
 
 
 def test_frontmatter_plugin_stores_metadata_on_root_data() -> None:
@@ -13,6 +15,19 @@ def test_frontmatter_plugin_stores_metadata_on_root_data() -> None:
 
     assert root.data == {'frontmatter': {'title': 'Hello', 'layout': 'landing'}}
     assert app.render_node(root) == '<h1>Hi</h1>\n'
+
+
+@pytest.mark.parametrize('renderer', [MarkdownRenderer(), RSTRenderer(), AsciiDocRenderer()])
+def test_frontmatter_plugin_blocks_streaming_before_metadata_is_lost(renderer) -> None:
+    app = Wenmode(streaming, renderer=renderer).use(frontmatter)
+    stream = app.stream('---\ntitle: Hello\n---\n\n# Hi\n')
+
+    assert app.supports_streaming is False
+    assert app.parser.streaming_blockers() == ['frontmatter:frontmatter']
+    assert app.renderer.streaming_blockers() == ['root:pre']
+    assert app.streaming_blockers() == ['frontmatter:frontmatter', 'root:pre']
+    with pytest.raises(StreamingUnsupportedError, match='frontmatter:frontmatter, root:pre'):
+        next(stream)
 
 
 def test_frontmatter_plugin_preserves_child_source_positions() -> None:

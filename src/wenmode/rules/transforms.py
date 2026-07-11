@@ -20,6 +20,7 @@ class RootTransform:
 
     name: str
     defer_inlines = False
+    supports_streaming = False
     required_rules: Sequence[type[Rule] | Rule] = ()
 
     def prepare(self, parser: Parser, root: Root, state: BlockState) -> None:

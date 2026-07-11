@@ -43,6 +43,9 @@ here while preparing a release, then move them under the final version heading.
 - Release completed iterable-stream source prefixes before yielding parsed
   blocks, while preserving absolute positions and clarifying that
   `StreamBlockState.lines` is the active buffered window.
+- Reject streaming before the first chunk when parser root transforms or
+  renderer root hooks require complete-root work that incremental parsing would
+  otherwise skip.
 
 ## 0.9.1
 

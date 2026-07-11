@@ -6,7 +6,7 @@ from typing import Any, cast
 from ._declarative import DeclarativePluginSpec, install_declarative
 from ._parser.source import LineSource
 from .nodes import Node, Root
-from .parser import Parser
+from .parser import Parser, StreamingUnsupportedError
 from .plugins import RendererHandlers
 from .plugins.types import PluginConfig, PluginLike, PluginSetupCall, PluginTarget
 from .presets import commonmark
@@ -84,15 +84,20 @@ class Wenmode:
     def stream(self, source: LineSource) -> Iterator[str]:
         """Yield rendered chunks while parsing Markdown incrementally.
 
-        Streaming is only supported for rule sets that do not require deferred
-        document-wide inline transforms.
+        Streaming is only supported when the parser has no document-wide
+        transforms and the renderer has no required root hooks.
 
         :param source: Markdown source as a string or an iterable of lines.
         :returns: Iterator of rendered chunks.
-        :raises wenmode.StreamingUnsupportedError: Raised by the parser when a
-            configured rule set requires deferred inline resolution.
+        :raises wenmode.StreamingUnsupportedError: Raised on first iteration
+            when parser transforms or renderer root hooks require a complete
+            root.
         """
-        return self.renderer.render_iter(self.parser.parse_iter(source))
+        def iterator() -> Iterator[str]:
+            self._assert_streaming_supported()
+            yield from self.renderer.render_iter(self.parser.parse_iter(source))
+
+        return iterator()
 
     def register_rule(self, rule: type[Rule] | Rule) -> None:
         """Register or replace one parser rule.
@@ -134,12 +139,27 @@ class Wenmode:
 
     @property
     def supports_streaming(self) -> bool:
-        """Return whether the configured parser can produce streaming output."""
-        return self.parser.supports_streaming
+        """Return whether the configured parser and renderer can stream."""
+        return self.parser.supports_streaming and self.renderer.supports_streaming
 
     def streaming_blockers(self) -> list[str]:
-        """Return deferred transform names that prevent streaming output."""
-        return self.parser.streaming_blockers()
+        """Return transform and root hook labels that prevent streaming output."""
+        blockers: list[str] = []
+        for blocker in [*self.parser.streaming_blockers(), *self.renderer.streaming_blockers()]:
+            if blocker not in blockers:
+                blockers.append(blocker)
+        return blockers
+
+    def _assert_streaming_supported(self) -> None:
+        blockers = self.streaming_blockers()
+        if not blockers:
+            return
+        names = ', '.join(blockers)
+        raise StreamingUnsupportedError(
+            f'streaming output is blocked by document-wide transforms or root render hooks: {names}; '
+            'deferred inline transforms are included, but complete-root work also blocks streaming; '
+            'use the streaming preset'
+        )
 
     def use(self, plugin: PluginTarget, **options: Any) -> Wenmode:
         """Install a plugin module or plugin object on this parser and renderer."""

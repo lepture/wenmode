@@ -157,6 +157,13 @@ the pseudo handler names `root:pre` and `root:post` for prefixes such as
 metadata blocks and suffixes. This keeps the renderer's built-in root behavior,
 such as footnote sections or deferred image definitions, intact.
 
+Root hooks receive a complete parsed `Root` and are not run during streaming.
+Registering `root:pre` or `root:post` on a renderer instance blocks
+`Wenmode.stream()` before the first chunk so metadata, summaries, or suffixes
+are not silently dropped. Plugins that need incremental output should wait for
+a dedicated streaming hook API rather than assuming root hooks will run with
+partial data.
+
 ```{code-block} python
 handlers = {
     'markdown': {'root:pre': render_document_metadata},
