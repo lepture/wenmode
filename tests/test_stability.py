@@ -88,6 +88,7 @@ def test_streaming_rejects_core_rules_with_deferred_transforms(rule) -> None:
 def test_documented_public_extension_imports_resolve() -> None:
     import wenmode
     import wenmode.plugins
+    import wenmode.renderers
     from wenmode import HTMLRenderer, MarkdownRenderer, Parser, RSTRenderer
     from wenmode.ast import find_all, from_ast, plain_text, walk
     from wenmode.nodes import BUILTIN_NODES, LiteralDirective, Root, Text
@@ -102,6 +103,21 @@ def test_documented_public_extension_imports_resolve() -> None:
     assert all(name not in wenmode.__all__ for name in {'Plugin', 'PluginConfig', 'PluginTarget'})
     assert all(name not in wenmode.plugins.__all__ for name in {'Plugin', 'PluginConfig', 'PluginTarget'})
     assert all('_parser' not in name for name in wenmode.__all__)
+    assert all(
+        name not in wenmode.renderers.__all__
+        for name in {'delimiter_for_align', 'normalize_table_row', 'quote_directive_attribute'}
+    )
+    assert {
+        'AsciiDocRenderer',
+        'BaseRenderer',
+        'DirectiveHtmlRenderer',
+        'HTMLRenderer',
+        'MarkdownRenderer',
+        'RSTRenderer',
+        'RenderContext',
+        'RenderHandler',
+        'render_node_children',
+    }.issubset(wenmode.renderers.__all__)
     assert {node.type: node for node in BUILTIN_NODES}['literalDirective'] is LiteralDirective
     assert isinstance(from_ast({'type': 'literalDirective', 'name': 'code-block', 'value': 'x'}), LiteralDirective)
     assert plain_text(Root(children=[Text(value='text')])) == 'text'

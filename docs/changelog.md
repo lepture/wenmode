@@ -20,6 +20,8 @@ here while preparing a release, then move them under the final version heading.
 - Expose built-in presets and parser rule collections as read-only sequences
   and mappings. Use `create_preset()` or `Parser.register_rule(s)` to derive or
   update rule configurations.
+- Stop exporting Markdown renderer implementation helpers from
+  `wenmode.renderers`; use the documented renderer classes and extension hooks.
 
 ## 0.9.1
 

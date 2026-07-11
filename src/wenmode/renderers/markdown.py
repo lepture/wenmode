@@ -245,7 +245,7 @@ def render_directive_attributes(attributes: dict[str, str] | None) -> str:
         if value == '':
             parts.append(key)
         else:
-            parts.append(f'{key}={quote_directive_attribute(value)}')
+            parts.append(f'{key}={_quote_directive_attribute(value)}')
 
     if parts:
         return '{' + ' '.join(parts) + '}'
@@ -257,11 +257,11 @@ def render_table(renderer: MarkdownRenderer, node: Table, context: RenderContext
     if not node.children:
         return ''
 
-    header = normalize_table_row(node.children[0], len(node.align))
-    body = [normalize_table_row(row, len(node.align)) for row in node.children[1:]]
+    header = _normalize_table_row(node.children[0], len(node.align))
+    body = [_normalize_table_row(row, len(node.align)) for row in node.children[1:]]
     lines = [
         '| ' + ' | '.join(render_table_cell_content(renderer, cell, context) for cell in header) + ' |',
-        '| ' + ' | '.join(delimiter_for_align(align) for align in node.align) + ' |',
+        '| ' + ' | '.join(_delimiter_for_align(align) for align in node.align) + ' |',
     ]
     lines.extend(
         '| ' + ' | '.join(render_table_cell_content(renderer, cell, context) for cell in row) + ' |' for row in body
@@ -269,7 +269,7 @@ def render_table(renderer: MarkdownRenderer, node: Table, context: RenderContext
     return '\n'.join(lines) + '\n\n'
 
 
-def normalize_table_row(row: Node, size: int) -> list[TableCell]:
+def _normalize_table_row(row: Node, size: int) -> list[TableCell]:
     """Return exactly ``size`` table cells for Markdown serialization."""
     if isinstance(row, TableRow):
         cells = [cell for cell in row.children if isinstance(cell, TableCell)]
@@ -284,7 +284,7 @@ def render_table_cell_content(renderer: MarkdownRenderer, cell: TableCell, conte
     return renderer.render_children(cell.children, context).replace('\n', ' ').strip()
 
 
-def delimiter_for_align(align: str | None) -> str:
+def _delimiter_for_align(align: str | None) -> str:
     """Return a Markdown table delimiter cell for an alignment value."""
     if align == 'left':
         return ':---'
@@ -295,7 +295,7 @@ def delimiter_for_align(align: str | None) -> str:
     return '---'
 
 
-def quote_directive_attribute(value: str) -> str:
+def _quote_directive_attribute(value: str) -> str:
     """Quote a directive attribute value when required by Markdown syntax."""
     if value and not re.search(r'[\s"\'=<>`{}]', value):
         return value

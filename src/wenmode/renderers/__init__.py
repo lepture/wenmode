@@ -3,7 +3,7 @@ from __future__ import annotations
 from .asciidoc import AsciiDocRenderer
 from .base import BaseRenderer, RenderContext, RenderHandler, render_node_children
 from .html import DirectiveHtmlRenderer, HTMLRenderer
-from .markdown import MarkdownRenderer, delimiter_for_align, normalize_table_row, quote_directive_attribute
+from .markdown import MarkdownRenderer
 from .rst import RSTRenderer
 
 __all__ = [
@@ -15,8 +15,5 @@ __all__ = [
     'RSTRenderer',
     'RenderContext',
     'RenderHandler',
-    'delimiter_for_align',
-    'normalize_table_row',
-    'quote_directive_attribute',
     'render_node_children',
 ]
