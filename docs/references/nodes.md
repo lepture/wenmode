@@ -82,6 +82,7 @@ restored by `from_ast()` when you pass plugin node classes:
 | `definitionList` | `definition_list.DefinitionListNode` | `children` |
 | `definitionTerm` | `definition_list.DefinitionTermNode` | `children` |
 | `definitionDescription` | `definition_list.DefinitionDescriptionNode` | `children`, `spread` |
+| `githubAlert` | `github_alert.GithubAlertNode` | `children`, `name` |
 | `htmlContainer` | `html_container.HtmlContainerNode` | `children`, `name`, `attributes`, `opening`, `closing` |
 | `math` | `block_math.MathNode` | `value` |
 | `inlineMath` | `inline_math.InlineMathNode` | `value` |

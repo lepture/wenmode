@@ -84,6 +84,7 @@ supported.
 | `wenmode.plugins.definition_list` | Definition list syntax and nodes |
 | `wenmode.plugins.fenced_directive` | MyST-style fenced directives, rendered as `containerDirective` or `literalDirective` nodes |
 | `wenmode.plugins.frontmatter` | Top-level `---` front matter stored on `root.data["frontmatter"]` |
+| `wenmode.plugins.github_alert` | GitHub alert blockquotes rendered as `githubAlert` nodes |
 | `wenmode.plugins.heading_ids` | Generated IDs for enabled heading rules |
 | `wenmode.plugins.html_container` | Standalone HTML tag pairs whose body is parsed as Markdown blocks |
 | `wenmode.plugins.block_math` | Display math blocks |
@@ -102,6 +103,29 @@ handlers when the feature has a standard representation in Wenmode's built-in
 renderers.
 Plugins that introduce custom node types expose a `nodes` class list for
 `wenmode.ast.from_ast()`; see {ref}`reference-nodes`.
+
+## GitHub Alerts
+
+The `github_alert` plugin parses top-level GitHub alert blockquotes and emits
+`githubAlert` nodes. By default, HTML output uses GitHub-compatible
+`markdown-alert` classes:
+
+```python
+from wenmode import Wenmode
+from wenmode.plugins import github_alert
+
+wen = Wenmode(plugins=[github_alert])
+```
+
+When you want HTML output to match Wenmode's admonition directive renderer, use
+`configure(html_style="admonition")`:
+
+```python
+from wenmode import Wenmode
+from wenmode.plugins import github_alert
+
+wen = Wenmode(plugins=[github_alert.configure(html_style="admonition")])
+```
 
 ## Heading IDs
 

@@ -15,6 +15,7 @@ from wenmode.plugins import (
     abbr,
     block_math,
     block_spoiler,
+    github_alert,
     heading_ids,
     inline_math,
     inline_spoiler,
@@ -67,8 +68,8 @@ def test_plugin_state_is_created_per_parse() -> None:
 
 
 def test_streaming_preset_supports_streaming_compatible_plugins() -> None:
-    app = Wenmode(streaming).use(block_math).use(inline_math).use(block_spoiler).use(inline_spoiler)
-    markdown = 'A $x$ and >! hidden !<.\n\n- [x] done\n'
+    app = Wenmode(streaming).use(block_math).use(inline_math).use(block_spoiler).use(inline_spoiler).use(github_alert)
+    markdown = 'A $x$ and >! hidden !<.\n\n> [!NOTE]\n> stream\n\n- [x] done\n'
 
     assert ''.join(app.stream(markdown)) == app.render(markdown)
     assert ''.join(app.stream(StringIO(markdown))) == app.render(markdown)
@@ -131,6 +132,7 @@ def test_documented_public_extension_imports_resolve() -> None:
     assert BlockState and SourceMap and StateKey and StateStore
     assert BlockFenced and InlineDelimited and InlineLiteral
     assert PluginModule and RendererHandlers
+    assert github_alert
     assert heading_ids
 
 

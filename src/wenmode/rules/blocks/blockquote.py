@@ -12,6 +12,8 @@ from ..base import BlockRule
 if TYPE_CHECKING:
     from wenmode.parser import Parser
 
+    from ..._parser.source import SourceCollector
+
 
 BLOCKQUOTE_RE = re.compile(r'[ \t]{0,3}> ?')
 NESTED_BLOCKQUOTE_RE = re.compile(r'[ \t]{0,3}(?:[*+-]|\d{1,9}[.)])[ \t]+>')
@@ -31,9 +33,9 @@ class Blockquote(BlockRule):
     name = 'blockquote'
     pattern = r'[ \t]{0,3}>'
 
-    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> BlockquoteNode:
+    @staticmethod
+    def parse_text(parser: Parser, state: BlockState, source: SourceCollector) -> str:
         lines: list[str] = []
-        source = state.source.collect()
         paragraph_open = False
         lazy_used = False
         while not state.done:
@@ -62,7 +64,11 @@ class Blockquote(BlockRule):
             lazy_used = False
             state.advance()
 
-        text = ''.join(lines)
+        return ''.join(lines)
+
+    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> BlockquoteNode:
+        source = state.source.collect()
+        text = self.parse_text(parser, state, source)
         return BlockquoteNode(children=parser.parse_blocks(text, parent_state=state, source=source.map()))
 
 

@@ -15,6 +15,7 @@ here while preparing a release, then move them under the final version heading.
 
 ### Added
 
+- Add `wenmode.plugins.github_alert` for top-level GitHub alert blockquotes.
 - Add `wenmode.plugins.heading_ids` to install generated heading IDs on the
   heading rules already enabled in a parser configuration.
 

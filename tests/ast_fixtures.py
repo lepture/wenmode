@@ -36,6 +36,7 @@ from wenmode.plugins import (
     block_math,
     block_spoiler,
     definition_list,
+    github_alert,
     html_container,
     inline_math,
     inline_spoiler,
@@ -175,6 +176,7 @@ PLUGIN_NODE_SAMPLES: list[NodeShape] = [
     ),
     ('math', block_math.MathNode, {'type': 'math', 'value': 'x + y\n'}),
     ('inlineMath', inline_math.InlineMathNode, {'type': 'inlineMath', 'value': 'x + y'}),
+    ('githubAlert', github_alert.GithubAlertNode, {'type': 'githubAlert', 'children': [PARAGRAPH_AST], 'name': 'note'}),
     ('blockSpoiler', block_spoiler.BlockSpoilerNode, {'type': 'blockSpoiler', 'children': [PARAGRAPH_AST]}),
     ('inlineSpoiler', inline_spoiler.InlineSpoilerNode, {'type': 'inlineSpoiler', 'children': [TEXT_AST]}),
     ('mark', mark.MarkNode, {'type': 'mark', 'children': [TEXT_AST]}),
@@ -192,6 +194,9 @@ The HTML spec uses ==mark==, ^^insert^^, H~2~O, 2^10^, [漢字(kanji)], >! secre
 $x + y$, and {abbr}`CPU`.
 
 *[HTML]: HyperText Markup Language
+
+> [!NOTE]
+> important *context*
 
 Apple
 : *fruit*
@@ -218,6 +223,7 @@ PLUGIN_ROUND_TRIP_NODE_TYPES = {
     'definitionTerm',
     'definitionDescription',
     'htmlContainer',
+    'githubAlert',
     'mark',
     'insert',
     'subscript',

@@ -262,6 +262,57 @@ Output node is `MathNode`, and its AST is:
 }
 ```
 
+## GitHub Alert Plugin
+
+`wenmode.plugins.github_alert` parses top-level GitHub alert blockquotes whose
+first line is one of `[!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, or
+`[!CAUTION]`.
+
+```markdown
+> [!NOTE]
+> important *context*
+```
+
+The plugin replaces the already enabled `blockquote` rule. It does not enable
+blockquote syntax by itself. HTML output defaults to GitHub-compatible
+`markdown-alert` classes. Use `github_alert.configure(html_style="admonition")`
+to render the same `<aside class="admonition ...">` structure as Wenmode's
+admonition directive renderer.
+
+Output node is `GithubAlertNode`, and its AST is:
+
+```json
+{
+  "type": "root",
+  "children": [
+    {
+      "type": "githubAlert",
+      "name": "note",
+      "children": [
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "type": "text",
+              "value": "important "
+            },
+            {
+              "type": "emphasis",
+              "children": [
+                {
+                  "type": "text",
+                  "value": "context"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
 ## Spoiler Plugin
 
 `wenmode.plugins.block_spoiler` parses `>!`-prefixed spoiler blocks.
