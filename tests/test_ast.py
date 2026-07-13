@@ -8,11 +8,10 @@ import pytest
 from tests.ast_fixtures import (
     BUILTIN_NODE_SHAPES,
     PLUGIN_NODE_SAMPLES,
-    PLUGIN_REGISTRY_TARGETS,
     PLUGIN_ROUND_TRIP_MARKDOWN,
     PLUGIN_ROUND_TRIP_NODE_TYPES,
-    PLUGIN_ROUND_TRIP_TARGETS,
 )
+from tests.plugin_helpers import PLUGIN_REGISTRY_TARGETS, PLUGIN_ROUND_TRIP_TARGETS, collect_plugin_nodes
 from wenmode import Wenmode
 from wenmode.ast import find, find_all, from_ast, iter_children, plain_text, walk
 from wenmode.nodes import (
@@ -41,13 +40,6 @@ class Callout(Parent):
 @dataclass
 class PluginContainer(Parent):
     type: str = 'pluginContainer'
-
-
-def collect_plugin_nodes(plugins: list[object]) -> list[type[Node]]:
-    nodes: list[type[Node]] = []
-    for plugin in plugins:
-        nodes.extend(getattr(plugin, 'nodes', []))
-    return nodes
 
 
 def node_chain(depth: int, node_type: str = 'paragraph') -> dict[str, object]:

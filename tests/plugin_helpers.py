@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 from wenmode import Wenmode
+from wenmode.nodes import Node
 from wenmode.plugins import (
     abbr,
     block_math,
@@ -107,6 +108,49 @@ PLUGIN_RULES: dict[str, object] = {
     'subscript': subscript,
     'superscript': superscript,
 }
+
+PLUGIN_REGISTRY_TARGETS: list[object] = [
+    abbr,
+    definition_list,
+    fenced_directive,
+    frontmatter,
+    html_container,
+    inline_role,
+    insert,
+    mark,
+    block_math,
+    inline_math,
+    ruby,
+    block_spoiler,
+    inline_spoiler,
+    subscript,
+    superscript,
+]
+
+PLUGIN_ROUND_TRIP_TARGETS: list[object] = [
+    frontmatter,
+    html_container,
+    abbr,
+    definition_list,
+    fenced_directive,
+    inline_role,
+    insert,
+    mark,
+    block_math,
+    inline_math,
+    ruby,
+    block_spoiler,
+    inline_spoiler,
+    subscript,
+    superscript,
+]
+
+
+def collect_plugin_nodes(plugins: Iterable[object]) -> list[type[Node]]:
+    nodes: list[type[Node]] = []
+    for plugin in plugins:
+        nodes.extend(getattr(plugin, 'nodes', []))
+    return nodes
 
 
 def configured_app(

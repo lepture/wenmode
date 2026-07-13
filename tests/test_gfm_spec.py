@@ -4,10 +4,8 @@ import pytest
 
 from tests.helpers import SpecExample, load_fixture
 from wenmode import HTMLRenderer, Wenmode
-from wenmode.presets import github
+from wenmode.presets import create_preset, github
 from wenmode.rules import ExtendedAutolink, Rule
-
-GFM_CORE = [rule for rule in github if rule is not ExtendedAutolink and not isinstance(rule, ExtendedAutolink)]
 
 
 @pytest.mark.parametrize(
@@ -22,5 +20,5 @@ def test_gfm_spec(example: SpecExample) -> None:
 
 def rules_for_example(example: SpecExample) -> list[type[Rule] | Rule]:
     if example['section'] == '6.8 Autolinks':
-        return GFM_CORE
+        return create_preset(github, remove=[ExtendedAutolink])
     return github

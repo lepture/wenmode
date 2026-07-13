@@ -35,6 +35,33 @@ def load_fixture(name: str) -> Any:
     return json.loads((FIXTURES_DIR / name).read_text(encoding='utf-8'))
 
 
+def max_type_depth(node: object, node_type: str) -> int:
+    if not isinstance(node, dict):
+        return 0
+    children = node.get('children')
+    child_depth = 0
+    if isinstance(children, list):
+        child_depth = max((max_type_depth(child, node_type) for child in children), default=0)
+    if node.get('type') == node_type:
+        return 1 + child_depth
+    return child_depth
+
+
+def text_values(node: object) -> list[str]:
+    if not isinstance(node, dict):
+        return []
+    values: list[str] = []
+    if node.get('type') == 'text':
+        value = node.get('value')
+        if isinstance(value, str):
+            values.append(value)
+    children = node.get('children')
+    if isinstance(children, list):
+        for child in children:
+            values.extend(text_values(child))
+    return values
+
+
 def load_text_fixture(name: str) -> list[dict[str, Any]]:
     """Load Markdown-style fixture cases.
 

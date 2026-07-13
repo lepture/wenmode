@@ -32,7 +32,7 @@ from wenmode.rules import (
 
 
 def parse_time(
-    markdown: str, rules: list[type[Rule] | Rule], plugins: Iterable[Any] = (), positions: bool = False
+    markdown: str, rules: Iterable[type[Rule] | Rule], plugins: Iterable[Any] = (), positions: bool = False
 ) -> float:
     parser = Wenmode(rules, positions=positions)
     for plugin in plugins:
@@ -44,7 +44,7 @@ def parse_time(
 
 def assert_scales_nearly_linearly(
     factory: Callable[[int], str],
-    rules: list[type[Rule] | Rule],
+    rules: Iterable[type[Rule] | Rule],
     small_size: int = 4000,
     large_size: int = 8000,
     plugins: Iterable[Any] = (),

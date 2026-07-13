@@ -32,7 +32,7 @@ POSITION_RULE_NAMES = {
 
 class PositionExample(TypedDict, total=False):
     name: str
-    rules: list[str]
+    rules: Iterable[str]
     markdown: str
     source_lines: list[str]
     ast: dict[str, object]

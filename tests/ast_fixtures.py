@@ -36,11 +36,8 @@ from wenmode.plugins import (
     block_math,
     block_spoiler,
     definition_list,
-    fenced_directive,
-    frontmatter,
     html_container,
     inline_math,
-    inline_role,
     inline_spoiler,
     insert,
     mark,
@@ -185,42 +182,6 @@ PLUGIN_NODE_SAMPLES: list[NodeShape] = [
     ('superscript', superscript.SuperscriptNode, {'type': 'superscript', 'children': [TEXT_AST]}),
     ('subscript', subscript.SubscriptNode, {'type': 'subscript', 'children': [TEXT_AST]}),
     ('ruby', ruby.RubyNode, {'type': 'ruby', 'segments': [{'base': '漢字', 'text': 'kanji'}]}),
-]
-
-PLUGIN_REGISTRY_TARGETS: list[object] = [
-    abbr,
-    definition_list,
-    fenced_directive,
-    frontmatter,
-    html_container,
-    inline_role,
-    insert,
-    mark,
-    block_math,
-    inline_math,
-    ruby,
-    block_spoiler,
-    inline_spoiler,
-    subscript,
-    superscript,
-]
-
-PLUGIN_ROUND_TRIP_TARGETS: list[object] = [
-    frontmatter,
-    html_container,
-    abbr,
-    definition_list,
-    fenced_directive,
-    inline_role,
-    insert,
-    mark,
-    block_math,
-    inline_math,
-    ruby,
-    block_spoiler,
-    inline_spoiler,
-    subscript,
-    superscript,
 ]
 
 PLUGIN_ROUND_TRIP_MARKDOWN = """---
