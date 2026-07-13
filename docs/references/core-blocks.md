@@ -173,8 +173,10 @@ Output node is `Code`, and its AST is:
 `IndentedCode` parses code blocks indented by four spaces or one tab.
 
 ```markdown
-    print(1)
+....print(1)
 ```
+
+.. hint:: The above example uses `.` to represent whitespace.
 
 Output node is `Code`, and its AST is:
 
