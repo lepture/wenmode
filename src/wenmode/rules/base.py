@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, ClassVar
 from wenmode.nodes import Node
 
 from .._parser.state import BlockState
-from .transforms import RootTransform
+from .transforms import NodeTransform, RootTransform
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
@@ -25,6 +25,7 @@ class Rule:
     def __init__(self, name: str | None = None) -> None:
         self.name = resolve_string_attribute(self, 'name', name)
         self.root_transforms: list[RootTransform] = []
+        self.node_transforms: list[NodeTransform] = []
 
 
 class BlockRule(Rule):

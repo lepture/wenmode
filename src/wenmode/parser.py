@@ -122,17 +122,17 @@ class Parser:
         """Yield top-level block nodes as they are parsed.
 
         This API is intended for streaming renderers and rejects rule sets with
-        document-wide transforms. With ``positions=True``, yielded nodes store
+        parser transforms that cannot stream. With ``positions=True``, yielded nodes store
         source offsets, but they do not have root-level line-start context;
         calling ``to_ast()`` on them emits offset-only positions.
 
         :param source: Markdown source as a string or an iterable of lines.
         :returns: Iterator of parsed block nodes.
-        :raises StreamingUnsupportedError: If enabled rules require
-            document-wide transforms.
+        :raises StreamingUnsupportedError: If enabled rules require parser
+            transforms that cannot stream.
         """
         assert_streaming_supported(
-            self.streaming_blockers(), blocked_by='document-wide transforms', guidance='use the streaming preset'
+            self.streaming_blockers(), blocked_by='parser transforms', guidance='use the streaming preset'
         )
         state = self._create_block_state(source, defer_inlines=False)
         while not state.done:

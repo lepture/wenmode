@@ -9,9 +9,7 @@ from wenmode import StreamingUnsupportedError, Wenmode
 from wenmode.nodes import Node, Position
 from wenmode.parser import Parser
 from wenmode.presets import commonmark, github, streaming
-from wenmode.rules import AtxHeading, Footnote, Link, List, Table
-from wenmode.rules.base import BlockRule, Rule
-from wenmode.rules.transforms import RootTransform
+from wenmode.rules import AtxHeading, BlockRule, Footnote, Image, Link, List, RootTransform, Rule, Table
 from wenmode.state import StreamBlockState, StreamLineBuffer
 
 
@@ -248,13 +246,20 @@ def test_wenmode_stream_rejects_unsupported_rules() -> None:
         next(Wenmode([Footnote]).stream('a[^one]\n\n[^one]: note\n'))
 
 
-def test_parse_iter_rejects_heading_id_root_transform() -> None:
-    parser = Parser([AtxHeading(id_transform=True)])
+def test_parse_iter_supports_heading_id_node_transform() -> None:
+    parser = Parser([AtxHeading(id_transform=True), Image(references=False)])
 
-    assert parser.supports_streaming is False
-    assert parser.streaming_blockers() == ['heading_id:default']
-    with pytest.raises(StreamingUnsupportedError, match='document-wide transforms: heading_id:default'):
-        next(parser.parse_iter('# Title\n'))
+    assert parser.supports_streaming is True
+    assert parser.streaming_blockers() == []
+    assert [node.to_ast() for node in parser.parse_iter('# Title\n# Title\n')] == [
+        {'type': 'heading', 'data': {'id': 'title'}, 'children': [{'type': 'text', 'value': 'Title'}], 'depth': 1},
+        {'type': 'heading', 'data': {'id': 'title-1'}, 'children': [{'type': 'text', 'value': 'Title'}], 'depth': 1},
+    ]
+
+    expected_image = {'type': 'image', 'url': '/image.jpg', 'alt': 'alt', 'title': 'title'}
+    assert [node.to_ast() for node in parser.parse_iter('# ![alt](/image.jpg "title")\n')] == [
+        {'type': 'heading', 'data': {'id': 'alt'}, 'children': [expected_image], 'depth': 1},
+    ]
 
 
 def test_parse_iter_rejects_custom_non_deferred_root_transform() -> None:
@@ -262,7 +267,7 @@ def test_parse_iter_rejects_custom_non_deferred_root_transform() -> None:
 
     assert parser.supports_streaming is False
     assert parser.streaming_blockers() == ['local_root']
-    with pytest.raises(StreamingUnsupportedError, match='document-wide transforms: local_root'):
+    with pytest.raises(StreamingUnsupportedError, match='parser transforms: local_root'):
         next(parser.parse_iter('Body\n'))
 
 

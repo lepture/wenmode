@@ -95,7 +95,7 @@ class Wenmode:
         """
         assert_streaming_supported(
             self.streaming_blockers(),
-            blocked_by='document-wide transforms or root render hooks',
+            blocked_by='parser transforms or root render hooks',
             guidance='deferred inline transforms are included, but complete-root work also blocks streaming; '
             'use the streaming preset',
         )

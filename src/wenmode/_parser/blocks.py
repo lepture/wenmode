@@ -12,6 +12,7 @@ from .state import BlockState
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
+    from wenmode.rules.base import BlockRule, ContinueRule
 
 
 class BlockParser:
@@ -124,7 +125,8 @@ class BlockParser:
     def container_depth_exceeded(self, name: str, state: BlockState | None) -> bool:
         return interrupts.container_depth_exceeded(name, state, self._parser.max_container_depth)
 
-    def _with_position(self, node: Node, state: BlockState, start_index: int) -> Node:
+    @staticmethod
+    def _with_position(node: Node, state: BlockState, start_index: int) -> Node:
         if node.position is None:
             node.position = state.source.position_between(start_index, state.index)
         return node
@@ -162,6 +164,7 @@ class BlockParser:
             if parsed is not None:
                 if state.index == previous_index:
                     raise RuntimeError(f"Block rule '{rule.name}' returned a node but state did not advance")
+                parsed = apply_node_transforms(rule, self._parser, parsed, state)
                 return parsed, True
             if state.index > previous_index:
                 return None, True
@@ -241,6 +244,7 @@ class BlockParser:
                 )
             if state.index == previous_index:
                 raise RuntimeError(f"Continuation rule '{continuation.name}' returned a node but state did not advance")
+            parsed = apply_node_transforms(continuation, self._parser, parsed, state)
             return parsed
         return None
 
@@ -254,3 +258,14 @@ def _append_paragraph_line(state: BlockState, source: SourceCollector | None, li
         source.add(state.index, len(line) - len(text), text)
     lines.append(text)
     state.advance()
+
+
+def apply_node_transforms(rule: BlockRule | ContinueRule, parser: Parser, node: Node, state: BlockState) -> Node:
+    for transform in rule.node_transforms:
+        if state.defer_inlines and transform.defer_inlines:
+            def run_transform() -> None:
+                transform.transform(parser, node, state)
+            state.pending_inline_callbacks.append(run_transform)
+            continue
+        node = transform.transform(parser, node, state)
+    return node

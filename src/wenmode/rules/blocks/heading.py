@@ -3,39 +3,60 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING, cast
 
-from wenmode.headings import Slugger, add_heading_ids
+from wenmode.ast import plain_text
+from wenmode.headings import Slugger
 from wenmode.nodes import Heading, Node
 
 from ..._parser.state import BlockState
+from ..._parser.store import StateKey
 from ..base import BlockRule, ContinueRule
-from ..transforms import RootTransform
+from ..transforms import NodeTransform
 
 if TYPE_CHECKING:
-    from wenmode.nodes import Root
     from wenmode.parser import Parser
 
 
 SETEXT_HEADING_RE = re.compile(r'[ \t]{0,3}(=+|-+)[ \t]*$')
+HEADING_SLUGGERS = StateKey[dict[str, Slugger]]('wenmode.heading.sluggers', lambda: {})
 
 
-class HeadingIdTransform(RootTransform):
-    """Root transform that adds generated IDs to heading nodes.
+class HeadingIdTransform(NodeTransform):
+    """Node transform that adds generated IDs to heading nodes.
 
     :param slugger_factory: Slugger class used to generate heading IDs.
     """
+
+    defer_inlines = True
 
     def __init__(self, slugger_factory: type[Slugger] = Slugger) -> None:
         self.slugger_factory = slugger_factory
         self.name = f'heading_id:{slugger_factory.name}'
 
-    def transform(self, parser: Parser, root: Root, state: BlockState) -> None:
-        add_heading_ids(root, slugger=self.slugger_factory())
+    def transform(self, parser: Parser, node: Heading, state: BlockState) -> Node:
+        sluggers = state.store.get(HEADING_SLUGGERS)
+        slugger = sluggers.get(self.name)
+        if slugger is None:
+            slugger = self.slugger_factory()
+            sluggers[self.name] = slugger
+
+        if node.data:
+            current_id = node.data.get('id')
+        else:
+            current_id = None
+        if isinstance(current_id, str):
+            slugger.use(current_id)
+            return node
+
+        if node.data is None:
+            node.data = {}
+        node.data['id'] = slugger.slug(plain_text(node.children))
+        return node
 
 
 HeadingIdTransformOption = bool | HeadingIdTransform
 
 
-def resolve_heading_id_transform(option: HeadingIdTransformOption) -> list[RootTransform]:
+def resolve_heading_id_transform(option: HeadingIdTransformOption) -> list[NodeTransform]:
     if option is False:
         return []
     if option is True:
@@ -60,7 +81,7 @@ class AtxHeading(BlockRule):
 
     def __init__(self, id_transform: HeadingIdTransformOption = False) -> None:
         super().__init__()
-        self.root_transforms = resolve_heading_id_transform(id_transform)
+        self.node_transforms = resolve_heading_id_transform(id_transform)
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Heading:
         line = state.line.rstrip('\r\n')
@@ -92,7 +113,7 @@ class SetextHeading(ContinueRule):
 
     def __init__(self, id_transform: HeadingIdTransformOption = False) -> None:
         super().__init__()
-        self.root_transforms = resolve_heading_id_transform(id_transform)
+        self.node_transforms = resolve_heading_id_transform(id_transform)
 
     def matches(self, line: str) -> bool:
         stripped = line.lstrip(' \t')

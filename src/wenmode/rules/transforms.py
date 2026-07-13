@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from wenmode.nodes import Root
+    from wenmode.nodes import Node, Root
     from wenmode.parser import Parser
 
     from .._parser.state import BlockState
@@ -20,7 +20,6 @@ class RootTransform:
 
     name: str
     defer_inlines = False
-    supports_streaming = False
     required_rules: Sequence[type[Rule] | Rule] = ()
 
     def prepare(self, parser: Parser, root: Root, state: BlockState) -> None:
@@ -30,3 +29,19 @@ class RootTransform:
     def transform(self, parser: Parser, root: Root, state: BlockState) -> None:
         """Update the root after deferred inlines have resolved."""
         pass
+
+
+class NodeTransform:
+    """Base class for per-node transforms attached by parser rules.
+
+    Node transforms run immediately after the owning block or continuation rule
+    returns a node. Unlike root transforms, they do not require a complete root
+    and can run during incremental parsing.
+    """
+
+    name: str
+    defer_inlines = False
+
+    def transform(self, parser: Parser, node: Node, state: BlockState) -> Node:
+        """Return the transformed node."""
+        return node

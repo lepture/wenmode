@@ -15,6 +15,7 @@ from wenmode.rules import (
     InlineCode,
     InlineRule,
     Link,
+    NodeTransform,
     RootTransform,
     Rule,
 )
@@ -34,8 +35,56 @@ def test_rule_base_state_is_instance_local() -> None:
     second = Rule('second')
 
     first.root_transforms.append(RootTransform())
+    first.node_transforms.append(NodeTransform())
 
     assert second.root_transforms == []
+    assert second.node_transforms == []
+
+
+def test_block_rule_node_transform_runs_after_parse() -> None:
+    class BangTransform(NodeTransform):
+        name = 'bang_transform'
+
+        def transform(self, parser: Parser, node: Node, state: BlockState) -> Node:
+            return Paragraph(children=[Text(value='transformed')])
+
+    class BangBlock(BlockRule):
+        name = 'bang_block'
+        pattern = r'!!'
+
+        def __init__(self) -> None:
+            super().__init__()
+            self.node_transforms = [BangTransform()]
+
+        def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
+            state.advance()
+            return Paragraph(children=[Text(value='original')])
+
+    assert render(Parser([BangBlock]), '!!\n') == '<p>transformed</p>\n'
+
+
+def test_continuation_rule_node_transform_runs_after_parse() -> None:
+    class ContinuationTransform(NodeTransform):
+        name = 'continuation_transform'
+
+        def transform(self, parser: Parser, node: Node, state: BlockState) -> Node:
+            return Paragraph(children=[Text(value='transformed')])
+
+    class BangContinuation(ContinueRule):
+        name = 'bang_continuation'
+
+        def __init__(self) -> None:
+            super().__init__()
+            self.node_transforms = [ContinuationTransform()]
+
+        def matches(self, line: str) -> bool:
+            return line.startswith('!!')
+
+        def parse_paragraph_continuation(self, parser: Parser, state: BlockState, lines: list[str]) -> Node | None:
+            state.advance()
+            return Paragraph(children=[Text(value='original')])
+
+    assert render(Parser([BangContinuation]), 'text\n!!\n') == '<p>transformed</p>\n'
 
 
 def test_inline_rule_compiles_pattern_on_init() -> None:

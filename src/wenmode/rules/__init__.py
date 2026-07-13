@@ -20,7 +20,7 @@ from .inlines.link import Image, Link
 from .inlines.strikethrough import Strikethrough
 from .inlines.text import BackslashEscape, CharacterReference, HardBreak
 from .references import ReferenceDefinition
-from .transforms import RootTransform
+from .transforms import NodeTransform, RootTransform
 
 __all__ = [
     'AtxHeading',
@@ -46,6 +46,7 @@ __all__ = [
     'LeafDirective',
     'Link',
     'List',
+    'NodeTransform',
     'RawHtml',
     'ReferenceDefinition',
     'RootTransform',
