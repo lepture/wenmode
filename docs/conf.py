@@ -36,9 +36,8 @@ html_theme_options = {
     'dark_logo': '_static/dark-logo.svg',
     'discussion_url': 'https://github.com/lepture/wenmode/discussions',
     'github_url': 'https://github.com/lepture/wenmode',
-    'twitter_url': 'https://twitter.com/lepture',
-    'twitter_creator': 'lepture',
-    'twitter_site': 'lepture',
+    'x_url': 'https://twitter.com/lepture',
+    'bluesky_url': 'https://bsky.app/profile/lepture.com',
     'nav_links': [{'title': 'Docs', 'url': 'usage'}, {'title': 'Support me', 'url': 'sponsors'}],
 }
 
