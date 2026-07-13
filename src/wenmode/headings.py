@@ -53,7 +53,7 @@ class HeadingIdTransform(NodeTransform):
         self.slugger_factory = slugger_factory
         self.name = f'heading_id:{slugger_factory.name}'
 
-    def transform(self, parser: Parser, node: Node, state: BlockState) -> Node:
+    def transform(self, parser: Parser, node: Node, state: BlockState) -> None:
         heading = cast(Heading, node)
         sluggers = state.store.get(HEADING_SLUGGERS)
         slugger = sluggers.get(self.name)
@@ -67,12 +67,11 @@ class HeadingIdTransform(NodeTransform):
             current_id = None
         if isinstance(current_id, str):
             slugger.use(current_id)
-            return heading
+            return
 
         if heading.data is None:
             heading.data = {}
         heading.data['id'] = slugger.slug(plain_text(heading.children))
-        return heading
 
 
 def add_heading_ids(

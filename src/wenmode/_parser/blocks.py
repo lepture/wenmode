@@ -267,5 +267,5 @@ def apply_node_transforms(rule: BlockRule | ContinueRule, parser: Parser, node: 
                 transform.transform(parser, node, state)
             state.pending_inline_callbacks.append(run_transform)
             continue
-        node = transform.transform(parser, node, state)
+        transform.transform(parser, node, state)
     return node

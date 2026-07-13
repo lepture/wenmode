@@ -7,10 +7,9 @@ import pytest
 
 from tests.helpers import max_type_depth, text_values
 from wenmode import Parser, Wenmode
-from wenmode._declaratives import BlockFenced, InlineDelimited, InlineLiteral
 from wenmode.directives import Admonition
 from wenmode.nodes import Literal, Parent
-from wenmode.plugins import inline_math, mark, ruby, smartypants
+from wenmode.plugins import BlockFenced, InlineDelimited, InlineLiteral, inline_math, mark, ruby, smartypants
 from wenmode.renderers import HTMLRenderer, RenderContext
 from wenmode.rules import AtxHeading, ContainerDirective, Link
 

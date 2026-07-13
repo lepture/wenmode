@@ -36,12 +36,13 @@ class NodeTransform:
 
     Node transforms run immediately after the owning block or continuation rule
     returns a node. Unlike root transforms, they do not require a complete root
-    and can run during incremental parsing.
+    and can run during incremental parsing. They mutate the supplied node in
+    place; they do not replace it.
     """
 
     name: str
     defer_inlines = False
 
-    def transform(self, parser: Parser, node: Node, state: BlockState) -> Node:
-        """Return the transformed node."""
-        return node
+    def transform(self, parser: Parser, node: Node, state: BlockState) -> None:
+        """Mutate the supplied node in place."""
+        pass

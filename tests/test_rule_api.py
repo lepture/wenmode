@@ -45,8 +45,9 @@ def test_block_rule_node_transform_runs_after_parse() -> None:
     class BangTransform(NodeTransform):
         name = 'bang_transform'
 
-        def transform(self, parser: Parser, node: Node, state: BlockState) -> Node:
-            return Paragraph(children=[Text(value='transformed')])
+        def transform(self, parser: Parser, node: Node, state: BlockState) -> None:
+            assert isinstance(node, Paragraph)
+            node.children = [Text(value='transformed')]
 
     class BangBlock(BlockRule):
         name = 'bang_block'
@@ -67,8 +68,9 @@ def test_continuation_rule_node_transform_runs_after_parse() -> None:
     class ContinuationTransform(NodeTransform):
         name = 'continuation_transform'
 
-        def transform(self, parser: Parser, node: Node, state: BlockState) -> Node:
-            return Paragraph(children=[Text(value='transformed')])
+        def transform(self, parser: Parser, node: Node, state: BlockState) -> None:
+            assert isinstance(node, Paragraph)
+            node.children = [Text(value='transformed')]
 
     class BangContinuation(ContinueRule):
         name = 'bang_continuation'
