@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 from wenmode import Wenmode
+from wenmode.headings import HeadingIdTransform
 from wenmode.nodes import Node
 from wenmode.plugins import (
     abbr,
@@ -57,7 +58,7 @@ RuleSpec = type[Rule] | Rule
 
 STANDARD_RULES: dict[str, RuleSpec] = {
     'atx_heading': AtxHeading,
-    'atx_heading_id': AtxHeading(id_transform=True),
+    'atx_heading_id': AtxHeading(transforms=[HeadingIdTransform()]),
     'autolink': Autolink,
     'backslash_escape': BackslashEscape,
     'blockquote': Blockquote,
@@ -69,7 +70,7 @@ STANDARD_RULES: dict[str, RuleSpec] = {
     'footnote': Footnote,
     'footnote_definition': FootnoteDefinition,
     'hard_break': HardBreak,
-    'heading_id_transform': AtxHeading(id_transform=True),
+    'heading_id_transform': AtxHeading(transforms=[HeadingIdTransform()]),
     'html_block': HtmlBlock,
     'html_block_disallow_iframe': HtmlBlock(disallowed_tags=['iframe']),
     'image': Image,

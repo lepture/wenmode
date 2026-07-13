@@ -6,6 +6,7 @@ from io import StringIO
 import pytest
 
 from wenmode import StreamingUnsupportedError, Wenmode
+from wenmode.headings import HeadingIdTransform
 from wenmode.nodes import Node, Position
 from wenmode.parser import Parser
 from wenmode.presets import commonmark, github, streaming
@@ -247,7 +248,7 @@ def test_wenmode_stream_rejects_unsupported_rules() -> None:
 
 
 def test_parse_iter_supports_heading_id_node_transform() -> None:
-    parser = Parser([AtxHeading(id_transform=True), Image(references=False)])
+    parser = Parser([AtxHeading(transforms=[HeadingIdTransform()]), Image(references=False)])
 
     assert parser.supports_streaming is True
     assert parser.streaming_blockers() == []

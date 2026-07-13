@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from wenmode.headings import HeadingIdTransform
+
 from .base import BlockRule, ContinueRule, InlineRule, Rule
 from .blocks.blockquote import Blockquote
 from .blocks.directive import ContainerDirective, LeafDirective
 from .blocks.fenced_code import FencedCode
-from .blocks.heading import AtxHeading, HeadingIdTransform, SetextHeading
+from .blocks.heading import AtxHeading, SetextHeading
 from .blocks.html import HtmlBlock
 from .blocks.indented_code import IndentedCode
 from .blocks.list import List

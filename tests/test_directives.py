@@ -9,6 +9,7 @@ from tests.helpers import load_fixture
 from tests.plugin_helpers import configured_app
 from wenmode import HTMLRenderer, MarkdownRenderer, RSTRenderer, Wenmode
 from wenmode.directives import Abbreviation, Admonition, Details, Figure, TableOfContents
+from wenmode.headings import HeadingIdTransform
 from wenmode.plugins import fenced_directive
 from wenmode.rules import AtxHeading, ContainerDirective, Emphasis, LeafDirective, TextDirective
 from wenmode.rules import Image as ImageRule
@@ -326,7 +327,8 @@ def test_fenced_directive_handles_empty_and_unclosed_bodies() -> None:
 
 def test_toc_leaf_directive_renders_heading_links() -> None:
     app = Wenmode(
-        [AtxHeading(id_transform=True), LeafDirective, ContainerDirective, Emphasis], directives=[TableOfContents()]
+        [AtxHeading(transforms=[HeadingIdTransform()]), LeafDirective, ContainerDirective, Emphasis],
+        directives=[TableOfContents()],
     )
 
     assert app.render(
@@ -350,7 +352,7 @@ def test_toc_leaf_directive_renders_heading_links() -> None:
 
 
 def test_toc_directive_uses_existing_heading_ids_even_when_rendered_late() -> None:
-    app = Wenmode([AtxHeading(id_transform=True), LeafDirective], directives=[TableOfContents()])
+    app = Wenmode([AtxHeading(transforms=[HeadingIdTransform()]), LeafDirective], directives=[TableOfContents()])
 
     assert app.render('## Before\n\n::toc{min-depth=2 max-depth=2 id=contents label=Contents}\n') == (
         '<h2 id="before">Before</h2>\n'
