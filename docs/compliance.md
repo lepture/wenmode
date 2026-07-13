@@ -1,3 +1,7 @@
+---
+description: Track Wenmode CommonMark and GitHub-flavored Markdown fixture coverage, known compatibility boundaries, and security-default differences.
+---
+
 (compliance)=
 # Compliance
 

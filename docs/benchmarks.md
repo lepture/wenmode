@@ -1,3 +1,7 @@
+---
+description: Benchmark Wenmode against Mistune, Python-Markdown, markdown-it-py, markdown2, Marko, and commonmark.py across documentation, book, and edge-case Markdown workloads.
+---
+
 (benchmarks)=
 # Benchmarks
 

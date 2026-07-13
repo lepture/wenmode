@@ -1,3 +1,7 @@
+---
+description: Reference Wenmode core block rules with Markdown syntax examples, AST output, and default HTML rendering.
+---
+
 (reference-core-blocks)=
 # Core block rules
 

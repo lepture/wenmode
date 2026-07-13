@@ -1,3 +1,7 @@
+---
+description: Enable Wenmode built-in plugins for GitHub alerts, heading IDs, CJK-friendly parsing, smart punctuation, HTML containers, front matter, math, and directives.
+---
+
 (plugins)=
 # Plugins
 
@@ -21,8 +25,10 @@ from wenmode.plugins import block_math, inline_math
 wen = Wenmode(github, plugins=[inline_math, block_math])
 ```
 
-Use this page to enable built-in plugins and understand their behavior. For
-custom plugin authoring, see {ref}`custom-plugins`.
+Use this page to enable built-in plugins and configure plugins with important
+setup options or behavior boundaries. For syntax examples and AST shapes, use
+the extension reference pages. For custom plugin authoring, see
+{ref}`custom-plugins`.
 
 ## Using Plugins
 
@@ -104,7 +110,18 @@ renderers.
 Plugins that introduce custom node types expose a `nodes` class list for
 `wenmode.ast.from_ast()`; see {ref}`reference-nodes`.
 
-## GitHub Alerts
+For syntax examples, generated nodes, and AST output, see
+{ref}`reference-extension-blocks` and {ref}`reference-extension-inlines`.
+
+## Common Plugin Setups
+
+The sections below cover plugins with setup options, renderer behavior, or
+integration boundaries that are easy to miss. Simple syntax plugins such as
+`mark`, `insert`, `ruby`, `subscript`, `superscript`, `inline_math`,
+`block_math`, `definition_list`, `abbr`, and spoilers are documented in the
+extension reference pages.
+
+### GitHub Alerts
 
 The `github_alert` plugin parses top-level GitHub alert blockquotes and emits
 `githubAlert` nodes. By default, HTML output uses GitHub-compatible
@@ -127,7 +144,7 @@ from wenmode.plugins import github_alert
 wen = Wenmode(plugins=[github_alert.configure(html_style="admonition")])
 ```
 
-## Heading IDs
+### Heading IDs
 
 The `heading_ids` plugin adds generated IDs to heading nodes parsed by the
 heading rules already enabled in your rule set. It does not enable heading
@@ -143,7 +160,7 @@ wen = Wenmode([AtxHeading], plugins=[heading_ids])
 assert wen.render('# Hello World\n') == '<h1 id="hello-world">Hello World</h1>\n'
 ```
 
-## CJK-Friendly Parsing
+### CJK-Friendly Parsing
 
 The `cjk_friendly` plugin keeps default parsing for non-CJK text while making
 inline behavior friendlier for Chinese, Japanese, and Korean prose. It allows
@@ -172,7 +189,7 @@ assert wen.render('请看 https://example.com。\n') == (
 )
 ```
 
-## Smart Punctuation
+### Smart Punctuation
 
 The `smartypants` plugin converts common ASCII punctuation in text nodes while
 rendering HTML. It turns straight quotes into curly quotes, `--` and `---` into
@@ -198,7 +215,7 @@ from wenmode.plugins import smartypants
 wen = Wenmode(plugins=[smartypants.configure(dashes=False)])
 ```
 
-## HTML Containers
+### HTML Containers
 
 The `html_container` plugin replaces the CommonMark `HtmlBlock` rule with a
 non-standard `HtmlContainer` rule. Standalone HTML tag pairs become
@@ -238,7 +255,7 @@ HTML renderer escaping still applies to the container boundaries by default.
 Use `HTMLRenderer(escape=False)` only for trusted or separately sanitized
 content, the same as raw HTML nodes.
 
-## Front Matter
+### Front Matter
 
 The `frontmatter` plugin consumes top-level `---` front matter before normal
 Markdown block parsing and stores the parsed value on the root node. It does not
@@ -287,7 +304,7 @@ def dump_meta(value: object) -> str | None:
 wen = Wenmode().use(frontmatter.configure(load=load_meta, dump=dump_meta, data_key='meta'))
 ```
 
-## Fenced Directives And Roles
+### Fenced Directives And Roles
 
 The `fenced_directive` and `inline_role` plugins provide MyST-style directive
 syntax. Inline roles map onto `textDirective`, one of the mdast-compatible

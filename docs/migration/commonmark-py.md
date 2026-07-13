@@ -1,3 +1,7 @@
+---
+description: Migrate from commonmark.py to Wenmode with CommonMark rendering, GFM options, AST differences, raw HTML behavior, and renderer customization.
+---
+
 (migration-commonmark-py)=
 # Migrating from commonmark.py
 

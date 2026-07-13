@@ -1,3 +1,7 @@
+---
+description: Migrate from Mistune to Wenmode with explicit Markdown rules, safe HTML defaults, mdast-compatible AST output, and renderer handlers.
+---
+
 (migration-mistune)=
 # Migrating from Mistune
 

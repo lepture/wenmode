@@ -20,6 +20,24 @@ Wenmode is for Python applications where Markdown is part of the product model:
 documentation systems, user-generated content, static-site pipelines, AI/AST
 workflows, custom dialects, and format converters.
 
+## Quick start
+
+Install Wenmode from PyPI:
+
+```bash
+pip install wenmode
+```
+
+Render Markdown with the default CommonMark-style rules and safer HTML defaults:
+
+```python
+from wenmode import Wenmode
+
+html = Wenmode().render('# Hello\n')
+
+assert html == '<h1>Hello</h1>\n'
+```
+
 ## Why Wenmode?
 
 ::::{grid} 1 1 2 2
@@ -65,6 +83,45 @@ Parsing, rule selection, transforms, directive handling, and rendering are
 separate pieces. Start with the default renderer, then opt into presets,
 plugins, or AST workflows only when your application needs them.
 
+## Markdown pipeline
+
+Wenmode keeps the Markdown pipeline explicit:
+
+```text
+Markdown source
+  -> Parser + explicit rules
+  -> mdast-compatible nodes
+  -> transforms, validation, storage, or indexing
+  -> HTML, Markdown, reStructuredText, AsciiDoc, or custom output
+```
+
+That split lets one application parse once, generate heading IDs, collect a
+table of contents, store AST JSON for search, and render HTML from the same
+tree.
+
+## Project status
+
+::::{grid} 1 1 2 2
+:gutter: 2
+:padding: 0
+
+:::{grid-item-card} Tested Markdown coverage
+:link: compliance
+:link-type: doc
+
+Wenmode runs CommonMark and GitHub-flavored Markdown fixture suites in its test
+suite, with documented compatibility boundaries.
+:::
+
+:::{grid-item-card} Modern Python support
+:link: compatibility
+:link-type: doc
+
+The package supports Python 3.10 and newer, including current CPython releases
+and PyPy versions covered by the project metadata.
+:::
+::::
+
 ## Start here
 
 | Goal | Start here |
@@ -74,8 +131,10 @@ plugins, or AST workflows only when your application needs them.
 | Choose CommonMark, GFM, streaming, or custom rules | {doc}`Presets <presets>` |
 | Add directives or non-standard syntax | {doc}`Directives <directives>` and {doc}`Plugins <plugins>` |
 | Render user-authored Markdown safely | {doc}`Security <security>` |
-| Build AST transforms, TOCs, or custom renderers | {doc}`Recipes <recipes>` |
+| Parse and filter AI-generated Markdown | {doc}`AI Markdown <recipes/ai-generated-markdown>` |
+| Build AST transforms, TOCs, or custom renderers | {doc}`Recipes <recipes/index>` |
 | Integrate Wenmode into an application pipeline | {doc}`Integrations <integrations>` |
+| Compare Python Markdown parsers | {doc}`Comparison <comparison>` |
 | Migrate from another Markdown parser | {doc}`Migration guides <migration/index>` |
 | Check compatibility and project status | {doc}`Compatibility <compatibility>` |
 
@@ -90,8 +149,9 @@ presets
 directives
 plugins
 security
-recipes
+recipes/index
 integrations
+comparison
 migration/index
 troubleshooting
 ```

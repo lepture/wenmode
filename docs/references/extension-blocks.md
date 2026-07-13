@@ -1,3 +1,7 @@
+---
+description: Reference Wenmode extension block rules and plugin block nodes, including directives, math, spoilers, HTML containers, and GitHub alerts.
+---
+
 (reference-extension-blocks)=
 # Plugin block rules
 

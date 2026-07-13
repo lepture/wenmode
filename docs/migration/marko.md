@@ -1,3 +1,7 @@
+---
+description: Migrate from Marko to Wenmode by replacing render calls, extensions, AST node handling, renderer customization, GFM features, and raw HTML settings.
+---
+
 (migration-marko)=
 # Migrating from Marko
 

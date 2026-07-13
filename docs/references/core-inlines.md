@@ -1,3 +1,7 @@
+---
+description: Reference Wenmode core inline rules with Markdown syntax examples, AST output, options, and default HTML rendering.
+---
+
 (reference-core-inlines)=
 # Core inline rules
 

@@ -1,3 +1,7 @@
+---
+description: Create custom Wenmode plugins that package parser rules, node classes, renderer handlers, transforms, setup options, and plugin state.
+---
+
 (custom-plugins)=
 # Custom Plugins
 

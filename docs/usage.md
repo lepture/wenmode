@@ -1,3 +1,7 @@
+---
+description: Install Wenmode, render Markdown to HTML, parse mdast-compatible AST output, choose renderers, use the CLI, and stream Markdown in Python.
+---
+
 (usage)=
 # Usage
 
@@ -355,5 +359,5 @@ wenmode render trusted.md --unsafe-html --unsafe-urls
 | Choose CommonMark, GFM, streaming, or a custom rule list | {doc}`Presets <presets>` |
 | Add built-in syntax such as math, smart punctuation, or directives | {doc}`Plugins <plugins>` |
 | Render untrusted user content safely | {doc}`Security <security>` |
-| Copy patterns for TOCs, heading IDs, AST JSON, or custom renderers | {doc}`Recipes <recipes>` |
+| Copy patterns for TOCs, heading IDs, AST JSON, or custom renderers | {doc}`Recipes <recipes/index>` |
 | Wire Wenmode into a larger application | {doc}`Integrations <integrations>` |

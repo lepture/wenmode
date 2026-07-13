@@ -80,6 +80,7 @@ your task:
 | Pick CommonMark, GFM, streaming, or custom rules | {doc}`Presets <presets>` |
 | Add extra syntax such as math or definition lists | {doc}`Plugins <plugins>` |
 | Handle untrusted user content | {doc}`Security <security>` |
-| Build AST transforms or app pipelines | {doc}`Recipes <recipes>` and {doc}`Integrations <integrations>` |
+| Build AST transforms or app pipelines | {doc}`Recipes <recipes/index>` and {doc}`Integrations <integrations>` |
+| Compare Python Markdown parsers | {doc}`Comparison <comparison>` |
 | Move from another Python Markdown parser | {doc}`Migration guides <migration/index>` |
 | Check compatibility and project status | {doc}`Compatibility <compatibility>` and {doc}`Compliance <compliance>` |

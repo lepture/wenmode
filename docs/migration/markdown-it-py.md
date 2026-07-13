@@ -1,3 +1,7 @@
+---
+description: Migrate from markdown-it-py to Wenmode by replacing token workflows, plugins, renderer rules, raw HTML configuration, and streaming needs.
+---
+
 (migration-markdown-it-py)=
 # Migrating from markdown-it-py
 

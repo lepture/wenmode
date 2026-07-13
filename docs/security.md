@@ -1,3 +1,7 @@
+---
+description: Configure Wenmode HTML escaping, URL sanitization, raw HTML rules, trusted passthrough, and safe settings for user-authored Markdown.
+---
+
 (security)=
 # Security
 

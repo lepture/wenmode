@@ -1,3 +1,7 @@
+---
+description: Understand how Wenmode composes Markdown syntax from opt-in block, inline, continuation, and transform rules.
+---
+
 (rules)=
 # Rules
 

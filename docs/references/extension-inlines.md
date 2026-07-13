@@ -1,3 +1,7 @@
+---
+description: Reference Wenmode extension inline rules and plugin inline nodes, including math, roles, marks, ruby, spoilers, subscripts, and superscripts.
+---
+
 (reference-extension-inlines)=
 # Plugin inline rules
 

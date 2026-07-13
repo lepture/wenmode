@@ -1,3 +1,7 @@
+---
+description: Migrate from Python-Markdown to Wenmode by mapping extensions, safe HTML behavior, table of contents workflows, AST handling, and renderer customization.
+---
+
 (migration-python-markdown)=
 # Migrating from Python-Markdown
 

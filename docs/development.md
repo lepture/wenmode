@@ -1,3 +1,7 @@
+---
+description: Develop Wenmode locally with documented setup, tests, docs builds, release checks, and contribution conventions.
+---
+
 (development)=
 # Development
 
@@ -73,7 +77,7 @@ the user-facing surface:
 - `changelog.md` for user-facing changes, upgrade notes, and compatibility updates.
 - `benchmarks.md` for benchmark methodology, versions, and results.
 - `troubleshooting.md` for common integration failures and fixes.
-- `recipes.md` for copyable integration patterns.
+- `recipes/` for copyable integration patterns.
 - `integrations.md` for end-to-end application pipelines.
 - `migration/*.md` for parser-to-Wenmode migration guides.
 - `plugins.md` and `custom-plugins.md` for plugin extension behavior.

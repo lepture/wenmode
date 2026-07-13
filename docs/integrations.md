@@ -1,3 +1,7 @@
+---
+description: Build reusable Wenmode integration pipelines by configuring Markdown once, sharing application factories, and reusing examples across services.
+---
+
 (integrations)=
 # Integrations
 
@@ -8,7 +12,7 @@ Build reusable Markdown pipelines with safe defaults, AST export, and streaming.
 ---
 
 Use this page when you are wiring Wenmode into an application rather than
-trying one API call. The examples keep parser setup, rendering policy, and
+trying one API call. Keep parser setup, rendering policy, plugins, and
 post-processing in one place so the behavior is easy to test.
 
 The main integration rule is: configure Markdown once, then reuse that
@@ -48,148 +52,18 @@ assert '<input checked="" disabled="" type="checkbox">' in html
 assert '<a href="https://example.com">https://example.com</a>' in html
 ```
 
-## Render untrusted user content
+## Choose focused patterns
 
-For comments, profile fields, forum posts, and other user-authored Markdown,
-start with the default HTML renderer. It escapes raw HTML and removes unsafe
-link targets.
+Use focused guides for details that are not specific to application wiring:
 
-```python
-from wenmode import Wenmode
-from wenmode.presets import github
-
-wen = Wenmode(github)
-text = '''
-Hello <script>alert(1)</script>.
-
-[bad](javascript:alert(1))
-'''
-
-html = wen.render(text)
-
-assert '&lt;script>alert(1)&lt;/script>' in html
-assert '<a>bad</a>' in html
-assert 'javascript:alert' not in html
-```
-
-If your application also wants raw HTML syntax to stay as plain text in the AST,
-remove the raw HTML parser rules as shown in {ref}`recipes`.
-
-## Publish documentation pages
-
-Documentation sites often need the rendered body, a table of contents, and a
-machine-readable AST for search or indexing. Parse once, then run tree
-transforms before rendering.
-
-```python
-import json
-
-from wenmode import HTMLRenderer, Wenmode
-from wenmode.headings import Slugger, add_heading_ids
-from wenmode.toc import collect_toc, render_toc_html
-
-
-class RenderedPage:
-    def __init__(self, html: str, toc_html: str, ast_json: str) -> None:
-        self.html = html
-        self.toc_html = toc_html
-        self.ast_json = ast_json
-
-
-def render_page(source: str) -> RenderedPage:
-    root = Wenmode().parse(source)
-    add_heading_ids(root, slugger=Slugger(), min_depth=2)
-
-    toc = collect_toc(root, min_depth=2, max_depth=3)
-    toc_html = render_toc_html(toc)
-    body_html = HTMLRenderer().render(root)
-
-    return RenderedPage(
-        html=toc_html + body_html,
-        toc_html=toc_html,
-        ast_json=json.dumps(root.to_ast(), ensure_ascii=False),
-    )
-
-
-text = '''
-# Guide
-
-## Install
-
-Run **wenmode**.
-'''
-
-page = render_page(text)
-
-assert '<a href="#install">Install</a>' in page.toc_html
-assert '<h2 id="install">Install</h2>' in page.html
-assert '"type": "root"' in page.ast_json
-```
-
-## Stream low-latency previews
-
-Use the `streaming` preset for live previews, chat responses, or other views
-that should emit HTML chunks before the whole document is available. This path
-supports tables, strikethrough, direct links, and direct images, but not
-reference-style links, footnotes, or deferred transforms.
-
-```python
-from collections.abc import Iterable
-
-from wenmode import Wenmode
-from wenmode.presets import streaming
-
-wen = Wenmode(streaming)
-
-
-def render_preview(lines: Iterable[str]) -> Iterable[str]:
-    yield '<article class="preview">\n'
-    yield from wen.stream(lines)
-    yield '</article>\n'
-
-
-chunks = list(
-    render_preview(
-        [
-            '# Preview\n',
-            '\n',
-            '| A | B |\n',
-            '| --- | --- |\n',
-            '| ~~old~~ | [link](https://example.com) |\n',
-            '\n',
-            'A [link](https://example.com).\n',
-        ]
-    )
-)
-html = ''.join(chunks)
-
-assert html.startswith('<article class="preview">')
-assert '<h1>Preview</h1>' in html
-assert '<del>old</del>' in html
-assert '<a href="https://example.com">link</a>' in html
-```
-
-Reference-style links and images stay as text in this preset, and footnotes are
-not enabled. See {ref}`rule-matrix` for rules and plugins that are not
-compatible with streaming.
-
-### FastAPI file uploads
-
-Use `StreamingResponse` when clients upload Markdown files and should receive
-HTML as Wenmode parses top-level blocks. The full runnable example lives in
-`examples/wenmode-fastapi`.
-
-```bash
-uv run --directory examples/wenmode-fastapi --locked uvicorn wenmode_fastapi:app --reload
-```
-
-```bash
-curl -N \
-  -F 'file=@README.md;type=text/markdown' \
-  http://127.0.0.1:8000/streaming
-```
-
-The example uses the same streaming boundary as `Wenmode(streaming)`.
+| Goal | Start here |
+| --- | --- |
+| Render untrusted user-authored Markdown | {ref}`security` |
+| Add heading IDs or a table of contents | {doc}`recipes/table-of-contents` |
+| Store or inspect AST JSON | {doc}`recipes/ast-workflows` |
+| Stream generated Markdown or filter nodes | {doc}`recipes/ai-generated-markdown` |
+| Stream ordinary Markdown chunks | {ref}`usage` and the `streaming` preset in {ref}`presets` |
+| Compare rule streaming compatibility | {ref}`rule-matrix` |
 
 ## Package a product dialect
 

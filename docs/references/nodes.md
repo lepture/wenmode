@@ -1,3 +1,7 @@
+---
+description: Understand Wenmode node model, mdast-compatible AST shape, node groups, restoration behavior, and plugin node registration.
+---
+
 (reference-nodes)=
 # Node model
 

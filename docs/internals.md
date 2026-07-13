@@ -1,3 +1,7 @@
+---
+description: Explore Wenmode internals including AST nodes, parser flow, rule dispatch, transforms, extension state, source maps, and renderer hooks.
+---
+
 (internals)=
 # Internals
 

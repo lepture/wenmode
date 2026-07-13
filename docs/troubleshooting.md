@@ -1,3 +1,7 @@
+---
+description: Diagnose Wenmode issues with raw HTML escaping, URL sanitization, directives, custom renderer handlers, streaming, GFM syntax, and reference links.
+---
+
 (troubleshooting)=
 # Troubleshooting
 

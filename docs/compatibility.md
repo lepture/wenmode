@@ -1,3 +1,7 @@
+---
+description: Review Wenmode project status, Python version support, Markdown coverage, public API stability, and migration expectations.
+---
+
 (compatibility)=
 # Compatibility
 

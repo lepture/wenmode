@@ -1,3 +1,7 @@
+---
+description: Use Wenmode directive syntax rules and directive renderers for admonitions, figures, tables of contents, raw blocks, and custom directive output.
+---
+
 (directives)=
 # Directives
 

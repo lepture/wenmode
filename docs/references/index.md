@@ -1,3 +1,7 @@
+---
+description: Browse Wenmode reference pages for core block rules, core inline rules, extension rules, and AST node shapes.
+---
+
 (reference)=
 # Reference
 

@@ -1,3 +1,7 @@
+---
+description: Choose Wenmode CommonMark, GitHub-flavored Markdown, streaming, or custom presets for your application's Markdown dialect.
+---
+
 (presets)=
 # Presets
 

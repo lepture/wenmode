@@ -1,3 +1,7 @@
+---
+description: Compare Wenmode parser rules and plugins by preset membership, node output, options, and streaming compatibility.
+---
+
 (rule-matrix)=
 # Rule matrix
 

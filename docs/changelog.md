@@ -1,3 +1,7 @@
+---
+description: Track Wenmode release notes, breaking changes, fixes, performance work, and upgrade-relevant changes by version.
+---
+
 (changelog)=
 # Changelog
 
@@ -15,7 +19,7 @@ here while preparing a release, then move them under the final version heading.
 
 Released **Jul 13, 2026**.
 
-### Added
+**Added**
 
 - Add `wenmode.plugins.github_alert` for top-level GitHub alert blockquotes.
 - Add `wenmode.plugins.heading_ids` to install generated heading IDs on the
@@ -23,7 +27,7 @@ Released **Jul 13, 2026**.
 - Re-export `BlockFenced`, `InlineDelimited`, and `InlineLiteral` from
   `wenmode.plugins` as the public entry point for simple custom plugin rules.
 
-### Breaking Changes
+**Breaking Changes**
 
 - Replace `AtxHeading(id_transform=True)` and
   `SetextHeading(id_transform=True)` with explicit node transforms:
@@ -34,7 +38,7 @@ Released **Jul 13, 2026**.
 
 Released **Jul 11, 2026**.
 
-### Breaking Changes
+**Breaking Changes**
 
 - Remove `NodeSpec` and `Node.to_spec()`. Use `wenmode.nodes.BUILTIN_NODES`
   and plugin `nodes` lists when iterating over available node classes.
@@ -63,7 +67,7 @@ Released **Jul 11, 2026**.
 - Move shared CJK, block, and parser utility helpers under `wenmode.utils` and
   keep parser-state-specific helpers out of generic utility modules.
 
-### Fixes
+**Fixes**
 
 - Bound `from_ast()` restoration with default node-depth and node-count
   budgets, and reject active reference cycles before recursive restoration can
@@ -86,7 +90,7 @@ Released **Jul 11, 2026**.
   renderer root hooks require complete-root work that incremental parsing would
   otherwise skip.
 
-### Performance
+**Performance**
 
 - Avoid capturing trailing `.*` regex groups in blockquote, list, reference,
   footnote, spoiler, and related block rules when the rest of the line can be
@@ -120,7 +124,7 @@ Released **Jul 9, 2026**.
 
 Released **Jul 2, 2026**.
 
-### Breaking Changes
+**Breaking Changes**
 
 - Change `from_ast()` and `node_from_ast()` to accept `nodes=[MyNode]`
   instead of `registry={MyNode.type: MyNode}`, and remove
@@ -140,7 +144,7 @@ Released **Jul 2, 2026**.
 - Expose declarative plugin data as `DeclarativePluginSpec`, and allow
   declarative plugins to omit `setup()` when they expose `spec`.
 
-### Added
+**Added**
 
 - Add `AsciiDocRenderer`, CLI `--format=asciidoc` support, and built-in plugin
   handlers for best-effort serialization to AsciiDoc.

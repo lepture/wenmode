@@ -1,3 +1,7 @@
+---
+description: Migrate from markdown2 to Wenmode by mapping extras, GFM features, table of contents behavior, raw HTML safety, and custom processing.
+---
+
 (migration-markdown2)=
 # Migrating from markdown2
 
