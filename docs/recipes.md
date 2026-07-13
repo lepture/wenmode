@@ -8,7 +8,10 @@ custom renderers, AST JSON output, and migration planning.
 
 ---
 
-This page collects common tasks that are one step beyond the quick start.
+This page collects copyable snippets for common tasks that are one step beyond
+the quick start. Use {ref}`usage` for the base API, {ref}`presets` and
+{ref}`plugins` for feature selection, and {ref}`integrations` for complete
+application pipelines.
 
 ## Enable GitHub-flavored Markdown
 

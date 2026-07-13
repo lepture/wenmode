@@ -21,9 +21,8 @@ from wenmode.plugins import block_math, inline_math
 wen = Wenmode(github, plugins=[inline_math, block_math])
 ```
 
-Use a plugin when you want a complete feature. Use individual rules when you
-are deliberately building a small dialect and already know which parser
-behavior you need.
+Use this page to enable built-in plugins and understand their behavior. For
+custom plugin authoring, see {ref}`custom-plugins`.
 
 ## Using Plugins
 
@@ -325,27 +324,17 @@ mdast directive syntax with colon markers.
 
 ## Creating Plugins
 
-Implement custom parser behavior through the public rule interfaces in
-`wenmode.rules`. Renderer output stays explicit: expose a `handlers` mapping
-and register it from `setup()`.
-
-A plugin is a module or object with a `setup(wen, /)` function. Inside
-`setup()`, register parser rules, renderer handlers, directive renderers, or any
-combination of them. When callers need options, expose a `configure()` function
-that returns a configured plugin object.
+A plugin is any module or object with a `setup(wen, /)` function:
 
 ```python
 from wenmode import Wenmode
 from wenmode.rules import Emphasis
 
 
-class MyPlugin:
-    def setup(self, wen: Wenmode, /) -> None:
-        wen.register_rule(Emphasis)
-
-
-wen = Wenmode([], plugins=[MyPlugin()])
+def setup(wen: Wenmode, /) -> None:
+    wen.register_rule(Emphasis)
 ```
 
-For non-trivial syntax, define the node, rule, render handlers, and `setup()`
-together. See {ref}`custom-plugins` for a complete custom plugin walkthrough.
+Use {ref}`custom-plugins` when you need to define new parser rules, node types,
+renderer handlers, setup options, or plugin state. Keep this page for choosing
+and configuring plugins that ship with Wenmode.

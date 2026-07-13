@@ -132,11 +132,10 @@ expected = '''
 assert wen.render('++very *important*++') == expected.lstrip()
 ```
 
-The custom `InlineRule` creates the parser node. If a renderer has no handler
-for a node type, `BaseRenderer` falls back to rendering child nodes or a
-literal `value`.
-The `nodes` list is optional for rendering, but expose it when callers may
-restore serialized AST data with `wenmode.ast.from_ast()`.
+The custom `InlineRule` creates the parser node. If no renderer handler matches
+the node type, `BaseRenderer` falls back to child nodes or a literal `value`.
+Expose the `nodes` list when callers may restore serialized AST data with
+`wenmode.ast.from_ast()`.
 
 ## Renderer Handlers
 
@@ -163,18 +162,13 @@ def setup(wen: Wenmode, /) -> None:
 Use stable node `type` values. Renderer handlers are selected by `node.type`,
 not by the Python class name.
 
-When a plugin needs to add document-level output before or after the rendered
-root, prefer renderer root hooks over replacing the `root` handler. Use
-the pseudo handler names `root:pre` and `root:post` for prefixes such as
-metadata blocks and suffixes. This keeps the renderer's built-in root behavior,
-such as footnote sections or deferred image definitions, intact.
+For document-level prefixes or suffixes, prefer the `root:pre` and `root:post`
+pseudo handlers over replacing the `root` handler. They preserve built-in root
+behavior such as footnotes or deferred image definitions.
 
-Root hooks receive a complete parsed `Root` and are not run during streaming.
-Registering `root:pre` or `root:post` on a renderer instance blocks
-`Wenmode.stream()` before the first chunk so metadata, summaries, or suffixes
-are not silently dropped. Plugins that need incremental output should wait for
-a dedicated streaming hook API rather than assuming root hooks will run with
-partial data.
+Root hooks require a complete parsed `Root`, so registering one blocks
+`Wenmode.stream()`. Plugins that need incremental output should avoid root
+hooks until a streaming hook API exists.
 
 ```{code-block} python
 handlers = {
@@ -297,23 +291,20 @@ children = parser.parse_blocks(
 )
 ```
 
-`parser.parse_blocks()` enforces `Parser.max_container_depth` for all nested
-block callers. When the boundary is reached, it does not recurse into block
-rules again; it returns shallow blank-separated paragraphs that preserve the
-collected source text and source positions. Do not bypass this helper with a
-custom recursive parser, or deeply nested untrusted input can evade Wenmode's
-container-depth limit.
+`parser.parse_blocks()` enforces `Parser.max_container_depth` for nested block
+content. At the limit, it returns shallow blank-separated paragraphs that
+preserve source text and positions. Do not bypass this helper with a custom
+recursive parser.
 
 If a rule decides not to handle a match, return `None` without consuming input.
 For inline rules, return `(None, match.start())`. The parser will continue with
 the normal fallback behavior.
 
-When a `BlockRule` or `ContinueRule` returns a node, it must advance `state` past
-the input it accepted. The parser raises `RuntimeError` identifying the rule if
-it returns a node without advancing state. A `ContinueRule` that returns `None`
-is declining the continuation and must leave `state` unchanged so paragraph
-parsing can keep the marker as normal text. A block rule may advance state and
-return `None` when it consumes input without producing a node.
+When a `BlockRule` or `ContinueRule` returns a node, it must advance `state`
+past the accepted input. Returning a node without advancing state raises
+`RuntimeError`. A `ContinueRule` that returns `None` must leave `state`
+unchanged; a block rule may advance state and return `None` when it consumes
+input without producing a node.
 
 ## Source Positions
 
@@ -371,14 +362,13 @@ if node.position is not None:
     )
 ```
 
-When nested Markdown children need precise positions, prefer passing a source
-map instead of setting every child manually. `parser.inline_source()` maps child
-nodes to the nested content, while the returned parent node still gets the full
-consumed range from the parser.
+When nested Markdown children need precise positions, prefer a source map over
+manual child positions. `parser.inline_source()` maps child nodes to nested
+content while the parent keeps the full consumed range.
 
 `Root.to_ast()` converts offsets to unist-style `line` and `column` fields.
-Standalone nodes, including nodes yielded by `Parser.parse_iter()`, do not have
-root line-start context and serialize positions with offsets only.
+Standalone nodes, including `Parser.parse_iter()` results, serialize positions
+with offsets only.
 
 ## Plugin State And Transforms
 

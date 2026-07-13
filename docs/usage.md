@@ -2,8 +2,8 @@
 # Usage
 
 ```{rst-class} lead
-Learn the Python and command line APIs for parsing Markdown, rendering output,
-and streaming HTML chunks.
+Install Wenmode, render Markdown, inspect the AST, choose renderers, use the
+CLI, and stream HTML chunks.
 ```
 
 ---
@@ -30,21 +30,7 @@ uv add wenmode
 :::
 ::::
 
-## Core objects
-
-Most code uses one of these shapes:
-
-| Object | Use it when |
-| --- | --- |
-| `Wenmode` | You want one object that parses Markdown and renders output. |
-| `Parser` | You want the AST and will render, transform, or store it yourself. |
-| `HTMLRenderer`, `MarkdownRenderer`, `RSTRenderer`, `AsciiDocRenderer` | You already have parsed nodes and want a specific output format. |
-
-`Wenmode()` defaults to the `commonmark` preset and `HTMLRenderer()`. Pass a
-different preset, rule list, renderer, or `positions=True` only when your
-application needs that behavior.
-
-## Quick start
+## Render Markdown
 
 `Wenmode` is the main convenience API. It owns a `Parser` and a renderer, and
 uses the `commonmark` preset with `HTMLRenderer` when no options are provided.
@@ -80,64 +66,21 @@ with open('README.md', encoding='utf-8') as file:
     html = wen.render(file)
 ```
 
-## Command line
+## Core objects
 
-Installing Wenmode exposes the `wenmode` command. The same CLI is also available
-through `python -m wenmode`, and `uvx` can run it without adding Wenmode to the
-current project.
+Most code uses one of these shapes:
 
-Render a Markdown file to HTML:
+| Object | Use it when |
+| --- | --- |
+| `Wenmode` | You want one object that parses Markdown and renders output. |
+| `Parser` | You want the AST and will render, transform, or store it yourself. |
+| `HTMLRenderer`, `MarkdownRenderer`, `RSTRenderer`, `AsciiDocRenderer` | You already have parsed nodes and want a specific output format. |
 
-```bash
-wenmode render README.md --preset=github
-```
+`Wenmode()` defaults to the `commonmark` preset and `HTMLRenderer()`. Pass a
+different preset, rule list, renderer, or `positions=True` only when your
+application needs that behavior.
 
-Run the same command without a permanent install:
-
-```bash
-uvx wenmode render README.md --preset=github
-```
-
-Read from stdin by omitting the source path or passing `-`. CLI output goes to
-stdout unless you pass `-o`:
-
-```bash
-printf '# Hello\n' | wenmode render --preset=github
-wenmode render README.md --format=rst -o README.rst
-wenmode render README.md --format=asciidoc -o README.adoc
-```
-
-Use `ast` when you want JSON output for tooling, tests, or editor integrations:
-
-```bash
-wenmode ast README.md --preset=github --positions
-python -m wenmode ast README.md --indent=2
-```
-
-The CLI supports the built-in presets: `commonmark`, `github`, and `streaming`.
-It defaults to `commonmark`.
-
-```bash
-wenmode render README.md --preset=commonmark
-wenmode render README.md --preset=github
-```
-
-Enable built-in plugins with `--plugin`. Repeat the option to enable multiple
-plugins.
-
-```bash
-wenmode render notes.md --plugin=frontmatter --plugin=inline_math
-```
-
-HTML output uses the same safety defaults as `HTMLRenderer()`: raw HTML nodes are
-escaped, and unsafe link or image URLs are sanitized. Use `--unsafe-html` or
-`--unsafe-urls` only for trusted content or content sanitized by another layer.
-
-```bash
-wenmode render trusted.md --unsafe-html --unsafe-urls
-```
-
-## Parsing
+## Parse to AST
 
 Use `parse()` when you want the AST instead of rendered output.
 
@@ -215,35 +158,15 @@ provide line-start context.
 Enable positions only for tooling that needs source ranges. Leave them disabled
 for ordinary HTML rendering.
 
-### Streaming output
+### Incremental parsing
 
-Use `Wenmode.stream()` or `Parser.parse_iter()` when a renderer can consume
-completed top-level blocks incrementally. Pass a line iterator for large files
-or uploads; string input has already been loaded into memory and is not the
-bounded-memory path.
+Use `Parser.parse_iter()` when you want parsed top-level blocks instead of HTML
+chunks. Like `Wenmode.stream()`, it only works with streaming-compatible rule
+sets and is most useful with a line iterator for large files or uploads.
 
-Streaming is rejected when enabled rules attach complete-root transforms, such
-as reference collection, footnotes, front matter, or heading ID generation.
-`Wenmode.supports_streaming` and `Wenmode.streaming_blockers()` report the
-combined parser and renderer compatibility before you call `stream()`.
-
-Renderer `root:pre` and `root:post` hooks are full-root hooks. Ordinary hooks
-block streaming rather than receiving an incomplete or synthetic root. Wenmode's
-built-in HTML footnote hook and RST image-definition hook are explicitly safe to
-omit for supported streaming configurations; they are not invoked with partial
-root data.
-
-Iterable input is consumed lazily. Completed top-level source prefixes are
-released before their rendered chunks or parsed nodes are yielded, while unread
-lookahead remains available to the parser. Retained source is proportional to
-the current unfinished block and required lookahead. A syntax that needs an
-entire unfinished block before it can emit a node may still retain that block.
-
-Custom streaming rules should treat `StreamBlockState.index`,
-`StreamBlockState.line_at()`, `StreamBlockState.has_index()`, and
-`StreamBlockState.peek()` as absolute source-index APIs. `StreamBlockState.lines`
-is the active buffered window only; it must not be treated as complete parse
-history.
+`Wenmode.supports_streaming` and `Wenmode.streaming_blockers()` report parser
+and renderer compatibility before you call `stream()` or `parse_iter()`. For
+streaming internals and custom rule constraints, see {ref}`internals`.
 
 ## Rendering
 
@@ -255,13 +178,11 @@ from wenmode import AsciiDocRenderer, Wenmode
 
 wen = Wenmode(renderer=AsciiDocRenderer())
 text = '# Hello'
-expected = '''
-= Hello
-'''
+expected = '= Hello\n'
 
 asciidoc = wen.render(text)
 
-assert asciidoc == expected.lstrip()
+assert asciidoc == expected
 ```
 
 Wenmode currently provides:
@@ -367,79 +288,72 @@ assert wen.streaming_blockers() == ['reference']
 `Wenmode.stream()` returns a synchronous iterator of HTML chunks. Web frameworks
 that accept iterable response bodies can send those chunks directly.
 
-See {ref}`choosing a rule preset <presets>`, {ref}`security`, and
-{ref}`common integration tasks <recipes>`.
+For framework response patterns and reusable application setup, see
+{ref}`integrations`.
 
-### FastAPI
+## Command line
 
-```python
-from collections.abc import Iterator
-from typing import BinaryIO
+Installing Wenmode exposes the `wenmode` command. The same CLI is available
+through `python -m wenmode`, and `uvx` can run it without adding Wenmode to the
+current project.
 
-from fastapi import FastAPI, File, UploadFile
-from fastapi.responses import StreamingResponse
-from wenmode import Wenmode
-from wenmode.presets import streaming
+Render a Markdown file to HTML:
 
-wen = Wenmode(streaming)
-app = FastAPI()
-
-
-def iter_upload_lines(file: BinaryIO, encoding: str = 'utf-8') -> Iterator[str]:
-    for line in file:
-        yield line.decode(encoding)
-
-
-def stream_uploaded_markdown(upload: UploadFile) -> Iterator[str]:
-    try:
-        upload.file.seek(0)
-        yield from wen.stream(iter_upload_lines(upload.file))
-    finally:
-        upload.file.close()
-
-
-@app.post('/streaming')
-async def preview(file: UploadFile = File(...)):
-    return StreamingResponse(
-        stream_uploaded_markdown(file),
-        media_type='text/html; charset=utf-8',
-    )
+```bash
+wenmode render README.md --preset=github
 ```
 
-The repository also includes a runnable FastAPI file-upload example in
-`examples/wenmode-fastapi`.
+Run the same command without a permanent install:
 
-### Flask
-
-```python
-from flask import Response
-from wenmode import Wenmode
-from wenmode.presets import streaming
-
-wen = Wenmode(streaming)
-
-
-def preview(markdown: str):
-    return Response(
-        wen.stream(markdown),
-        mimetype='text/html',
-    )
+```bash
+uvx wenmode render README.md --preset=github
 ```
 
-### Django
+Read from stdin by omitting the source path or passing `-`. CLI output goes to
+stdout unless you pass `-o`:
 
-```python
-from django.http import StreamingHttpResponse
-from wenmode import Wenmode
-from wenmode.presets import streaming
-
-wen = Wenmode(streaming)
-
-
-def preview(request):
-    markdown = request.POST['markdown']
-    return StreamingHttpResponse(
-        wen.stream(markdown),
-        content_type='text/html; charset=utf-8',
-    )
+```bash
+printf '# Hello\n' | wenmode render --preset=github
+wenmode render README.md --format=rst -o README.rst
+wenmode render README.md --format=asciidoc -o README.adoc
 ```
+
+Use `ast` when you want JSON output for tooling, tests, or editor integrations:
+
+```bash
+wenmode ast README.md --preset=github --positions
+python -m wenmode ast README.md --indent=2
+```
+
+The CLI supports the built-in presets: `commonmark`, `github`, and `streaming`.
+It defaults to `commonmark`.
+
+```bash
+wenmode render README.md --preset=commonmark
+wenmode render README.md --preset=github
+```
+
+Enable built-in plugins with `--plugin`. Repeat the option to enable multiple
+plugins.
+
+```bash
+wenmode render notes.md --plugin=frontmatter --plugin=inline_math
+```
+
+HTML output uses the same safety defaults as `HTMLRenderer()`: raw HTML nodes
+are escaped, and unsafe link or image URLs are sanitized. Use `--unsafe-html` or
+`--unsafe-urls` only for trusted content or content sanitized by another layer.
+
+```bash
+wenmode render trusted.md --unsafe-html --unsafe-urls
+```
+
+## Next steps
+
+| Goal | Next page |
+| --- | --- |
+| Choose CommonMark, GFM, streaming, or a custom rule list | {doc}`Presets <presets>` |
+| Add built-in syntax such as math, smart punctuation, or directives | {doc}`Plugins <plugins>` |
+| Render untrusted user content safely | {doc}`Security <security>` |
+| Copy patterns for TOCs, heading IDs, AST JSON, or custom renderers | {doc}`Recipes <recipes>` |
+| Wire Wenmode into a larger application | {doc}`Integrations <integrations>` |

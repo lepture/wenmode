@@ -16,24 +16,6 @@ configuration everywhere the same content type is rendered. Avoid letting the
 editor preview, API response, and background indexing job drift into different
 rule sets.
 
-## Repository examples
-
-The repository includes local example packages that show Wenmode embedded in web
-and documentation frameworks:
-
-- `examples/wenmode-fastapi` is a FastAPI app that streams uploaded Markdown
-  files through `StreamingResponse`.
-- `examples/wenmode-mkdocs` is a MkDocs plugin that renders page Markdown
-  through Wenmode before MkDocs finishes the page build.
-- `examples/wenmode-myst` is a Sphinx source parser that uses Wenmode instead
-  of `myst_parser` for Markdown input.
-
-The Wenmode documentation itself uses the `wenmode_myst` example. The Sphinx
-configuration adds `examples/wenmode-myst/src` to `sys.path` and enables the
-`wenmode_myst` extension, so these docs are built by parsing Markdown with
-Wenmode, rendering it to reStructuredText, and handing that generated text back
-to Sphinx.
-
 ## Reuse one configured instance
 
 Create a small service object around the rule set your product supports. A
@@ -147,10 +129,9 @@ assert '"type": "root"' in page.ast_json
 ## Stream low-latency previews
 
 Use the `streaming` preset for live previews, chat responses, or other views
-that should emit HTML chunks before the whole document is available. Keep
-reference-style links, footnotes, and other deferred features out of this path.
-The preset still supports streaming-compatible tables, strikethrough, direct
-links, and direct images.
+that should emit HTML chunks before the whole document is available. This path
+supports tables, strikethrough, direct links, and direct images, but not
+reference-style links, footnotes, or deferred transforms.
 
 ```python
 from collections.abc import Iterable
@@ -208,10 +189,7 @@ curl -N \
   http://127.0.0.1:8000/streaming
 ```
 
-The example uses the same streaming boundary as `Wenmode(streaming)`: tables,
-strikethrough, direct links, and direct images render incrementally; reference
-definitions, footnotes, and deferred transforms are not part of the streaming
-path.
+The example uses the same streaming boundary as `Wenmode(streaming)`.
 
 ## Package a product dialect
 
@@ -254,6 +232,21 @@ assert html == expected.lstrip()
 
 Pass renderer or parsing options through the same factory when another layer
 needs a different output format or source positions. For new syntax, create a
-plugin that registers parser rules and renderer handlers together. See
-{ref}`custom-plugins` for an RST-inspired example that creates a new node type
-and registers HTML, Markdown, and RST rendering behavior.
+plugin that registers parser rules and renderer handlers together; see
+{ref}`custom-plugins`.
+
+## Repository examples
+
+The repository includes local example packages that show Wenmode embedded in web
+and documentation frameworks:
+
+- `examples/wenmode-fastapi` is a FastAPI app that streams uploaded Markdown
+  files through `StreamingResponse`.
+- `examples/wenmode-mkdocs` is a MkDocs plugin that renders page Markdown
+  through Wenmode before MkDocs finishes the page build.
+- `examples/wenmode-myst` is a Sphinx source parser that uses Wenmode instead
+  of `myst_parser` for Markdown input.
+
+These docs use the `wenmode_myst` example: Sphinx loads the extension from
+`examples/wenmode-myst/src`, then Wenmode converts Markdown to reStructuredText
+before Sphinx parses it.

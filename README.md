@@ -164,12 +164,10 @@ from wenmode import AsciiDocRenderer, Wenmode
 wen = Wenmode(renderer=AsciiDocRenderer())
 
 text = '# Hello'
-expected = '''
-= Hello
-'''
+expected = '= Hello\n'
 
 asciidoc = wen.render(text)
-assert asciidoc == expected.lstrip()
+assert asciidoc == expected
 ```
 
 ## Rules, presets, and plugins

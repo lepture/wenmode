@@ -1,5 +1,5 @@
 ---
-description: Decide whether Wenmode fits your Python Markdown integration before choosing presets, renderers, plugins, or migration guides.
+description: Understand where Wenmode fits before choosing presets, renderers, plugins, or migration guides.
 ---
 
 (introduce)=
@@ -12,28 +12,12 @@ filter.
 
 ---
 
-Wenmode is a Markdown toolkit for Python applications that need to control the
-Markdown dialect they accept. It parses Markdown into node objects first, then
-renders those nodes with an HTML, Markdown, reStructuredText, AsciiDoc, or custom
-renderer.
+Wenmode is a Markdown toolkit for Python applications that need explicit control
+over parsing and rendering. It parses Markdown into mdast-compatible node
+objects, then renders those nodes as HTML, Markdown, reStructuredText, AsciiDoc,
+or application-specific output.
 
-That split is the core design choice. Parsing, rule selection, transforms,
-directive handling, and rendering are separate pieces, so an application can
-choose the behavior it needs instead of enabling one global extension bundle.
-
-## What Wenmode optimizes for
-
-Wenmode is built around five practical needs:
-
-| Need | Wenmode feature |
-| --- | --- |
-| Keep Markdown behavior explicit | Choose `commonmark`, `github`, `streaming`, or an exact rule list. |
-| Inspect or store parsed content | Parse to mdast-compatible node objects and `Node.to_ast()` dictionaries. |
-| Render user-authored content safely | Escape raw HTML and sanitize unsafe URLs by default. |
-| Add product-specific syntax | Package rules and renderer handlers with `Wenmode(..., plugins=[plugin])`. |
-| Emit output incrementally | Use the `streaming` preset when deferred reference resolution is not needed. |
-
-The common case still stays small:
+The default API is still small:
 
 ```python
 from wenmode import Wenmode
@@ -43,38 +27,35 @@ html = Wenmode().render('# Hello\n')
 assert html == '<h1>Hello</h1>\n'
 ```
 
-When you need the syntax tree, parse first:
+The rest of the library exists for applications that need to inspect the tree,
+choose a dialect, add syntax, or enforce rendering policy.
 
-```python
-from wenmode import Wenmode
-from wenmode.ast import find_all, plain_text
-from wenmode.nodes import Heading
+## Core model
 
-root = Wenmode().parse('# Hello\n\nA [link](/url).\n')
-headings = find_all(root, Heading)
+Wenmode keeps the Markdown pipeline split into explicit pieces:
 
-assert [plain_text(heading) for heading in headings] == ['Hello']
-assert root.to_ast()['type'] == 'root'
-```
+| Piece | Responsibility |
+| --- | --- |
+| Presets and rules | Define the Markdown dialect. |
+| Parser | Turns source text into node objects. |
+| AST helpers and transforms | Inspect, validate, or modify parsed content. |
+| Renderers | Convert nodes to HTML, Markdown, RST, AsciiDoc, or custom output. |
+| Plugins | Package custom rules, nodes, renderer handlers, and options. |
+
+This split lets one application parse once, add heading IDs, collect a table of
+contents, store AST JSON for search, and render HTML from the same tree. Another
+application can keep the same parser but swap the renderer or safety policy.
 
 ## When Wenmode is a good fit
 
-Use Wenmode when your application needs one or more of these behaviors:
+Use Wenmode when your application needs one or more of these:
 
 - A documented Markdown dialect for comments, documentation, CMS content, or
   AI-generated Markdown.
 - AST-based indexing, validation, transformation, diagnostics, or conversion.
 - A safer default HTML path for user-authored content.
-- Custom syntax that should be owned by your application instead of patched into
-  a global renderer.
-- Streaming previews or responses where direct links are enough and deferred
-  references can stay disabled.
-
-For example, a documentation system might parse once, add heading IDs, collect a
-table of contents, store AST JSON for search, and render HTML from the same
-tree. A product comment renderer might use the `github` preset but keep raw HTML
-escaped. A migration from another parser might start with `Wenmode().render()`
-and later move extension behavior into explicit plugins.
+- Product-specific syntax packaged as plugins.
+- Streaming output where deferred document-wide features can stay disabled.
 
 ## When to choose something else
 
@@ -83,12 +64,12 @@ library. A smaller helper may be enough when your application only calls
 `markdown_to_html(text)` and never inspects the AST, changes syntax, streams
 output, or controls extension boundaries.
 
-Also avoid treating `HTMLRenderer(escape=False)` as a sanitizer. It is a raw
-HTML passthrough setting for trusted or separately sanitized content. Start with
-the default renderer for untrusted Markdown and review {ref}`security` before
+Also do not treat `HTMLRenderer(escape=False)` as a sanitizer. It is a raw HTML
+passthrough setting for trusted or separately sanitized content. Start with the
+default renderer for untrusted Markdown and review {ref}`security` before
 changing safety settings.
 
-## How to read the docs
+## Where to go next
 
 If you are evaluating Wenmode, start here and then choose the path that matches
 your task:

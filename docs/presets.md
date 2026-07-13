@@ -8,8 +8,9 @@ Markdown, or streaming output.
 
 ---
 
-Presets are lists of rules. Pass one to `Wenmode` or `Parser` to select a
-Markdown dialect.
+Presets are named rule lists. Use this page to choose or derive a Markdown
+dialect; use {ref}`plugins` when syntax needs new nodes or renderer behavior,
+and {ref}`rule-matrix` when you need exact rule membership.
 
 ```python
 from wenmode import Wenmode
@@ -17,9 +18,6 @@ from wenmode.presets import github
 
 wen = Wenmode(github)
 ```
-
-Use {ref}`plugins` for non-standard syntax that needs its own nodes and renderer
-handlers.
 
 In most applications, choose one preset first, then add plugins or custom rules
 only for the syntax that preset does not cover.
@@ -102,7 +100,7 @@ custom streaming configuration enables a deferred rule or plugin, `stream()`
 raises `StreamingUnsupportedError` instead of emitting partial output with
 missing document-wide context.
 
-## Custom preset
+## Custom Preset
 
 A preset is a reusable rule sequence. Create a custom one when your product needs a
 smaller or stricter dialect than `commonmark`, `github`, or `streaming`.
@@ -114,43 +112,6 @@ update an existing parser explicitly.
 
 Keep custom dialects in one module so the editor preview, API renderer,
 background jobs, and tests all use the same Markdown behavior.
-
-```python
-from wenmode import Wenmode
-from wenmode.presets import commonmark
-from wenmode.rules import HtmlBlock, Image, Link, RawHtml
-
-product_preset = [
-    rule
-    for rule in commonmark
-    if rule not in {HtmlBlock, Image, Link, RawHtml}
-]
-product_preset.extend([
-    Image(references=False),
-    Link(references=False),
-])
-
-wen = Wenmode(product_preset)
-text = '''
-<span>plain</span>
-
-A [direct](/url) and [reference][id].
-'''
-
-html = wen.render(text)
-
-assert '&lt;span&gt;plain&lt;/span&gt;' in html
-assert '<a href="/url">direct</a>' in html
-assert '[reference][id]' in html
-```
-
-This example starts from `commonmark`, removes raw HTML parsing, and replaces
-reference-style image and link rules with direct-only variants. Export
-`product_preset` from your own package when multiple services need the same
-syntax rules.
-
-Use `create_preset()` when you want that derivation to match rules by their
-stable names:
 
 ```python
 from wenmode import Wenmode
