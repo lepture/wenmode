@@ -89,8 +89,8 @@ Wenmode has three parser rule categories:
 - `InlineRule` parses inline syntax such as links, inline code, directives, and
   formatting.
 
-Some rules also attach transforms. Node transforms update a node as soon as its
-owning block or continuation rule returns it. Root transforms collect
+Some rules also attach transforms. Node transforms mutate a node in place as soon
+as its owning block or continuation rule returns it. Root transforms collect
 document-wide definitions, defer inline resolution until the whole document is
 known, or update parsed nodes after block parsing is complete.
 

@@ -20,6 +20,8 @@ here while preparing a release, then move them under the final version heading.
 - Add `wenmode.plugins.github_alert` for top-level GitHub alert blockquotes.
 - Add `wenmode.plugins.heading_ids` to install generated heading IDs on the
   heading rules already enabled in a parser configuration.
+- Re-export `BlockFenced`, `InlineDelimited`, and `InlineLiteral` from
+  `wenmode.plugins` as the public entry point for simple custom plugin rules.
 
 ### Breaking Changes
 

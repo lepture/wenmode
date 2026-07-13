@@ -33,6 +33,11 @@ A plugin can be a module or an object. During construction, `Wenmode` calls
 `setup(wen, /)` on each plugin in `plugins=[...]`. Use `configure()` to return a
 configured plugin object when a plugin needs options.
 
+For simple delimiter or fenced-block syntax, import `BlockFenced`,
+`InlineDelimited`, or `InlineLiteral` from `wenmode.plugins`. The underlying
+implementation remains internal; `wenmode.plugins` is the supported import path
+for custom plugins.
+
 ```python
 from wenmode import Wenmode
 from wenmode.rules import Emphasis
@@ -207,6 +212,11 @@ def configure(*, inline: bool = True, block: bool = True) -> MyPlugin:
 Validate option values inside `configure()` or the configured plugin's
 `setup()` when the plugin needs stricter behavior.
 
+For built-in-style configurable plugins, keep options keyword-only, return an
+immutable `@dataclass(frozen=True)` plugin object from `configure()`, and keep
+`setup(wen, /)` free of extra parameters. That keeps module plugins and
+configured plugin objects interchangeable in `Wenmode(..., plugins=[...])`.
+
 ## Rule Types Inside Plugins
 
 Rules are implementation details of a plugin. Use the rule type that matches
@@ -217,7 +227,7 @@ the syntax you are adding:
 | `InlineRule` | inline spans such as `++marked++` |
 | `BlockRule` | standalone block starts such as fenced blocks |
 | `ContinueRule` | paragraph continuations such as definition-list items |
-| `Rule` with node transforms | local node rewrites that can run during streaming |
+| `Rule` with node transforms | local in-place node updates that can run during streaming |
 | `Rule` with root transforms | document-wide state or tree rewrites |
 
 Every rule has a stable `name`. Parser rule names are used as dictionary keys,

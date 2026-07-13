@@ -108,13 +108,13 @@ At a high level:
 2. Block openers are matched against enabled `BlockRule` patterns.
 3. If no block rule handles the line, the parser reads a paragraph.
 4. Paragraph text is parsed with enabled inline rules.
-5. Node transforms update nodes that can be finalized immediately.
+5. Node transforms mutate nodes that can be finalized immediately.
 6. Root transforms finalize document-wide features.
 
 The important boundary for extension authors is that block parsing creates the
 tree shape, inline parsing fills span-level children, node transforms handle
-rule-local rewrites, and root transforms handle features that need document-wide
-state.
+rule-local in-place updates, and root transforms handle features that need
+document-wide state.
 
 `Parser.parse_iter()` follows the block parser incrementally and yields nodes as
 they are parsed. It rejects rule sets that attach parser transforms that cannot
@@ -177,14 +177,19 @@ the per-parse `BlockState`, without waiting for the complete document. Heading
 ID generation uses this path: the heading node is available immediately, while
 the per-document slugger state lives in `BlockState.store`.
 
+Node transforms mutate the supplied node in place and return `None`. They do not
+replace the node returned by the owning rule. If a feature needs a different
+node type or parent-level replacement, implement that behavior in the block or
+continuation rule itself.
+
 Node transforms that need finalized inline children can set
 `defer_inlines=True`. During full parsing with deferred inline resolution, those
 callbacks run after pending inline nodes are resolved. In streaming-compatible
 configurations, inline parsing is not deferred, so the same transform still runs
 before the node is yielded.
 
-Because node transforms run during block parsing, they also run in
-`Parser.parse_iter()` and can support streaming output.
+Because node transforms run during block parsing and do not need a complete
+`Root`, they also run in `Parser.parse_iter()` and can support streaming output.
 
 ## Root transforms
 
@@ -200,10 +205,9 @@ Reference links, footnotes, and abbreviations use this mechanism because
 definitions found later in the document can affect earlier inline nodes.
 
 Streaming never builds a complete `Root`, so every root transform blocks
-`Parser.parse_iter()` unless the transform is explicitly marked streaming-safe.
-This is separate from `defer_inlines`: full parsing defers inline parsing only
-for transforms that request it, while streaming rejects root transforms that
-require complete-root work.
+`Parser.parse_iter()`. This is separate from `defer_inlines`: full parsing
+defers inline parsing only for transforms that request it, while streaming
+rejects root transforms because they require complete-root work.
 
 ## Parser state
 
