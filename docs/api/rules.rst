@@ -26,6 +26,9 @@ Rule Base Classes
 .. autoclass:: wenmode.rules.RootTransform
    :members:
 
+.. autoclass:: wenmode.rules.NodeTransform
+   :members:
+
 Block Rules
 -----------
 

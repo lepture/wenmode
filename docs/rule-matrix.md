@@ -22,8 +22,8 @@ rules to enable. For syntax examples and default HTML output, use the
 | `IndentedCode` | block | yes | yes | yes | `code` | none |
 | `HtmlBlock` | block | yes | configured | yes | `html` | `disallowed_tags=()` |
 | `List` | block | yes | configured | yes | `list`, `listItem` | `task=False` |
-| `AtxHeading` | block | yes | yes | yes | `heading` | `id_transform=False` |
-| `SetextHeading` | continuation | yes | yes | yes | `heading` | `id_transform=False` |
+| `AtxHeading` | block | yes | yes | yes | `heading` | `transforms=()` |
+| `SetextHeading` | continuation | yes | yes | yes | `heading` | `transforms=()` |
 | `Blockquote` | block | yes | yes | yes | `blockquote` | none |
 | `HardBreak` | inline | yes | yes | yes | `break` | none |
 | `Autolink` | inline | yes | yes | yes | `link` | none |
@@ -110,11 +110,12 @@ Generate heading IDs while keeping a small dialect:
 
 ```python
 from wenmode import Wenmode
+from wenmode.headings import HeadingIdTransform
 from wenmode.rules import AtxHeading, SetextHeading
 
 wen = Wenmode([
-    AtxHeading(id_transform=True),
-    SetextHeading(id_transform=True),
+    AtxHeading(transforms=[HeadingIdTransform()]),
+    SetextHeading(transforms=[HeadingIdTransform()]),
 ])
 ```
 

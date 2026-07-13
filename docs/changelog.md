@@ -11,6 +11,15 @@ releases.
 This page records notable changes for released versions. Add unreleased entries
 here while preparing a release, then move them under the final version heading.
 
+## 0.11.0
+
+### Breaking Changes
+
+- Replace `AtxHeading(id_transform=True)` and
+  `SetextHeading(id_transform=True)` with explicit node transforms:
+  `AtxHeading(transforms=[HeadingIdTransform()])` and
+  `SetextHeading(transforms=[HeadingIdTransform()])`.
+
 ## 0.10.0
 
 ### Breaking Changes

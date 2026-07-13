@@ -35,8 +35,8 @@ Output node is `Heading`, and its AST is:
 }
 ```
 
-Option example: use `AtxHeading(id_transform=True)` to add generated heading
-IDs.
+Option example: use `AtxHeading(transforms=[HeadingIdTransform()])` to add
+generated heading IDs.
 
 ```markdown
 # Hello World
@@ -93,8 +93,8 @@ Output node is `Heading`, and its AST is:
 }
 ```
 
-Option example: use `SetextHeading(id_transform=True)` to add generated heading
-IDs.
+Option example: use `SetextHeading(transforms=[HeadingIdTransform()])` to add
+generated heading IDs.
 
 ```markdown
 Hello World

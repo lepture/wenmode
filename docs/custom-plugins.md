@@ -217,6 +217,7 @@ the syntax you are adding:
 | `InlineRule` | inline spans such as `++marked++` |
 | `BlockRule` | standalone block starts such as fenced blocks |
 | `ContinueRule` | paragraph continuations such as definition-list items |
+| `Rule` with node transforms | local node rewrites that can run during streaming |
 | `Rule` with root transforms | document-wide state or tree rewrites |
 
 Every rule has a stable `name`. Parser rule names are used as dictionary keys,

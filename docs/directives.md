@@ -133,11 +133,12 @@ You can also pass directive renderers at construction time:
 ```python
 from wenmode import Wenmode
 from wenmode.directives import Abbreviation, Admonition, Details, Figure, TableOfContents
+from wenmode.headings import HeadingIdTransform
 from wenmode.presets import commonmark
 from wenmode.rules import AtxHeading, ContainerDirective, LeafDirective
 
 wen = Wenmode(
-    [*commonmark, AtxHeading(id_transform=True), LeafDirective, ContainerDirective],
+    [*commonmark, AtxHeading(transforms=[HeadingIdTransform()]), LeafDirective, ContainerDirective],
     directives=[Abbreviation(), Admonition(), Details(), Figure(), TableOfContents()],
 )
 ```
@@ -212,15 +213,16 @@ The parser builds an AST before rendering.
 ### TableOfContents
 
 `TableOfContents` renders a `toc` leaf directive from heading IDs already
-present in the parsed tree. Use heading rules with `id_transform=True` when you
+present in the parsed tree. Use heading rules with `HeadingIdTransform` when you
 want Wenmode to create those heading IDs.
 
 ```python
 from wenmode import HTMLRenderer, Parser
 from wenmode.directives import TableOfContents
+from wenmode.headings import HeadingIdTransform
 from wenmode.rules import AtxHeading, LeafDirective
 
-parser = Parser([AtxHeading(id_transform=True), LeafDirective])
+parser = Parser([AtxHeading(transforms=[HeadingIdTransform()]), LeafDirective])
 text = '''
 ::toc{min=2 max=3}
 

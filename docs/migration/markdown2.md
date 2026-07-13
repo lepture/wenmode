@@ -65,7 +65,7 @@ custom plugins or preprocessing.
 | `tables` | `github` preset or `Table` rule |
 | `fenced-code-blocks` | default `commonmark` preset includes fenced code |
 | `footnotes` | `github` preset or `Footnote` rule |
-| `header-ids` | `AtxHeading(id_transform=True)`, `SetextHeading(id_transform=True)`, or `add_heading_ids()` |
+| `header-ids` | `AtxHeading(transforms=[HeadingIdTransform()])`, `SetextHeading(transforms=[HeadingIdTransform()])`, or `add_heading_ids()` |
 | `strike` | `github` preset or `Strikethrough` rule |
 | `code-friendly` | usually no direct migration; test the exact documents and adjust rule lists if needed |
 | `smarty-pants` | run a typography transform before or after Wenmode, or add a custom renderer transform |
@@ -111,11 +111,12 @@ html = markdown2.markdown(text, extras=['header-ids'])
 :caption: wenmode
 
 from wenmode import Wenmode
+from wenmode.headings import HeadingIdTransform
 from wenmode.rules import AtxHeading, SetextHeading
 
 wen = Wenmode([
-    AtxHeading(id_transform=True),
-    SetextHeading(id_transform=True),
+    AtxHeading(transforms=[HeadingIdTransform()]),
+    SetextHeading(transforms=[HeadingIdTransform()]),
 ])
 html = wen.render(text)
 ```
