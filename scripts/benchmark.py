@@ -27,6 +27,8 @@ from wenmode.plugins import (
     definition_list,
     fenced_directive,
     frontmatter,
+    github_alert,
+    heading_ids,
     inline_math,
     inline_role,
     inline_spoiler,
@@ -239,6 +241,8 @@ def make_wenmode_all() -> Wenmode:
             insert,
             superscript,
             subscript,
+            heading_ids,
+            github_alert,
         ],
     )
     return wen

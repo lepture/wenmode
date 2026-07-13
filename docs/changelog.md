@@ -13,7 +13,7 @@ here while preparing a release, then move them under the final version heading.
 
 ## 0.11.0
 
-**Unreleased**
+Released **Jul 13, 2026**.
 
 ### Added
 

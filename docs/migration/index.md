@@ -72,9 +72,9 @@ non-Wenmode target from the migration guides:
 
 | Case | Bytes | Wenmode mean | Fastest migration target | Target mean |
 | --- | ---: | ---: | --- | ---: |
-| docs | 116,875 | 16.56ms | mistune | 22.28ms |
-| rust-book | 1,225,464 | 163.27ms | mistune | 246.29ms |
-| progit | 502,090 | 31.54ms | mistune | 42.83ms |
+| docs | 135,115 | 18.08ms | mistune | 25.42ms |
+| rust-book | 1,226,076 | 168.82ms | mistune | 222.76ms |
+| progit | 502,090 | 28.90ms | mistune | 45.41ms |
 
 Benchmark numbers are hardware- and corpus-dependent, so treat them as a local
 comparison rather than a universal ranking. For the full result table, parser
