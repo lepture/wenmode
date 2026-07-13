@@ -27,7 +27,16 @@ workflows, custom dialects, and format converters.
 :padding: 0
 :class-row: surface
 
-:::{grid-item-card} Explicit dialects
+:::{grid-item-card} From Mistune's author
+:link: introduce
+:link-type: doc
+
+Wenmode comes from the same author as
+[Mistune](https://mistune.lepture.com/), redesigned for applications that need
+to own the full Markdown pipeline.
+:::
+
+:::{grid-item-card} Explicit rule composition
 :link: presets
 :link-type: doc
 
@@ -43,20 +52,12 @@ Parse to mdast-compatible nodes before indexing, transforming, storing,
 validating, or rendering content.
 :::
 
-:::{grid-item-card} Safe HTML defaults
+:::{grid-item-card} Safer HTML defaults
 :link: security
 :link-type: doc
 
 Escape raw HTML and sanitize unsafe URLs by default, then opt into trusted
 passthrough only when your application has a separate sanitization layer.
-:::
-
-:::{grid-item-card} Pluggable rendering
-:link: recipes
-:link-type: doc
-
-Render HTML, normalized Markdown, reStructuredText, AsciiDoc, or
-application-specific output with renderer handlers.
 :::
 ::::
 

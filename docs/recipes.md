@@ -124,6 +124,91 @@ assert html == expected.lstrip()
 See {ref}`Security <security>` for renderer-level escaping and URL sanitization
 behavior.
 
+## Filter and stream LLM Markdown
+
+Use `Parser.parse_iter()` with a streaming-compatible preset when an LLM response
+should be rendered as HTML while it is still arriving. Filter each parsed block
+before handing it to the renderer.
+
+```python
+from collections.abc import Iterable, Iterator
+
+from wenmode import HTMLRenderer, Wenmode
+from wenmode.nodes import Node
+from wenmode.presets import streaming
+
+ALLOWED_NODE_TYPES = {
+    'blockquote',
+    'break',
+    'code',
+    'delete',
+    'emphasis',
+    'heading',
+    'inlineCode',
+    'link',
+    'list',
+    'listItem',
+    'paragraph',
+    'strong',
+    'table',
+    'tableCell',
+    'tableRow',
+    'text',
+    'thematicBreak',
+}
+
+wen = Wenmode(streaming, renderer=HTMLRenderer())
+
+
+def filter_node(node: Node) -> Node | None:
+    if node.type not in ALLOWED_NODE_TYPES:
+        return None
+
+    children = getattr(node, 'children', None)
+    if isinstance(children, list):
+        children[:] = [
+            child
+            for child in (filter_node(child) for child in children)
+            if child is not None
+        ]
+    return node
+
+
+def iter_filtered_nodes(source: str | Iterable[str]) -> Iterator[Node]:
+    for node in wen.parser.parse_iter(source):
+        filtered = filter_node(node)
+        if filtered is not None:
+            yield filtered
+
+
+def render_llm_markdown(source: str | Iterable[str]) -> Iterator[str]:
+    yield from wen.renderer.render_iter(iter_filtered_nodes(source))
+
+
+markdown = '''
+# Answer
+
+Use **Markdown** safely.
+
+![tracking pixel](https://example.com/pixel.png)
+
+<script>alert(1)</script>
+'''
+
+html = ''.join(render_llm_markdown(markdown))
+
+assert '<h1>Answer</h1>' in html
+assert '<strong>Markdown</strong>' in html
+assert '<img' not in html
+assert '<script' not in html
+```
+
+The allowlist above removes `image` and `html` nodes. Keep the default
+`HTMLRenderer()` safety settings so unsafe URLs are also removed from links that
+remain allowed. If you need reference-style links, footnotes, or any other
+feature that waits for the complete document, parse the full response first
+instead of using `parse_iter()`.
+
 ## Generate heading IDs
 
 Use the `heading_ids` plugin when you want Wenmode to add generated heading IDs
