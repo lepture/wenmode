@@ -120,6 +120,8 @@ and documentation frameworks:
   through Wenmode before MkDocs finishes the page build.
 - `examples/wenmode-myst` is a Sphinx source parser that uses Wenmode instead
   of `myst_parser` for Markdown input.
+- `examples/wenmode-docx` is a `python-docx` bridge that converts Markdown AST
+  nodes into Word documents.
 
 These docs use the `wenmode_myst` example: Sphinx loads the extension from
 `examples/wenmode-myst/src`, then Wenmode converts Markdown to reStructuredText

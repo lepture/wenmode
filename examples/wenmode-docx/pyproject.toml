@@ -1,0 +1,28 @@
+[project]
+name = "wenmode-docx"
+version = "0.1.0"
+description = "Example Markdown to DOCX converter built with Wenmode and python-docx."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "python-docx",
+    "wenmode",
+]
+
+[tool.uv.sources]
+wenmode = { path = "../..", editable = true }
+
+[project.scripts]
+wenmode-docx = "wenmode_docx:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+test = [
+    "pytest>=8.4.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
