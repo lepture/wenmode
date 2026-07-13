@@ -51,21 +51,11 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.sdist]
-exclude = [
-    "/.*.swp",
-    "/*.swp",
-    "/.coverage",
-    "/.idea",
-    "/.mypy_cache",
-    "/.pytest_cache",
-    "/.ruff_cache",
-    "/coverage.xml",
-    "/demo.py",
-    "/dist",
-    "/docs/_build",
-    "/htmlcov",
-    "/public",
-    "/uv.lock",
+only-include = [
+    "src",
+    "README.rst",
+    "LICENSE",
+    "pyproject.toml",
 ]
 
 [tool.hatch.version]
