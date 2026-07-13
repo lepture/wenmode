@@ -116,13 +116,31 @@ def test_github_alert_renders_markdown() -> None:
     assert app.render('> [!NOTE]\n> **Body**\n') == '> [!NOTE]\n> **Body**\n'
 
 
+def test_github_alert_renders_empty_markdown() -> None:
+    app = Wenmode(renderer=MarkdownRenderer(), plugins=[github_alert])
+
+    assert app.render('> [!NOTE]\n') == '> [!NOTE]\n'
+
+
 def test_github_alert_renders_rst() -> None:
     app = Wenmode(renderer=RSTRenderer(), plugins=[github_alert])
 
     assert app.render('> [!WARNING]\n> Body\n') == '.. warning::\n\n   Body\n'
 
 
+def test_github_alert_renders_empty_rst() -> None:
+    app = Wenmode(renderer=RSTRenderer(), plugins=[github_alert])
+
+    assert app.render('> [!WARNING]\n') == '.. warning::\n'
+
+
 def test_github_alert_renders_asciidoc() -> None:
     app = Wenmode(renderer=AsciiDocRenderer(), plugins=[github_alert])
 
     assert app.render('> [!TIP]\n> Body\n') == '[TIP]\n====\nBody\n====\n'
+
+
+def test_github_alert_renders_empty_asciidoc() -> None:
+    app = Wenmode(renderer=AsciiDocRenderer(), plugins=[github_alert])
+
+    assert app.render('> [!TIP]\n') == '[TIP]\n====\n====\n'

@@ -11,8 +11,8 @@ from wenmode import AsciiDocRenderer, HTMLRenderer, MarkdownRenderer, RSTRendere
 from wenmode.ast import from_ast
 from wenmode.directives import Admonition, Details, Figure, TableOfContents
 from wenmode.nodes import Html, Image, Link, List, ListItem, Literal, Paragraph, Parent, Root, Text
-from wenmode.plugins import html_container, inline_math
-from wenmode.presets import streaming
+from wenmode.plugins import fenced_directive, html_container, inline_math
+from wenmode.presets import github, streaming
 from wenmode.renderers import BaseRenderer, RenderContext
 from wenmode.rules import Footnote
 
@@ -192,6 +192,48 @@ def test_renderer_examples(example: RendererExample) -> None:
     assert rst == example['rst']
     if 'asciidoc' in example:
         assert asciidoc == example['asciidoc']
+
+
+def test_asciidoc_renderer_renders_empty_blockquote_from_markdown() -> None:
+    app = Wenmode(github, renderer=AsciiDocRenderer())
+
+    assert app.render('>\n') == '____\n____\n'
+
+
+def test_asciidoc_renderer_renders_empty_code_block_from_markdown() -> None:
+    app = Wenmode(github, renderer=AsciiDocRenderer())
+
+    assert app.render('```\n```\n') == '----\n----\n'
+
+
+def test_asciidoc_renderer_renders_html_block_from_markdown() -> None:
+    app = Wenmode(github, renderer=AsciiDocRenderer())
+
+    assert app.render('<div>\nx\n</div>\n') == '++++\n<div>\nx\n</div>\n++++\n'
+
+
+def test_asciidoc_renderer_renders_image_title_from_markdown() -> None:
+    app = Wenmode(github, renderer=AsciiDocRenderer())
+
+    assert app.render('![Alt](/img "A title")\n') == 'image:/img[Alt,title="A title"]\n'
+
+
+def test_asciidoc_renderer_renders_inline_code_with_plus_from_markdown() -> None:
+    app = Wenmode(github, renderer=AsciiDocRenderer())
+
+    assert app.render('`a+b`\n') == '++a+b++\n'
+
+
+def test_markdown_renderer_renders_directive_flag_attribute_from_markdown() -> None:
+    app = Wenmode(github, renderer=MarkdownRenderer(), plugins=[fenced_directive])
+
+    assert app.render('```{note}\n:flag:\n```\n') == ':::note{flag}\n:::\n'
+
+
+def test_markdown_renderer_renders_wrapped_link_destination_from_markdown() -> None:
+    app = Wenmode(github, renderer=MarkdownRenderer())
+
+    assert app.render('[x](<a b> "ti\\"tle")\n') == '[x](a%20b "ti\\"tle")\n'
 
 
 def test_renderer_registers_custom_node_handler() -> None:

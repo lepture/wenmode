@@ -141,6 +141,28 @@ def test_wenmode_installs_declarative_literal_value() -> None:
     assert wen.render('A {% raw *value* %}.\n') == '<p>A <data> raw *value* </data>.</p>\n'
 
 
+def test_wenmode_declarative_inline_literal_rejects_incomplete_openers() -> None:
+    class LiteralPlugin:
+        nodes = [CustomInlineLiteral]
+        rules = [InlineLiteral(name='custom_literal', node=CustomInlineLiteral, opener='$', closer='$')]
+        handlers = {'html': {CustomInlineLiteral.type: lambda renderer, node, context: f'<data>{node.value}</data>'}}
+
+        @staticmethod
+        def setup(wen: Wenmode, /) -> None:
+            wen.register_rules(LiteralPlugin.rules)
+            wen.register_renderer_handlers(LiteralPlugin.handlers)
+
+    wen = Wenmode(plugins=[LiteralPlugin])
+
+    assert wen.render('$\n') == '<p>$</p>\n'
+    assert wen.render('$ value$\n') == '<p>$ value$</p>\n'
+    assert wen.render('$value\n') == '<p>$value</p>\n'
+    assert wen.render('$value$ ok\n') == '<p><data>value</data> ok</p>\n'
+
+    literal_only = Wenmode([], plugins=[LiteralPlugin])
+    assert literal_only.render(r'\$value$' + '\n') == '<p>\\$value$</p>\n'
+
+
 def test_wenmode_installs_declarative_delimited_children_with_asymmetric_delimiters() -> None:
     class DelimitedChildrenPlugin:
         nodes = [CustomBlockParent]
@@ -171,6 +193,45 @@ def test_wenmode_installs_declarative_delimited_children_with_asymmetric_delimit
     assert wen.render('A {+very *important*+} value.\n') == ('<p>A <span>very <em>important</em></span> value.</p>\n')
 
 
+def test_wenmode_declarative_trimmed_inline_children_rejects_escaped_or_multiline_content() -> None:
+    class TrimmedChildrenPlugin:
+        nodes = [CustomBlockParent]
+        rules = [
+            InlineDelimited(
+                name='custom_trimmed_children',
+                node=CustomBlockParent,
+                opener='{{',
+                closer='}}',
+                strip_content=True,
+                allow_newline=False,
+                reject_opening_whitespace=False,
+                reject_closing_whitespace=False,
+                reject_longer_run=False,
+            )
+        ]
+        handlers = {
+            'html': {
+                CustomBlockParent.type: lambda renderer, node, context: (
+                    f'<span>{renderer.render_children(node.children, context)}</span>'
+                )
+            }
+        }
+
+        @staticmethod
+        def setup(wen: Wenmode, /) -> None:
+            wen.register_rules(TrimmedChildrenPlugin.rules)
+            wen.register_renderer_handlers(TrimmedChildrenPlugin.handlers)
+
+    wen = Wenmode(plugins=[TrimmedChildrenPlugin])
+
+    assert wen.render('{{  ok  }}\n') == '<p><span>ok</span></p>\n'
+    assert wen.render('{{ a\n b }}\n') == '<p>{{ a\nb }}</p>\n'
+    assert wen.render('{{ a }} and {{}}\n') == '<p><span>a</span> and {{}}</p>\n'
+
+    trimmed_only = Wenmode([], plugins=[TrimmedChildrenPlugin])
+    assert trimmed_only.render(r'\{{ ok }}' + '\n') == '<p>\\{{ ok }}</p>\n'
+
+
 def test_wenmode_installs_declarative_block_fenced_literal() -> None:
     class BlockLiteralPlugin:
         nodes = [CustomBlockLiteral]
@@ -189,6 +250,22 @@ def test_wenmode_installs_declarative_block_fenced_literal() -> None:
     wen = Wenmode(plugins=[BlockLiteralPlugin])
 
     assert wen.render('%%%\nbody\n%%%\n') == '<aside>body</aside>\n'
+
+
+def test_wenmode_declarative_block_fenced_rejects_unallowed_opener_content() -> None:
+    class BlockLiteralPlugin:
+        nodes = [CustomBlockLiteral]
+        rules = [BlockFenced(name='custom_block_literal', node=CustomBlockLiteral, opener='%%%', closer='%%%')]
+        handlers = {'html': {CustomBlockLiteral.type: lambda renderer, node, context: f'<aside>{node.value}</aside>\n'}}
+
+        @staticmethod
+        def setup(wen: Wenmode, /) -> None:
+            wen.register_rules(BlockLiteralPlugin.rules)
+            wen.register_renderer_handlers(BlockLiteralPlugin.handlers)
+
+    wen = Wenmode(plugins=[BlockLiteralPlugin])
+
+    assert wen.render('%%% title\nbody\n%%%\n') == '<p>%%% title\nbody</p>\n<aside></aside>\n'
 
 
 def test_wenmode_installs_declarative_block_fenced_children() -> None:
@@ -276,6 +353,24 @@ def test_wenmode_accepts_plugin_specs_with_use() -> None:
     wen = Wenmode([]).use(smartypants.configure(dashes=False))
 
     assert wen.render('"Hello..." -- ok\n') == '<p>“Hello…” -- ok</p>\n'
+
+
+def test_wenmode_smartypants_renders_decade_apostrophes_and_emdashes() -> None:
+    wen = Wenmode(plugins=[smartypants])
+
+    assert wen.render("'90s rock---really\n") == '<p>’90s rock—really</p>\n'
+
+
+def test_wenmode_smartypants_renders_nested_single_quotes_and_contractions() -> None:
+    wen = Wenmode(plugins=[smartypants])
+
+    assert wen.render("He said 'hello' and can't stop.\n") == '<p>He said ‘hello’ and can’t stop.</p>\n'
+
+
+def test_wenmode_smartypants_can_disable_all_replacements() -> None:
+    wen = Wenmode(plugins=[smartypants.configure(quotes=False, dashes=False, ellipses=False)])
+
+    assert wen.render('"Hi..." -- ok\n') == '<p>&quot;Hi...&quot; -- ok</p>\n'
 
 
 def test_wenmode_rejects_configured_plugin_plus_extra_options() -> None:
