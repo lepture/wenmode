@@ -13,6 +13,8 @@ here while preparing a release, then move them under the final version heading.
 
 ## 0.11.0
 
+**Unreleased**
+
 ### Added
 
 - Add `wenmode.plugins.github_alert` for top-level GitHub alert blockquotes.
@@ -27,6 +29,8 @@ here while preparing a release, then move them under the final version heading.
   `SetextHeading(transforms=[HeadingIdTransform()])`.
 
 ## 0.10.0
+
+Released **Jul 11, 2026**.
 
 ### Breaking Changes
 
