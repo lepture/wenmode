@@ -12,6 +12,7 @@ from wenmode.plugins import (
     definition_list,
     fenced_directive,
     frontmatter,
+    heading_ids,
     html_container,
     inline_math,
     inline_role,
@@ -96,6 +97,7 @@ PLUGIN_RULES: dict[str, object] = {
     'definition_list': definition_list,
     'fenced_directive': fenced_directive,
     'frontmatter': frontmatter,
+    'heading_ids': heading_ids,
     'html_container': html_container,
     'inline_math': inline_math,
     'inline_spoiler': inline_spoiler,
@@ -115,6 +117,7 @@ PLUGIN_REGISTRY_TARGETS: list[object] = [
     definition_list,
     fenced_directive,
     frontmatter,
+    heading_ids,
     html_container,
     inline_role,
     insert,
@@ -130,6 +133,7 @@ PLUGIN_REGISTRY_TARGETS: list[object] = [
 
 PLUGIN_ROUND_TRIP_TARGETS: list[object] = [
     frontmatter,
+    heading_ids,
     html_container,
     abbr,
     definition_list,

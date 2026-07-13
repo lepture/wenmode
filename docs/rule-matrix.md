@@ -68,6 +68,7 @@ The plugin name in the first column is the module you import from
 | `abbr` | `AbbreviationRule` | transform | rewrites matching text to `abbreviation` | not streaming-compatible |
 | `definition_list` | `DefinitionListRule` | continuation | `definitionList`, `definitionTerm`, `definitionDescription` | compatible |
 | `frontmatter` | `FrontmatterRule` | block + transform | stores parsed data on `root.data["frontmatter"]` | compatible |
+| `heading_ids` | `HeadingIdTransform` | node transform | adds generated `data.id` values to enabled heading rules | compatible |
 | `html_container` | `HtmlContainer` | block | replaces `HtmlBlock`; emits `htmlContainer` for standalone tag pairs and `html` for raw fallback cases | compatible |
 | `block_math` | configured fenced rule | block | `math` | compatible |
 | `inline_math` | configured literal rule | inline | `inlineMath` | compatible |

@@ -84,6 +84,7 @@ supported.
 | `wenmode.plugins.definition_list` | Definition list syntax and nodes |
 | `wenmode.plugins.fenced_directive` | MyST-style fenced directives, rendered as `containerDirective` or `literalDirective` nodes |
 | `wenmode.plugins.frontmatter` | Top-level `---` front matter stored on `root.data["frontmatter"]` |
+| `wenmode.plugins.heading_ids` | Generated IDs for enabled heading rules |
 | `wenmode.plugins.html_container` | Standalone HTML tag pairs whose body is parsed as Markdown blocks |
 | `wenmode.plugins.block_math` | Display math blocks |
 | `wenmode.plugins.inline_math` | Inline math spans |
@@ -101,6 +102,22 @@ handlers when the feature has a standard representation in Wenmode's built-in
 renderers.
 Plugins that introduce custom node types expose a `nodes` class list for
 `wenmode.ast.from_ast()`; see {ref}`reference-nodes`.
+
+## Heading IDs
+
+The `heading_ids` plugin adds generated IDs to heading nodes parsed by the
+heading rules already enabled in your rule set. It does not enable heading
+syntax by itself.
+
+```python
+from wenmode import Wenmode
+from wenmode.plugins import heading_ids
+from wenmode.rules import AtxHeading
+
+wen = Wenmode([AtxHeading], plugins=[heading_ids])
+
+assert wen.render('# Hello World\n') == '<h1 id="hello-world">Hello World</h1>\n'
+```
 
 ## CJK-Friendly Parsing
 

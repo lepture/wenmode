@@ -40,18 +40,19 @@ assert '<a href="https://example.com">https://example.com</a>' in html
 
 ## Render a table of contents
 
-Use heading rules with `HeadingIdTransform` and register the built-in
-`TableOfContents` directive renderer.
+Use the `heading_ids` plugin and register the built-in `TableOfContents`
+directive renderer.
 
 ```python
 from wenmode import Wenmode
 from wenmode.directives import TableOfContents
-from wenmode.headings import HeadingIdTransform
+from wenmode.plugins import heading_ids
 from wenmode.rules import AtxHeading, LeafDirective
 
 wen = Wenmode(
-    [AtxHeading(transforms=[HeadingIdTransform()]), LeafDirective],
+    [AtxHeading, LeafDirective],
     directives=[TableOfContents()],
+    plugins=[heading_ids],
 )
 text = '''
 ::toc{min=2 max=3}
@@ -125,15 +126,15 @@ behavior.
 
 ## Generate heading IDs
 
-Pass `HeadingIdTransform` to heading rules when you want Wenmode to add
-generated heading IDs during parsing.
+Use the `heading_ids` plugin when you want Wenmode to add generated heading IDs
+during parsing.
 
 ```python
 from wenmode import Wenmode
-from wenmode.headings import HeadingIdTransform
+from wenmode.plugins import heading_ids
 from wenmode.rules import AtxHeading
 
-wen = Wenmode([AtxHeading(transforms=[HeadingIdTransform()])])
+wen = Wenmode([AtxHeading], plugins=[heading_ids])
 text = '# Hello World'
 expected = '''
 <h1 id="hello-world">Hello World</h1>

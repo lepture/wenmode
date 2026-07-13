@@ -13,6 +13,11 @@ here while preparing a release, then move them under the final version heading.
 
 ## 0.11.0
 
+### Added
+
+- Add `wenmode.plugins.heading_ids` to install generated heading IDs on the
+  heading rules already enabled in a parser configuration.
+
 ### Breaking Changes
 
 - Replace `AtxHeading(id_transform=True)` and
