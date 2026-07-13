@@ -57,3 +57,6 @@ renderer = DOCXRenderer()
 document = Wenmode(github, renderer=renderer).render("# Draft\n\nBody text.")
 document.save("draft.docx")
 ```
+
+`DOCXRenderer(table_style=..., paragraph_style=...)` can be used to apply Word
+styles while keeping each render call isolated to its own document.

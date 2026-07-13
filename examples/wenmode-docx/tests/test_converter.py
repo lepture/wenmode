@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from docx import Document
+from docx.oxml.ns import qn
 from wenmode_docx import DOCXRenderer, markdown_to_docx, save_markdown_as_docx
 
 from wenmode import Wenmode
@@ -56,3 +57,23 @@ def test_docx_renderer_can_be_reused_without_sharing_document_state() -> None:
     assert [paragraph.text for paragraph in first.paragraphs] == ['First']
     assert [paragraph.text for paragraph in second.paragraphs] == ['Second']
     assert first is not second
+
+
+def test_docx_renderer_outputs_word_hyperlink_and_bottom_border() -> None:
+    document = markdown_to_docx('Visit [Wenmode](https://wenmode.lepture.com).\n\n---\n')
+
+    hyperlink = document.paragraphs[0]._p.find(qn('w:hyperlink'))
+    border = document.paragraphs[1]._p.pPr.find(qn('w:pBdr')).find(qn('w:bottom'))
+
+    assert hyperlink is not None
+    assert hyperlink.find(qn('w:r')).text == 'Wenmode'
+    assert document.paragraphs[0].text == 'Visit Wenmode.'
+    assert border.get(qn('w:val')) == 'single'
+
+
+def test_docx_renderer_uses_default_table_style_unless_configured() -> None:
+    plain = markdown_to_docx('| A |\n| --- |\n| B |\n')
+    styled = DOCXRenderer(table_style='Table Grid').render(Wenmode(github).parse('| A |\n| --- |\n| B |\n'))
+
+    assert plain.tables[0].style.name == 'Normal Table'
+    assert styled.tables[0].style.name == 'Table Grid'
