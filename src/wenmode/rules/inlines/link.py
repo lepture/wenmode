@@ -8,6 +8,7 @@ from wenmode.nodes import Break, InlineCode, Node, Parent, Text
 from wenmode.nodes import Image as ImageNode
 from wenmode.nodes import Link as LinkNode
 from wenmode.utils import is_escaped, normalize_label_text, normalize_uri_text
+from wenmode.utils.text import parse_angle_destination, parse_bare_destination
 
 from ..._parser.source import SourceMap
 from ..._parser.state import BlockState
@@ -335,32 +336,8 @@ def skip_link_spaces(text: str, start: int) -> int:
 
 def parse_destination(text: str, start: int) -> tuple[str | None, int]:
     if start < len(text) and text[start] == '<':
-        end = text.find('>', start + 1)
-        if end == -1 or '\n' in text[start + 1 : end] or '\\' in text[start + 1 : end]:
-            return None, start
-        return text[start + 1 : end], end + 1
-
-    chars: list[str] = []
-    depth = 0
-    index = start
-    while index < len(text):
-        char = text[index]
-        if char in ' \t\r\n':
-            break
-        if char == '\\' and index + 1 < len(text):
-            chars.append(text[index : index + 2])
-            index += 2
-            continue
-        if char == '(':
-            depth += 1
-        elif char == ')':
-            if depth == 0:
-                break
-            depth -= 1
-        chars.append(char)
-        index += 1
-
-    return ''.join(chars), index
+        return parse_angle_destination(text, start)
+    return parse_bare_destination(text, start)
 
 
 def parse_title(text: str, start: int) -> tuple[str, int] | None:

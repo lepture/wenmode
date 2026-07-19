@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from wenmode.utils import normalize_label, normalize_label_text, normalize_uri_text
+from wenmode.utils.text import parse_angle_destination, parse_bare_destination
 
 from .._parser.store import StateKey
 from .base import BlockRule, Rule
@@ -18,7 +19,6 @@ if TYPE_CHECKING:
 
 
 REFERENCE_START_RE = re.compile(r'^[ \t]{0,3}\[(?P<label>(?:\\.|[^\[\]\\\n]){1,999})\]:[ \t]*')
-REFERENCE_DESTINATION_RE = re.compile(r'(?:\\.|[^\s()\\]|[(](?:\\.|[^()\s\\])*[)])+')
 MULTILINE_LABEL_START_RE = re.compile(r'^[ \t]{0,3}\[[^\]\n]*$')
 MULTILINE_LABEL_END_RE = re.compile(r'^(?P<label_end>[^\]]*)\]:[ \t]*')
 
@@ -123,18 +123,15 @@ def parse_reference(state: BlockState, index: int) -> tuple[int, str, str, str |
 def parse_reference_destination(text: str) -> tuple[str | None, str]:
     text = text.lstrip()
     if text.startswith('<'):
-        end = text.find('>')
-        if end == -1:
+        destination, end = parse_angle_destination(text, 0)
+        if destination is None:
             return None, text
-        destination = text[1:end]
-        if '\n' in destination:
-            return None, text
-        return destination, text[end + 1 :]
+        return destination, text[end:]
 
-    match = REFERENCE_DESTINATION_RE.match(text)
-    if match is None:
+    destination, end = parse_bare_destination(text, 0)
+    if destination is None or end == 0:
         return None, text
-    return match.group(0), text[match.end() :]
+    return destination, text[end:]
 
 
 def parse_reference_title(text: str) -> tuple[str, str] | None:
