@@ -181,6 +181,14 @@ def test_unclosed_multiline_reference_title_scales_nearly_linearly() -> None:
     assert_scales_nearly_linearly(lambda size: '[x]: /url "\n' + 'a\n' * size + '\n[x]\n', [Link], 1000, 2000)
 
 
+def test_unclosed_inline_link_title_escapes_scale_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(lambda size: '[x](/url "' + '\\!' * size + '\n', [Link], 4000, 8000)
+
+
+def test_many_reference_definitions_scale_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(lambda size: ''.join(f'[x{index}]: /url\n' for index in range(size)), [Link])
+
+
 def test_footnote_blank_continuations_scale_nearly_linearly() -> None:
     assert_scales_nearly_linearly(
         lambda size: '[^x]: first\n' + '\n' * size + '  second\n\n[^x]\n', [Footnote], 1000, 2000

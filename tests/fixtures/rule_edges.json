@@ -586,12 +586,12 @@
     "html": "<p>[x]</p>\n"
   },
   {
-    "name": "link bad angle destination stays text",
+    "name": "link angle destination preserves literal backslash",
     "rules": [
       "link"
     ],
     "markdown": "[x](<bad\\url>)\n",
-    "html": "<p>[x](&lt;bad\\url&gt;)</p>\n"
+    "html": "<p><a href=\"bad%5Curl\">x</a></p>\n"
   },
   {
     "name": "link missing closing paren stays text",

@@ -152,12 +152,56 @@ def test_uri_normalization_requires_semicolon_for_character_references() -> None
     )
 
 
+def test_angle_link_destination_accepts_backslash_escapes() -> None:
+    app = Wenmode([Link])
+
+    assert app.render('[link](<foo\\*bar>)\n') == '<p><a href="foo*bar">link</a></p>\n'
+    assert app.render('[link](<foo\\>bar>)\n') == '<p><a href="foo%3Ebar">link</a></p>\n'
+    assert app.render('[link](<foo\\<bar>)\n') == '<p><a href="foo%3Cbar">link</a></p>\n'
+
+
+def test_angle_link_destination_rejects_unescaped_angle_opener() -> None:
+    app = Wenmode([Link])
+
+    assert app.render('[link](<foo<bar>)\n') == '<p>[link](&lt;foo&lt;bar&gt;)</p>\n'
+
+
+def test_bare_link_destination_only_escapes_punctuation() -> None:
+    app = Wenmode([Link])
+
+    assert app.render('[link](foo\\ bar)\n') == '<p>[link](foo\\ bar)</p>\n'
+    assert app.render('[link](foo\\*bar)\n') == '<p><a href="foo*bar">link</a></p>\n'
+    assert app.render('[link](foo\\bar)\n') == '<p><a href="foo%5Cbar">link</a></p>\n'
+
+
 def test_reference_uri_normalization_requires_semicolon_for_character_references() -> None:
     app = Wenmode([Link])
 
     assert app.render('[x]: https://example.com/search?tag=red&section=all\n\n[x]\n') == (
         '<p><a href="https://example.com/search?tag=red&amp;section=all">x</a></p>\n'
     )
+
+
+def test_angle_reference_destination_accepts_backslash_escapes() -> None:
+    app = Wenmode([Link])
+
+    assert app.render('[x]: <a\\*b>\n\n[x]\n') == '<p><a href="a*b">x</a></p>\n'
+    assert app.render('[x]: <a\\>b>\n\n[x]\n') == '<p><a href="a%3Eb">x</a></p>\n'
+    assert app.render('[x]: <a\\<b>\n\n[x]\n') == '<p><a href="a%3Cb">x</a></p>\n'
+
+
+def test_angle_reference_destination_rejects_unescaped_angle_opener() -> None:
+    app = Wenmode([Link])
+
+    assert app.render('[x]: <a<b>\n\n[x]\n') == '<p>[x]: &lt;a&lt;b&gt;</p>\n<p>[x]</p>\n'
+
+
+def test_bare_reference_destination_only_escapes_punctuation() -> None:
+    app = Wenmode([Link])
+
+    assert app.render('[x]: foo\\ bar\n\n[x]\n') == '<p>[x]: foo\\ bar</p>\n<p>[x]</p>\n'
+    assert app.render('[x]: foo\\*bar\n\n[x]\n') == '<p><a href="foo*bar">x</a></p>\n'
+    assert app.render('[x]: foo\\bar\n\n[x]\n') == '<p><a href="foo%5Cbar">x</a></p>\n'
 
 
 def test_html_block_preserves_nested_pre_across_blank_lines() -> None:

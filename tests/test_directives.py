@@ -189,6 +189,20 @@ def test_builtin_directives_drop_event_and_style_attributes() -> None:
     )
 
 
+def test_builtin_directives_escape_attribute_values() -> None:
+    app = Wenmode([ContainerDirective], renderer=HTMLRenderer(directives=[Admonition(), Details(), Figure()]))
+
+    assert app.render(':::note{class="wide\\" onclick=\\"alert(1)"}\n:::\n') == (
+        '<aside class="wide&quot; onclick=&quot;alert(1) admonition admonition-note">\n</aside>\n'
+    )
+    assert app.render(':::details{open class="wide\\" onclick=\\"alert(1)"}\n:::\n') == (
+        '<details open="" class="wide&quot; onclick=&quot;alert(1)">\n</details>\n'
+    )
+    assert app.render(':::figure{figclass="wide\\" onclick=\\"alert(1)" figwidth="10\\" onmouseover=\\"x"}\n:::\n') == (
+        '<figure figclass="wide&quot; onclick=&quot;alert(1)" figwidth="10&quot; onmouseover=&quot;x">\n</figure>\n'
+    )
+
+
 def test_html_renderer_can_disable_attribute_sanitization() -> None:
     app = Wenmode([ContainerDirective], renderer=HTMLRenderer(sanitize_attrs=False, directives=[Figure()]))
 

@@ -419,6 +419,40 @@ def test_html_renderer_sanitizes_obfuscated_unsafe_link_and_image_urls() -> None
     assert HTMLRenderer().render(node) == '<p><a>bad</a> <img alt="&quot;alt&quot;" /></p>\n'
 
 
+def test_html_renderer_sanitizes_percent_encoded_unsafe_urls() -> None:
+    node = Paragraph(
+        children=[
+            Link(url='javascript%3Aalert(1)', children=[Text(value='bad')]),
+            Text(value=' '),
+            Link(url='%6aavascript:alert(1)', children=[Text(value='bad')]),
+            Text(value=' '),
+            Link(url='java%0ascript:alert(1)', children=[Text(value='bad')]),
+            Text(value=' '),
+            Image(url='javascript%253Aalert(1)', alt='bad'),
+        ]
+    )
+
+    assert HTMLRenderer().render(node) == '<p><a>bad</a> <a>bad</a> <a>bad</a> <img alt="bad" /></p>\n'
+
+
+def test_html_renderer_keeps_safe_percent_encoded_urls() -> None:
+    node = Paragraph(
+        children=[
+            Link(url='https://example.com/%6aavascript%3Aalert(1)', children=[Text(value='safe')]),
+            Text(value=' '),
+            Link(url='mailto:user%2Btag@example.com', children=[Text(value='mail')]),
+            Text(value=' '),
+            Link(url='/docs/foo%3Abar', children=[Text(value='relative')]),
+        ]
+    )
+
+    assert HTMLRenderer().render(node) == (
+        '<p><a href="https://example.com/%6aavascript%3Aalert(1)">safe</a> '
+        '<a href="mailto:user%2Btag@example.com">mail</a> '
+        '<a href="/docs/foo%3Abar">relative</a></p>\n'
+    )
+
+
 def test_html_renderer_can_disable_url_sanitization_for_trusted_content() -> None:
     node = Paragraph(
         children=[
