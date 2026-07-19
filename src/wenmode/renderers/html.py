@@ -4,7 +4,7 @@ import re
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 from typing import Any, Protocol, cast
-from urllib.parse import quote, urlsplit
+from urllib.parse import quote, unquote, urlsplit
 
 from wenmode.nodes import (
     Blockquote,
@@ -179,7 +179,7 @@ class HTMLRenderer(BaseRenderer):
         if not self.sanitize_urls:
             return value
 
-        normalized = ''.join(char for char in value.strip() if char > ' ')
+        normalized = normalize_url_for_scheme_check(value)
         scheme = urlsplit(normalized).scheme.lower()
         if scheme and scheme not in self.allowed_url_schemes:
             return None
@@ -232,6 +232,20 @@ class HTMLRenderer(BaseRenderer):
         if rendered is not None:
             return rendered
         return self.render_children(node.children, context)
+
+
+def normalize_url_for_scheme_check(value: str) -> str:
+    normalized = strip_ascii_control_space(value)
+    for _ in range(8):
+        decoded = strip_ascii_control_space(unquote(normalized))
+        if decoded == normalized:
+            break
+        normalized = decoded
+    return normalized
+
+
+def strip_ascii_control_space(value: str) -> str:
+    return ''.join(char for char in value.strip() if char > ' ')
 
 
 @HTMLRenderer.register('root')
