@@ -42,9 +42,63 @@ def test_github_alert_can_render_admonition_html() -> None:
     )
 
 
+def test_github_alert_can_configure_custom_alerts() -> None:
+    app = Wenmode(plugins=[github_alert.configure(alerts={'think': 'Thinking'})])
+
+    assert app.render('> [!THINK]\n> Body.\n') == (
+        '<div class="markdown-alert markdown-alert-think">\n'
+        '<p class="markdown-alert-title">Thinking</p>\n'
+        '<p>Body.</p>\n'
+        '</div>\n'
+    )
+
+
+def test_github_alert_custom_alerts_extend_defaults() -> None:
+    app = Wenmode(plugins=[github_alert.configure(alerts={'think': 'Thinking'})])
+
+    assert app.render('> [!NOTE]\n> Body.\n') == (
+        '<div class="markdown-alert markdown-alert-note">\n'
+        '<p class="markdown-alert-title">Note</p>\n'
+        '<p>Body.</p>\n'
+        '</div>\n'
+    )
+
+
+def test_github_alert_can_override_default_titles() -> None:
+    app = Wenmode(plugins=[github_alert.configure(alerts={'note': 'Nota'})])
+
+    assert app.render('> [!NOTE]\n> Body.\n') == (
+        '<div class="markdown-alert markdown-alert-note">\n'
+        '<p class="markdown-alert-title">Nota</p>\n'
+        '<p>Body.</p>\n'
+        '</div>\n'
+    )
+
+
+def test_github_alert_can_render_custom_alerts_as_admonitions() -> None:
+    app = Wenmode(plugins=[github_alert.configure(html_style='admonition', alerts={'think': 'Thinking'})])
+
+    assert app.render('> [!THINK]\n> Body.\n') == (
+        '<aside class="admonition admonition-think">\n'
+        '<p class="admonition-title">Thinking</p>\n'
+        '<p>Body.</p>\n'
+        '</aside>\n'
+    )
+
+
 def test_github_alert_rejects_unknown_html_style() -> None:
     with pytest.raises(ValueError, match="html_style must be 'github' or 'admonition'"):
         github_alert.configure(html_style='plain')  # type: ignore[arg-type]
+
+
+def test_github_alert_rejects_invalid_alert_names() -> None:
+    with pytest.raises(ValueError, match=r'alert names must match'):
+        github_alert.configure(alerts={'bad name': 'Bad'})
+
+
+def test_github_alert_rejects_empty_alert_titles() -> None:
+    with pytest.raises(ValueError, match='alert titles must be non-empty strings'):
+        github_alert.configure(alerts={'bad': ''})
 
 
 def test_github_alert_ast_shape() -> None:
@@ -69,6 +123,21 @@ def test_github_alert_leaves_unknown_markers_as_blockquotes() -> None:
     app = Wenmode([Blockquote], plugins=[github_alert])
 
     assert app.render('> [!DANGER]\n> Body\n') == '<blockquote>\n<p>[!DANGER]\nBody</p>\n</blockquote>\n'
+
+
+def test_github_alert_configured_alerts_replace_existing_replacement() -> None:
+    app = Wenmode([Blockquote], plugins=[github_alert])
+
+    assert app.render('> [!THINK]\n> Body\n') == '<blockquote>\n<p>[!THINK]\nBody</p>\n</blockquote>\n'
+
+    app.use(github_alert.configure(alerts={'think': 'Thinking'}))
+
+    assert app.render('> [!THINK]\n> Body\n') == (
+        '<div class="markdown-alert markdown-alert-think">\n'
+        '<p class="markdown-alert-title">Thinking</p>\n'
+        '<p>Body</p>\n'
+        '</div>\n'
+    )
 
 
 def test_github_alert_is_top_level_only() -> None:
