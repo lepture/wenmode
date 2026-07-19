@@ -83,6 +83,24 @@ assert '<aside class="admonition admonition-warning">' in html
 assert '<p class="admonition-title">Warning</p>' in html
 ```
 
+Custom alert types can be added with the `alerts` option. Defaults stay
+enabled unless you override their titles:
+
+```python
+from wenmode import Wenmode
+from wenmode.plugins import github_alert
+from wenmode.presets import github
+
+wen = Wenmode(github, plugins=[
+    github_alert.configure(alerts={'think': 'Thinking'})
+])
+
+html = wen.render('> [!THINK]\n> Internal reasoning.\n')
+
+assert '<div class="markdown-alert markdown-alert-think">' in html
+assert '<p class="markdown-alert-title">Thinking</p>' in html
+```
+
 The alert plugin replaces the enabled blockquote rule. It does not enable
 blockquote syntax by itself, so pair it with `github`, `commonmark`, or an
 explicit rule list that includes blockquotes.

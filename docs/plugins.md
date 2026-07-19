@@ -144,6 +144,15 @@ from wenmode.plugins import github_alert
 wen = Wenmode(plugins=[github_alert.configure(html_style="admonition")])
 ```
 
+Custom alert types can be added with `alerts`:
+
+```python
+from wenmode import Wenmode
+from wenmode.plugins import github_alert
+
+wen = Wenmode(plugins=[github_alert.configure(alerts={"think": "Thinking"})])
+```
+
 ### Heading IDs
 
 The `heading_ids` plugin adds generated IDs to heading nodes parsed by the

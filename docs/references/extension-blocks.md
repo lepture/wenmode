@@ -283,6 +283,9 @@ blockquote syntax by itself. HTML output defaults to GitHub-compatible
 to render the same `<aside class="admonition ...">` structure as Wenmode's
 admonition directive renderer.
 
+Use `github_alert.configure(alerts={"think": "Thinking"})` to add custom alert
+types such as `[!THINK]`. The default GitHub alert types remain enabled.
+
 Output node is `GithubAlertNode`, and its AST is:
 
 ```json
