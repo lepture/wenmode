@@ -15,6 +15,13 @@ releases.
 This page records notable changes for released versions. Add unreleased entries
 here while preparing a release, then move them under the final version heading.
 
+## 0.11.1
+
+Released **Jul 19, 2026**.
+
+- Harden HTML URL sanitization against percent-encoded unsafe schemes.
+- Fix escaped characters in link and reference destinations.
+
 ## 0.11.0
 
 Released **Jul 13, 2026**.
