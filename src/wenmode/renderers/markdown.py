@@ -115,8 +115,12 @@ def render_paragraph(renderer: MarkdownRenderer, node: Paragraph, context: Rende
 
 @MarkdownRenderer.register('heading')
 def render_heading(renderer: MarkdownRenderer, node: Heading, context: RenderContext) -> str:
+    text = renderer.render_children(node.children, context)
+    if node.depth in (1, 2) and ('\n' in text or '\r' in text):
+        underline = '=' if node.depth == 1 else '-'
+        return f'{text}\n{underline * 3}\n\n'
     marker = '#' * node.depth
-    return f'{marker} {renderer.render_children(node.children, context)}\n\n'
+    return f'{marker} {text}\n\n'
 
 
 @MarkdownRenderer.register('blockquote')

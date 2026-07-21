@@ -10,7 +10,7 @@ from tests.plugin_helpers import configured_app
 from wenmode import AsciiDocRenderer, HTMLRenderer, MarkdownRenderer, RSTRenderer, StreamingUnsupportedError, Wenmode
 from wenmode.ast import from_ast
 from wenmode.directives import Admonition, Details, Figure, TableOfContents
-from wenmode.nodes import Html, Image, Link, List, ListItem, Literal, Paragraph, Parent, Root, Text
+from wenmode.nodes import Heading, Html, Image, Link, List, ListItem, Literal, Paragraph, Parent, Root, Text
 from wenmode.plugins import fenced_directive, html_container, inline_math
 from wenmode.presets import github, streaming
 from wenmode.renderers import BaseRenderer, RenderContext
@@ -534,3 +534,29 @@ def test_markdown_renderer_round_trips_nested_lists(markdown: str) -> None:
     reformatted = markdown_app.render(markdown)
 
     assert html_app.render(reformatted) == html_app.render(markdown)
+
+
+@pytest.mark.parametrize(
+    'markdown',
+    [
+        'Foo\nBar\n===\n',
+        'Foo\nBar\n---\n',
+        'one\ntwo\nthree\n===\n',
+        'Foo *bar\nbaz*\n====\n',
+    ],
+)
+def test_markdown_renderer_round_trips_multiline_setext_headings(markdown: str) -> None:
+    html_app = configured_app(['setext_heading', 'emphasis'])
+    markdown_app = configured_app(['setext_heading', 'emphasis'], renderer=MarkdownRenderer())
+
+    reformatted = markdown_app.render(markdown)
+
+    assert html_app.render(reformatted) == html_app.render(markdown)
+
+
+def test_markdown_renderer_uses_setext_for_carriage_return_heading_text() -> None:
+    root = Root(children=[Heading(depth=1, children=[Text(value='Foo\rBar')])])
+    markdown = MarkdownRenderer().render(root)
+
+    assert markdown == 'Foo\rBar\n===\n'
+    assert Wenmode(renderer=HTMLRenderer()).render(markdown) == HTMLRenderer().render(root)
