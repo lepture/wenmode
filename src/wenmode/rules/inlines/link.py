@@ -44,8 +44,7 @@ class Image(InlineRule):
     """
 
     name = 'image'
-    pattern = r'!\['
-    trigger_chars = '!'
+    opener = '!'
 
     def __init__(self, references: bool = True) -> None:
         super().__init__()
@@ -81,7 +80,7 @@ class Link(InlineRule):
 
     name = 'link'
     pattern = None
-    trigger_chars = '['
+    opener = '['
 
     def __init__(self, references: bool = True) -> None:
         super().__init__()

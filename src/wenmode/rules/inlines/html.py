@@ -40,7 +40,7 @@ class Autolink(InlineRule):
 
     name = 'autolink'
     pattern = rf'{URI_RE}|{EMAIL_RE}'
-    trigger_chars = '<'
+    opener = '<'
 
     def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
         match = self.compiled.match(text, start)
@@ -78,7 +78,7 @@ class RawHtml(InlineRule):
     """
 
     name = 'raw_html'
-    trigger_chars = '<'
+    opener = '<'
 
     def __init__(
         self, disallowed_tags: Sequence[str] = (), comment_style: Literal['commonmark', 'gfm'] = 'commonmark'

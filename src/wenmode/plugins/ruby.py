@@ -44,7 +44,7 @@ class RubyRule(InlineRule):
     order: ClassVar[int] = 90
     name = 'ruby'
     pattern = RUBY_PATTERN
-    trigger_chars = '['
+    opener = '['
 
     def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
         match = self.compiled.match(text, start)

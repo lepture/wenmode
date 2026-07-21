@@ -94,7 +94,7 @@ def test_inline_rule_supports_trigger_only_parse_from_start() -> None:
     class Mention(InlineRule):
         name = 'mention'
         pattern = None
-        trigger_chars = '@'
+        opener = '@'
 
         def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
             if start + 1 >= len(text) or not text[start + 1].isalpha():
@@ -116,7 +116,7 @@ def test_trigger_only_rule_can_decline_before_same_trigger_rule() -> None:
         order = 10
         name = 'single_tilde'
         pattern = None
-        trigger_chars = '~'
+        opener = '~'
 
         def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
             if not (start + 2 < len(text) and text[start + 1] != '~' and text[start + 2] == '~'):
@@ -127,7 +127,7 @@ def test_trigger_only_rule_can_decline_before_same_trigger_rule() -> None:
         order = 20
         name = 'double_tilde'
         pattern = r'~~[^~]+~~'
-        trigger_chars = '~'
+        opener = '~'
 
         def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
             match = self.compiled.match(text, start)
@@ -136,6 +136,74 @@ def test_trigger_only_rule_can_decline_before_same_trigger_rule() -> None:
             return Text(value='double:' + match.group(0)[2:-2]), match.end()
 
     assert render(Parser([SingleTilde, DoubleTilde]), '~~x~~ ~y~\n') == '<p>double:x single:y</p>\n'
+
+
+def test_inline_rule_opener_must_be_single_character() -> None:
+    class Alert(InlineRule):
+        name = 'alert'
+        opener = '!!'
+
+    with pytest.raises(ValueError, match='single characters'):
+        Alert()
+
+
+def test_inline_opener_dispatch_leaves_longer_delimiter_matching_to_rule() -> None:
+    class ImageLike(InlineRule):
+        name = 'image_like'
+        opener = '!'
+
+        def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+            if not text.startswith('![', start):
+                return None, start
+            return Text(value='image'), start + 2
+
+    class LinkLike(InlineRule):
+        name = 'link_like'
+        opener = '['
+
+        def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+            return Text(value='link'), start + 1
+
+    parser = Parser([ImageLike, LinkLike])
+
+    assert render(parser, '![ [\n') == '<p>image link</p>\n'
+
+
+def test_inline_opener_dispatch_uses_rule_order_for_same_opener() -> None:
+    class Bang(InlineRule):
+        order = 10
+        name = 'bang'
+        opener = '!'
+
+        def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+            return Text(value='bang'), start + 1
+
+    class ImageLike(InlineRule):
+        order = 20
+        name = 'image_like'
+        opener = '!'
+
+        def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+            if not text.startswith('![', start):
+                return None, start
+            return Text(value='image'), start + 2
+
+    parser = Parser([ImageLike, Bang])
+
+    assert parser._ruleset.inline_opener_re is not None
+    assert parser._ruleset.inline_opener_re.match('![').group(0) == '!'
+    assert render(parser, '![\n') == '<p>bang[</p>\n'
+
+
+def test_inline_rule_opener_accepts_multiple_single_character_hints() -> None:
+    class Mention(InlineRule):
+        name = 'mention'
+        opener = ('@', '#')
+
+        def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+            return Text(value='mention:' + text[start]), start + 1
+
+    assert render(Parser([Mention]), '@ #\n') == '<p>mention:@ mention:#</p>\n'
 
 
 def test_strikethrough_trigger_only_rule_parses_single_and_double_tildes() -> None:
@@ -156,7 +224,7 @@ def test_rule_subclasses_can_define_identity_as_class_attributes() -> None:
     class BangInline(InlineRule):
         name = 'bang_inline'
         pattern = r'!!'
-        trigger_chars = '!'
+        opener = '!'
 
         def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
             match = self.compiled.match(text, start)
@@ -354,7 +422,7 @@ def test_parser_rebuilds_inline_dispatch_when_rule_is_replaced() -> None:
     class AtToken(InlineRule):
         name = 'token'
         pattern = r'@a'
-        trigger_chars = '@'
+        opener = '@'
 
         def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
             match = self.compiled.match(text, start)
@@ -365,7 +433,7 @@ def test_parser_rebuilds_inline_dispatch_when_rule_is_replaced() -> None:
     class BangToken(InlineRule):
         name = 'token'
         pattern = r'!b'
-        trigger_chars = '!'
+        opener = '!'
 
         def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
             match = self.compiled.match(text, start)
@@ -387,7 +455,7 @@ def test_inline_dispatch_uses_rule_order_for_equal_offset_candidates() -> None:
     class TriggeredAt(InlineRule):
         name = 'triggered_at'
         pattern = r'@'
-        trigger_chars = '@'
+        opener = '@'
 
         def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
             match = self.compiled.match(text, start)

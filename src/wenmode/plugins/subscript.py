@@ -32,7 +32,7 @@ class SubscriptRule(InlineRule):
     order: ClassVar[int] = 90
     name = 'subscript'
     pattern = None
-    trigger_chars = '~'
+    opener = '~'
 
     def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
         span = find_delimited_span(text, start, '~', reject_adjacent=True, allow_spaces=False, allow_escaped_space=True)

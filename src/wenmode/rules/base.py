@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Any, ClassVar, cast
+from typing import TYPE_CHECKING, ClassVar, TypeAlias, cast
 
 from wenmode.nodes import Node
 
@@ -10,6 +10,8 @@ from .transforms import NodeTransform, RootTransform
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
+
+Opener: TypeAlias = str | tuple[str, ...]
 
 
 class Rule:
@@ -83,19 +85,22 @@ class InlineRule(Rule):
     :param pattern: Regular expression pattern used by this inline rule.
         Set this to ``None`` for trigger-only rules that implement
         :meth:`parse` directly.
-    :param trigger_chars: Optional literal characters that can start the rule.
-        Supplying trigger characters lets the parser dispatch inline rules more
-        efficiently.
+    :param opener: Optional single-character opener, or tuple of single-character
+        openers, that can start the rule. Supplying openers lets the parser
+        dispatch inline rules more efficiently; rule implementations remain
+        responsible for checking any longer delimiter syntax.
     """
 
     pattern: str | None = None
-    trigger_chars: str = ''
+    opener: Opener = ''
+    openers: tuple[str, ...]
     compiled: re.Pattern[str]
 
-    def __init__(self, name: str | None = None, pattern: str | None = None, trigger_chars: str | None = None) -> None:
+    def __init__(self, name: str | None = None, pattern: str | None = None, opener: Opener | None = None) -> None:
         super().__init__(name)
         self.pattern = resolve_string_attribute(self, 'pattern', pattern, optional=True)
-        self.trigger_chars = cast(str, resolve_string_attribute(self, 'trigger_chars', trigger_chars, default=''))
+        self.opener = resolve_opener_attribute(self, opener)
+        self.openers = normalize_openers(self.opener)
         self.compiled = re.compile(self.pattern if self.pattern is not None else r'(?!)')
 
     def search(self, text: str, pos: int = 0) -> int | None:
@@ -141,3 +146,36 @@ def resolve_string_attribute(
         return resolved
     requirement = 'string or None' if optional else 'string'
     raise TypeError(f'{type(obj).__name__} requires a {name} {requirement}')
+
+
+def resolve_opener_attribute(obj: object, value: Opener | None) -> Opener:
+    if value is None:
+        resolved = getattr(type(obj), 'opener', '')
+    else:
+        resolved = value
+    if isinstance(resolved, str):
+        return resolved
+    if isinstance(resolved, tuple) and all(isinstance(opener, str) for opener in resolved):
+        return resolved
+    raise TypeError(f'{type(obj).__name__} requires an opener string or tuple of strings')
+
+
+def normalize_openers(opener: Opener) -> tuple[str, ...]:
+    values: tuple[str, ...]
+    if isinstance(opener, str):
+        values = (opener,) if opener else ()
+    else:
+        values = opener
+
+    normalized: list[str] = []
+    seen: set[str] = set()
+    for value in values:
+        if not value:
+            raise ValueError('opener values must not be empty')
+        if len(value) != 1:
+            raise ValueError('opener values must be single characters')
+        if value in seen:
+            continue
+        seen.add(value)
+        normalized.append(value)
+    return tuple(normalized)

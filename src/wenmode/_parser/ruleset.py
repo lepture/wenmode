@@ -10,6 +10,7 @@ from wenmode.rules.base import BlockRule, ContinueRule, InlineRule, Rule
 from wenmode.rules.transforms import RootTransform
 
 T = TypeVar('T', bound=Rule)
+InlineOpenerRules = dict[str, list[InlineRule]]
 
 
 class EmphasisRule(Protocol):
@@ -32,9 +33,9 @@ class RuleSet:
     streaming_blockers: tuple[str, ...]
     block_rule_order: dict[str, int]
     inline_rule_order: dict[str, int]
-    triggered_inline_rules: dict[str, list[InlineRule]]
+    opener_inline_rules: InlineOpenerRules
     search_inline_rules: list[InlineRule]
-    inline_trigger_re: re.Pattern[str] | None
+    inline_opener_re: re.Pattern[str] | None
     block_openers: re.Pattern[str] | None
 
     @classmethod
@@ -50,7 +51,7 @@ class RuleSet:
         rules = {rule.name: rule for rule in resolved_rules}
         block_rules = sorted_by_order([rule for rule in resolved_rules if isinstance(rule, BlockRule)])
         inline_rules = sorted_by_order([rule for rule in resolved_rules if isinstance(rule, InlineRule)])
-        triggered_inline_rules, search_inline_rules = prepare_inline_dispatch(inline_rules)
+        opener_inline_rules, search_inline_rules = prepare_inline_dispatch(inline_rules)
         deferred_inline_transforms = tuple(transform.name for transform in root_transforms if transform.defer_inlines)
         streaming_blockers = tuple(transform.name for transform in root_transforms)
         emphasis = rules.get('emphasis')
@@ -66,9 +67,9 @@ class RuleSet:
             streaming_blockers=streaming_blockers,
             block_rule_order={rule.name: index for index, rule in enumerate(block_rules)},
             inline_rule_order={rule.name: index for index, rule in enumerate(inline_rules)},
-            triggered_inline_rules=triggered_inline_rules,
+            opener_inline_rules=opener_inline_rules,
             search_inline_rules=search_inline_rules,
-            inline_trigger_re=compile_inline_trigger_re(triggered_inline_rules),
+            inline_opener_re=compile_inline_opener_re(opener_inline_rules),
             block_openers=compile_block_openers(block_rules),
         )
 
@@ -106,21 +107,21 @@ def compile_block_openers(rules: list[BlockRule]) -> re.Pattern[str] | None:
     return None
 
 
-def prepare_inline_dispatch(rules: list[InlineRule]) -> tuple[dict[str, list[InlineRule]], list[InlineRule]]:
-    triggered: dict[str, list[InlineRule]] = {}
+def prepare_inline_dispatch(rules: list[InlineRule]) -> tuple[InlineOpenerRules, list[InlineRule]]:
+    opener_rules: InlineOpenerRules = {}
     search: list[InlineRule] = []
     for rule in rules:
         if rule.name == 'emphasis':
             continue
-        if not rule.trigger_chars:
+        if not rule.openers:
             search.append(rule)
             continue
-        for char in rule.trigger_chars:
-            triggered.setdefault(char, []).append(rule)
-    return triggered, search
+        for opener in rule.openers:
+            opener_rules.setdefault(opener, []).append(rule)
+    return opener_rules, search
 
 
-def compile_inline_trigger_re(rules: dict[str, list[InlineRule]]) -> re.Pattern[str] | None:
+def compile_inline_opener_re(rules: InlineOpenerRules) -> re.Pattern[str] | None:
     if not rules:
         return None
     return re.compile(f'[{re.escape("".join(rules))}]')

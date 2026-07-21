@@ -24,7 +24,7 @@ class Strikethrough(InlineRule):
 
     name = 'strikethrough'
     pattern = None
-    trigger_chars = '~'
+    opener = '~'
 
     def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
         parsed = find_strikethrough(text, start)

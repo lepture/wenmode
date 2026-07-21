@@ -30,7 +30,7 @@ class BackslashEscape(InlineRule):
 
     name = 'backslash_escape'
     pattern = rf'\\(?=[{ESCAPABLE}])'
-    trigger_chars = '\\'
+    opener = '\\'
 
     def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
         if start + 1 >= len(text) or text[start] != '\\' or text[start + 1] not in ESCAPABLE_CHARS:
@@ -50,7 +50,7 @@ class CharacterReference(InlineRule):
 
     name = 'character_reference'
     pattern = r'&(?:#[xX][0-9A-Fa-f]+|#[0-9]+|[A-Za-z][A-Za-z0-9]{1,31});'
-    trigger_chars = '&'
+    opener = '&'
 
     def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
         match = self.compiled.match(text, start)

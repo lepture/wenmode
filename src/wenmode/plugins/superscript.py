@@ -31,7 +31,7 @@ class SuperscriptRule(InlineRule):
 
     name = 'superscript'
     pattern = None
-    trigger_chars = '^'
+    opener = '^'
 
     def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
         span = find_delimited_span(text, start, '^', allow_spaces=False, allow_escaped_space=True)

@@ -48,7 +48,6 @@ rules = [
         node=InlineMathNode,
         opener='$',
         closer='$',
-        trigger_chars='$',
         reject_closing_before_digit=True,
         reject_adjacent_delimiter=True,
     )

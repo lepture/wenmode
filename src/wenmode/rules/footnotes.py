@@ -52,7 +52,7 @@ class Footnote(InlineRule):
     order: ClassVar[int] = 50
     name = 'footnote'
     pattern = FOOTNOTE_REFERENCE_RE
-    trigger_chars = '['
+    opener = '['
 
     def __init__(self) -> None:
         super().__init__()

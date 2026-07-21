@@ -27,7 +27,6 @@ rules = [
         node=InlineSpoilerNode,
         opener='>!',
         closer='!<',
-        trigger_chars='>',
         allow_newline=False,
         reject_opening_whitespace=False,
         reject_closing_whitespace=False,

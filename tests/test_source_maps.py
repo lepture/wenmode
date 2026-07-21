@@ -38,7 +38,7 @@ class SyntheticBlockSourceRule(SyntheticInlineSourceRule):
 class ProbeLetter(InlineRule):
     name = 'probe_letter'
     pattern = r'[A-Za-z]'
-    trigger_chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    opener = tuple('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
 
     def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
         match = self.compiled.match(text, start)
@@ -228,7 +228,7 @@ def test_inline_sources_are_state_local() -> None:
     class ProbeSource(InlineRule):
         name = 'probe_source'
         pattern = r'!'
-        trigger_chars = '!'
+        opener = '!'
 
         def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
             match = self.compiled.match(text, start)

@@ -28,7 +28,7 @@ class InlineCode(InlineRule):
     """
 
     name = 'inline_code'
-    trigger_chars = '`'
+    opener = '`'
 
     def matches_start(self, text: str, start: int) -> bool:
         return text[start] == '`' and (start == 0 or text[start - 1] != '`')

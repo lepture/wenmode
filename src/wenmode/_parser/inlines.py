@@ -123,20 +123,21 @@ class InlineParser:
             limit = found[0]
         else:
             limit = len(text)
-        if self._rule_set.inline_trigger_re is None:
+        if self._rule_set.inline_opener_re is None:
             return found
 
-        trigger_end = min(limit + 1, len(text))
-        trigger_match = self._rule_set.inline_trigger_re.search(text, pos, trigger_end)
-        while trigger_match is not None and trigger_match.start() <= limit:
-            start = trigger_match.start()
-            triggered_rules = self._matching_triggered_inline_rules(text, start)
-            if not triggered_rules:
-                trigger_match = self._rule_set.inline_trigger_re.search(text, start + 1, trigger_end)
+        opener_end = min(limit + 1, len(text))
+        opener_match = self._rule_set.inline_opener_re.search(text, pos, opener_end)
+        while opener_match is not None and opener_match.start() <= limit:
+            start = opener_match.start()
+            opener = text[start]
+            opener_rules = self._matching_opener_inline_rules(opener, text, start)
+            if not opener_rules:
+                opener_match = self._rule_set.inline_opener_re.search(text, start + 1, opener_end)
                 continue
             if found is not None and start == found[0]:
-                return start, self._merge_inline_rules(triggered_rules, found[1])
-            return start, triggered_rules
+                return start, self._merge_inline_rules(opener_rules, found[1])
+            return start, opener_rules
         return found
 
     def _search_inline_candidate(self, text: str, pos: int, search_cache: InlineSearchCache) -> InlineCandidate | None:
@@ -175,16 +176,16 @@ class InlineParser:
     ) -> tuple[InlineRule, ...]:
         return tuple(sorted((*first, *second), key=lambda rule: self._rule_set.inline_rule_order[rule.name]))
 
-    def _matching_triggered_inline_rules(self, text: str, start: int) -> Sequence[InlineRule]:
-        rules = self._rule_set.triggered_inline_rules[text[start]]
-        if len(rules) == 1:
-            rule = rules[0]
+    def _matching_opener_inline_rules(self, opener: str, text: str, start: int) -> Sequence[InlineRule]:
+        opener_rules = self._rule_set.opener_inline_rules[opener]
+        if len(opener_rules) == 1:
+            rule = opener_rules[0]
             if rule.matches_start(text, start):
-                return rules
+                return opener_rules
             return ()
 
         matched: list[InlineRule] = []
-        for rule in rules:
+        for rule in opener_rules:
             if not rule.matches_start(text, start):
                 continue
             matched.append(rule)

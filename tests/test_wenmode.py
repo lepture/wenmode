@@ -75,7 +75,8 @@ def test_wenmode_installs_declarative_plugin() -> None:
     wen = Wenmode(plugins=[mark])
 
     assert mark.nodes == [mark.MarkNode]
-    assert mark.rules[0].pattern == '=='
+    assert mark.rules[0].opener == '='
+    assert mark.rules[0].opening_delimiter == '=='
     assert wen.render('==marked *text*==\n') == '<p><mark>marked <em>text</em></mark></p>\n'
     assert wen.render('===not marked===\n') == '<p>===not marked===</p>\n'
 

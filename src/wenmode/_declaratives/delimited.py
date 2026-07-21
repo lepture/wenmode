@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 """Configurable delimited inline rules."""
-
-import re
 from bisect import bisect_left
 from collections.abc import Callable
 from typing import TYPE_CHECKING, cast
@@ -29,7 +27,7 @@ DECLARATIVE_CLOSING_DELIMITERS = StateKey[ClosingDelimiterCache]('wenmode.declar
 
 def _is_simple_delimited_children(syntax: InlineDelimited) -> bool:
     return (
-        syntax.opener == syntax.closer
+        syntax.opening_delimiter == syntax.closer
         and not syntax.strip_content
         and syntax.allow_newline
         and syntax.reject_empty
@@ -55,6 +53,9 @@ def _is_trimmed_delimited_children(syntax: InlineDelimited) -> bool:
 class InlineDelimited(InlineRule):
     """Configurable inline rule for paired literal delimiters."""
 
+    opening_delimiter: str
+    closer: str
+
     def __init__(
         self,
         *,
@@ -62,7 +63,6 @@ class InlineDelimited(InlineRule):
         node: type[Parent],
         opener: str,
         closer: str,
-        trigger_chars: str | None = None,
         allow_newline: bool = True,
         reject_empty: bool = True,
         reject_opening_whitespace: bool = True,
@@ -73,7 +73,7 @@ class InlineDelimited(InlineRule):
     ) -> None:
         _validate_delimiters(opener, closer)
         self.node = node
-        self.opener = opener
+        self.opening_delimiter = opener
         self.closer = closer
         self.allow_newline = allow_newline
         self.reject_empty = reject_empty
@@ -90,9 +90,7 @@ class InlineDelimited(InlineRule):
             self._parse_impl = self._parse_trimmed
         else:
             self._parse_impl = self._parse_general
-        super().__init__(
-            name=name, pattern=re.escape(opener), trigger_chars=opener[0] if trigger_chars is None else trigger_chars
-        )
+        super().__init__(name=name, opener=opener[0])
 
     def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
         return self._parse_impl(parser, text, start, state)
@@ -100,14 +98,14 @@ class InlineDelimited(InlineRule):
     def _parse_general(
         self, parser: Parser, text: str, start: int, state: BlockState
     ) -> tuple[Node | None, int]:
-        if not text.startswith(self.opener, start):
+        if not text.startswith(self.opening_delimiter, start):
             return None, start
         if self.escape and is_escaped(text, start):
             return None, start
-        if self.reject_longer_run and is_part_of_longer_delimiter_run(text, start, self.opener):
+        if self.reject_longer_run and is_part_of_longer_delimiter_run(text, start, self.opening_delimiter):
             return None, start
 
-        value_start = start + len(self.opener)
+        value_start = start + len(self.opening_delimiter)
         if value_start >= len(text):
             return None, start
         if self.reject_opening_whitespace and text[value_start].isspace():
@@ -123,12 +121,12 @@ class InlineDelimited(InlineRule):
     def _parse_simple(
         self, parser: Parser, text: str, start: int, state: BlockState
     ) -> tuple[Node | None, int]:
-        if not text.startswith(self.opener, start):
+        if not text.startswith(self.opening_delimiter, start):
             return None, start
-        if is_escaped(text, start) or is_part_of_longer_delimiter_run(text, start, self.opener):
+        if is_escaped(text, start) or is_part_of_longer_delimiter_run(text, start, self.opening_delimiter):
             return None, start
 
-        value_start = start + len(self.opener)
+        value_start = start + len(self.opening_delimiter)
         if value_start >= len(text) or text[value_start].isspace():
             return None, start
 
@@ -141,12 +139,12 @@ class InlineDelimited(InlineRule):
     def _parse_trimmed(
         self, parser: Parser, text: str, start: int, state: BlockState
     ) -> tuple[Node | None, int]:
-        if not text.startswith(self.opener, start):
+        if not text.startswith(self.opening_delimiter, start):
             return None, start
         if is_escaped(text, start):
             return None, start
 
-        content_start = start + len(self.opener)
+        content_start = start + len(self.opening_delimiter)
         if content_start >= len(text):
             return None, start
 
@@ -180,6 +178,9 @@ class InlineDelimited(InlineRule):
 class InlineLiteral(InlineRule):
     """Configurable delimiter rule that produces literal nodes."""
 
+    opening_delimiter: str
+    closer: str
+
     def __init__(
         self,
         *,
@@ -187,7 +188,6 @@ class InlineLiteral(InlineRule):
         node: type[LiteralNode],
         opener: str,
         closer: str,
-        trigger_chars: str | None = None,
         allow_newline: bool = False,
         reject_empty: bool = True,
         reject_opening_whitespace: bool = True,
@@ -200,7 +200,7 @@ class InlineLiteral(InlineRule):
     ) -> None:
         _validate_delimiters(opener, closer)
         self.node = node
-        self.opener = opener
+        self.opening_delimiter = opener
         self.closer = closer
         self.allow_newline = allow_newline
         self.reject_empty = reject_empty
@@ -212,21 +212,19 @@ class InlineLiteral(InlineRule):
         self.strip_content = strip_content
         self.escape = escape
         self._node_factory = _literal_node_factory(self)
-        super().__init__(
-            name=name, pattern=re.escape(opener), trigger_chars=opener[0] if trigger_chars is None else trigger_chars
-        )
+        super().__init__(name=name, opener=opener[0])
 
     def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
-        if not text.startswith(self.opener, start):
+        if not text.startswith(self.opening_delimiter, start):
             return None, start
         if self.escape and is_escaped(text, start):
             return None, start
-        if self.reject_adjacent_delimiter and is_adjacent_to_delimiter(text, start, self.opener):
+        if self.reject_adjacent_delimiter and is_adjacent_to_delimiter(text, start, self.opening_delimiter):
             return None, start
-        if self.reject_longer_run and is_part_of_longer_delimiter_run(text, start, self.opener):
+        if self.reject_longer_run and is_part_of_longer_delimiter_run(text, start, self.opening_delimiter):
             return None, start
 
-        value_start = start + len(self.opener)
+        value_start = start + len(self.opening_delimiter)
         if value_start >= len(text):
             return None, start
         if self.reject_opening_whitespace and text[value_start].isspace():
