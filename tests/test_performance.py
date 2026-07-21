@@ -27,7 +27,9 @@ from wenmode.rules import (
     Link,
     List,
     Rule,
+    Table,
     TextDirective,
+    ThematicBreak,
 )
 
 
@@ -136,6 +138,14 @@ def test_atx_heading_closing_candidates_scale_nearly_linearly() -> None:
 
 def test_complete_html_tag_attributes_scale_nearly_linearly() -> None:
     assert_scales_nearly_linearly(lambda size: '<custom data-x="' + 'x' * size + '">\n\n', [HtmlBlock], 8000, 16000)
+
+
+def test_table_opener_candidates_scale_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(lambda size: 'a|' + 'x' * size + '\n', [Table], 8000, 16000)
+
+
+def test_thematic_break_failed_candidates_scale_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(lambda size: '* ' * size + 'x\n', [ThematicBreak], 1000, 2000)
 
 
 def test_nested_html_block_raw_tags_scale_nearly_linearly() -> None:

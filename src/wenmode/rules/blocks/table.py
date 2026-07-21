@@ -31,7 +31,7 @@ class Table(BlockRule):
     """
 
     name = 'table'
-    pattern = r'[ \t]{0,3}.*\|.*(?:\r?\n)?$'
+    pattern = r'[ \t]{0,3}[^|\r\n]*\|'
 
     def __init__(self, require_body_pipe: bool = True) -> None:
         super().__init__()
