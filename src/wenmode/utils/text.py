@@ -46,11 +46,16 @@ def parse_angle_destination(text: str, start: int) -> tuple[str | None, int]:
 
 
 def parse_bare_destination(text: str, start: int) -> tuple[str | None, int]:
+    destination, end, _failure_end = parse_bare_destination_result(text, start)
+    return destination, end
+
+
+def parse_bare_destination_result(text: str, start: int) -> tuple[str | None, int, int | None]:
     match = BARE_DESTINATION_FAST_RE.match(text, start)
     if match is not None:
         end = match.end()
         if end >= len(text) or text[end] not in '(\\':
-            return match.group(0), end
+            return match.group(0), end, None
 
     chars: list[str] = []
     depth = 0
@@ -73,8 +78,8 @@ def parse_bare_destination(text: str, start: int) -> tuple[str | None, int]:
         index += 1
 
     if depth:
-        return None, start
-    return ''.join(chars), index
+        return None, start, index
+    return ''.join(chars), index, None
 
 
 def decode_character_references(value: str) -> str:

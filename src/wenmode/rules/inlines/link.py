@@ -8,7 +8,7 @@ from wenmode.nodes import Break, InlineCode, Node, Parent, Text
 from wenmode.nodes import Image as ImageNode
 from wenmode.nodes import Link as LinkNode
 from wenmode.utils import is_escaped, normalize_label_text, normalize_uri_text
-from wenmode.utils.text import parse_angle_destination, parse_bare_destination
+from wenmode.utils.text import parse_angle_destination, parse_bare_destination_result
 
 from ..._parser.source import SourceMap
 from ..._parser.state import BlockState
@@ -25,8 +25,12 @@ if TYPE_CHECKING:
 ANGLE_SPAN_RE = re.compile(rf'{URI_RE}|{EMAIL_RE}|{HTML_RE}')
 ClosingBracketCache = dict[int, tuple[str, dict[int, int]]]
 LinkContainmentCache = dict[tuple[int, bool, int, int], tuple[str, list[int], list[int]]]
+DirectDestinationFailureCache = dict[int, tuple[str, int]]
 CLOSING_BRACKET_CACHE = StateKey[ClosingBracketCache]('wenmode.inline.closing_brackets', lambda: {})
 LINK_CONTAINMENT_CACHE = StateKey[LinkContainmentCache]('wenmode.inline.link_containment', lambda: {})
+DIRECT_DESTINATION_FAILURES = StateKey[DirectDestinationFailureCache](
+    'wenmode.inline.direct_destination_failures', lambda: {}
+)
 IN_LINK_DEPTH = StateKey[int]('wenmode.inline.in_link_depth', lambda: 0)
 IMAGE_ALT_DEPTH = StateKey[int]('wenmode.inline.image_alt_depth', lambda: 0)
 
@@ -57,7 +61,7 @@ class Image(InlineRule):
     def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
         if not text.startswith('![', start):
             return None, start
-        parsed = parse_link_or_image(parser, text, start, image=True, state=state, references=self.references)
+        parsed = parse_link_or_image(text, start, image=True, state=state, references=self.references)
         if parsed is None:
             return None, start
 
@@ -97,7 +101,7 @@ class Link(InlineRule):
             return None, start
         if state.store.get(IN_LINK_DEPTH) > 0:
             return None, start
-        parsed = parse_link_or_image(parser, text, start, image=False, state=state, references=self.references)
+        parsed = parse_link_or_image(text, start, image=False, state=state, references=self.references)
         if parsed is None:
             return None, start
 
@@ -128,7 +132,7 @@ def parse_image_alt(parser: Parser, label: str, state: BlockState, source: Sourc
 
 
 def parse_link_or_image(
-    parser: Parser, text: str, start: int, image: bool, state: BlockState, references: bool = True
+    text: str, start: int, image: bool, state: BlockState, references: bool = True
 ) -> tuple[str, str, str | None, int, int, int] | None:
     bracket_cache = closing_bracket_cache(state)
     if image:
@@ -141,13 +145,16 @@ def parse_link_or_image(
 
     after_label = label_end + 1
 
-    direct = parse_direct_destination(text, after_label)
+    direct = parse_direct_destination_cached(text, after_label, state)
     if direct is not None:
         if not image and label_contains_link(text, label_start, label_end, state, references):
             return None
         url, title, end = direct
         return text[label_start:label_end], url, title, end, label_start, label_end
     if not references:
+        return None
+    reference_cache = state.store.get(REFERENCES_KEY)
+    if not reference_cache:
         return None
 
     label = text[label_start:label_end]
@@ -269,7 +276,7 @@ def link_destination_or_reference_end(
     text: str, label_start: int, label_end: int, state: BlockState, pairs: dict[int, int], references: bool
 ) -> int | None:
     after_label = label_end + 1
-    direct = parse_direct_destination(text, after_label)
+    direct = parse_direct_destination_cached(text, after_label, state)
     if direct is not None:
         return direct[2]
     if not references or not state.store.get(REFERENCES_KEY):
@@ -311,12 +318,37 @@ def find_angle_span_end(text: str, start: int) -> int | None:
 
 
 def parse_direct_destination(text: str, start: int) -> tuple[str, str | None, int] | None:
+    parsed, _failure_end = parse_direct_destination_result(text, start)
+    return parsed
+
+
+def parse_direct_destination_cached(
+    text: str, start: int, state: BlockState
+) -> tuple[str, str | None, int] | None:
+    cache = state.store.get(DIRECT_DESTINATION_FAILURES)
+    key = id(text)
+    cached = cache.get(key)
+    if cached is not None and cached[0] is text and start < cached[1]:
+        return None
+
+    parsed, failure_end = parse_direct_destination_result(text, start)
+    if parsed is None and failure_end is not None:
+        if cached is None or cached[0] is not text or failure_end > cached[1]:
+            cache[key] = (text, failure_end)
+    return parsed
+
+
+def parse_direct_destination_result(text: str, start: int) -> tuple[tuple[str, str | None, int] | None, int | None]:
     if start >= len(text) or text[start] != '(':
-        return None
+        return None, None
     index = skip_link_spaces(text, start + 1)
-    destination, index = parse_destination(text, index)
+    if index < len(text) and text[index] == '<':
+        destination, index = parse_angle_destination(text, index)
+        failure_end = None
+    else:
+        destination, index, failure_end = parse_bare_destination_result(text, index)
     if destination is None:
-        return None
+        return None, failure_end
 
     after_destination = skip_link_spaces(text, index)
     title: str | None = None
@@ -326,8 +358,8 @@ def parse_direct_destination(text: str, start: int) -> tuple[str, str | None, in
         after_destination = skip_link_spaces(text, after_destination)
 
     if after_destination >= len(text) or text[after_destination] != ')':
-        return None
-    return normalize_uri_text(destination), title, after_destination + 1
+        return None, None
+    return (normalize_uri_text(destination), title, after_destination + 1), None
 
 
 def skip_link_spaces(text: str, start: int) -> int:
@@ -335,12 +367,6 @@ def skip_link_spaces(text: str, start: int) -> int:
     while index < len(text) and text[index] in ' \t\r\n':
         index += 1
     return index
-
-
-def parse_destination(text: str, start: int) -> tuple[str | None, int]:
-    if start < len(text) and text[start] == '<':
-        return parse_angle_destination(text, start)
-    return parse_bare_destination(text, start)
 
 
 def parse_title(text: str, start: int) -> tuple[str, int] | None:

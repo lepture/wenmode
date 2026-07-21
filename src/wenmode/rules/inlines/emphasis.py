@@ -20,6 +20,8 @@ from ..base import InlineRule
 if TYPE_CHECKING:
     from wenmode.parser import Parser
 
+_PLACEHOLDER_TEXT = '\ufffc'
+
 
 class Emphasis(InlineRule):
     """Parse emphasis and strong emphasis delimiters.
@@ -69,6 +71,8 @@ def parse_emphasis_sequence(nodes: list[Node], cjk_friendly: bool = False, max_d
             parts.append(node)
             source_pos += source_length(node)
 
+    if process_flat_non_nested_delimiters(parts, delimiters, max_depth=max_depth):
+        return [part for part in parts if not (isinstance(part, TextNode) and part.value == '')]
     process_delimiters(parts, delimiters, max_depth=max_depth)
     return [part for part in parts if not (isinstance(part, TextNode) and part.value == '')]
 
@@ -79,18 +83,14 @@ def source_text(nodes: list[Node]) -> str:
         if isinstance(node, TextNode):
             values.append(node.value)
         else:
-            values.append(placeholder_text(node))
+            values.append(_PLACEHOLDER_TEXT)
     return ''.join(values)
 
 
 def source_length(node: Node) -> int:
     if isinstance(node, TextNode):
         return len(node.value)
-    return len(placeholder_text(node))
-
-
-def placeholder_text(node: Node) -> str:
-    return '\ufffc'
+    return len(_PLACEHOLDER_TEXT)
 
 
 def split_text_node(
@@ -139,6 +139,70 @@ def next_delimiter_run(text: str, start: int) -> int:
     while index < len(text) and text[index] not in '*_':
         index += 1
     return index
+
+
+def process_flat_non_nested_delimiters(
+    parts: list[Node], delimiters: list[Delimiter], max_depth: int = 20
+) -> bool:
+    if max_depth <= 0 or len(delimiters) < 2:
+        return False
+    for delimiter in delimiters:
+        if delimiter.length != 1:
+            return False
+        part = parts[delimiter.index]
+        if not isinstance(part, TextNode) or len(part.value) != 1:
+            return False
+
+    matches: list[tuple[int, int, EmphasisNode]] = []
+    opener_stacks: dict[str, list[int]] = {'*': [], '_': []}
+    for closer_pos, closer in enumerate(delimiters):
+        matched = False
+        if closer.can_close:
+            stack = opener_stacks[closer.marker]
+            while stack:
+                opener_pos = stack.pop()
+                opener = delimiters[opener_pos]
+                if not is_matching_opener(opener, closer):
+                    continue
+                if closer_pos - opener_pos > 2:
+                    return False
+                node = flat_emphasis_node(parts, opener, closer, max_depth)
+                if node is None:
+                    return False
+                matches.append((opener.index, closer.index, node))
+                matched = True
+                break
+        if not matched and closer.can_open:
+            opener_stacks[closer.marker].append(closer_pos)
+
+    if not matches:
+        return False
+
+    match_by_opener = {opener_index: (closer_index, node) for opener_index, closer_index, node in matches}
+    result: list[Node] = []
+    index = 0
+    while index < len(parts):
+        matched_pair = match_by_opener.get(index)
+        if matched_pair is None:
+            result.append(parts[index])
+            index += 1
+            continue
+        closer_index, node = matched_pair
+        result.append(node)
+        index = closer_index + 1
+    parts[:] = result
+    return True
+
+
+def flat_emphasis_node(
+    parts: list[Node], opener: Delimiter, closer: Delimiter, max_depth: int
+) -> EmphasisNode | None:
+    use_length, opener_text, closer_text = prepare_delimiter_match(parts, opener, closer, max_depth)
+    if use_length != 1 or opener_text is None or closer_text is None:
+        return None
+    node = EmphasisNode(children=parts[opener.index + 1 : closer.index])
+    node.position = emphasis_position(opener_text, closer_text, 1)
+    return node
 
 
 def process_delimiters(parts: list[Node], delimiters: list[Delimiter], max_depth: int = 20) -> None:

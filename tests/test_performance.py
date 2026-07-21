@@ -68,6 +68,10 @@ def test_nested_link_label_brackets_do_not_parse_labels_recursively() -> None:
     assert_scales_nearly_linearly(lambda size: '[' * size + 'a' + ']' * size + '(/u)\n', commonmark, 200, 400)
 
 
+def test_balanced_link_label_brackets_without_destination_scale_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(lambda size: '[' * size + 'a' + ']' * size + '\n', commonmark, 1000, 2000)
+
+
 def test_repeated_link_suffixes_do_not_rescan_outer_labels() -> None:
     assert_scales_nearly_linearly(lambda size: '[' * size + 'a' + '](/u)' * size + '\n', commonmark, 500, 1000)
 
@@ -76,12 +80,24 @@ def test_nested_image_alt_brackets_do_not_parse_unbounded_recursively() -> None:
     assert_scales_nearly_linearly(lambda size: '![' * size + 'a' + '](/u)' * size + '\n', commonmark, 200, 400)
 
 
+def test_malformed_image_labels_without_destinations_scale_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(lambda size: '![' * size + 'a' + ']' * size + '\n', commonmark, 1000, 2000)
+
+
+def test_repeated_empty_label_unclosed_destinations_scale_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(lambda size: '[](' * size + '\n', commonmark, 1000, 2000)
+
+
 def test_failed_footnote_like_links_do_not_rescan_suffixes() -> None:
     assert_scales_nearly_linearly(lambda size: '[^x' * size + '\n', github)
 
 
 def test_dense_emphasis_delimiters_scale_nearly_linearly() -> None:
     assert_scales_nearly_linearly(lambda size: '*a' * size + '\n', commonmark)
+
+
+def test_flat_mixed_emphasis_delimiters_scale_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(lambda size: '*a_b' * size + '\n', commonmark, 1000, 2000)
 
 
 def test_unmatched_code_span_runs_scale_nearly_linearly() -> None:
@@ -211,6 +227,16 @@ def test_list_blank_continuations_scale_nearly_linearly() -> None:
 
 def test_list_marker_interrupt_candidates_scale_nearly_linearly() -> None:
     assert_scales_nearly_linearly(lambda size: 'paragraph\n1. ' + ' ' * size + '\n', [List], 8000, 16000)
+
+
+def test_list_marker_interrupt_candidates_with_positions_scale_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(
+        lambda size: 'paragraph\n1. ' + ' ' * size + '\n',
+        [List],
+        8000,
+        16000,
+        positions=True,
+    )
 
 
 def test_abbreviation_definition_candidates_scale_nearly_linearly() -> None:

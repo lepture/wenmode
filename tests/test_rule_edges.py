@@ -109,6 +109,22 @@ def test_emphasis_multiple_of_three_uses_original_delimiter_length(markdown: str
     assert Wenmode().render(markdown) == html
 
 
+@pytest.mark.parametrize(
+    ('markdown', 'html'),
+    [
+        ('*_a_*\n', '<p><em><em>a</em></em></p>\n'),
+        ('*a_b*a_b\n', '<p><em>a_b</em>a_b</p>\n'),
+        ('_a*b_a*b\n', '<p>_a<em>b_a</em>b</p>\n'),
+    ],
+)
+def test_flat_mixed_emphasis_fast_path_preserves_semantics(markdown: str, html: str) -> None:
+    assert Wenmode().render(markdown) == html
+
+
+def test_failed_direct_destination_does_not_hide_following_link() -> None:
+    assert Wenmode().render('[](foo[bar](/u)\n') == '<p>[](foo<a href="/u">bar</a></p>\n'
+
+
 def test_emphasis_respects_max_container_depth() -> None:
     app = Wenmode()
     app.parser.max_container_depth = 1
