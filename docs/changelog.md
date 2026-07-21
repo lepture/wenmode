@@ -17,6 +17,20 @@ here while preparing a release, then move them under the final version heading.
 
 ## Unreleased
 
+## 0.12.1
+
+Released **Jul 22, 2026**.
+
+**Fixed**
+
+- Preserve links that appear after failed direct destinations with nested
+  parentheses.
+
+**Performance**
+
+- Improve edge-case parsing performance for malformed links, malformed images,
+  and flat mixed emphasis delimiter runs.
+
 ## 0.12.0
 
 Released **Jul 22, 2026**.
