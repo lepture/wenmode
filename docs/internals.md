@@ -166,9 +166,11 @@ Returning `None` declines the continuation and must leave `BlockState.index`
 unchanged. Returning a replacement node must advance the state past the accepted
 input.
 
-`InlineRule` instances provide a regex pattern and `parse()` method. They return
-`(node, end_index)`. If the rule does not accept a match, it returns
-`(None, start_index)` so the parser can treat the marker as text.
+`InlineRule` instances provide candidate discovery through literal `opener`
+values or `search()`, then parse from a candidate `start` offset. They return
+`(node, end_index)`. If the rule does not accept the candidate, it returns
+`(None, start)` so the parser can try other rules at that offset or treat the
+marker as text.
 
 ## Node transforms
 

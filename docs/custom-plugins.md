@@ -99,12 +99,12 @@ class PlusMarkNode(Parent):
 
 class PlusMarkRule(InlineRule):
     name = 'plus_mark'
-    pattern = r'\+\+'
-    trigger_chars = '+'
+    opener = '+'
 
-    def parse(self, parser, text, match, state):
-        start = match.start()
-        value_start = match.end()
+    def parse(self, parser, text, start, state):
+        if not text.startswith('++', start):
+            return None, start
+        value_start = start + 2
         close = text.find('++', value_start)
         if close == -1:
             return None, start
@@ -245,7 +245,7 @@ Rules also have an `order` class attribute. Block and inline rules default to
 class MyRule(InlineRule):
     name = 'my_rule'
     pattern = r'!!'
-    trigger_chars = '!'
+    opener = '!'
     order = 90
 ```
 
@@ -253,8 +253,10 @@ class MyRule(InlineRule):
 configured rule instances. Classes are instantiated automatically. Instances are
 useful when the rule itself has options.
 
-For stateless custom rules, prefer defining `name`, `pattern`, and
-`trigger_chars` as class attributes. Keep `__init__()` only when the rule needs
+For stateless custom rules, prefer defining `name`, `opener`, and, when needed,
+`pattern` as class attributes. `opener` is a single-character dispatch hint, or
+a tuple of single-character dispatch hints; validate longer delimiters inside
+`matches_start()` or `parse()`. Keep `__init__()` only when the rule needs
 caller-provided configuration.
 
 ## Parsing Nested Content
@@ -274,7 +276,7 @@ When nested children need positions mapped to the original document, pass the
 source range explicitly:
 
 ```{code-block} python
-value_start = match.end()
+value_start = start + 2
 value_end = text.find('++', value_start)
 
 children = parser.parse_inlines(
@@ -312,8 +314,8 @@ preserve source text and positions. Do not bypass this helper with a custom
 recursive parser.
 
 If a rule decides not to handle a match, return `None` without consuming input.
-For inline rules, return `(None, match.start())`. The parser will continue with
-the normal fallback behavior.
+For inline rules, return `(None, start)`. The parser will continue with the
+normal fallback behavior.
 
 When a `BlockRule` or `ContinueRule` returns a node, it must advance `state`
 past the accepted input. Returning a node without advancing state raises
@@ -345,15 +347,18 @@ class MentionNode(Node):
 class MentionRule(InlineRule):
     name = 'mention'
     pattern = r'@[A-Za-z][A-Za-z0-9_]*'
-    trigger_chars = '@'
+    opener = '@'
 
     def parse(
         self,
         parser: Parser,
         text: str,
-        match: re.Match[str],
+        start: int,
         state: BlockState,
     ) -> tuple[Node | None, int]:
+        match = self.compiled.match(text, start)
+        if match is None:
+            return None, start
         return MentionNode(name=match.group(0)[1:]), match.end()
 ```
 

@@ -18,6 +18,12 @@ here while preparing a release, then move them under the final version heading.
 ## Unreleased
 
 - Allow `github_alert.configure()` to add custom alert types.
+- Change `InlineRule.parse()` to receive a candidate `start` offset instead of
+  a `re.Match`; inline rules now decide internally whether to use their compiled
+  regex pattern.
+- Replace `InlineRule.trigger_chars` with `InlineRule.opener`, a single-character
+  string or tuple of single-character strings used for inline candidate
+  dispatch.
 
 ## 0.11.1
 

@@ -101,7 +101,7 @@ supported.
 | `wenmode.plugins.mark` | `mark` inline nodes |
 | `wenmode.plugins.ruby` | Ruby annotation nodes |
 | `wenmode.plugins.smartypants` | HTML smart punctuation rendering for quotes, dashes, and ellipses |
-| `wenmode.plugins.subscript` | `subscript` inline nodes |
+| `wenmode.plugins.subscript` | `subscript` inline nodes; shares tilde syntax with strikethrough |
 | `wenmode.plugins.superscript` | `superscript` inline nodes |
 
 Each plugin also registers default HTML, Markdown, RST, or AsciiDoc renderer

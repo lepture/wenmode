@@ -122,6 +122,12 @@ Output node is `SuperscriptNode`, and its AST is:
 H~2~O
 ```
 
+Subscript uses single tildes, so it overlaps with GFM strikethrough syntax.
+When both `wenmode.plugins.subscript` and `Strikethrough` are enabled,
+single-tilde spans such as `H~2~O` are parsed as subscript, while double-tilde
+spans such as `~~deleted~~` remain strikethrough. Longer tilde runs such as
+`~~~text~~~` are left as text.
+
 Output node is `SubscriptNode`, and its AST is:
 
 ```json
