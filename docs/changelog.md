@@ -17,7 +17,16 @@ here while preparing a release, then move them under the final version heading.
 
 ## Unreleased
 
+## 0.12.0
+
+Released **Jul 22, 2026**.
+
+**Added**
+
 - Allow `github_alert.configure()` to add custom alert types.
+
+**Breaking Changes**
+
 - Change `InlineRule.parse()` to receive a candidate `start` offset instead of
   a `re.Match`; inline rules now decide internally whether to use their compiled
   regex pattern.
