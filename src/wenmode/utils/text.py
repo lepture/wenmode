@@ -60,6 +60,7 @@ def parse_bare_destination_result(text: str, start: int) -> tuple[str | None, in
     chars: list[str] = []
     depth = 0
     index = start
+    has_closing_paren = False
     while index < len(text):
         char = text[index]
         if char in ' \t\r\n':
@@ -71,6 +72,7 @@ def parse_bare_destination_result(text: str, start: int) -> tuple[str | None, in
         if char == '(':
             depth += 1
         elif char == ')':
+            has_closing_paren = True
             if depth == 0:
                 break
             depth -= 1
@@ -78,7 +80,7 @@ def parse_bare_destination_result(text: str, start: int) -> tuple[str | None, in
         index += 1
 
     if depth:
-        return None, start, index
+        return None, start, None if has_closing_paren else index
     return ''.join(chars), index, None
 
 

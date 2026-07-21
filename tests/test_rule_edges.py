@@ -121,8 +121,15 @@ def test_flat_mixed_emphasis_fast_path_preserves_semantics(markdown: str, html: 
     assert Wenmode().render(markdown) == html
 
 
-def test_failed_direct_destination_does_not_hide_following_link() -> None:
-    assert Wenmode().render('[](foo[bar](/u)\n') == '<p>[](foo<a href="/u">bar</a></p>\n'
+@pytest.mark.parametrize(
+    ('markdown', 'html'),
+    [
+        ('[](foo[bar](/u)\n', '<p>[](foo<a href="/u">bar</a></p>\n'),
+        ('[](foo([bar](/u)\n', '<p>[](foo(<a href="/u">bar</a></p>\n'),
+    ],
+)
+def test_failed_direct_destination_does_not_hide_following_link(markdown: str, html: str) -> None:
+    assert Wenmode().render(markdown) == html
 
 
 def test_emphasis_respects_max_container_depth() -> None:

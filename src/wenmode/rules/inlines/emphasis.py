@@ -178,18 +178,15 @@ def process_flat_non_nested_delimiters(
     if not matches:
         return False
 
-    match_by_opener = {opener_index: (closer_index, node) for opener_index, closer_index, node in matches}
     result: list[Node] = []
     index = 0
-    while index < len(parts):
-        matched_pair = match_by_opener.get(index)
-        if matched_pair is None:
-            result.append(parts[index])
-            index += 1
-            continue
-        closer_index, node = matched_pair
+    for opener_index, closer_index, node in matches:
+        if opener_index < index:
+            return False
+        result.extend(parts[index:opener_index])
         result.append(node)
         index = closer_index + 1
+    result.extend(parts[index:])
     parts[:] = result
     return True
 
