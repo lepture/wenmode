@@ -55,10 +55,12 @@ class Image(InlineRule):
         else:
             self.root_transforms = []
 
-    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
-        parsed = parse_link_or_image(parser, text, match.start(), image=True, state=state, references=self.references)
+    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+        if not text.startswith('![', start):
+            return None, start
+        parsed = parse_link_or_image(parser, text, start, image=True, state=state, references=self.references)
         if parsed is None:
-            return None, match.start()
+            return None, start
 
         label, url, title, end, label_start, label_end = parsed
         label_source = parser.inline_source(text, state, label_start, label_end)
@@ -78,7 +80,7 @@ class Link(InlineRule):
     """
 
     name = 'link'
-    pattern = r'\['
+    pattern = None
     trigger_chars = '['
 
     def __init__(self, references: bool = True) -> None:
@@ -89,14 +91,16 @@ class Link(InlineRule):
         else:
             self.root_transforms = []
 
-    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
-        if match.start() > 0 and text[match.start() - 1] == '!' and not is_escaped(text, match.start() - 1):
-            return None, match.start()
+    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+        if start >= len(text) or text[start] != '[':
+            return None, start
+        if start > 0 and text[start - 1] == '!' and not is_escaped(text, start - 1):
+            return None, start
         if state.store.get(IN_LINK_DEPTH) > 0:
-            return None, match.start()
-        parsed = parse_link_or_image(parser, text, match.start(), image=False, state=state, references=self.references)
+            return None, start
+        parsed = parse_link_or_image(parser, text, start, image=False, state=state, references=self.references)
         if parsed is None:
-            return None, match.start()
+            return None, start
 
         label, url, title, end, label_start, label_end = parsed
         label_source = parser.inline_source(text, state, label_start, label_end)

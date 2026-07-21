@@ -40,7 +40,10 @@ class ProbeLetter(InlineRule):
     pattern = r'[A-Za-z]'
     trigger_chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
-    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
+    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+        match = self.compiled.match(text, start)
+        if match is None:
+            return None, start
         return Node(type=f'probe_{match.group(0)}'), match.end()
 
 
@@ -227,9 +230,12 @@ def test_inline_sources_are_state_local() -> None:
         pattern = r'!'
         trigger_chars = '!'
 
-        def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
-            current_source = parser.inline_source(text, state, match.start(), match.end())
-            other_source = parser.inline_source(text, other_state, match.start(), match.end())
+        def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+            match = self.compiled.match(text, start)
+            if match is None:
+                return None, start
+            current_source = parser.inline_source(text, state, start, match.end())
+            other_source = parser.inline_source(text, other_state, start, match.end())
             assert current_source is not None
             observations.append(
                 (current_source.source_offset(0), current_source.source_offset(1), other_source is None)

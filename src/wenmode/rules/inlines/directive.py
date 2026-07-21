@@ -37,10 +37,12 @@ class TextDirective(InlineRule):
     pattern = r':(?=[A-Za-z])'
     trigger_chars = ':'
 
-    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
-        parsed = parse_text_directive_head(text, match.start() + 1, state)
+    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+        if start + 1 >= len(text) or text[start] != ':' or not text[start + 1].isascii() or not text[start + 1].isalpha():
+            return None, start
+        parsed = parse_text_directive_head(text, start + 1, state)
         if parsed is None:
-            return None, match.start()
+            return None, start
 
         name, label, attributes, end, label_start, label_end = parsed
         if label is not None and label_start is not None and label_end is not None:

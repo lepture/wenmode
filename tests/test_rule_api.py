@@ -18,6 +18,7 @@ from wenmode.rules import (
     NodeTransform,
     RootTransform,
     Rule,
+    Strikethrough,
 )
 from wenmode.state import BlockState
 
@@ -89,10 +90,58 @@ def test_continuation_rule_node_transform_runs_after_parse() -> None:
     assert render(Parser([BangContinuation]), 'text\n!!\n') == '<p>transformed</p>\n'
 
 
-def test_inline_rule_compiles_pattern_on_init() -> None:
-    rule = InlineCode()
+def test_inline_rule_supports_trigger_only_parse_from_start() -> None:
+    class Mention(InlineRule):
+        name = 'mention'
+        pattern = None
+        trigger_chars = '@'
 
-    assert rule.compiled.pattern == rule.pattern
+        def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+            if start + 1 >= len(text) or not text[start + 1].isalpha():
+                return None, start
+            end = start + 2
+            while end < len(text) and text[end].isalpha():
+                end += 1
+            return Text(value='mention:' + text[start + 1 : end]), end
+
+    rule = Mention()
+
+    assert rule.pattern is None
+    assert rule.search('@name') is None
+    assert render(Parser([rule]), '@name @1\n') == '<p>mention:name @1</p>\n'
+
+
+def test_trigger_only_rule_can_decline_before_same_trigger_rule() -> None:
+    class SingleTilde(InlineRule):
+        order = 10
+        name = 'single_tilde'
+        pattern = None
+        trigger_chars = '~'
+
+        def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+            if not (start + 2 < len(text) and text[start + 1] != '~' and text[start + 2] == '~'):
+                return None, start
+            return Text(value='single:' + text[start + 1]), start + 3
+
+    class DoubleTilde(InlineRule):
+        order = 20
+        name = 'double_tilde'
+        pattern = r'~~[^~]+~~'
+        trigger_chars = '~'
+
+        def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+            match = self.compiled.match(text, start)
+            if match is None:
+                return None, start
+            return Text(value='double:' + match.group(0)[2:-2]), match.end()
+
+    assert render(Parser([SingleTilde, DoubleTilde]), '~~x~~ ~y~\n') == '<p>double:x single:y</p>\n'
+
+
+def test_strikethrough_trigger_only_rule_parses_single_and_double_tildes() -> None:
+    assert render(Parser([Strikethrough]), '~~x~~ ~y~ ~~~z~~~ ~~~~\n') == (
+        '<p><del>x</del> <del>y</del> ~~~z~~~ ~~~~</p>\n'
+    )
 
 
 def test_rule_subclasses_can_define_identity_as_class_attributes() -> None:
@@ -109,7 +158,10 @@ def test_rule_subclasses_can_define_identity_as_class_attributes() -> None:
         pattern = r'!!'
         trigger_chars = '!'
 
-        def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
+        def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+            match = self.compiled.match(text, start)
+            if match is None:
+                return None, start
             return Text(value='inline'), match.end()
 
     app = Wenmode([BangBlock, BangInline])
@@ -304,7 +356,10 @@ def test_parser_rebuilds_inline_dispatch_when_rule_is_replaced() -> None:
         pattern = r'@a'
         trigger_chars = '@'
 
-        def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
+        def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+            match = self.compiled.match(text, start)
+            if match is None:
+                return None, start
             return Text(value='at'), match.end()
 
     class BangToken(InlineRule):
@@ -312,7 +367,10 @@ def test_parser_rebuilds_inline_dispatch_when_rule_is_replaced() -> None:
         pattern = r'!b'
         trigger_chars = '!'
 
-        def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
+        def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+            match = self.compiled.match(text, start)
+            if match is None:
+                return None, start
             return Text(value='bang'), match.end()
 
     parser = Parser([AtToken])
@@ -331,14 +389,20 @@ def test_inline_dispatch_uses_rule_order_for_equal_offset_candidates() -> None:
         pattern = r'@'
         trigger_chars = '@'
 
-        def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
+        def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+            match = self.compiled.match(text, start)
+            if match is None:
+                return None, start
             return Text(value='triggered'), match.end()
 
     class SearchedAt(InlineRule):
         name = 'searched_at'
         pattern = r'@'
 
-        def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
+        def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+            match = self.compiled.match(text, start)
+            if match is None:
+                return None, start
             return Text(value='searched'), match.end()
 
     triggered_first = parse_inlines(Parser([TriggeredAt, SearchedAt]), '@')

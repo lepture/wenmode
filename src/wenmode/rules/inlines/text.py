@@ -14,6 +14,7 @@ if TYPE_CHECKING:
 
 
 ESCAPABLE = r'!"#$%&\'()*+,\-./:;<=>?@\[\\\]^_`{|}~'
+ESCAPABLE_CHARS = '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~'
 NUMERIC_CHARACTER_REFERENCE_RE = re.compile(r'&#(?P<base>[xX]?)(?P<digits>[0-9A-Fa-f]+);')
 
 
@@ -31,8 +32,10 @@ class BackslashEscape(InlineRule):
     pattern = rf'\\(?=[{ESCAPABLE}])'
     trigger_chars = '\\'
 
-    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
-        return Text(value=text[match.end()], _parse_emphasis=False), match.end() + 1
+    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+        if start + 1 >= len(text) or text[start] != '\\' or text[start + 1] not in ESCAPABLE_CHARS:
+            return None, start
+        return Text(value=text[start + 1], _parse_emphasis=False), start + 2
 
 
 class CharacterReference(InlineRule):
@@ -49,7 +52,10 @@ class CharacterReference(InlineRule):
     pattern = r'&(?:#[xX][0-9A-Fa-f]+|#[0-9]+|[A-Za-z][A-Za-z0-9]{1,31});'
     trigger_chars = '&'
 
-    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
+    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+        match = self.compiled.match(text, start)
+        if match is None:
+            return None, start
         value = match.group(0)
         numeric = NUMERIC_CHARACTER_REFERENCE_RE.match(value)
         if numeric is not None:
@@ -79,13 +85,13 @@ class HardBreak(InlineRule):
     name = 'hard_break'
     pattern = r'(?:\\| {2,})\r?\n'
 
-    def search(self, text: str, pos: int = 0) -> re.Match[str] | None:
-        start = find_hard_break(text, pos)
-        if start is not None:
-            return self.compiled.match(text, start)
-        return None
+    def search(self, text: str, pos: int = 0) -> int | None:
+        return find_hard_break(text, pos)
 
-    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
+    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+        match = self.compiled.match(text, start)
+        if match is None:
+            return None, start
         return Break(), match.end()
 
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 from wenmode.nodes import Node
 
@@ -23,7 +23,7 @@ class Rule:
     order: ClassVar[int] = 100
 
     def __init__(self, name: str | None = None) -> None:
-        self.name = resolve_string_attribute(self, 'name', name)
+        self.name = cast(str, resolve_string_attribute(self, 'name', name))
         self.root_transforms: list[RootTransform] = []
         self.node_transforms: list[NodeTransform] = []
 
@@ -38,7 +38,7 @@ class BlockRule(Rule):
 
     def __init__(self, name: str | None = None, pattern: str | None = None) -> None:
         super().__init__(name)
-        self.pattern = resolve_string_attribute(self, 'pattern', pattern)
+        self.pattern = cast(str, resolve_string_attribute(self, 'pattern', pattern))
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
         """Parse a matched block opener.
@@ -81,46 +81,63 @@ class InlineRule(Rule):
     """Base class for inline Markdown rules.
 
     :param pattern: Regular expression pattern used by this inline rule.
+        Set this to ``None`` for trigger-only rules that implement
+        :meth:`parse` directly.
     :param trigger_chars: Optional literal characters that can start the rule.
         Supplying trigger characters lets the parser dispatch inline rules more
         efficiently.
     """
 
-    pattern: str
+    pattern: str | None = None
     trigger_chars: str = ''
     compiled: re.Pattern[str]
 
     def __init__(self, name: str | None = None, pattern: str | None = None, trigger_chars: str | None = None) -> None:
         super().__init__(name)
-        self.pattern = resolve_string_attribute(self, 'pattern', pattern)
-        self.trigger_chars = resolve_string_attribute(self, 'trigger_chars', trigger_chars, default='')
-        self.compiled = re.compile(self.pattern)
+        self.pattern = resolve_string_attribute(self, 'pattern', pattern, optional=True)
+        self.trigger_chars = cast(str, resolve_string_attribute(self, 'trigger_chars', trigger_chars, default=''))
+        self.compiled = re.compile(self.pattern if self.pattern is not None else r'(?!)')
 
-    def search(self, text: str, pos: int = 0) -> re.Match[str] | None:
-        """Search for the next candidate match.
+    def search(self, text: str, pos: int = 0) -> int | None:
+        """Search for the next candidate start.
 
         Override this method for rules that need custom scanning behavior.
         """
-        return self.compiled.search(text, pos)
+        if self.pattern is None:
+            return None
+        match = self.compiled.search(text, pos)
+        if match is None:
+            return None
+        return match.start()
 
-    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
-        """Parse a matched inline opener.
+    def matches_start(self, text: str, start: int) -> bool:
+        if self.pattern is None:
+            return True
+        return self.compiled.match(text, start) is not None
+
+    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+        """Parse an inline node starting at ``start``.
 
         :param parser: Active parser.
         :param text: Full inline source text.
-        :param match: Match object returned by this rule.
+        :param start: Candidate start offset.
         :param state: Current block state.
-        :returns: A ``(node, end_index)`` pair. Return ``(None, match.start())``
+        :returns: A ``(node, end_index)`` pair. Return ``(None, start)``
             to decline the match.
         """
         raise NotImplementedError
 
 
-def resolve_string_attribute(obj: object, name: str, value: str | None, default: str | None = None) -> str:
+def resolve_string_attribute(
+    obj: object, name: str, value: str | None, default: str | None = None, *, optional: bool = False
+) -> str | None:
     if value is None:
         resolved = getattr(type(obj), name, default)
     else:
         resolved = value
+    if optional and resolved is None:
+        return None
     if isinstance(resolved, str):
         return resolved
-    raise TypeError(f'{type(obj).__name__} requires a {name} string')
+    requirement = 'string or None' if optional else 'string'
+    raise TypeError(f'{type(obj).__name__} requires a {name} {requirement}')

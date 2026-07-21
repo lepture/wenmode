@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from typing import TYPE_CHECKING
 
 from wenmode.nodes import Node
@@ -22,10 +21,12 @@ class RoleRule(InlineRule):
     pattern = r'\{(?=[A-Za-z])'
     trigger_chars = '{'
 
-    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
-        parsed = parse_role(text, match.start())
+    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+        if start + 1 >= len(text) or text[start] != '{' or not text[start + 1].isascii() or not text[start + 1].isalpha():
+            return None, start
+        parsed = parse_role(text, start)
         if parsed is None:
-            return None, match.start()
+            return None, start
 
         name, label, end, label_start, label_end = parsed
         return (

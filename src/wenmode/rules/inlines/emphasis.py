@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -39,8 +38,8 @@ class Emphasis(InlineRule):
         super().__init__()
         self.cjk_friendly = cjk_friendly
 
-    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
-        return None, match.start()
+    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+        return None, start
 
     def parse_emphasis_sequence(self, nodes: list[Node], max_depth: int = 20) -> list[Node]:
         return parse_emphasis_sequence(nodes, cjk_friendly=self.cjk_friendly, max_depth=max_depth)

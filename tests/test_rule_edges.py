@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from typing import TypedDict
 
 import pytest
@@ -28,7 +27,10 @@ class SearchInline(InlineRule):
     def __init__(self) -> None:
         super().__init__('search_inline', r'x')
 
-    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
+    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+        match = self.compiled.match(text, start)
+        if match is None:
+            return None, start
         return Text(value='search'), match.end()
 
 
@@ -38,7 +40,10 @@ class LaterSearchInline(InlineRule):
     def __init__(self) -> None:
         super().__init__('later_search_inline', r'x')
 
-    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
+    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+        match = self.compiled.match(text, start)
+        if match is None:
+            return None, start
         return Text(value='later'), match.end()
 
 
@@ -48,7 +53,10 @@ class TriggerInline(InlineRule):
     def __init__(self) -> None:
         super().__init__('trigger_inline', r'x', 'x')
 
-    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
+    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+        match = self.compiled.match(text, start)
+        if match is None:
+            return None, start
         return Text(value='trigger'), match.end()
 
 

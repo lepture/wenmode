@@ -49,14 +49,14 @@ class ExtendedAutolink(InlineRule):
         super().__init__()
         self.cjk_friendly = cjk_friendly
 
-    def search(self, text: str, pos: int = 0) -> re.Match[str] | None:
+    def search(self, text: str, pos: int = 0) -> int | None:
         url_match = self.search_url(text, pos)
         email_match = self.search_email(text, pos)
         if email_match is None:
-            return url_match
+            return None if url_match is None else url_match.start()
         if url_match is None or email_match.start() < url_match.start():
-            return email_match
-        return url_match
+            return email_match.start()
+        return url_match.start()
 
     def search_url(self, text: str, pos: int) -> re.Match[str] | None:
         lower_text = text.lower()
@@ -82,7 +82,10 @@ class ExtendedAutolink(InlineRule):
             cursor = text.find('@', cursor + 1)
         return None
 
-    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
+    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+        match = self.compiled.match(text, start)
+        if match is None:
+            return None, start
         value = match.group(0)
         if is_mailto_or_xmpp(value):
             value = trim_mailto_or_xmpp(value)
@@ -90,7 +93,7 @@ class ExtendedAutolink(InlineRule):
             value = trim_trailing_punctuation(value, cjk_friendly=self.cjk_friendly)
             value = trim_entity_suffix(value)
         if not value:
-            return None, match.start()
+            return None, start
 
         url = value
         if value.lower().startswith('www.'):
@@ -99,10 +102,10 @@ class ExtendedAutolink(InlineRule):
             url = 'mailto:' + value
 
         text_node = Text(value=value)
-        source = parser.inline_source(text, state, match.start(), match.start() + len(value))
+        source = parser.inline_source(text, state, start, start + len(value))
         if source is not None:
             text_node.position = source.position(0, len(value))
-        return Link(url=normalize_uri(url), children=[text_node]), match.start() + len(value)
+        return Link(url=normalize_uri(url), children=[text_node]), start + len(value)
 
 
 def trim_trailing_punctuation(value: str, cjk_friendly: bool = False) -> str:

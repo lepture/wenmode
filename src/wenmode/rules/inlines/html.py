@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Literal
 from urllib.parse import quote
@@ -43,7 +42,10 @@ class Autolink(InlineRule):
     pattern = rf'{URI_RE}|{EMAIL_RE}'
     trigger_chars = '<'
 
-    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
+    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+        match = self.compiled.match(text, start)
+        if match is None:
+            return None, start
         uri = match.groupdict().get('uri')
         if uri is not None:
             text_node = Text(value=uri)
@@ -87,7 +89,10 @@ class RawHtml(InlineRule):
         self.disallowed_html_filter = compile_disallowed_html_filter(disallowed_tags)
         self.comment_style = comment_style
 
-    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
+    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+        match = self.compiled.match(text, start)
+        if match is None:
+            return None, start
         value = match.group(0)
         filtered = filter_disallowed_html(value, self.disallowed_html_filter)
         if filtered != value:

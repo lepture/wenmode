@@ -46,11 +46,14 @@ class RubyRule(InlineRule):
     pattern = RUBY_PATTERN
     trigger_chars = '['
 
-    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
+    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+        match = self.compiled.match(text, start)
+        if match is None:
+            return None, start
         ruby = RubyNode(segments=parse_ruby_segments(match.group(0)))
-        source = parser.inline_source(text, state, match.start(), match.end())
+        source = parser.inline_source(text, state, start, match.end())
         if source is not None:
-            ruby.position = source.position(0, match.end() - match.start())
+            ruby.position = source.position(0, match.end() - start)
         end = match.end()
         link = parse_ruby_link(parser, text, end, ruby, state)
         if link is not None:

@@ -28,17 +28,23 @@ class InlineCode(InlineRule):
     """
 
     name = 'inline_code'
-    pattern = r'(?<!`)`+'
     trigger_chars = '`'
 
-    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
-        if match.start() > 0 and text[match.start() - 1] == '`':
-            return None, match.start()
-        marker_length = match.end() - match.start()
-        end = find_matching_backtick_run(text, match.end(), marker_length)
+    def matches_start(self, text: str, start: int) -> bool:
+        return text[start] == '`' and (start == 0 or text[start - 1] != '`')
+
+    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+        match = BACKTICK_RUN_RE.match(text, start)
+        if match is None:
+            return None, start
+        if start > 0 and text[start - 1] == '`':
+            return None, start
+        marker_length = match.end() - start
+        value_start = match.end()
+        end = find_matching_backtick_run(text, value_start, marker_length)
         if end is None:
-            return None, match.start()
-        value = CODE_LINE_ENDING_RE.sub(' ', text[match.end() : end])
+            return None, start
+        value = CODE_LINE_ENDING_RE.sub(' ', text[value_start:end])
         if len(value) >= 2 and value.startswith(' ') and value.endswith(' ') and any(char != ' ' for char in value):
             value = value[1:-1]
         return InlineCodeNode(value=value), end + marker_length

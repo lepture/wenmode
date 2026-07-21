@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -9,7 +8,8 @@ from wenmode.renderers import MarkdownRenderer, RenderContext
 from wenmode.renderers.asciidoc import AsciiDocRenderContext, AsciiDocRenderer
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer
-from wenmode.rules.base import InlineRule, Rule
+from wenmode.rules import InlineRule, Rule
+from wenmode.rules.delimiters import find_delimited_span
 
 from .._parser.state import BlockState
 from .types import RendererHandlers
@@ -30,12 +30,15 @@ class SuperscriptRule(InlineRule):
     """Parse caret-delimited superscript spans."""
 
     name = 'superscript'
-    pattern = r'\^(?:(?<!\\)(?:\\\\)*\\\^|\S|\\ )+?\^'
+    pattern = None
     trigger_chars = '^'
 
-    def parse(self, parser: Parser, text: str, match: re.Match[str], state: BlockState) -> tuple[Node | None, int]:
-        value = match.group(0)[1:-1].replace('\\ ', ' ')
-        return SuperscriptNode(children=parser.parse_inlines(value, state)), match.end()
+    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+        span = find_delimited_span(text, start, '^', allow_spaces=False, allow_escaped_space=True)
+        if span is None:
+            return None, start
+        value = text[span.value_start : span.value_end].replace('\\ ', ' ')
+        return SuperscriptNode(children=parser.parse_inlines(value, state)), span.close_end
 
 
 def render_html(renderer: HTMLRenderer, node: SuperscriptNode, context: HTMLRenderContext) -> str:
