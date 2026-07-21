@@ -128,8 +128,10 @@ class InlineParser:
 
         opener_end = min(limit + 1, len(text))
         opener_match = self._rule_set.inline_opener_re.search(text, pos, opener_end)
-        while opener_match is not None and opener_match.start() <= limit:
+        while opener_match is not None:
             start = opener_match.start()
+            if start > limit:
+                break
             opener = text[start]
             opener_rules = self._matching_opener_inline_rules(opener, text, start)
             if not opener_rules:

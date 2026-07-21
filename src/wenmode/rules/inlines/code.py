@@ -4,7 +4,7 @@ import re
 from typing import TYPE_CHECKING
 
 from wenmode.nodes import InlineCode as InlineCodeNode
-from wenmode.nodes import Node
+from wenmode.nodes import Node, Text
 
 from ..._parser.state import BlockState
 from ..base import InlineRule
@@ -43,7 +43,7 @@ class InlineCode(InlineRule):
         value_start = match.end()
         end = find_matching_backtick_run(text, value_start, marker_length)
         if end is None:
-            return None, start
+            return Text(value=text[start:value_start]), value_start
         value = CODE_LINE_ENDING_RE.sub(' ', text[value_start:end])
         if len(value) >= 2 and value.startswith(' ') and value.endswith(' ') and any(char != ' ' for char in value):
             value = value[1:-1]
