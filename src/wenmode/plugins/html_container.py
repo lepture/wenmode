@@ -141,6 +141,7 @@ def parse_html_attributes(text: str) -> dict[str, HtmlContainerAttributeValue] |
 
 
 def find_matching_close_index(state: BlockState, name: str) -> int | None:
+    closer = container_closer_re(name)
     depth = 0
     index = state.index + 1
     while state.has_index(index):
@@ -150,7 +151,7 @@ def find_matching_close_index(state: BlockState, name: str) -> int | None:
             depth += 1
             index += 1
             continue
-        if is_container_closer(line, name):
+        if closer.match(line):
             if depth == 0:
                 return index
             depth -= 1
@@ -158,8 +159,12 @@ def find_matching_close_index(state: BlockState, name: str) -> int | None:
     return None
 
 
+def container_closer_re(name: str) -> re.Pattern[str]:
+    return re.compile(rf'(?i)^[ \t]{{0,3}}</{re.escape(name)}\s*>[ \t]*(?:\r?\n)?$')
+
+
 def is_container_closer(line: str, name: str) -> bool:
-    return re.match(rf'(?i)^[ \t]{{0,3}}</{re.escape(name)}\s*>[ \t]*(?:\r?\n)?$', line) is not None
+    return container_closer_re(name).match(line) is not None
 
 
 def collect_container_body(state: BlockState, source: SourceCollector, close_index: int) -> str:
