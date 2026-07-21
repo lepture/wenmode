@@ -4,7 +4,7 @@ import re
 
 from wenmode import Parser, Wenmode
 from wenmode.nodes import Node, Root
-from wenmode.rules import AtxHeading, Blockquote, BlockRule, Footnote, Link, RootTransform, Rule
+from wenmode.rules import AtxHeading, Blockquote, BlockRule, Footnote, Link, NodeTransform, RootTransform, Rule
 from wenmode.state import BlockState, StateKey, StateStore
 
 TERMS = StateKey('tests.terms', lambda: {})
@@ -102,6 +102,29 @@ def test_deferred_inline_callbacks_and_state_store_are_per_parse() -> None:
 
     assert app.parse('first\n').data == {'values': ['first'], 'pending_inlines': 0, 'pending_callbacks': 0}
     assert app.parse('second\n').data == {'values': ['second'], 'pending_inlines': 0, 'pending_callbacks': 0}
+
+
+def test_deferred_node_transform_callbacks_bind_each_transform() -> None:
+    class MarkerTransform(NodeTransform):
+        defer_inlines = True
+
+        def __init__(self, marker: str) -> None:
+            self.marker = marker
+            self.name = f'marker:{marker}'
+
+        def transform(self, parser: Parser, node: Node, state: BlockState) -> None:
+            if node.data is None:
+                node.data = {}
+            node.data.setdefault('markers', []).append(self.marker)
+
+    app = Wenmode([AtxHeading(transforms=[MarkerTransform('first'), MarkerTransform('second')]), Link])
+    root = app.parse('# [Title][ref]\n\n[ref]: /url\n')
+
+    heading = root.children[0]
+    assert heading.data == {'markers': ['first', 'second']}
+    assert heading.to_ast()['children'] == [
+        {'type': 'link', 'url': '/url', 'children': [{'type': 'text', 'value': 'Title'}]},
+    ]
 
 
 def test_parser_binds_footnote_definitions_to_root() -> None:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from typing import TYPE_CHECKING, cast
 
 from wenmode.nodes import Node, Paragraph
@@ -13,6 +14,7 @@ from .state import BlockState
 if TYPE_CHECKING:
     from wenmode.parser import Parser
     from wenmode.rules.base import BlockRule, ContinueRule
+    from wenmode.rules.transforms import NodeTransform
 
 
 class BlockParser:
@@ -263,9 +265,16 @@ def _append_paragraph_line(state: BlockState, source: SourceCollector | None, li
 def apply_node_transforms(rule: BlockRule | ContinueRule, parser: Parser, node: Node, state: BlockState) -> Node:
     for transform in rule.node_transforms:
         if state.defer_inlines and transform.defer_inlines:
-            def run_transform() -> None:
-                transform.transform(parser, node, state)
-            state.pending_inline_callbacks.append(run_transform)
+            state.pending_inline_callbacks.append(_deferred_node_transform(transform, parser, node, state))
             continue
         transform.transform(parser, node, state)
     return node
+
+
+def _deferred_node_transform(
+    transform: NodeTransform, parser: Parser, node: Node, state: BlockState
+) -> Callable[[], None]:
+    def run_transform() -> None:
+        transform.transform(parser, node, state)
+
+    return run_transform
