@@ -191,9 +191,10 @@ continuation rule itself.
 
 Node transforms that need finalized inline children can set
 `defer_inlines=True`. During full parsing with deferred inline resolution, those
-callbacks run after pending inline nodes are resolved. In streaming-compatible
-configurations, inline parsing is not deferred, so the same transform still runs
-before the node is yielded.
+callbacks run after pending inline nodes are resolved. Deferred inline queues
+are managed through `BlockState` methods rather than direct list mutation. In
+streaming-compatible configurations, inline parsing is not deferred, so the same
+transform still runs before the node is yielded.
 
 Because node transforms run during block parsing and do not need a complete
 `Root`, they also run in `Parser.parse_iter()` and can support streaming output.

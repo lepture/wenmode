@@ -41,15 +41,16 @@ class BlockParser:
             source_tracker = PositionSourceTracker(source.line_offsets(lines))
         else:
             source_tracker = NullSourceTracker()
+        pending_inlines, pending_callbacks, inline_sources = parent_state.deferred_state()
         return BlockState(
             lines,
             source=source_tracker,
             store=parent_state.store,
             depth=parent_state.depth + 1,
-            pending_inlines=parent_state.pending_inlines,
-            pending_inline_callbacks=parent_state.pending_inline_callbacks,
             defer_inlines=parent_state.defer_inlines,
-            inline_sources=parent_state.inline_sources,
+            _pending_inlines=pending_inlines,
+            _pending_inline_callbacks=pending_callbacks,
+            _inline_sources=inline_sources,
         )
 
     def _parse_shallow_blocks(self, state: BlockState) -> list[Node]:
@@ -265,7 +266,7 @@ def _append_paragraph_line(state: BlockState, source: SourceCollector | None, li
 def apply_node_transforms(rule: BlockRule | ContinueRule, parser: Parser, node: Node, state: BlockState) -> Node:
     for transform in rule.node_transforms:
         if state.defer_inlines and transform.defer_inlines:
-            state.pending_inline_callbacks.append(_deferred_node_transform(transform, parser, node, state))
+            state.defer_inline_callback(_deferred_node_transform(transform, parser, node, state))
             continue
         transform.transform(parser, node, state)
     return node

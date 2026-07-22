@@ -37,22 +37,18 @@ class InlineParser:
 
     def resolve_pending(self, state: BlockState) -> None:
         state.defer_inlines = False
-        pending = list(state.pending_inlines)
-        state.pending_inlines.clear()
-        for nodes, text, source in pending:
+        for nodes, text, source in state.take_pending_inlines():
             nodes[:] = self.parse(text, state, source=source)
-        callbacks = list(state.pending_inline_callbacks)
-        state.pending_inline_callbacks.clear()
-        for callback in callbacks:
+        for callback in state.take_pending_inline_callbacks():
             callback()
 
     def source_for(self, text: str, state: BlockState, start: int, end: int) -> SourceMap | None:
         if not self._parser.positions:
             return None
-        for source in reversed(state.inline_sources):
-            if source.text == text:
-                return source.slice(start, end)
-        return None
+        source = state.inline_source_for(text)
+        if source is None:
+            return None
+        return source.slice(start, end)
 
     def _defer_inline_parse(self, text: str, state: BlockState, source: SourceMap | None) -> list[Node]:
         pending_nodes: list[Node] = []
@@ -60,7 +56,7 @@ class InlineParser:
             pending_source = source
         else:
             pending_source = None
-        state.pending_inlines.append((pending_nodes, text, pending_source))
+        state.defer_inline_parse(pending_nodes, text, pending_source)
         return pending_nodes
 
     def _parse_inline_nodes(self, text: str, state: BlockState, source: SourceMap | None) -> list[Node]:
@@ -69,7 +65,7 @@ class InlineParser:
         pos = 0
 
         if source is not None:
-            state.inline_sources.append(source)
+            state.push_inline_source(source)
         try:
             while pos < len(text):
                 found = self._find_inline_candidate(text, pos, search_cache)
@@ -98,7 +94,7 @@ class InlineParser:
             return self._finalize_inline_nodes(nodes)
         finally:
             if source is not None:
-                state.inline_sources.pop()
+                state.pop_inline_source()
 
     def _finalize_inline_nodes(self, nodes: list[Node]) -> list[Node]:
         nodes = merge_text(nodes)

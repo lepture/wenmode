@@ -99,13 +99,14 @@ def test_deferred_inline_callbacks_and_state_store_are_per_parse() -> None:
                 first_child = getattr(paragraph, 'children', [])[0]
                 state.store.get(values).append(getattr(first_child, 'value', ''))
 
-            state.pending_inline_callbacks.append(record_resolved_text)
+            state.defer_inline_callback(record_resolved_text)
 
         def transform(self, parser: Parser, root: Root, state: BlockState) -> None:
+            pending_inlines, pending_callbacks, _ = state.deferred_state()
             root.data = {
                 'values': list(state.store.get(values)),
-                'pending_inlines': len(state.pending_inlines),
-                'pending_callbacks': len(state.pending_inline_callbacks),
+                'pending_inlines': len(pending_inlines),
+                'pending_callbacks': len(pending_callbacks),
             }
 
     app = Wenmode([DeferredRule])

@@ -268,7 +268,7 @@ def is_same_indent_list_marker(line: str, marker_indent: int) -> bool:
 
 def schedule_task_list_marker(state: BlockState, item: ListItem) -> None:
     if state.defer_inlines:
-        state.pending_inline_callbacks.append(lambda: apply_task_list_marker(item))
+        state.defer_inline_callback(lambda: apply_task_list_marker(item))
     else:
         apply_task_list_marker(item)
 

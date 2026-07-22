@@ -407,8 +407,9 @@ registers missing required rules when it rebuilds the rule set.
 
 Use `defer_inlines = True` only when inline parsing needs document-wide state
 collected by a transform, such as reference-style links or abbreviation
-definitions. Rule sets with deferred inline parsing cannot be used with
-streaming output.
+definitions. A transform that needs to run after deferred inline parsing should
+schedule work with `state.defer_inline_callback()`. Rule sets with deferred
+inline parsing cannot be used with streaming output.
 
 If a plugin is intended for streaming output, test it through
 `Wenmode(streaming, plugins=[plugin]).stream(...)` or through an equivalent

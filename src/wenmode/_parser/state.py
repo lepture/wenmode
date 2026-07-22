@@ -102,11 +102,7 @@ class BlockState:
     :param index: Current line index.
     :param store: Per-parse extension state store.
     :param depth: Container nesting depth.
-    :param pending_inlines: Deferred inline parse targets.
-    :param pending_inline_callbacks: Callbacks to run after deferred inline
-        parsing is resolved.
     :param defer_inlines: Whether inline parsing is currently deferred.
-    :param inline_sources: Active inline source stack for nested inline parsing.
     """
 
     lines: list[str]
@@ -114,10 +110,10 @@ class BlockState:
     source: NullSourceTracker = field(default_factory=NullSourceTracker)
     store: StateStore = field(default_factory=StateStore)
     depth: int = 0
-    pending_inlines: list[tuple[list[Node], str, SourceMap | None]] = field(default_factory=list)
-    pending_inline_callbacks: list[Callable[[], None]] = field(default_factory=list)
     defer_inlines: bool = False
-    inline_sources: list[SourceMap] = field(default_factory=list)
+    _pending_inlines: list[tuple[list[Node], str, SourceMap | None]] = field(default_factory=list, repr=False)
+    _pending_inline_callbacks: list[Callable[[], None]] = field(default_factory=list, repr=False)
+    _inline_sources: list[SourceMap] = field(default_factory=list, repr=False)
 
     def __post_init__(self) -> None:
         self.source.bind(self)
@@ -172,6 +168,47 @@ class BlockState:
         """Return a line by absolute index."""
         return self.lines[index]
 
+    def defer_inline_parse(self, nodes: list[Node], text: str, source: SourceMap | None) -> None:
+        """Queue an inline parse target until document-wide state is ready."""
+        self._pending_inlines.append((nodes, text, source))
+
+    def take_pending_inlines(self) -> list[tuple[list[Node], str, SourceMap | None]]:
+        """Remove and return queued inline parse targets."""
+        pending = list(self._pending_inlines)
+        self._pending_inlines.clear()
+        return pending
+
+    def defer_inline_callback(self, callback: Callable[[], None]) -> None:
+        """Queue a callback to run after deferred inline parsing resolves."""
+        self._pending_inline_callbacks.append(callback)
+
+    def take_pending_inline_callbacks(self) -> list[Callable[[], None]]:
+        """Remove and return deferred inline callbacks."""
+        callbacks = list(self._pending_inline_callbacks)
+        self._pending_inline_callbacks.clear()
+        return callbacks
+
+    def push_inline_source(self, source: SourceMap) -> None:
+        """Push an active inline source map."""
+        self._inline_sources.append(source)
+
+    def pop_inline_source(self) -> SourceMap:
+        """Pop the active inline source map."""
+        return self._inline_sources.pop()
+
+    def inline_source_for(self, text: str) -> SourceMap | None:
+        """Return the innermost active inline source matching ``text``."""
+        for source in reversed(self._inline_sources):
+            if source.text == text:
+                return source
+        return None
+
+    def deferred_state(self) -> tuple[
+        list[tuple[list[Node], str, SourceMap | None]], list[Callable[[], None]], list[SourceMap]
+    ]:
+        """Return shared deferred inline queues for nested block states."""
+        return self._pending_inlines, self._pending_inline_callbacks, self._inline_sources
+
 
 class StreamBlockState(BlockState):
     """Block state backed by a lazy :class:`StreamLineBuffer`."""
@@ -183,9 +220,9 @@ class StreamBlockState(BlockState):
         source: NullSourceTracker | None = None,
         store: StateStore | None = None,
         depth: int = 0,
+        defer_inlines: bool = False,
         pending_inlines: list[tuple[list[Node], str, SourceMap | None]] | None = None,
         pending_inline_callbacks: list[Callable[[], None]] | None = None,
-        defer_inlines: bool = False,
         inline_sources: list[SourceMap] | None = None,
     ) -> None:
         self.line_buffer = line_buffer
@@ -205,10 +242,10 @@ class StreamBlockState(BlockState):
             source=source,
             store=store,
             depth=depth,
-            pending_inlines=pending_inlines,
-            pending_inline_callbacks=pending_inline_callbacks,
             defer_inlines=defer_inlines,
-            inline_sources=inline_sources,
+            _pending_inlines=pending_inlines,
+            _pending_inline_callbacks=pending_inline_callbacks,
+            _inline_sources=inline_sources,
         )
 
     @property
