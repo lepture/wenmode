@@ -402,8 +402,8 @@ from wenmode.state import StateKey
 TERMS = StateKey('my_package.terms', lambda: {})
 ```
 
-Root transforms can declare `required_rules`; the parser automatically
-registers missing required rules when it rebuilds the rule set.
+Rules can declare `required_rules`; the parser automatically registers missing
+required rules when it rebuilds the rule set.
 
 Use `defer_inlines = True` only when inline parsing needs document-wide state
 collected by a transform, such as reference-style links or abbreviation

@@ -41,9 +41,11 @@ class TermDefinition(BlockRule):
         return None
 
 
+Glossary.required_rules = [TermDefinition]
+
+
 class GlossaryTransform(RootTransform):
     name = 'glossary'
-    required_rules = [TermDefinition]
 
     def transform(self, parser: Parser, root: Root, state: BlockState) -> None:
         root.data = {'terms': dict(state.store.get(TERMS))}

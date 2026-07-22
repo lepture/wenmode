@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, ClassVar, TypeAlias, cast
+from typing import TYPE_CHECKING, ClassVar, TypeAlias, Union, cast
 
 from wenmode.nodes import Node
 
@@ -13,6 +14,10 @@ if TYPE_CHECKING:
     from wenmode.parser import Parser
 
 Opener: TypeAlias = str | tuple[str, ...]
+RuleDependency: TypeAlias = Union[type['Rule'], 'Rule']
+RootTransformDependency: TypeAlias = type[RootTransform] | RootTransform
+NodeTransformDependency: TypeAlias = type[NodeTransform] | NodeTransform
+TransformDependency: TypeAlias = RootTransformDependency | NodeTransformDependency
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,11 +53,22 @@ class Rule:
 
     name: str
     order: ClassVar[int] = 100
+    required_rules: list[RuleDependency]
+    root_transforms: list[RootTransform]
+    node_transforms: list[NodeTransform]
 
     def __init__(self, name: str | None = None) -> None:
         self.name = cast(str, resolve_string_attribute(self, 'name', name))
-        self.root_transforms: list[RootTransform] = []
-        self.node_transforms: list[NodeTransform] = []
+        required_rules = cast(Sequence[RuleDependency], getattr(type(self), 'required_rules', ()))
+        root_transforms = cast(Sequence[RootTransformDependency], getattr(type(self), 'root_transforms', ()))
+        node_transforms = cast(Sequence[NodeTransformDependency], getattr(type(self), 'node_transforms', ()))
+        self.required_rules: list[RuleDependency] = list(required_rules)
+        self.root_transforms: list[RootTransform] = [
+            cast(RootTransform, resolve_transform(transform)) for transform in root_transforms
+        ]
+        self.node_transforms: list[NodeTransform] = [
+            cast(NodeTransform, resolve_transform(transform)) for transform in node_transforms
+        ]
 
 
 class BlockRule(Rule):
@@ -216,3 +232,9 @@ def normalize_openers(opener: Opener) -> tuple[str, ...]:
         seen.add(value)
         normalized.append(value)
     return tuple(normalized)
+
+
+def resolve_transform(transform: TransformDependency) -> RootTransform | NodeTransform:
+    if isinstance(transform, type):
+        return transform()
+    return transform

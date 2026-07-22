@@ -25,6 +25,7 @@ here while preparing a release, then move them under the final version heading.
   `candidate.line` and `candidate.match`.
 - Change `ContinueRule` to produce a `ContinueCandidate` with
   `match_candidate()` before `parse_paragraph_continuation()`.
+- Move rule dependencies from root transforms to `Rule.required_rules`.
 
 ## 0.12.1
 

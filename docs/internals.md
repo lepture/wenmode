@@ -204,7 +204,6 @@ Because node transforms run during block parsing and do not need a complete
 Rules can attach root transforms through their `root_transforms` attribute.
 Transforms can:
 
-- add required helper rules,
 - collect document-wide definitions,
 - defer inline parsing until definitions are known,
 - update nodes after the whole tree is parsed.

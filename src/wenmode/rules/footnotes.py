@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, ClassVar
 
@@ -11,7 +10,7 @@ from wenmode.utils import count_indent, normalize_label, normalize_label_text
 
 from .._parser.source import SourceCollector
 from .._parser.store import StateKey
-from .base import BlockCandidate, BlockRule, InlineCandidate, InlineRule, Rule
+from .base import BlockCandidate, BlockRule, InlineCandidate, InlineRule
 from .transforms import RootTransform
 
 if TYPE_CHECKING:
@@ -53,10 +52,6 @@ class Footnote(InlineRule):
     name = 'footnote'
     pattern = FOOTNOTE_REFERENCE_RE
     opener = '['
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.root_transforms = [FootnoteTransform()]
 
     def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
         match = candidate.match
@@ -106,7 +101,6 @@ class FootnoteDefinition(BlockRule):
 class FootnoteTransform(RootTransform):
     name = 'footnote'
     defer_inlines = True
-    required_rules: Sequence[type[Rule] | Rule] = [FootnoteDefinition]
 
     def prepare(self, parser: Parser, root: Root, state: BlockState) -> None:
         definitions = collect_footnote_definitions(root)
@@ -120,6 +114,10 @@ class FootnoteTransform(RootTransform):
 
     def transform(self, parser: Parser, root: Root, state: BlockState) -> None:
         root.footnote_definitions = state.store.get(FOOTNOTE_DEFINITIONS_KEY)
+
+
+Footnote.required_rules = [FootnoteDefinition]
+Footnote.root_transforms = [FootnoteTransform()]
 
 
 def collect_footnote_definitions(node: Node) -> dict[str, FootnoteDefinitionNode]:

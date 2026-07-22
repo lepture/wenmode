@@ -39,13 +39,8 @@ class RuleSet:
 
     @classmethod
     def from_rules(cls, registered_rules: list[Rule]) -> RuleSet:
-        resolved_rules = list(registered_rules)
+        resolved_rules = expand_required_rules(registered_rules)
         root_transforms = collect_root_transforms(resolved_rules)
-        for transform in root_transforms:
-            for required in transform.required_rules:
-                rule = resolve_rule(required)
-                if all(registered.name != rule.name for registered in resolved_rules):
-                    resolved_rules.append(rule)
 
         rules = {rule.name: rule for rule in resolved_rules}
         block_rules = sorted_by_order([rule for rule in resolved_rules if isinstance(rule, BlockRule)])
@@ -81,6 +76,25 @@ def resolve_rule(rule: type[Rule] | Rule) -> Rule:
     if isinstance(rule, type):
         return cast(Callable[[], Rule], rule)()
     return rule
+
+
+def expand_required_rules(registered_rules: list[Rule]) -> list[Rule]:
+    resolved_rules: list[Rule] = []
+    index = 0
+    for rule in registered_rules:
+        add_rule(resolved_rules, rule)
+
+    while index < len(resolved_rules):
+        rule = resolved_rules[index]
+        index += 1
+        for required in rule.required_rules:
+            add_rule(resolved_rules, resolve_rule(required))
+    return resolved_rules
+
+
+def add_rule(rules: list[Rule], rule: Rule) -> None:
+    if all(registered.name != rule.name for registered in rules):
+        rules.append(rule)
 
 
 def sorted_by_order(rules: list[T]) -> list[T]:

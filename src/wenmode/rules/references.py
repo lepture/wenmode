@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -9,7 +8,7 @@ from wenmode.utils import normalize_label, normalize_label_text, normalize_uri_t
 from wenmode.utils.text import parse_angle_destination, parse_bare_destination
 
 from .._parser.store import StateKey
-from .base import BlockCandidate, BlockRule, Rule
+from .base import BlockCandidate, BlockRule
 from .transforms import RootTransform
 
 if TYPE_CHECKING:
@@ -67,7 +66,6 @@ class ReferenceDefinition(BlockRule):
 class ReferenceTransform(RootTransform):
     name = 'reference'
     defer_inlines = True
-    required_rules: Sequence[type[Rule] | Rule] = [ReferenceDefinition]
 
 
 def resolve_state_reference(state: BlockState, label: str) -> ReferenceState | None:

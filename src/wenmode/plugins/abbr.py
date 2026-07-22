@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, ClassVar
 
@@ -47,16 +46,6 @@ def create_abbreviations() -> dict[str, AbbreviationState]:
 ABBREVIATIONS_KEY = StateKey('wenmode.abbreviations', create_abbreviations)
 
 
-class AbbreviationRule(Rule):
-    """Parse abbreviation definitions and rewrite matching text nodes."""
-
-    name = 'abbreviation'
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.root_transforms = [AbbreviationTransform()]
-
-
 class AbbreviationDefinitionRule(BlockRule):
     order: ClassVar[int] = 80
     name = 'abbreviation_definition'
@@ -76,7 +65,6 @@ class AbbreviationDefinitionRule(BlockRule):
 class AbbreviationTransform(RootTransform):
     name = 'abbreviation'
     defer_inlines = True
-    required_rules: Sequence[type[Rule] | Rule] = [AbbreviationDefinitionRule]
 
     def transform(self, parser: Parser, root: Root, state: BlockState) -> None:
         abbreviations = state.store.get(ABBREVIATIONS_KEY)
@@ -84,6 +72,14 @@ class AbbreviationTransform(RootTransform):
             return
         pattern = re.compile('|'.join(re.escape(label) for label in sorted(abbreviations, key=len, reverse=True)))
         transform_abbreviations(root, abbreviations, pattern)
+
+
+class AbbreviationRule(Rule):
+    """Parse abbreviation definitions and rewrite matching text nodes."""
+
+    name = 'abbreviation'
+    required_rules = [AbbreviationDefinitionRule]
+    root_transforms = [AbbreviationTransform()]
 
 
 def parse_abbreviation_definition(state: BlockState, index: int) -> tuple[int, str, str] | None:

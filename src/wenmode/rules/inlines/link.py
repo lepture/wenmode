@@ -14,7 +14,7 @@ from ..._parser.source import SourceMap
 from ..._parser.state import BlockState
 from ..._parser.store import StateKey
 from ..base import InlineCandidate, InlineRule
-from ..references import REFERENCES_KEY, ReferenceTransform, resolve_state_reference
+from ..references import REFERENCES_KEY, ReferenceDefinition, ReferenceTransform, resolve_state_reference
 from .code import find_matching_backtick_run
 from .html import EMAIL_RE, HTML_RE, URI_RE
 
@@ -54,6 +54,7 @@ class Image(InlineRule):
         super().__init__()
         self.references = references
         if references:
+            self.required_rules = [ReferenceDefinition()]
             self.root_transforms = [ReferenceTransform()]
 
     def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
@@ -88,6 +89,7 @@ class Link(InlineRule):
         super().__init__()
         self.references = references
         if references:
+            self.required_rules = [ReferenceDefinition()]
             self.root_transforms = [ReferenceTransform()]
 
     def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
