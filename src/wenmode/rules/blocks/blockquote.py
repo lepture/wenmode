@@ -15,9 +15,9 @@ if TYPE_CHECKING:
     from ..._parser.source import SourceCollector
 
 
-BLOCKQUOTE_RE = re.compile(r'[ \t]{0,3}> ?')
-NESTED_BLOCKQUOTE_RE = re.compile(r'[ \t]{0,3}(?:[*+-]|\d{1,9}[.)])[ \t]+>')
-SETEXT_MARKER_RE = re.compile(r'[ \t]{0,3}(=+|-+)[ \t]*$')
+BLOCKQUOTE_RE = re.compile(r' {0,3}> ?')
+NESTED_BLOCKQUOTE_RE = re.compile(r' {0,3}(?:[*+-]|\d{1,9}[.)])[ \t]+>')
+SETEXT_MARKER_RE = re.compile(r' {0,3}(=+|-+)[ \t]*$')
 
 
 class Blockquote(BlockRule):
@@ -31,7 +31,7 @@ class Blockquote(BlockRule):
     """
 
     name = 'blockquote'
-    pattern = r'[ \t]{0,3}>'
+    pattern = r' {0,3}>'
 
     @staticmethod
     def parse_text(parser: Parser, state: BlockState, source: SourceCollector) -> str:

@@ -9,6 +9,7 @@ from tests.plugin_helpers import configured_app
 from wenmode import HTMLRenderer, MarkdownRenderer, Parser, Wenmode
 from wenmode.directives import Figure
 from wenmode.nodes import Node, Parent, Text
+from wenmode.presets import github
 from wenmode.rules import AtxHeading, InlineRule, RawHtml
 from wenmode.state import BlockState
 
@@ -119,6 +120,35 @@ def test_emphasis_multiple_of_three_uses_original_delimiter_length(markdown: str
 )
 def test_flat_mixed_emphasis_fast_path_preserves_semantics(markdown: str, html: str) -> None:
     assert Wenmode().render(markdown) == html
+
+
+@pytest.mark.parametrize(
+    ('markdown', 'html'),
+    [
+        ('\t---\n', '<pre><code>---\n</code></pre>\n'),
+        (' \t---\n', '<pre><code>---\n</code></pre>\n'),
+        ('\t# x\n', '<pre><code># x\n</code></pre>\n'),
+        ('\t- x\n', '<pre><code>- x\n</code></pre>\n'),
+        ('\t<div>\n', '<pre><code>&lt;div&gt;\n</code></pre>\n'),
+        ('\t```\n\tx\n\t```\n', '<pre><code>```\nx\n```\n</code></pre>\n'),
+    ],
+)
+def test_leading_tabs_before_block_markers_count_as_indented_code(markdown: str, html: str) -> None:
+    assert Wenmode().render(markdown) == html
+
+
+def test_leading_tabs_before_table_rows_count_as_indented_code() -> None:
+    markdown = '\ta | b\n\t--- | ---\n\tx | y\n'
+
+    assert Wenmode(github).render(markdown) == '<pre><code>a | b\n--- | ---\nx | y\n</code></pre>\n'
+
+
+def test_leading_tabs_before_fenced_directive_count_as_indented_code() -> None:
+    markdown = '\t```{note}\n\ttext\n\t```\n'
+
+    assert configured_app(['fenced_directive', 'indented_code']).render(markdown) == (
+        '<pre><code>```{note}\ntext\n```\n</code></pre>\n'
+    )
 
 
 @pytest.mark.parametrize(

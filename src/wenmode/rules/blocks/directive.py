@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from wenmode.parser import Parser
 
 
-CONTAINER_DIRECTIVE_RE = re.compile(r'(?P<indent>[ \t]{0,3})(?P<fence>:{3,})')
+CONTAINER_DIRECTIVE_RE = re.compile(r'(?P<indent> {0,3})(?P<fence>:{3,})')
 
 
 class LeafDirective(BlockRule):
@@ -31,7 +31,7 @@ class LeafDirective(BlockRule):
     """
 
     name = 'leaf_directive'
-    pattern = r'[ \t]{0,3}::(?=[A-Za-z])'
+    pattern = r' {0,3}::(?=[A-Za-z])'
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
         line = state.line.rstrip('\r\n')
@@ -64,7 +64,7 @@ class ContainerDirective(BlockRule):
     """
 
     name = 'container_directive'
-    pattern = r'[ \t]{0,3}:{3,}(?=[A-Za-z])'
+    pattern = r' {0,3}:{3,}(?=[A-Za-z])'
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
         line = state.line.rstrip('\r\n')
@@ -79,7 +79,7 @@ class ContainerDirective(BlockRule):
             return None
 
         state.advance()
-        closer = re.compile(rf'[ \t]{{0,3}}:{{{len(fence)},}}[ \t]*$')
+        closer = re.compile(rf' {{0,3}}:{{{len(fence)},}}[ \t]*$')
         source = state.source.collect()
         lines = collect_until_with_source(state, source, lambda line: closer.match(line.rstrip('\r\n')) is not None)
 
@@ -96,7 +96,7 @@ def directive_label_children(parser: Parser, label: str | None, state: BlockStat
 
 def parse_leaf_directive_head(line: str) -> str | None:
     index = 0
-    while index < len(line) and index < 3 and line[index] in {' ', '\t'}:
+    while index < len(line) and index < 3 and line[index] == ' ':
         index += 1
     if not line.startswith('::', index):
         return None

@@ -126,13 +126,13 @@ class HtmlBlock(BlockRule):
 
     name = 'html_block'
     pattern = (
-        rf'[ \t]{{0,3}}<(?:'
+        r' {0,3}<(?:'
         rf'{HTML_BLOCK_SCRIPT_STYLE_PATTERN}'
-        rf'|!--|\?|![A-Za-z]|\!\[CDATA\['
+        r'|!--|\?|![A-Za-z]|\!\[CDATA\['
         rf'|{HTML_BLOCK_TAG_PATTERN}'
         rf'|{HTML_BLOCK_COMPLETE_OPEN_TAG_PATTERN}'
         rf'|{HTML_BLOCK_COMPLETE_CLOSE_TAG_PATTERN}'
-        rf')'
+        r')'
     )
 
     def __init__(self, disallowed_tags: Sequence[str] = ()) -> None:

@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 MARKER_RE = re.compile(
-    r'^(?P<indent>[ \t]{0,3})(?P<marker>(?P<bullet>[*+-])|(?P<ordered>\d{1,9})(?P<delimiter>[.)]))(?P<spaces>[ \t]+|$)'
+    r'^(?P<indent> {0,3})(?P<marker>(?P<bullet>[*+-])|(?P<ordered>\d{1,9})(?P<delimiter>[.)]))(?P<spaces>[ \t]+|$)'
 )
 TASK_MARKER_RE = re.compile(r'^\[([ xX])][ \t]+')
 
@@ -43,7 +43,7 @@ class List(BlockRule):
     """
 
     name = 'list'
-    pattern = r'[ \t]{0,3}(?:[*+-](?:[ \t]+|$)|\d{1,9}[.)](?:[ \t]+|$))'
+    pattern = r' {0,3}(?:[*+-](?:[ \t]+|$)|\d{1,9}[.)](?:[ \t]+|$))'
 
     def __init__(self, task: bool = False) -> None:
         super().__init__()
@@ -361,11 +361,11 @@ def item_has_content(lines: list[str]) -> bool:
 
 def update_open_fence(line: str, fence_char: str, fence_size: int) -> tuple[str, int]:
     if not fence_char:
-        match = re.match(r'[ \t]{0,3}(`{3,}|~{3,})', line)
+        match = re.match(r' {0,3}(`{3,}|~{3,})', line)
         if match is None:
             return '', 0
         return match.group(1)[0], len(match.group(1))
-    if re.match(rf'[ \t]{{0,3}}{re.escape(fence_char)}{{{fence_size},}}[ \t]*$', line.rstrip('\r\n')):
+    if re.match(rf' {{0,3}}{re.escape(fence_char)}{{{fence_size},}}[ \t]*$', line.rstrip('\r\n')):
         return '', 0
     return fence_char, fence_size
 

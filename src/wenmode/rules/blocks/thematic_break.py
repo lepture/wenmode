@@ -25,9 +25,9 @@ class ThematicBreak(BlockRule):
     order: ClassVar[int] = 50
     name = 'thematic_break'
     pattern = (
-        r'[ \t]{0,3}\*[ \t]*\*[ \t]*\*[ \t*]*$'
-        r'|[ \t]{0,3}-[ \t]*-[ \t]*-[ \t-]*$'
-        r'|[ \t]{0,3}_[ \t]*_[ \t]*_[ \t_]*$'
+        r' {0,3}\*[ \t]*\*[ \t]*\*[ \t*]*$'
+        r'| {0,3}-[ \t]*-[ \t]*-[ \t-]*$'
+        r'| {0,3}_[ \t]*_[ \t]*_[ \t_]*$'
     )
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> ThematicBreakNode:

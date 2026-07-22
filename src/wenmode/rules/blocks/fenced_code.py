@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from wenmode.parser import Parser
 
 
-FENCE_OPENER_RE = re.compile(r'(?P<indent>[ \t]{0,3})(?P<fence>`{3,}|~{3,})')
+FENCE_OPENER_RE = re.compile(r'(?P<indent> {0,3})(?P<fence>`{3,}|~{3,})')
 
 
 class FencedCode(BlockRule):
@@ -29,7 +29,7 @@ class FencedCode(BlockRule):
     """
 
     name = 'fenced_code'
-    pattern = r'[ \t]{0,3}(?:`{3,}|~{3,})'
+    pattern = r' {0,3}(?:`{3,}|~{3,})'
 
     def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node:
         opener = cast(re.Match[str], FENCE_OPENER_RE.match(state.line.rstrip('\r\n')))
@@ -55,7 +55,7 @@ class FencedCode(BlockRule):
             meta = None
         state.advance()
 
-        closer = re.compile(rf'[ \t]{{0,3}}{re.escape(fence_char)}{{{len(fence)},}}[ \t]*$')
+        closer = re.compile(rf' {{0,3}}{re.escape(fence_char)}{{{len(fence)},}}[ \t]*$')
         lines = state.consume_until(
             lambda line: closer.match(line.rstrip('\r\n')) is not None, lambda line: strip_fence_indent(line, indent)
         )

@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from wenmode.parser import Parser
 
 
-SETEXT_HEADING_RE = re.compile(r'[ \t]{0,3}(=+|-+)[ \t]*$')
+SETEXT_HEADING_RE = re.compile(r' {0,3}(=+|-+)[ \t]*$')
 
 
 class AtxHeading(BlockRule):
@@ -30,7 +30,7 @@ class AtxHeading(BlockRule):
     """
 
     name = 'atx_heading'
-    pattern = r'[ \t]{0,3}#{1,6}(?:[ \t]+|$)'
+    pattern = r' {0,3}#{1,6}(?:[ \t]+|$)'
 
     def __init__(self, transforms: Iterable[NodeTransform] = ()) -> None:
         super().__init__()
@@ -69,7 +69,7 @@ class SetextHeading(ContinueRule):
         self.node_transforms = list(transforms)
 
     def matches(self, line: str) -> bool:
-        stripped = line.lstrip(' \t')
+        stripped = line.lstrip(' ')
         return stripped.startswith(('=', '-'))
 
     def parse_paragraph_continuation(self, parser: Parser, state: BlockState, lines: list[str]) -> Node | None:
@@ -91,7 +91,7 @@ class SetextHeading(ContinueRule):
 
 def parse_atx_heading_line(line: str) -> tuple[str, str, int] | None:
     index = 0
-    while index < len(line) and index < 3 and line[index] in {' ', '\t'}:
+    while index < len(line) and index < 3 and line[index] == ' ':
         index += 1
 
     marker_start = index

@@ -39,12 +39,12 @@ def fence_pattern(fence: FencedDirectiveFence) -> str:
 
 
 def fenced_directive_pattern(fence: FencedDirectiveFence) -> str:
-    return rf'[ \t]{{0,3}}(?:{fence_pattern(fence)})\{{{FENCED_DIRECTIVE_NAME_PATTERN}\}}'
+    return rf' {{0,3}}(?:{fence_pattern(fence)})\{{{FENCED_DIRECTIVE_NAME_PATTERN}\}}'
 
 
 def compile_fenced_directive_re(fence: FencedDirectiveFence) -> re.Pattern[str]:
     return re.compile(
-        rf'(?P<indent>[ \t]{{0,3}})(?P<fence>{fence_pattern(fence)})'
+        rf'(?P<indent> {{0,3}})(?P<fence>{fence_pattern(fence)})'
         rf'\{{(?P<name>{FENCED_DIRECTIVE_NAME_PATTERN})\}}'
     )
 
@@ -73,7 +73,7 @@ class FencedDirectiveRule(BlockRule):
         fence_char = fence[0]
         name = opener.group('name')
         title = line[opener.end() :].strip() or None
-        closer = re.compile(rf'[ \t]{{0,3}}{re.escape(fence_char)}{{{len(fence)},}}[ \t]*$')
+        closer = re.compile(rf' {{0,3}}{re.escape(fence_char)}{{{len(fence)},}}[ \t]*$')
         state.advance()
         return name, title, closer
 
