@@ -113,10 +113,6 @@ class InlineRule(Rule):
         self.compiled = re.compile(self.pattern if self.pattern is not None else r'(?!)')
 
     def search_candidate(self, text: str, pos: int = 0) -> InlineCandidate | None:
-        """Search for the next candidate start.
-
-        Override this method for rules that need custom scanning behavior.
-        """
         if self.pattern is None:
             return None
         match = self.compiled.search(text, pos)

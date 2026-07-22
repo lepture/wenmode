@@ -9,8 +9,7 @@ from wenmode.nodes import Node, Parent, Position, Text
 from wenmode.renderers import render_node_children
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer
-from wenmode.rules.base import BlockRule, Rule
-from wenmode.rules.transforms import RootTransform
+from wenmode.rules import BlockRule, RootTransform, Rule
 
 from .._parser.state import BlockState
 from .._parser.store import StateKey

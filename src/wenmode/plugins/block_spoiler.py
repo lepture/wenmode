@@ -10,7 +10,7 @@ from wenmode.renderers.asciidoc import AsciiDocRenderContext, AsciiDocRenderer
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.markdown import render_prefixed_block
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer, indent_block
-from wenmode.rules.base import BlockRule, Rule
+from wenmode.rules import BlockRule, Rule
 from wenmode.utils import expand_leading_tabs
 
 from .._parser.state import BlockState

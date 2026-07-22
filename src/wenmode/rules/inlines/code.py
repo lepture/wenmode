@@ -30,9 +30,6 @@ class InlineCode(InlineRule):
     name = 'inline_code'
     opener = '`'
 
-    def matches_start(self, text: str, start: int) -> bool:
-        return self.match_candidate(text, start) is not None
-
     def match_candidate(self, text: str, start: int) -> InlineCandidate | None:
         if text[start] != '`' or (start > 0 and text[start - 1] == '`'):
             return None

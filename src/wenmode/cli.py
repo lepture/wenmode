@@ -32,7 +32,7 @@ from .plugins import (
 )
 from .presets import commonmark, github, streaming
 from .renderers import AsciiDocRenderer, HTMLRenderer, MarkdownRenderer, RSTRenderer
-from .rules.base import Rule
+from .rules import Rule
 from .wenmode import Wenmode
 
 RuleList = Sequence[type[Rule] | Rule]

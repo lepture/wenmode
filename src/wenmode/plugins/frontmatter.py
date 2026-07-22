@@ -9,8 +9,7 @@ from wenmode.renderers.asciidoc import AsciiDocRenderContext, AsciiDocRenderer
 from wenmode.renderers.base import RenderContext
 from wenmode.renderers.markdown import MarkdownRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer
-from wenmode.rules.base import BlockRule, Rule
-from wenmode.rules.transforms import RootTransform
+from wenmode.rules import BlockRule, RootTransform, Rule
 
 from .._parser.state import BlockState
 from .._parser.store import StateKey

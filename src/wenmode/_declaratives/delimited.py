@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, cast
 from wenmode.nodes import Literal as LiteralNode
 from wenmode.nodes import Node, Parent
 from wenmode.nodes import Text as TextNode
-from wenmode.rules.base import InlineCandidate, InlineRule
+from wenmode.rules import InlineCandidate, InlineRule
 from wenmode.utils import is_escaped
 
 from .._parser.source import SourceMap

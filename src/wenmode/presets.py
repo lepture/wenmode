@@ -21,12 +21,12 @@ from .rules import (
     Link,
     List,
     RawHtml,
+    Rule,
     SetextHeading,
     Strikethrough,
     Table,
     ThematicBreak,
 )
-from .rules.base import Rule
 
 RuleSpec = type[Rule] | Rule
 

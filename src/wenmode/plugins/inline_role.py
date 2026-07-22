@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from wenmode.nodes import Node
 from wenmode.nodes import TextDirective as TextDirectiveNode
-from wenmode.rules.base import InlineCandidate, InlineRule
+from wenmode.rules import InlineCandidate, InlineRule
 from wenmode.rules.inlines.directive import NAME_RE
 
 from .._parser.state import BlockState

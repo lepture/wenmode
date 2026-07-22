@@ -11,7 +11,7 @@ from .plugins import RendererHandlers
 from .plugins.types import PluginModule
 from .presets import commonmark
 from .renderers import BaseRenderer, DirectiveHtmlRenderer, HTMLRenderer
-from .rules.base import Rule
+from .rules import Rule
 
 
 class Wenmode:

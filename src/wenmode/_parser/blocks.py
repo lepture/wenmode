@@ -13,8 +13,7 @@ from .state import BlockState
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
-    from wenmode.rules.base import BlockRule, ContinueRule
-    from wenmode.rules.transforms import NodeTransform
+    from wenmode.rules import BlockRule, ContinueRule, NodeTransform
 
 
 class BlockParser:

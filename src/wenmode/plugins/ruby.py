@@ -10,7 +10,7 @@ from wenmode.renderers import MarkdownRenderer, RenderContext
 from wenmode.renderers.asciidoc import AsciiDocRenderContext, AsciiDocRenderer
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer
-from wenmode.rules.base import InlineCandidate, InlineRule, Rule
+from wenmode.rules import InlineCandidate, InlineRule, Rule
 from wenmode.rules.inlines.link import (
     CLOSING_BRACKET_CACHE,
     closing_bracket_map,

@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, ClassVar, TypeAlias, cast
 from wenmode.nodes import ContainerDirective as ContainerDirectiveNode
 from wenmode.nodes import LiteralDirective as LiteralDirectiveNode
 from wenmode.nodes import Node
-from wenmode.rules.base import BlockRule
+from wenmode.rules import BlockRule
 from wenmode.rules.blocks.directive import collect_until_with_source, directive_label_children
 
 from .._parser.state import BlockState

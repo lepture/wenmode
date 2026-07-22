@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Literal, TypeAlias, cast
 
 from wenmode.nodes import Literal as LiteralNode
 from wenmode.nodes import Node, Parent
-from wenmode.rules.base import BlockRule
+from wenmode.rules import BlockRule
 
 from .._parser.state import BlockState
 

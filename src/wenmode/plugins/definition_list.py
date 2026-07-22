@@ -9,7 +9,7 @@ from wenmode.renderers import MarkdownRenderer, RenderContext
 from wenmode.renderers.asciidoc import AsciiDocRenderContext, AsciiDocRenderer
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer, indent_block
-from wenmode.rules.base import ContinueRule, Rule
+from wenmode.rules import ContinueRule, Rule
 
 from .._parser.source import SourceCollector
 from .._parser.state import BlockState

@@ -10,7 +10,7 @@ from wenmode.renderers import MarkdownRenderer, RenderContext
 from wenmode.renderers.asciidoc import AsciiDocRenderContext, AsciiDocRenderer
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer, indent_block
-from wenmode.rules.base import BlockRule, Rule
+from wenmode.rules import BlockRule, Rule
 from wenmode.rules.blocks.html import HTML_SCRIPT_STYLE_RE, HtmlBlock
 from wenmode.utils import compile_disallowed_html_filter, filter_disallowed_html, unquote_attribute_value
 

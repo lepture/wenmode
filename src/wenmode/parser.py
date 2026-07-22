@@ -11,8 +11,7 @@ from ._parser.state import BlockState, StreamBlockState, StreamLineBuffer
 from ._streaming import StreamingUnsupportedError as StreamingUnsupportedError
 from ._streaming import assert_streaming_supported
 from .nodes import Node, Root
-from .rules.base import BlockRule, InlineRule, Rule
-from .rules.transforms import RootTransform
+from .rules import BlockRule, InlineRule, RootTransform, Rule
 
 __all__ = ['Parser', 'StreamingUnsupportedError']
 

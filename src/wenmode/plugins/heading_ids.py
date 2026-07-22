@@ -4,8 +4,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from wenmode.headings import HeadingIdTransform, Slugger
-from wenmode.rules import Rule
-from wenmode.rules.transforms import NodeTransform
+from wenmode.rules import NodeTransform, Rule
 
 if TYPE_CHECKING:
     from wenmode import Wenmode
