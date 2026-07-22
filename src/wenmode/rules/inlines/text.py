@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import html
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from wenmode.nodes import Break, Node, Text
 
@@ -33,8 +33,6 @@ class BackslashEscape(InlineRule):
     opener = '\\'
 
     def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
-        if start + 1 >= len(text) or text[start] != '\\' or text[start + 1] not in ESCAPABLE_CHARS:
-            return None, start
         return Text(value=text[start + 1], _parse_emphasis=False), start + 2
 
 
@@ -53,9 +51,7 @@ class CharacterReference(InlineRule):
     opener = '&'
 
     def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
-        match = self.compiled.match(text, start)
-        if match is None:
-            return None, start
+        match = cast(re.Match[str], self.compiled.match(text, start))
         value = match.group(0)
         numeric = NUMERIC_CHARACTER_REFERENCE_RE.match(value)
         if numeric is not None:
@@ -89,9 +85,7 @@ class HardBreak(InlineRule):
         return find_hard_break(text, pos)
 
     def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
-        match = self.compiled.match(text, start)
-        if match is None:
-            return None, start
+        match = cast(re.Match[str], self.compiled.match(text, start))
         return Break(), match.end()
 
 

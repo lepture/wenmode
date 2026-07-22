@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from wenmode.nodes import InlineCode as InlineCodeNode
 from wenmode.nodes import Node, Text
@@ -34,11 +34,7 @@ class InlineCode(InlineRule):
         return text[start] == '`' and (start == 0 or text[start - 1] != '`')
 
     def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
-        match = BACKTICK_RUN_RE.match(text, start)
-        if match is None:
-            return None, start
-        if start > 0 and text[start - 1] == '`':
-            return None, start
+        match = cast(re.Match[str], BACKTICK_RUN_RE.match(text, start))
         marker_length = match.end() - start
         value_start = match.end()
         end = find_matching_backtick_run(text, value_start, marker_length)

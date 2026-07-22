@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, cast
 
 from wenmode.nodes import FootnoteDefinition as FootnoteDefinitionNode
 from wenmode.nodes import FootnoteReference, Node, Root
@@ -59,9 +59,7 @@ class Footnote(InlineRule):
         self.root_transforms = [FootnoteTransform()]
 
     def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
-        match = self.compiled.match(text, start)
-        if match is None:
-            return None, start
+        match = cast(re.Match[str], self.compiled.match(text, start))
         identifier = normalize_label(match.group('label'))
         footnote = state.store.get(FOOTNOTES_KEY).get(identifier)
         if footnote is None:

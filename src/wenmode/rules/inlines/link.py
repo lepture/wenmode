@@ -90,8 +90,6 @@ class Link(InlineRule):
             self.root_transforms = [ReferenceTransform()]
 
     def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
-        if start >= len(text) or text[start] != '[':
-            return None, start
         if start > 0 and text[start - 1] == '!' and not is_escaped(text, start - 1):
             return None, start
         if state.store.get(IN_LINK_DEPTH) > 0:

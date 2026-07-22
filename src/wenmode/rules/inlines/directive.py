@@ -38,8 +38,6 @@ class TextDirective(InlineRule):
     opener = ':'
 
     def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
-        if start + 1 >= len(text) or text[start] != ':' or not text[start + 1].isascii() or not text[start + 1].isalpha():
-            return None, start
         parsed = parse_text_directive_head(text, start + 1, state)
         if parsed is None:
             return None, start

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import re
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, cast
 from urllib.parse import quote
 
 from wenmode.nodes import Html, Link, Node, Text
@@ -43,9 +44,7 @@ class Autolink(InlineRule):
     opener = '<'
 
     def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
-        match = self.compiled.match(text, start)
-        if match is None:
-            return None, start
+        match = cast(re.Match[str], self.compiled.match(text, start))
         uri = match.groupdict().get('uri')
         if uri is not None:
             text_node = Text(value=uri)
@@ -90,9 +89,7 @@ class RawHtml(InlineRule):
         self.comment_style = comment_style
 
     def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
-        match = self.compiled.match(text, start)
-        if match is None:
-            return None, start
+        match = cast(re.Match[str], self.compiled.match(text, start))
         value = match.group(0)
         filtered = filter_disallowed_html(value, self.disallowed_html_filter)
         if filtered != value:

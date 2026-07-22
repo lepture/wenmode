@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from wenmode.nodes import Link, Node, Text
 from wenmode.utils.cjk import is_cjk_punctuation
@@ -83,9 +83,7 @@ class ExtendedAutolink(InlineRule):
         return None
 
     def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
-        match = self.compiled.match(text, start)
-        if match is None:
-            return None, start
+        match = cast(re.Match[str], self.compiled.match(text, start))
         value = match.group(0)
         if is_mailto_or_xmpp(value):
             value = trim_mailto_or_xmpp(value)

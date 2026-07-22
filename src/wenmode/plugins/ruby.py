@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, cast
 
 from wenmode.nodes import Link as LinkNode
 from wenmode.nodes import Node
@@ -47,9 +47,7 @@ class RubyRule(InlineRule):
     opener = '['
 
     def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
-        match = self.compiled.match(text, start)
-        if match is None:
-            return None, start
+        match = cast(re.Match[str], self.compiled.match(text, start))
         ruby = RubyNode(segments=parse_ruby_segments(match.group(0)))
         source = parser.inline_source(text, state, start, match.end())
         if source is not None:
