@@ -8,7 +8,7 @@ from wenmode.renderers import MarkdownRenderer, RenderContext
 from wenmode.renderers.asciidoc import AsciiDocRenderContext, AsciiDocRenderer
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer
-from wenmode.rules import InlineRule, Rule
+from wenmode.rules import InlineCandidate, InlineRule, Rule
 from wenmode.rules.delimiters import find_delimited_span
 
 from .._parser.state import BlockState
@@ -33,7 +33,8 @@ class SubscriptRule(InlineRule):
     name = 'subscript'
     opener = '~'
 
-    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+    def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
+        start = candidate.start
         span = find_delimited_span(text, start, '~', reject_adjacent=True, allow_spaces=False, allow_escaped_space=True)
         if span is None:
             return None, start

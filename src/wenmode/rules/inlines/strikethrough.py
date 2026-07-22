@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from wenmode.nodes import Delete, Node
 
 from ..._parser.state import BlockState
-from ..base import InlineRule
+from ..base import InlineCandidate, InlineRule
 from ..delimiters import find_delimited_span
 
 if TYPE_CHECKING:
@@ -25,7 +25,8 @@ class Strikethrough(InlineRule):
     name = 'strikethrough'
     opener = '~'
 
-    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+    def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
+        start = candidate.start
         parsed = find_delimited_span(text, start, '~', max_run=2, reject_adjacent=True)
         if parsed is None:
             return None, start

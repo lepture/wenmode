@@ -4,7 +4,7 @@ import re
 
 from wenmode import Parser, Wenmode
 from wenmode.nodes import Node, Paragraph, Parent, Text
-from wenmode.rules import AtxHeading, BlockRule, InlineCode, InlineRule, SetextHeading
+from wenmode.rules import AtxHeading, BlockRule, InlineCandidate, InlineCode, InlineRule, SetextHeading
 from wenmode.state import BlockState, SourceMap, SourceSegment
 
 
@@ -40,10 +40,9 @@ class ProbeLetter(InlineRule):
     pattern = r'[A-Za-z]'
     opener = tuple('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
 
-    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
-        match = self.compiled.match(text, start)
-        if match is None:
-            return None, start
+    def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
+        match = candidate.match
+        assert match is not None
         return Node(type=f'probe_{match.group(0)}'), match.end()
 
 
@@ -230,10 +229,10 @@ def test_inline_sources_are_state_local() -> None:
         pattern = r'!'
         opener = '!'
 
-        def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
-            match = self.compiled.match(text, start)
-            if match is None:
-                return None, start
+        def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
+            start = candidate.start
+            match = candidate.match
+            assert match is not None
             current_source = parser.inline_source(text, state, start, match.end())
             other_source = parser.inline_source(text, other_state, start, match.end())
             assert current_source is not None

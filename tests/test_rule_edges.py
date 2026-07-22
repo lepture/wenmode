@@ -10,7 +10,7 @@ from wenmode import HTMLRenderer, MarkdownRenderer, Parser, Wenmode
 from wenmode.directives import Figure
 from wenmode.nodes import Node, Parent, Text
 from wenmode.presets import github
-from wenmode.rules import AtxHeading, InlineRule, RawHtml
+from wenmode.rules import AtxHeading, InlineCandidate, InlineRule, RawHtml
 from wenmode.state import BlockState
 
 
@@ -28,10 +28,9 @@ class SearchInline(InlineRule):
     def __init__(self) -> None:
         super().__init__('search_inline', r'x')
 
-    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
-        match = self.compiled.match(text, start)
-        if match is None:
-            return None, start
+    def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
+        match = candidate.match
+        assert match is not None
         return Text(value='search'), match.end()
 
 
@@ -41,10 +40,9 @@ class LaterSearchInline(InlineRule):
     def __init__(self) -> None:
         super().__init__('later_search_inline', r'x')
 
-    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
-        match = self.compiled.match(text, start)
-        if match is None:
-            return None, start
+    def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
+        match = candidate.match
+        assert match is not None
         return Text(value='later'), match.end()
 
 
@@ -54,10 +52,9 @@ class TriggerInline(InlineRule):
     def __init__(self) -> None:
         super().__init__('trigger_inline', r'x', 'x')
 
-    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
-        match = self.compiled.match(text, start)
-        if match is None:
-            return None, start
+    def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
+        match = candidate.match
+        assert match is not None
         return Text(value='trigger'), match.end()
 
 

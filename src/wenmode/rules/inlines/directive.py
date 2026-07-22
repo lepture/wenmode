@@ -10,7 +10,7 @@ from wenmode.nodes import TextDirective as TextDirectiveNode
 from ..._parser.source import SourceMap
 from ..._parser.state import BlockState
 from ..._parser.store import StateKey
-from ..base import InlineRule
+from ..base import InlineCandidate, InlineRule
 from ..directives import parse_attributes
 
 if TYPE_CHECKING:
@@ -37,7 +37,8 @@ class TextDirective(InlineRule):
     pattern = r':(?=[A-Za-z])'
     opener = ':'
 
-    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+    def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
+        start = candidate.start
         parsed = parse_text_directive_head(text, start + 1, state)
         if parsed is None:
             return None, start

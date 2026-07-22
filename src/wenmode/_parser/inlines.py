@@ -4,6 +4,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, cast
 
 from wenmode.nodes import Node, Text
+from wenmode.rules.base import InlineCandidate as RuleCandidate
 from wenmode.rules.base import InlineRule
 
 from .ruleset import RuleSet
@@ -14,7 +15,8 @@ if TYPE_CHECKING:
     from wenmode.parser import Parser
 
 InlineSearchCache = dict[str, object]
-InlineCandidate = tuple[int, Sequence[InlineRule]]
+MatchedInlineRule = tuple[InlineRule, RuleCandidate]
+InlineCandidateGroup = tuple[int, Sequence[MatchedInlineRule]]
 
 
 class InlineParser:
@@ -82,7 +84,8 @@ class InlineParser:
                     nodes.append(text_node(text, pos, start, source))
 
                 if len(rules) == 1:
-                    node, end = rules[0].parse(self._parser, text, start, state)
+                    rule, candidate = rules[0]
+                    node, end = rule.parse(self._parser, text, candidate, state)
                 else:
                     node, end = self._parse_inline_candidate(text, start, state, rules)
                 if node is None or end <= start:
@@ -109,15 +112,17 @@ class InlineParser:
         return merge_text(nodes)
 
     def _parse_inline_candidate(
-        self, text: str, start: int, state: BlockState, rules: Sequence[InlineRule]
+        self, text: str, start: int, state: BlockState, rules: Sequence[MatchedInlineRule]
     ) -> tuple[Node | None, int]:
-        for rule in rules:
-            node, end = rule.parse(self._parser, text, start, state)
+        for rule, candidate in rules:
+            node, end = rule.parse(self._parser, text, candidate, state)
             if node is not None and end > start:
                 return node, end
         return None, start
 
-    def _find_inline_candidate(self, text: str, pos: int, search_cache: InlineSearchCache) -> InlineCandidate | None:
+    def _find_inline_candidate(
+        self, text: str, pos: int, search_cache: InlineSearchCache
+    ) -> InlineCandidateGroup | None:
         found = self._search_inline_candidate(text, pos, search_cache)
         if found is not None:
             limit = found[0]
@@ -142,30 +147,33 @@ class InlineParser:
             return start, opener_rules
         return found
 
-    def _search_inline_candidate(self, text: str, pos: int, search_cache: InlineSearchCache) -> InlineCandidate | None:
+    def _search_inline_candidate(
+        self, text: str, pos: int, search_cache: InlineSearchCache
+    ) -> InlineCandidateGroup | None:
         cached_text = search_cache.get('text')
         cached_pos = search_cache.get('pos')
         cached_found = search_cache.get('found')
         if cached_text is text and isinstance(cached_pos, int) and cached_pos <= pos:
             if cached_found is None:
                 return None
-            cached = cast(InlineCandidate, cached_found)
+            cached = cast(InlineCandidateGroup, cached_found)
             if pos <= cached[0]:
                 return cached
 
         found_start: int | None = None
-        found_rules: list[InlineRule] = []
+        found_rules: list[MatchedInlineRule] = []
         for rule in self._rule_set.search_inline_rules:
-            start = rule.search(text, pos)
-            if start is None:
+            candidate = rule.search_candidate(text, pos)
+            if candidate is None:
                 continue
+            start = candidate.start
             if found_start is None or start < found_start:
                 found_start = start
-                found_rules = [rule]
+                found_rules = [(rule, candidate)]
             elif start == found_start:
-                found_rules.append(rule)
+                found_rules.append((rule, candidate))
         if found_start is None:
-            found: InlineCandidate | None = None
+            found: InlineCandidateGroup | None = None
         else:
             found = (found_start, tuple(found_rules))
         search_cache['text'] = text
@@ -174,23 +182,27 @@ class InlineParser:
         return found
 
     def _merge_inline_rules(
-        self, first: Sequence[InlineRule], second: Sequence[InlineRule]
-    ) -> tuple[InlineRule, ...]:
-        return tuple(sorted((*first, *second), key=lambda rule: self._rule_set.inline_rule_order[rule.name]))
+        self, first: Sequence[MatchedInlineRule], second: Sequence[MatchedInlineRule]
+    ) -> tuple[MatchedInlineRule, ...]:
+        return tuple(
+            sorted((*first, *second), key=lambda item: self._rule_set.inline_rule_order[item[0].name])
+        )
 
-    def _matching_opener_inline_rules(self, opener: str, text: str, start: int) -> Sequence[InlineRule]:
+    def _matching_opener_inline_rules(self, opener: str, text: str, start: int) -> Sequence[MatchedInlineRule]:
         opener_rules = self._rule_set.opener_inline_rules[opener]
         if len(opener_rules) == 1:
             rule = opener_rules[0]
-            if rule.matches_start(text, start):
-                return opener_rules
+            candidate = rule.match_candidate(text, start)
+            if candidate is not None:
+                return ((rule, candidate),)
             return ()
 
-        matched: list[InlineRule] = []
+        matched: list[MatchedInlineRule] = []
         for rule in opener_rules:
-            if not rule.matches_start(text, start):
+            candidate = rule.match_candidate(text, start)
+            if candidate is None:
                 continue
-            matched.append(rule)
+            matched.append((rule, candidate))
         return tuple(matched)
 
 

@@ -89,7 +89,7 @@ from dataclasses import dataclass
 
 from wenmode import Wenmode
 from wenmode.nodes import Parent
-from wenmode.rules import InlineRule
+from wenmode.rules import InlineCandidate, InlineRule
 
 
 @dataclass
@@ -101,7 +101,8 @@ class PlusMarkRule(InlineRule):
     name = 'plus_mark'
     opener = '+'
 
-    def parse(self, parser, text, start, state):
+    def parse(self, parser, text, candidate, state):
+        start = candidate.start
         if not text.startswith('++', start):
             return None, start
         value_start = start + 2
@@ -256,7 +257,7 @@ useful when the rule itself has options.
 For stateless custom rules, prefer defining `name`, `opener`, and, when needed,
 `pattern` as class attributes. `opener` is a single-character dispatch hint, or
 a tuple of single-character dispatch hints; validate longer delimiters inside
-`matches_start()` or `parse()`. Keep `__init__()` only when the rule needs
+`match_candidate()` or `parse()`. Keep `__init__()` only when the rule needs
 caller-provided configuration.
 
 ## Parsing Nested Content
@@ -353,12 +354,11 @@ class MentionRule(InlineRule):
         self,
         parser: Parser,
         text: str,
-        start: int,
+        candidate: InlineCandidate,
         state: BlockState,
     ) -> tuple[Node | None, int]:
-        match = self.compiled.match(text, start)
-        if match is None:
-            return None, start
+        match = candidate.match
+        assert match is not None
         return MentionNode(name=match.group(0)[1:]), match.end()
 ```
 

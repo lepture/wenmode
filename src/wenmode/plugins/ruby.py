@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, ClassVar, cast
+from typing import TYPE_CHECKING, ClassVar
 
 from wenmode.nodes import Link as LinkNode
 from wenmode.nodes import Node
@@ -10,7 +10,7 @@ from wenmode.renderers import MarkdownRenderer, RenderContext
 from wenmode.renderers.asciidoc import AsciiDocRenderContext, AsciiDocRenderer
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer
-from wenmode.rules.base import InlineRule, Rule
+from wenmode.rules.base import InlineCandidate, InlineRule, Rule
 from wenmode.rules.inlines.link import (
     CLOSING_BRACKET_CACHE,
     closing_bracket_map,
@@ -46,8 +46,10 @@ class RubyRule(InlineRule):
     pattern = RUBY_PATTERN
     opener = '['
 
-    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
-        match = cast(re.Match[str], self.compiled.match(text, start))
+    def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
+        start = candidate.start
+        match = candidate.match
+        assert match is not None
         ruby = RubyNode(segments=parse_ruby_segments(match.group(0)))
         source = parser.inline_source(text, state, start, match.end())
         if source is not None:

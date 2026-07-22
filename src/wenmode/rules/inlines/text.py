@@ -2,19 +2,18 @@ from __future__ import annotations
 
 import html
 import re
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 from wenmode.nodes import Break, Node, Text
 
 from ..._parser.state import BlockState
-from ..base import InlineRule
+from ..base import InlineCandidate, InlineRule
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
 
 
 ESCAPABLE = r'!"#$%&\'()*+,\-./:;<=>?@\[\\\]^_`{|}~'
-ESCAPABLE_CHARS = '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~'
 NUMERIC_CHARACTER_REFERENCE_RE = re.compile(r'&#(?P<base>[xX]?)(?P<digits>[0-9A-Fa-f]+);')
 
 
@@ -32,7 +31,8 @@ class BackslashEscape(InlineRule):
     pattern = rf'\\(?=[{ESCAPABLE}])'
     opener = '\\'
 
-    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+    def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
+        start = candidate.start
         return Text(value=text[start + 1], _parse_emphasis=False), start + 2
 
 
@@ -50,8 +50,9 @@ class CharacterReference(InlineRule):
     pattern = r'&(?:#[xX][0-9A-Fa-f]+|#[0-9]+|[A-Za-z][A-Za-z0-9]{1,31});'
     opener = '&'
 
-    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
-        match = cast(re.Match[str], self.compiled.match(text, start))
+    def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
+        match = candidate.match
+        assert match is not None
         value = match.group(0)
         numeric = NUMERIC_CHARACTER_REFERENCE_RE.match(value)
         if numeric is not None:
@@ -81,11 +82,18 @@ class HardBreak(InlineRule):
     name = 'hard_break'
     pattern = r'(?:\\| {2,})\r?\n'
 
-    def search(self, text: str, pos: int = 0) -> int | None:
-        return find_hard_break(text, pos)
+    def search_candidate(self, text: str, pos: int = 0) -> InlineCandidate | None:
+        start = find_hard_break(text, pos)
+        if start is None:
+            return None
+        match = self.compiled.match(text, start)
+        if match is None:
+            return None
+        return InlineCandidate(start, match)
 
-    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
-        match = cast(re.Match[str], self.compiled.match(text, start))
+    def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
+        match = candidate.match
+        assert match is not None
         return Break(), match.end()
 
 

@@ -15,7 +15,7 @@ from wenmode.utils.cjk import (
 )
 
 from ..._parser.state import BlockState
-from ..base import InlineRule
+from ..base import InlineCandidate, InlineRule
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
@@ -40,8 +40,8 @@ class Emphasis(InlineRule):
         super().__init__()
         self.cjk_friendly = cjk_friendly
 
-    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
-        return None, start
+    def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
+        return None, candidate.start
 
     def parse_emphasis_sequence(self, nodes: list[Node], max_depth: int = 20) -> list[Node]:
         return parse_emphasis_sequence(nodes, cjk_friendly=self.cjk_friendly, max_depth=max_depth)

@@ -12,6 +12,7 @@ from wenmode.rules import (
     BlockRule,
     ContinueRule,
     Footnote,
+    InlineCandidate,
     InlineCode,
     InlineRule,
     Link,
@@ -96,7 +97,8 @@ def test_inline_rule_supports_trigger_only_parse_from_start() -> None:
         pattern = None
         opener = '@'
 
-        def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+        def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
+            start = candidate.start
             if start + 1 >= len(text) or not text[start + 1].isalpha():
                 return None, start
             end = start + 2
@@ -107,7 +109,6 @@ def test_inline_rule_supports_trigger_only_parse_from_start() -> None:
     rule = Mention()
 
     assert rule.pattern is None
-    assert rule.search('@name') is None
     assert render(Parser([rule]), '@name @1\n') == '<p>mention:name @1</p>\n'
 
 
@@ -118,7 +119,8 @@ def test_trigger_only_rule_can_decline_before_same_trigger_rule() -> None:
         pattern = None
         opener = '~'
 
-        def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+        def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
+            start = candidate.start
             if not (start + 2 < len(text) and text[start + 1] != '~' and text[start + 2] == '~'):
                 return None, start
             return Text(value='single:' + text[start + 1]), start + 3
@@ -129,10 +131,9 @@ def test_trigger_only_rule_can_decline_before_same_trigger_rule() -> None:
         pattern = r'~~[^~]+~~'
         opener = '~'
 
-        def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
-            match = self.compiled.match(text, start)
-            if match is None:
-                return None, start
+        def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
+            match = candidate.match
+            assert match is not None
             return Text(value='double:' + match.group(0)[2:-2]), match.end()
 
     assert render(Parser([SingleTilde, DoubleTilde]), '~~x~~ ~y~\n') == '<p>double:x single:y</p>\n'
@@ -152,7 +153,8 @@ def test_inline_opener_dispatch_leaves_longer_delimiter_matching_to_rule() -> No
         name = 'image_like'
         opener = '!'
 
-        def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+        def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
+            start = candidate.start
             if not text.startswith('![', start):
                 return None, start
             return Text(value='image'), start + 2
@@ -161,7 +163,8 @@ def test_inline_opener_dispatch_leaves_longer_delimiter_matching_to_rule() -> No
         name = 'link_like'
         opener = '['
 
-        def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+        def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
+            start = candidate.start
             return Text(value='link'), start + 1
 
     parser = Parser([ImageLike, LinkLike])
@@ -175,7 +178,8 @@ def test_inline_opener_dispatch_uses_rule_order_for_same_opener() -> None:
         name = 'bang'
         opener = '!'
 
-        def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+        def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
+            start = candidate.start
             return Text(value='bang'), start + 1
 
     class ImageLike(InlineRule):
@@ -183,7 +187,8 @@ def test_inline_opener_dispatch_uses_rule_order_for_same_opener() -> None:
         name = 'image_like'
         opener = '!'
 
-        def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+        def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
+            start = candidate.start
             if not text.startswith('![', start):
                 return None, start
             return Text(value='image'), start + 2
@@ -200,7 +205,8 @@ def test_inline_rule_opener_accepts_multiple_single_character_hints() -> None:
         name = 'mention'
         opener = ('@', '#')
 
-        def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+        def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
+            start = candidate.start
             return Text(value='mention:' + text[start]), start + 1
 
     assert render(Parser([Mention]), '@ #\n') == '<p>mention:@ mention:#</p>\n'
@@ -226,10 +232,9 @@ def test_rule_subclasses_can_define_identity_as_class_attributes() -> None:
         pattern = r'!!'
         opener = '!'
 
-        def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
-            match = self.compiled.match(text, start)
-            if match is None:
-                return None, start
+        def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
+            match = candidate.match
+            assert match is not None
             return Text(value='inline'), match.end()
 
     app = Wenmode([BangBlock, BangInline])
@@ -424,10 +429,9 @@ def test_parser_rebuilds_inline_dispatch_when_rule_is_replaced() -> None:
         pattern = r'@a'
         opener = '@'
 
-        def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
-            match = self.compiled.match(text, start)
-            if match is None:
-                return None, start
+        def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
+            match = candidate.match
+            assert match is not None
             return Text(value='at'), match.end()
 
     class BangToken(InlineRule):
@@ -435,10 +439,9 @@ def test_parser_rebuilds_inline_dispatch_when_rule_is_replaced() -> None:
         pattern = r'!b'
         opener = '!'
 
-        def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
-            match = self.compiled.match(text, start)
-            if match is None:
-                return None, start
+        def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
+            match = candidate.match
+            assert match is not None
             return Text(value='bang'), match.end()
 
     parser = Parser([AtToken])
@@ -457,20 +460,18 @@ def test_inline_dispatch_uses_rule_order_for_equal_offset_candidates() -> None:
         pattern = r'@'
         opener = '@'
 
-        def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
-            match = self.compiled.match(text, start)
-            if match is None:
-                return None, start
+        def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
+            match = candidate.match
+            assert match is not None
             return Text(value='triggered'), match.end()
 
     class SearchedAt(InlineRule):
         name = 'searched_at'
         pattern = r'@'
 
-        def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
-            match = self.compiled.match(text, start)
-            if match is None:
-                return None, start
+        def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
+            match = candidate.match
+            assert match is not None
             return Text(value='searched'), match.end()
 
     triggered_first = parse_inlines(Parser([TriggeredAt, SearchedAt]), '@')

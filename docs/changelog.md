@@ -17,6 +17,11 @@ here while preparing a release, then move them under the final version heading.
 
 ## Unreleased
 
+**Breaking Changes**
+
+- Change `InlineRule.parse()` to receive an `InlineCandidate`; use
+  `candidate.start` and `candidate.match`.
+
 ## 0.12.1
 
 Released **Jul 22, 2026**.

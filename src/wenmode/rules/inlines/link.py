@@ -13,7 +13,7 @@ from wenmode.utils.text import parse_angle_destination, parse_bare_destination_r
 from ..._parser.source import SourceMap
 from ..._parser.state import BlockState
 from ..._parser.store import StateKey
-from ..base import InlineRule
+from ..base import InlineCandidate, InlineRule
 from ..references import REFERENCES_KEY, ReferenceTransform, resolve_state_reference
 from .code import find_matching_backtick_run
 from .html import EMAIL_RE, HTML_RE, URI_RE
@@ -56,7 +56,8 @@ class Image(InlineRule):
         if references:
             self.root_transforms = [ReferenceTransform()]
 
-    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+    def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
+        start = candidate.start
         if not text.startswith('![', start):
             return None, start
         parsed = parse_link_or_image(text, start, image=True, state=state, references=self.references)
@@ -89,7 +90,8 @@ class Link(InlineRule):
         if references:
             self.root_transforms = [ReferenceTransform()]
 
-    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+    def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
+        start = candidate.start
         if start > 0 and text[start - 1] == '!' and not is_escaped(text, start - 1):
             return None, start
         if state.store.get(IN_LINK_DEPTH) > 0:

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from wenmode.nodes import Node
 from wenmode.nodes import TextDirective as TextDirectiveNode
-from wenmode.rules.base import InlineRule
+from wenmode.rules.base import InlineCandidate, InlineRule
 from wenmode.rules.inlines.directive import NAME_RE
 
 from .._parser.state import BlockState
@@ -21,7 +21,8 @@ class RoleRule(InlineRule):
     pattern = r'\{(?=[A-Za-z])'
     opener = '{'
 
-    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+    def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
+        start = candidate.start
         parsed = _parse_role(text, start)
         if parsed is None:
             return None, start

@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, cast
 from wenmode.nodes import Literal as LiteralNode
 from wenmode.nodes import Node, Parent
 from wenmode.nodes import Text as TextNode
-from wenmode.rules.base import InlineRule
+from wenmode.rules.base import InlineCandidate, InlineRule
 from wenmode.utils import is_escaped
 
 from .._parser.source import SourceMap
@@ -92,7 +92,8 @@ class InlineDelimited(InlineRule):
             self._parse_impl = self._parse_general
         super().__init__(name=name, opener=opener[0])
 
-    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+    def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
+        start = candidate.start
         return self._parse_impl(parser, text, start, state)
 
     def _parse_general(
@@ -214,7 +215,8 @@ class InlineLiteral(InlineRule):
         self._node_factory = _literal_node_factory(self)
         super().__init__(name=name, opener=opener[0])
 
-    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
+    def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
+        start = candidate.start
         if not text.startswith(self.opening_delimiter, start):
             return None, start
         if self.escape and is_escaped(text, start):

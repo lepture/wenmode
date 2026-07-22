@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, ClassVar, TypeAlias, cast
 
 from wenmode.nodes import Node
@@ -12,6 +13,14 @@ if TYPE_CHECKING:
     from wenmode.parser import Parser
 
 Opener: TypeAlias = str | tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class InlineCandidate:
+    """Candidate inline match produced by rule dispatch."""
+
+    start: int
+    match: re.Match[str] | None = None
 
 
 class Rule:
@@ -103,7 +112,7 @@ class InlineRule(Rule):
         self.openers = normalize_openers(self.opener)
         self.compiled = re.compile(self.pattern if self.pattern is not None else r'(?!)')
 
-    def search(self, text: str, pos: int = 0) -> int | None:
+    def search_candidate(self, text: str, pos: int = 0) -> InlineCandidate | None:
         """Search for the next candidate start.
 
         Override this method for rules that need custom scanning behavior.
@@ -113,22 +122,27 @@ class InlineRule(Rule):
         match = self.compiled.search(text, pos)
         if match is None:
             return None
-        return match.start()
+        return InlineCandidate(match.start(), match)
 
-    def matches_start(self, text: str, start: int) -> bool:
+    def match_candidate(self, text: str, start: int) -> InlineCandidate | None:
         if self.pattern is None:
-            return True
-        return self.compiled.match(text, start) is not None
+            return InlineCandidate(start)
+        match = self.compiled.match(text, start)
+        if match is None:
+            return None
+        return InlineCandidate(start, match)
 
-    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
-        """Parse an inline node starting at ``start``.
+    def parse(
+        self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState
+    ) -> tuple[Node | None, int]:
+        """Parse an inline node from ``candidate``.
 
         :param parser: Active parser.
         :param text: Full inline source text.
-        :param start: Candidate start offset.
+        :param candidate: Candidate start and optional regex match from dispatch.
         :param state: Current block state.
-        :returns: A ``(node, end_index)`` pair. Return ``(None, start)``
-            to decline the match.
+        :returns: A ``(node, end_index)`` pair. Return ``(None,
+            candidate.start)`` to decline the match.
         """
         raise NotImplementedError
 

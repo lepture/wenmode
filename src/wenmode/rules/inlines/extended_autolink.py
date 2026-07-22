@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 from wenmode.nodes import Link, Node, Text
 from wenmode.utils.cjk import is_cjk_punctuation
 
 from ..._parser.state import BlockState
-from ..base import InlineRule
+from ..base import InlineCandidate, InlineRule
 from .html import normalize_uri
 
 if TYPE_CHECKING:
@@ -49,14 +49,16 @@ class ExtendedAutolink(InlineRule):
         super().__init__()
         self.cjk_friendly = cjk_friendly
 
-    def search(self, text: str, pos: int = 0) -> int | None:
+    def search_candidate(self, text: str, pos: int = 0) -> InlineCandidate | None:
         url_match = self.search_url(text, pos)
         email_match = self.search_email(text, pos)
         if email_match is None:
-            return None if url_match is None else url_match.start()
+            if url_match is None:
+                return None
+            return InlineCandidate(url_match.start(), url_match)
         if url_match is None or email_match.start() < url_match.start():
-            return email_match.start()
-        return url_match.start()
+            return InlineCandidate(email_match.start(), email_match)
+        return InlineCandidate(url_match.start(), url_match)
 
     def search_url(self, text: str, pos: int) -> re.Match[str] | None:
         lower_text = text.lower()
@@ -82,8 +84,10 @@ class ExtendedAutolink(InlineRule):
             cursor = text.find('@', cursor + 1)
         return None
 
-    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
-        match = cast(re.Match[str], self.compiled.match(text, start))
+    def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
+        start = candidate.start
+        match = candidate.match
+        assert match is not None
         value = match.group(0)
         if is_mailto_or_xmpp(value):
             value = trim_mailto_or_xmpp(value)

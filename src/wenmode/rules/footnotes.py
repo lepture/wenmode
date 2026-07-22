@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, ClassVar, cast
+from typing import TYPE_CHECKING, ClassVar
 
 from wenmode.nodes import FootnoteDefinition as FootnoteDefinitionNode
 from wenmode.nodes import FootnoteReference, Node, Root
@@ -11,7 +11,7 @@ from wenmode.utils import count_indent, normalize_label, normalize_label_text
 
 from .._parser.source import SourceCollector
 from .._parser.store import StateKey
-from .base import BlockRule, InlineRule, Rule
+from .base import BlockRule, InlineCandidate, InlineRule, Rule
 from .transforms import RootTransform
 
 if TYPE_CHECKING:
@@ -58,12 +58,13 @@ class Footnote(InlineRule):
         super().__init__()
         self.root_transforms = [FootnoteTransform()]
 
-    def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
-        match = cast(re.Match[str], self.compiled.match(text, start))
+    def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
+        match = candidate.match
+        assert match is not None
         identifier = normalize_label(match.group('label'))
         footnote = state.store.get(FOOTNOTES_KEY).get(identifier)
         if footnote is None:
-            return None, start
+            return None, candidate.start
 
         return FootnoteReference(identifier=footnote.identifier, label=footnote.label), match.end()
 

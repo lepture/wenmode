@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from wenmode.headings import HeadingIdTransform
 
-from .base import BlockRule, ContinueRule, InlineRule, Rule
+from .base import BlockRule, ContinueRule, InlineCandidate, InlineRule, Rule
 from .blocks.blockquote import Blockquote
 from .blocks.directive import ContainerDirective, LeafDirective
 from .blocks.fenced_code import FencedCode
@@ -43,6 +43,7 @@ __all__ = [
     'HtmlBlock',
     'Image',
     'IndentedCode',
+    'InlineCandidate',
     'InlineRule',
     'InlineCode',
     'LeafDirective',
