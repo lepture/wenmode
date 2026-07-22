@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Generator, Sequence
 from typing import TYPE_CHECKING, cast
 
 from wenmode.nodes import Node, Text
-from wenmode.rules.base import InlineCandidate as RuleCandidate
-from wenmode.rules.base import InlineRule
+from wenmode.rules import InlineCandidate, InlineRule
 
 from .ruleset import RuleSet
 from .source import SourceMap
@@ -15,7 +14,7 @@ if TYPE_CHECKING:
     from wenmode.parser import Parser
 
 InlineSearchCache = dict[str, object]
-MatchedInlineRule = tuple[InlineRule, RuleCandidate]
+MatchedInlineRule = tuple[InlineRule, InlineCandidate]
 InlineCandidateGroup = tuple[int, Sequence[MatchedInlineRule]]
 
 
@@ -138,7 +137,7 @@ class InlineParser:
             if start > limit:
                 break
             opener = text[start]
-            opener_rules = self._matching_opener_inline_rules(opener, text, start)
+            opener_rules = tuple(self._matching_opener_inline_rules(opener, text, start))
             if not opener_rules:
                 opener_match = self._rule_set.inline_opener_re.search(text, start + 1, opener_end)
                 continue
@@ -188,22 +187,13 @@ class InlineParser:
             sorted((*first, *second), key=lambda item: self._rule_set.inline_rule_order[item[0].name])
         )
 
-    def _matching_opener_inline_rules(self, opener: str, text: str, start: int) -> Sequence[MatchedInlineRule]:
+    def _matching_opener_inline_rules(self, opener: str, text: str, start: int) -> Generator[MatchedInlineRule]:
         opener_rules = self._rule_set.opener_inline_rules[opener]
-        if len(opener_rules) == 1:
-            rule = opener_rules[0]
-            candidate = rule.match_candidate(text, start)
-            if candidate is not None:
-                return ((rule, candidate),)
-            return ()
-
-        matched: list[MatchedInlineRule] = []
         for rule in opener_rules:
             candidate = rule.match_candidate(text, start)
             if candidate is None:
                 continue
-            matched.append((rule, candidate))
-        return tuple(matched)
+            yield rule, candidate
 
 
 def text_node(text: str, start: int, end: int, source: SourceMap | None) -> Text:
