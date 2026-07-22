@@ -15,7 +15,9 @@ releases.
 This page records notable changes for released versions. Add unreleased entries
 here while preparing a release, then move them under the final version heading.
 
-## Unreleased
+## 0.13.0
+
+Released **Jul 22, 2026**.
 
 **Breaking Changes**
 
