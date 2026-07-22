@@ -30,7 +30,6 @@ class SuperscriptRule(InlineRule):
     """Parse caret-delimited superscript spans."""
 
     name = 'superscript'
-    pattern = None
     opener = '^'
 
     def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:

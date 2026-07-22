@@ -55,8 +55,6 @@ class Image(InlineRule):
         self.references = references
         if references:
             self.root_transforms = [ReferenceTransform()]
-        else:
-            self.root_transforms = []
 
     def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
         if not text.startswith('![', start):
@@ -83,7 +81,6 @@ class Link(InlineRule):
     """
 
     name = 'link'
-    pattern = None
     opener = '['
 
     def __init__(self, references: bool = True) -> None:
@@ -91,8 +88,6 @@ class Link(InlineRule):
         self.references = references
         if references:
             self.root_transforms = [ReferenceTransform()]
-        else:
-            self.root_transforms = []
 
     def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
         if start >= len(text) or text[start] != '[':
@@ -134,12 +129,13 @@ def parse_image_alt(parser: Parser, label: str, state: BlockState, source: Sourc
 def parse_link_or_image(
     text: str, start: int, image: bool, state: BlockState, references: bool = True
 ) -> tuple[str, str, str | None, int, int, int] | None:
-    bracket_cache = closing_bracket_cache(state)
+    bracket_cache = state.store.get(CLOSING_BRACKET_CACHE)
+    bracket_pairs = closing_bracket_map(text, bracket_cache)
     if image:
         label_start = start + 2
     else:
         label_start = start + 1
-    label_end = find_closing_bracket(text, label_start, bracket_cache)
+    label_end = bracket_pairs.get(label_start)
     if label_end is None:
         return None
 
@@ -161,7 +157,7 @@ def parse_link_or_image(
     reference_label = label
     end = after_label
     if after_label < len(text) and text[after_label] == '[':
-        ref_end = find_closing_bracket(text, after_label + 1, bracket_cache)
+        ref_end = bracket_pairs.get(after_label + 1)
         if ref_end is None:
             return None
         explicit = text[after_label + 1 : ref_end]
@@ -179,14 +175,6 @@ def parse_link_or_image(
             return None
         return label, reference.url, reference.title, end, label_start, label_end
     return None
-
-
-def closing_bracket_cache(state: BlockState) -> ClosingBracketCache:
-    return state.store.get(CLOSING_BRACKET_CACHE)
-
-
-def find_closing_bracket(text: str, start: int, cache: ClosingBracketCache) -> int | None:
-    return closing_bracket_map(text, cache).get(start)
 
 
 def closing_bracket_map(text: str, cache: ClosingBracketCache) -> dict[int, int]:
@@ -231,7 +219,7 @@ def build_closing_bracket_map(text: str) -> dict[int, int]:
 
 
 def label_contains_link(text: str, label_start: int, label_end: int, state: BlockState, references: bool) -> bool:
-    bracket_cache = closing_bracket_cache(state)
+    bracket_cache = state.store.get(CLOSING_BRACKET_CACHE)
     pairs = closing_bracket_map(text, bracket_cache)
     starts, suffix_min_ends = link_containment_index(text, state, pairs, references)
     index = bisect_left(starts, label_start)

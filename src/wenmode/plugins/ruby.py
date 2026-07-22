@@ -12,8 +12,8 @@ from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer
 from wenmode.rules.base import InlineRule, Rule
 from wenmode.rules.inlines.link import (
-    closing_bracket_cache,
-    find_closing_bracket,
+    CLOSING_BRACKET_CACHE,
+    closing_bracket_map,
     invalid_reference_label,
     parse_direct_destination,
 )
@@ -81,7 +81,7 @@ def parse_ruby_link(
     if text[start] != '[':
         return None
 
-    ref_end = find_closing_bracket(text, start + 1, closing_bracket_cache(state))
+    ref_end = closing_bracket_map(text, state.store.get(CLOSING_BRACKET_CACHE)).get(start + 1)
     if ref_end is None:
         return None
 

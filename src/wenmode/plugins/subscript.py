@@ -31,7 +31,6 @@ class SubscriptRule(InlineRule):
 
     order: ClassVar[int] = 90
     name = 'subscript'
-    pattern = None
     opener = '~'
 
     def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
