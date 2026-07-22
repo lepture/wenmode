@@ -92,6 +92,13 @@ class StreamLineBuffer:
 
 
 @dataclass
+class _DeferredInlineState:
+    pending_inlines: list[tuple[list[Node], str, SourceMap | None]] = field(default_factory=list)
+    pending_inline_callbacks: list[Callable[[], None]] = field(default_factory=list)
+    inline_sources: list[SourceMap] = field(default_factory=list)
+
+
+@dataclass
 class BlockState:
     """Mutable state for one block parse.
 
@@ -111,9 +118,7 @@ class BlockState:
     store: StateStore = field(default_factory=StateStore)
     depth: int = 0
     defer_inlines: bool = False
-    _pending_inlines: list[tuple[list[Node], str, SourceMap | None]] = field(default_factory=list, repr=False)
-    _pending_inline_callbacks: list[Callable[[], None]] = field(default_factory=list, repr=False)
-    _inline_sources: list[SourceMap] = field(default_factory=list, repr=False)
+    _deferred: _DeferredInlineState = field(default_factory=_DeferredInlineState, repr=False)
 
     def __post_init__(self) -> None:
         self.source.bind(self)
@@ -170,44 +175,38 @@ class BlockState:
 
     def defer_inline_parse(self, nodes: list[Node], text: str, source: SourceMap | None) -> None:
         """Queue an inline parse target until document-wide state is ready."""
-        self._pending_inlines.append((nodes, text, source))
+        self._deferred.pending_inlines.append((nodes, text, source))
 
     def take_pending_inlines(self) -> list[tuple[list[Node], str, SourceMap | None]]:
         """Remove and return queued inline parse targets."""
-        pending = list(self._pending_inlines)
-        self._pending_inlines.clear()
+        pending = list(self._deferred.pending_inlines)
+        self._deferred.pending_inlines.clear()
         return pending
 
     def defer_inline_callback(self, callback: Callable[[], None]) -> None:
         """Queue a callback to run after deferred inline parsing resolves."""
-        self._pending_inline_callbacks.append(callback)
+        self._deferred.pending_inline_callbacks.append(callback)
 
     def take_pending_inline_callbacks(self) -> list[Callable[[], None]]:
         """Remove and return deferred inline callbacks."""
-        callbacks = list(self._pending_inline_callbacks)
-        self._pending_inline_callbacks.clear()
+        callbacks = list(self._deferred.pending_inline_callbacks)
+        self._deferred.pending_inline_callbacks.clear()
         return callbacks
 
     def push_inline_source(self, source: SourceMap) -> None:
         """Push an active inline source map."""
-        self._inline_sources.append(source)
+        self._deferred.inline_sources.append(source)
 
     def pop_inline_source(self) -> SourceMap:
         """Pop the active inline source map."""
-        return self._inline_sources.pop()
+        return self._deferred.inline_sources.pop()
 
     def inline_source_for(self, text: str) -> SourceMap | None:
         """Return the innermost active inline source matching ``text``."""
-        for source in reversed(self._inline_sources):
+        for source in reversed(self._deferred.inline_sources):
             if source.text == text:
                 return source
         return None
-
-    def deferred_state(self) -> tuple[
-        list[tuple[list[Node], str, SourceMap | None]], list[Callable[[], None]], list[SourceMap]
-    ]:
-        """Return shared deferred inline queues for nested block states."""
-        return self._pending_inlines, self._pending_inline_callbacks, self._inline_sources
 
 
 class StreamBlockState(BlockState):
@@ -221,21 +220,15 @@ class StreamBlockState(BlockState):
         store: StateStore | None = None,
         depth: int = 0,
         defer_inlines: bool = False,
-        pending_inlines: list[tuple[list[Node], str, SourceMap | None]] | None = None,
-        pending_inline_callbacks: list[Callable[[], None]] | None = None,
-        inline_sources: list[SourceMap] | None = None,
+        deferred: _DeferredInlineState | None = None,
     ) -> None:
         self.line_buffer = line_buffer
         if source is None:
             source = NullSourceTracker()
         if store is None:
             store = StateStore()
-        if pending_inlines is None:
-            pending_inlines = []
-        if pending_inline_callbacks is None:
-            pending_inline_callbacks = []
-        if inline_sources is None:
-            inline_sources = []
+        if deferred is None:
+            deferred = _DeferredInlineState()
         super().__init__(
             line_buffer.lines,
             index=index,
@@ -243,9 +236,7 @@ class StreamBlockState(BlockState):
             store=store,
             depth=depth,
             defer_inlines=defer_inlines,
-            _pending_inlines=pending_inlines,
-            _pending_inline_callbacks=pending_inline_callbacks,
-            _inline_sources=inline_sources,
+            _deferred=deferred,
         )
 
     @property

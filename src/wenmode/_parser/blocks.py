@@ -41,16 +41,13 @@ class BlockParser:
             source_tracker = PositionSourceTracker(source.line_offsets(lines))
         else:
             source_tracker = NullSourceTracker()
-        pending_inlines, pending_callbacks, inline_sources = parent_state.deferred_state()
         return BlockState(
             lines,
             source=source_tracker,
             store=parent_state.store,
             depth=parent_state.depth + 1,
             defer_inlines=parent_state.defer_inlines,
-            _pending_inlines=pending_inlines,
-            _pending_inline_callbacks=pending_callbacks,
-            _inline_sources=inline_sources,
+            _deferred=parent_state._deferred,
         )
 
     def _parse_shallow_blocks(self, state: BlockState) -> list[Node]:

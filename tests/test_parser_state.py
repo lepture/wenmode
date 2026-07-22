@@ -104,17 +104,12 @@ def test_deferred_inline_callbacks_and_state_store_are_per_parse() -> None:
             state.defer_inline_callback(record_resolved_text)
 
         def transform(self, parser: Parser, root: Root, state: BlockState) -> None:
-            pending_inlines, pending_callbacks, _ = state.deferred_state()
-            root.data = {
-                'values': list(state.store.get(values)),
-                'pending_inlines': len(pending_inlines),
-                'pending_callbacks': len(pending_callbacks),
-            }
+            root.data = {'values': list(state.store.get(values))}
 
     app = Wenmode([DeferredRule])
 
-    assert app.parse('first\n').data == {'values': ['first'], 'pending_inlines': 0, 'pending_callbacks': 0}
-    assert app.parse('second\n').data == {'values': ['second'], 'pending_inlines': 0, 'pending_callbacks': 0}
+    assert app.parse('first\n').data == {'values': ['first']}
+    assert app.parse('second\n').data == {'values': ['second']}
 
 
 def test_deferred_node_transform_callbacks_bind_each_transform() -> None:

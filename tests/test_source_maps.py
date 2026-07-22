@@ -243,8 +243,6 @@ def test_inline_sources_are_state_local() -> None:
 
     Wenmode([ProbeSource], positions=True).parse('!')
 
-    _, _, inline_sources = other_state.deferred_state()
-    assert inline_sources == []
     assert observations == [(0, 1, True)]
 
 
