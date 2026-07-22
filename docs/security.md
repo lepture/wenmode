@@ -12,19 +12,20 @@ controls.
 
 ---
 
-Wenmode parses Markdown into an AST and then renders that AST. Security behavior
-comes mostly from the renderer you choose and the rules you enable.
+Wenmode parses Markdown into an AST and then renders the AST. The renderer
+controls most security behavior. The enabled rules also control whether raw HTML
+enters the AST.
 
-For untrusted user content, the safest starting point is the default
-`Wenmode()` or `Wenmode(github)` with the default `HTMLRenderer()`. Change
-renderer safety options only after you know where raw HTML and URLs are
-validated in your application.
+For untrusted content, use the default `Wenmode()` or `Wenmode(github)` with the
+default `HTMLRenderer()`. Before you change renderer options, identify the code
+that validates raw HTML and URLs in your application.
 
 ## Threat model
 
-The default HTML path is designed for user-authored Markdown where raw HTML
-should not execute and unsafe link targets should not be emitted as active
-attributes. It is not a full HTML sanitizer for already-trusted raw HTML.
+The default HTML path is for user-authored Markdown. It prevents raw HTML from
+executing and omits unsafe link targets from active attributes. It is not a full
+HTML sanitizer. If your application accepts raw HTML from untrusted users,
+sanitize that HTML before or after Wenmode.
 
 Keep these boundaries in mind:
 
@@ -40,7 +41,7 @@ Keep these boundaries in mind:
 
 ## Security profiles
 
-Use the narrowest profile that matches the source of the Markdown.
+Choose the profile that permits only the syntax required by the Markdown source.
 
 | Scenario | Parser rules | Renderer | Notes |
 | --- | --- | --- | --- |
@@ -50,8 +51,8 @@ Use the narrowest profile that matches the source of the Markdown.
 | Plain-text-only Markdown fields | custom rule list without `HtmlBlock` and `RawHtml` | `HTMLRenderer()` | Raw HTML syntax stays as text in the AST and renders escaped. |
 | Streaming untrusted Markdown | `streaming` preset | `HTMLRenderer()` | Direct links work, reference-style links stay as text, unsafe URLs are sanitized. |
 
-For untrusted content, avoid `escape=False` and `sanitize_urls=False` unless a
-separate sanitizer or policy check has already accepted the HTML and URLs.
+For untrusted content, do not use `escape=False` or `sanitize_urls=False` unless
+a separate sanitizer or policy check has accepted the HTML and URLs.
 
 ## Restoring serialized AST data
 
@@ -113,7 +114,7 @@ must not execute.
 ## Allowing raw HTML
 
 Construct `HTMLRenderer` with `escape=False` only when the Markdown source is
-trusted or sanitized elsewhere.
+trusted or another component has sanitized it.
 
 ```python
 from wenmode import HTMLRenderer, Wenmode
@@ -129,8 +130,7 @@ html = wen.render(text)
 assert html == expected.lstrip()
 ```
 
-This allows raw HTML nodes to pass through the renderer. It does not sanitize
-HTML for you.
+This passes raw HTML nodes through the renderer. It does not sanitize HTML.
 
 Unknown or custom literal nodes render string values as escaped text unless an
 HTML handler is registered for their node type. Even with
@@ -156,9 +156,9 @@ html = wen.render(text)
 assert html == expected.lstrip()
 ```
 
-Allowed URL schemes are `http`, `https`, `irc`, `ircs`, `mailto`, and `tel`.
-Relative URLs are allowed. Use `HTMLRenderer(sanitize_urls=False)` only when URL
-validation is handled before rendering.
+The allowed URL schemes are `http`, `https`, `irc`, `ircs`, `mailto`, and `tel`.
+Relative URLs are also allowed. Use `HTMLRenderer(sanitize_urls=False)` only
+when another component validates URLs before rendering.
 
 ## Recommended settings
 

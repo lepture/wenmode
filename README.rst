@@ -28,12 +28,12 @@ Wenmode is a composable Markdown toolkit for Python by the same author as
 design, with a stronger focus on explicit rule composition, mdast-compatible AST
 output, extension state, and pluggable rendering.
 
-The top-level ``Wenmode`` class combines a parser and a renderer. By default it
-parses CommonMark-style Markdown and renders HTML.
+The top-level ``Wenmode`` class combines a parser and a renderer. By default,
+``Wenmode`` parses CommonMark-style Markdown and renders HTML.
 
 Documentation: `https://wenmode.lepture.com <https://wenmode.lepture.com>`__
 
-Use Wenmode when you need one or more of these behaviors:
+Use Wenmode to:
 
 - render Markdown to HTML with safe defaults for user-authored content,
 - choose the exact Markdown rules your application accepts,
@@ -114,8 +114,8 @@ Use ``parse()`` when you need the mdast-compatible syntax tree:
        ],
    }
 
-Enable source positions when you need editor ranges, diagnostics, or AST-based
-tooling:
+Set ``positions=True`` to include source ranges for editor integration,
+diagnostics, or AST-based tooling:
 
 .. code-block:: python
 
@@ -167,8 +167,7 @@ tooling:
        ]
    }
 
-Pass a different renderer when you want another output format, such as
-reStructuredText or AsciiDoc:
+Pass a renderer when you need reStructuredText or AsciiDoc output:
 
 .. code-block:: python
 
@@ -193,7 +192,7 @@ Most applications start with a preset:
 - ``streaming``, for incremental HTML output.
 
 Rules are opt-in and composable. ``Wenmode()`` uses the ``commonmark`` preset by
-default; pass an explicit rule list when you want a custom Markdown dialect.
+default. Pass an explicit rule list to define a custom Markdown dialect.
 
 .. code-block:: python
 
@@ -266,17 +265,17 @@ libraries covered by the migration guides:
 
    uv run --locked --group benchmark python scripts/benchmark.py --case all
 
-``wenmode-core`` uses CommonMark-style rules plus pipe tables, with raw HTML
-passthrough and URL sanitization disabled for parity with the other HTML
-renderers. Mistune, Python-Markdown, markdown-it-py, and markdown2 enable table
-support; Marko uses its broader GFM helper; ``commonmark.py`` is included as a
-CommonMark-only baseline because it has no pipe table support.
+``wenmode-core`` uses CommonMark-style rules plus pipe tables. It disables raw HTML
+passthrough and URL sanitization to match the other HTML renderers. Mistune,
+Python-Markdown, markdown-it-py, and markdown2 enable table support. Marko uses
+its broader GFM helper. ``commonmark.py`` is a CommonMark-only baseline because it
+does not support pipe tables.
 
 ``wenmode-all`` uses the ``github`` preset plus Wenmode's built-in plugins,
 including front matter, math, definition lists, abbreviations, spoilers, ruby
-text, heading IDs, GitHub alerts, and additional inline formatting. These extra
-rules are mostly unused by the benchmark corpora, so this target measures
-dispatch overhead rather than a syntax-equivalent comparison.
+text, heading IDs, GitHub alerts, and additional inline formatting. The benchmark
+corpora use few of these extra rules. This target measures rule dispatch
+overhead, not equivalent syntax coverage.
 
 All benchmark targets are created once before warmup and timed iterations, then
 reused for every render call. Python-Markdown resets the same reusable
@@ -337,8 +336,8 @@ configuration. See the full methodology in the
 Streaming
 ---------
 
-Use the ``streaming`` preset when you want to render HTML chunks without waiting
-for the entire document to be parsed and rendered:
+Use the ``streaming`` preset to render HTML chunks before the complete document is
+parsed and rendered:
 
 .. code-block:: python
 
@@ -356,11 +355,10 @@ for the entire document to be parsed and rendered:
    for chunk in wen.stream(text):
        send(chunk)
 
-The returned iterator can be passed to streaming responses in frameworks such
-as Django, Flask, and FastAPI. The ``streaming`` preset keeps tables,
-strikethrough, direct links, and direct images enabled, while reference-style
-links, footnotes, and other deferred document-wide transforms stay out of the
-streaming path.
+Pass the returned iterator to a streaming response in Django, Flask, FastAPI,
+or another framework. The ``streaming`` preset keeps tables, strikethrough, direct
+links, and direct images enabled. It excludes reference-style links, footnotes,
+and other deferred document-wide transforms.
 
 Learn more
 ----------

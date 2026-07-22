@@ -72,21 +72,21 @@ with open('README.md', encoding='utf-8') as file:
 
 ## Core objects
 
-Most code uses one of these shapes:
+Use these objects for the following tasks:
 
 | Object | Use it when |
 | --- | --- |
-| `Wenmode` | You want one object that parses Markdown and renders output. |
-| `Parser` | You want the AST and will render, transform, or store it yourself. |
-| `HTMLRenderer`, `MarkdownRenderer`, `RSTRenderer`, `AsciiDocRenderer` | You already have parsed nodes and want a specific output format. |
+| `Wenmode` | Parse Markdown and render output with one object. |
+| `Parser` | Parse Markdown when your code will render, transform, or store the AST. |
+| `HTMLRenderer`, `MarkdownRenderer`, `RSTRenderer`, `AsciiDocRenderer` | Render parsed nodes in a specific output format. |
 
 `Wenmode()` defaults to the `commonmark` preset and `HTMLRenderer()`. Pass a
-different preset, rule list, renderer, or `positions=True` only when your
-application needs that behavior.
+different preset, rule list, or renderer when your application needs different
+syntax or output. Set `positions=True` when your code needs source ranges.
 
 ## Parse to AST
 
-Use `parse()` when you want the AST instead of rendered output.
+Use `parse()` to return the AST instead of rendered output.
 
 ```python
 from wenmode import Wenmode
@@ -121,9 +121,9 @@ rendering behavior lives in renderers.
 
 ### Source positions
 
-Pass `positions=True` when you need source ranges for editor integration,
-diagnostics, or AST-based tooling. Positions are opt-in so the default AST shape
-and parser overhead stay small.
+Set `positions=True` to include source ranges for editor integration, diagnostics,
+or AST-based tooling. Positions are opt-in. This keeps the default AST shape and
+parser overhead small.
 
 ```python
 from wenmode import Wenmode
@@ -164,9 +164,9 @@ for ordinary HTML rendering.
 
 ### Incremental parsing
 
-Use `Parser.parse_iter()` when you want parsed top-level blocks instead of HTML
-chunks. Like `Wenmode.stream()`, it only works with streaming-compatible rule
-sets and is most useful with a line iterator for large files or uploads.
+Use `Parser.parse_iter()` to return parsed top-level blocks instead of HTML
+chunks. Like `Wenmode.stream()`, it requires a streaming-compatible rule set. It
+is useful with a line iterator for large files or uploads.
 
 `Wenmode.supports_streaming` and `Wenmode.streaming_blockers()` report parser
 and renderer compatibility before you call `stream()` or `parse_iter()`. For
@@ -233,13 +233,13 @@ Parser state is created per parse. Reference definitions, footnote definitions,
 and abbreviation definitions do not leak between calls, so a parser instance can
 be reused safely.
 
-Use this split form when parsing and rendering happen in different layers of
-your application, or when you need to run AST transforms before rendering.
+Use this split form when different application layers parse and render the
+document, or when your code must transform the AST before rendering.
 
 ## Streaming output
 
-Use the `streaming` preset when you want HTML chunks without waiting for the
-whole document to be parsed and rendered.
+Use the `streaming` preset to return HTML chunks before the complete document is
+parsed and rendered.
 
 ```python
 from wenmode import Wenmode

@@ -13,22 +13,22 @@ application.
 ---
 
 LLMs often return Markdown because it is compact, readable, and easy to display.
-In production applications, generated Markdown usually needs more than direct
-HTML rendering:
+Do not render generated Markdown directly in a production application. You may
+need to:
 
-- only a subset of Markdown syntax may be allowed;
-- images, raw HTML, or unknown extension nodes may need to be removed;
-- links and image URLs need renderer-level safety handling;
-- previews may need to stream before the full answer is available;
-- search, citations, or analytics may need structured AST data.
+- restrict the allowed Markdown syntax;
+- remove images, raw HTML, or unknown extension nodes;
+- validate link and image URLs;
+- stream a preview before the complete answer is available;
+- store AST data for search, citations, or analytics.
 
-Wenmode is a good fit for this workflow because parsing, AST inspection,
-filtering, and rendering are separate steps.
+Wenmode supports this workflow because parsing, AST inspection, filtering, and
+rendering are separate steps.
 
 ## Choose a rule set
 
-Use the `streaming` preset when the response should render incrementally as
-tokens arrive. It supports common block and inline syntax, tables,
+Use the `streaming` preset to render the response as tokens arrive. It supports
+common block and inline syntax, tables,
 strikethrough, direct links, and direct images, but disables features that need
 the complete document, such as reference-style links and footnotes.
 
@@ -39,9 +39,9 @@ from wenmode.presets import streaming
 wen = Wenmode(streaming)
 ```
 
-If you need reference-style links, footnotes, or document-wide transforms, parse
-the complete generated answer first with `commonmark`, `github`, or a custom
-rule list.
+If the answer uses reference-style links, footnotes, or document-wide
+transforms, parse the complete answer with `commonmark`, `github`, or a custom
+rule list before you render it.
 
 ## Filter nodes before rendering
 
@@ -109,8 +109,8 @@ not included in `ALLOWED_NODE_TYPES`.
 
 ## Render streamed output
 
-The same function can consume a string, a line iterator, or another iterable
-that yields Markdown chunks.
+The function accepts a string, a line iterator, or another iterable that yields
+Markdown chunks.
 
 ```python
 markdown = '''
@@ -131,10 +131,10 @@ assert '<img' not in html
 assert '<script' not in html
 ```
 
-Keep the default `HTMLRenderer()` safety settings so unsafe URLs are removed
-from allowed links. Node filtering and HTML renderer safety solve different
-problems: filtering decides which Markdown constructs are allowed, while the
-renderer decides how surviving nodes become HTML.
+Keep the default `HTMLRenderer()` safety settings. The renderer removes unsafe
+URLs from links that pass the node filter. Node filtering and renderer safety
+have different roles: filtering selects the allowed Markdown constructs, while
+the renderer converts the remaining nodes to HTML.
 
 ## Parse the full answer when needed
 

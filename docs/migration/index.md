@@ -12,17 +12,16 @@ extensions, renderer behavior, AST workflows, and safety defaults.
 
 ---
 
-Wenmode is not a drop-in wrapper around other Markdown parsers. It is built
-around explicit rule composition and renderer dispatch, so migration is usually
-best handled by identifying which syntax and output behavior your application
-depends on, then choosing a preset or rule list that matches it.
+Wenmode is not a drop-in wrapper for other Markdown parsers. It uses explicit
+rules and renderer dispatch. During migration, list the syntax and output
+behavior that your application uses. Then choose a matching preset or rule list.
 
 If you are still deciding whether this model fits your application, read
 {doc}`../introduce` before choosing a parser-specific migration guide.
 
-Before changing code, collect a few representative Markdown documents from your
-application and save the HTML or AST output you currently rely on. Use those
-fixtures to compare Wenmode behavior during the migration.
+Before you change code, collect representative Markdown documents from your
+application. Save the HTML or AST output that your application currently uses.
+Use these fixtures to compare Wenmode behavior during the migration.
 
 ```{toctree}
 :maxdepth: 2
@@ -47,9 +46,9 @@ Use this process for any parser migration:
 6. If your application used parser tokens or an AST, migrate that logic to
    `Node.to_ast()` or direct node traversal.
 
-Each guide shows the existing library call first, then the equivalent Wenmode
-call. Code block captions name the parser being migrated from and `wenmode`, so
-you can compare the shape of the old integration with the replacement code.
+Each guide shows the existing library call first and the equivalent Wenmode call
+second. Code block captions identify the old parser and `wenmode`. Use the
+captions to compare the old integration with the replacement code.
 
 ## Which guide to use
 
