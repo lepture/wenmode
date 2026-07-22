@@ -21,6 +21,10 @@ here while preparing a release, then move them under the final version heading.
 
 - Change `InlineRule.parse()` to receive an `InlineCandidate`; use
   `candidate.start` and `candidate.match`.
+- Change `BlockRule.parse()` to receive a `BlockCandidate`; use
+  `candidate.line` and `candidate.match`.
+- Change `ContinueRule` to produce a `ContinueCandidate` with
+  `match_candidate()` before `parse_paragraph_continuation()`.
 
 ## 0.12.1
 

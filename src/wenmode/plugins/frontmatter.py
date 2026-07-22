@@ -9,7 +9,7 @@ from wenmode.renderers.asciidoc import AsciiDocRenderContext, AsciiDocRenderer
 from wenmode.renderers.base import RenderContext
 from wenmode.renderers.markdown import MarkdownRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer
-from wenmode.rules import BlockRule, RootTransform, Rule
+from wenmode.rules import BlockCandidate, BlockRule, RootTransform, Rule
 
 from .._parser.state import BlockState
 from .._parser.store import StateKey
@@ -48,7 +48,7 @@ class FrontmatterRule(BlockRule):
         self.load = load or load_simple_frontmatter
         self.root_transforms = [FrontmatterTransform(data_key)]
 
-    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
+    def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> Node | None:
         if state.depth != 0 or state.index != 0:
             return None
 

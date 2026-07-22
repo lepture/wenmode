@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-import re
 from typing import TYPE_CHECKING
 
 from wenmode.nodes import Code
 from wenmode.utils import count_indent
 
 from ..._parser.state import BlockState
-from ..base import BlockRule
+from ..base import BlockCandidate, BlockRule
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
@@ -26,7 +25,7 @@ class IndentedCode(BlockRule):
     name = 'indented_code'
     pattern = r'(?: {4,}|[ \t]{0,3}\t)'
 
-    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Code:
+    def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> Code:
         lines: list[str] = []
 
         while not state.done:

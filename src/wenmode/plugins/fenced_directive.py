@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, ClassVar, TypeAlias, cast
 from wenmode.nodes import ContainerDirective as ContainerDirectiveNode
 from wenmode.nodes import LiteralDirective as LiteralDirectiveNode
 from wenmode.nodes import Node
-from wenmode.rules import BlockRule
+from wenmode.rules import BlockCandidate, BlockRule
 from wenmode.rules.blocks.directive import collect_until_with_source, directive_label_children
 
 from .._parser.state import BlockState
@@ -114,7 +114,7 @@ class FencedDirectiveRule(BlockRule):
             state.advance()
         return ''.join(lines)
 
-    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
+    def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> Node | None:
         name, argument, closer = self.parse_directive_head(state)
         attributes = self.parse_directive_attributes(state)
         if name in self.literal_names:

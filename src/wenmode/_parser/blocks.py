@@ -153,11 +153,11 @@ class BlockParser:
         first_rule_name = cast(str, match.lastgroup)
         start = self._rule_set.block_rule_order[first_rule_name]
         for rule in self._rule_set.block_rules[start:]:
-            rule_match = re.match(rule.pattern, line)
-            if rule_match is None or self.container_depth_exceeded(rule.name, state):
+            candidate = rule.match_candidate(line)
+            if candidate is None or self.container_depth_exceeded(rule.name, state):
                 continue
             previous_index = state.index
-            parsed = rule.parse(self._parser, state, rule_match)
+            parsed = rule.parse(self._parser, state, candidate)
             if state.index < previous_index:
                 raise RuntimeError(
                     f"Block rule '{rule.name}' moved state backwards from index {previous_index} to {state.index}"
@@ -227,10 +227,11 @@ class BlockParser:
 
     def _parse_paragraph_continuation(self, state: BlockState, lines: list[str], line: str) -> Node | None:
         for continuation in self._rule_set.paragraph_continuations:
-            if not continuation.matches(line):
+            candidate = continuation.match_candidate(line)
+            if candidate is None:
                 continue
             previous_index = state.index
-            parsed = continuation.parse_paragraph_continuation(self._parser, state, lines)
+            parsed = continuation.parse_paragraph_continuation(self._parser, state, lines, candidate)
             if parsed is None:
                 if state.index != previous_index:
                     raise RuntimeError(

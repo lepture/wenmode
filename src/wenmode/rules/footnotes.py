@@ -11,7 +11,7 @@ from wenmode.utils import count_indent, normalize_label, normalize_label_text
 
 from .._parser.source import SourceCollector
 from .._parser.store import StateKey
-from .base import BlockRule, InlineCandidate, InlineRule, Rule
+from .base import BlockCandidate, BlockRule, InlineCandidate, InlineRule, Rule
 from .transforms import RootTransform
 
 if TYPE_CHECKING:
@@ -82,7 +82,7 @@ class FootnoteDefinition(BlockRule):
     name = 'footnote_definition'
     pattern = r'[ \t]{0,3}\[\^'
 
-    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> FootnoteDefinitionNode | None:
+    def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> FootnoteDefinitionNode | None:
         line = state.line.rstrip('\r\n')
         parsed = FOOTNOTE_DEFINITION_RE.match(line)
         if parsed is None:

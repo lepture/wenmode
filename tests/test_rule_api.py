@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from collections.abc import Mapping
 
 import pytest
@@ -9,7 +8,9 @@ from wenmode import HTMLRenderer, Parser, Wenmode
 from wenmode.nodes import Node, Paragraph, Text
 from wenmode.rules import (
     AtxHeading,
+    BlockCandidate,
     BlockRule,
+    ContinueCandidate,
     ContinueRule,
     Footnote,
     InlineCandidate,
@@ -59,7 +60,7 @@ def test_block_rule_node_transform_runs_after_parse() -> None:
             super().__init__()
             self.node_transforms = [BangTransform()]
 
-        def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
+        def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> Node | None:
             state.advance()
             return Paragraph(children=[Text(value='original')])
 
@@ -81,10 +82,14 @@ def test_continuation_rule_node_transform_runs_after_parse() -> None:
             super().__init__()
             self.node_transforms = [ContinuationTransform()]
 
-        def matches(self, line: str) -> bool:
-            return line.startswith('!!')
+        def match_candidate(self, line: str) -> ContinueCandidate | None:
+            if not line.startswith('!!'):
+                return None
+            return ContinueCandidate(line)
 
-        def parse_paragraph_continuation(self, parser: Parser, state: BlockState, lines: list[str]) -> Node | None:
+        def parse_paragraph_continuation(
+            self, parser: Parser, state: BlockState, lines: list[str], candidate: ContinueCandidate
+        ) -> Node | None:
             state.advance()
             return Paragraph(children=[Text(value='original')])
 
@@ -223,7 +228,7 @@ def test_rule_subclasses_can_define_identity_as_class_attributes() -> None:
         name = 'bang_block'
         pattern = r'[ \t]{0,3}!!$'
 
-        def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
+        def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> Node | None:
             state.advance()
             return Paragraph(children=[Text(value='bang')])
 
@@ -247,7 +252,7 @@ def test_block_rule_returning_node_must_advance_state() -> None:
         name = 'non_progressing_block'
         pattern = r'!!'
 
-        def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
+        def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> Node | None:
             return Paragraph(children=[])
 
     parser = Parser([NonProgressingBlock])
@@ -261,7 +266,7 @@ def test_block_rule_cannot_move_state_backwards() -> None:
         name = 'backwards_block'
         pattern = r'!!'
 
-        def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
+        def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> Node | None:
             state.advance(-1)
             return None
 
@@ -275,10 +280,14 @@ def test_continuation_rule_returning_node_must_advance_state() -> None:
     class NonProgressingContinuation(ContinueRule):
         name = 'non_progressing_continuation'
 
-        def matches(self, line: str) -> bool:
-            return line.startswith('!!')
+        def match_candidate(self, line: str) -> ContinueCandidate | None:
+            if not line.startswith('!!'):
+                return None
+            return ContinueCandidate(line)
 
-        def parse_paragraph_continuation(self, parser: Parser, state: BlockState, lines: list[str]) -> Node | None:
+        def parse_paragraph_continuation(
+            self, parser: Parser, state: BlockState, lines: list[str], candidate: ContinueCandidate
+        ) -> Node | None:
             return Paragraph(children=[])
 
     parser = Parser([NonProgressingContinuation])
@@ -291,10 +300,14 @@ def test_continuation_rule_decline_must_not_advance_state() -> None:
     class ForwardDecliningContinuation(ContinueRule):
         name = 'forward_declining_continuation'
 
-        def matches(self, line: str) -> bool:
-            return line.startswith('!!')
+        def match_candidate(self, line: str) -> ContinueCandidate | None:
+            if not line.startswith('!!'):
+                return None
+            return ContinueCandidate(line)
 
-        def parse_paragraph_continuation(self, parser: Parser, state: BlockState, lines: list[str]) -> Node | None:
+        def parse_paragraph_continuation(
+            self, parser: Parser, state: BlockState, lines: list[str], candidate: ContinueCandidate
+        ) -> Node | None:
             state.advance()
             return None
 
@@ -312,10 +325,14 @@ def test_continuation_rule_decline_must_not_move_state_backwards() -> None:
             super().__init__()
             self.moved = False
 
-        def matches(self, line: str) -> bool:
-            return line.startswith('!!')
+        def match_candidate(self, line: str) -> ContinueCandidate | None:
+            if not line.startswith('!!'):
+                return None
+            return ContinueCandidate(line)
 
-        def parse_paragraph_continuation(self, parser: Parser, state: BlockState, lines: list[str]) -> Node | None:
+        def parse_paragraph_continuation(
+            self, parser: Parser, state: BlockState, lines: list[str], candidate: ContinueCandidate
+        ) -> Node | None:
             if not self.moved:
                 self.moved = True
                 state.advance(-1)
@@ -331,19 +348,27 @@ def test_continuation_rule_can_decline_without_advancing() -> None:
     class DecliningContinuation(ContinueRule):
         name = 'declining_continuation'
 
-        def matches(self, line: str) -> bool:
-            return line.startswith('!!')
+        def match_candidate(self, line: str) -> ContinueCandidate | None:
+            if not line.startswith('!!'):
+                return None
+            return ContinueCandidate(line)
 
-        def parse_paragraph_continuation(self, parser: Parser, state: BlockState, lines: list[str]) -> Node | None:
+        def parse_paragraph_continuation(
+            self, parser: Parser, state: BlockState, lines: list[str], candidate: ContinueCandidate
+        ) -> Node | None:
             return None
 
     class TransformingContinuation(ContinueRule):
         name = 'transforming_continuation'
 
-        def matches(self, line: str) -> bool:
-            return line.startswith('!!')
+        def match_candidate(self, line: str) -> ContinueCandidate | None:
+            if not line.startswith('!!'):
+                return None
+            return ContinueCandidate(line)
 
-        def parse_paragraph_continuation(self, parser: Parser, state: BlockState, lines: list[str]) -> Node | None:
+        def parse_paragraph_continuation(
+            self, parser: Parser, state: BlockState, lines: list[str], candidate: ContinueCandidate
+        ) -> Node | None:
             state.advance()
             return Paragraph(children=[Text(value='transformed')])
 
@@ -355,7 +380,7 @@ def test_block_rule_can_decline_without_advancing() -> None:
         name = 'declining_block'
         pattern = r'!!'
 
-        def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
+        def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> Node | None:
             return None
 
     assert render(Parser([DecliningBlock]), '!!\n') == '<p>!!</p>\n'
@@ -366,7 +391,7 @@ def test_block_rule_can_consume_without_returning_node() -> None:
         name = 'consuming_block'
         pattern = r'!!'
 
-        def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
+        def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> Node | None:
             state.advance()
             return None
 

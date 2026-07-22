@@ -9,7 +9,7 @@ from wenmode.utils import normalize_label, normalize_label_text, normalize_uri_t
 from wenmode.utils.text import parse_angle_destination, parse_bare_destination
 
 from .._parser.store import StateKey
-from .base import BlockRule, Rule
+from .base import BlockCandidate, BlockRule, Rule
 from .transforms import RootTransform
 
 if TYPE_CHECKING:
@@ -46,7 +46,7 @@ class ReferenceDefinition(BlockRule):
     name = 'reference_definition'
     pattern = r'[ \t]{0,3}\[(?!\^)'
 
-    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> None:
+    def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> None:
         multiline_label = parse_multiline_label_reference(state, state.index)
         if multiline_label is not None:
             next_index, label, url, title = multiline_label

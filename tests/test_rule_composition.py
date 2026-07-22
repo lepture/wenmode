@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
@@ -21,7 +20,7 @@ from wenmode.rules import (
     SetextHeading,
     ThematicBreak,
 )
-from wenmode.rules.base import BlockRule
+from wenmode.rules.base import BlockCandidate, BlockRule
 
 
 @dataclass
@@ -33,7 +32,7 @@ class RecursiveBlockRule(BlockRule):
     name = 'recursive_block'
     pattern = r'@@[A-Z]'
 
-    def parse(self, parser: Any, state: Any, match: re.Match[str]) -> Node | None:
+    def parse(self, parser: Any, state: Any, candidate: BlockCandidate) -> Node | None:
         marker = state.line.rstrip('\r\n')[2:]
         if len(marker) != 1:
             return None

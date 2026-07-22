@@ -10,7 +10,7 @@ from wenmode.utils import count_indent, count_indent_from, expand_leading_tabs
 
 from ..._parser.source import SourceCollector, SourceMap
 from ..._parser.state import BlockState
-from ..base import BlockRule, Rule
+from ..base import BlockCandidate, BlockRule, Rule
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
@@ -49,7 +49,7 @@ class List(BlockRule):
         super().__init__()
         self.task = task
 
-    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> ListNode:
+    def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> ListNode:
         first = cast(re.Match[str], MARKER_RE.match(state.line.rstrip('\r\n')))
         if state.depth >= parser.max_container_depth - 1:
             return parse_shallow_list(parser, state, first, task=self.task)
@@ -114,7 +114,7 @@ def parse_list_item_marker(
     marker = MARKER_RE.match(line)
     if marker is None:
         return None
-    if has_items and isinstance(thematic_break, BlockRule) and re.match(thematic_break.pattern, line):
+    if has_items and isinstance(thematic_break, BlockRule) and thematic_break.compiled.match(line):
         return None
     if not marker_matches_style(marker, style):
         return None

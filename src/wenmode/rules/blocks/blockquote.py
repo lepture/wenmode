@@ -7,7 +7,7 @@ from wenmode.nodes import Blockquote as BlockquoteNode
 from wenmode.utils import expand_leading_tabs
 
 from ..._parser.state import BlockState
-from ..base import BlockRule
+from ..base import BlockCandidate, BlockRule
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
@@ -66,7 +66,7 @@ class Blockquote(BlockRule):
 
         return ''.join(lines)
 
-    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> BlockquoteNode:
+    def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> BlockquoteNode:
         source = state.source.collect()
         text = self.parse_text(parser, state, source)
         return BlockquoteNode(children=parser.parse_blocks(text, parent_state=state, source=source.map()))
@@ -85,6 +85,6 @@ def starts_nonparagraph_block(parser: Parser, line: str) -> bool:
     }
     for name in rule_names:
         rule = parser.rules.get(name)
-        if isinstance(rule, BlockRule) and re.match(rule.pattern, line):
+        if isinstance(rule, BlockRule) and rule.compiled.match(line):
             return True
     return False

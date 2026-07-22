@@ -23,6 +23,22 @@ class InlineCandidate:
     match: re.Match[str] | None = None
 
 
+@dataclass(frozen=True, slots=True)
+class BlockCandidate:
+    """Candidate block match produced by block dispatch."""
+
+    line: str
+    match: re.Match[str]
+
+
+@dataclass(frozen=True, slots=True)
+class ContinueCandidate:
+    """Candidate paragraph continuation produced by continuation dispatch."""
+
+    line: str
+    match: re.Match[str] | None = None
+
+
 class Rule:
     """Base class for parser rules.
 
@@ -46,20 +62,28 @@ class BlockRule(Rule):
     """
 
     pattern: str
+    compiled: re.Pattern[str]
 
     def __init__(self, name: str | None = None, pattern: str | None = None) -> None:
         super().__init__(name)
         self.pattern = cast(str, resolve_string_attribute(self, 'pattern', pattern))
+        self.compiled = re.compile(self.pattern)
 
-    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
-        """Parse a matched block opener.
+    def match_candidate(self, line: str) -> BlockCandidate | None:
+        match = self.compiled.match(line)
+        if match is None:
+            return None
+        return BlockCandidate(line, match)
+
+    def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> Node | None:
+        """Parse a matched block candidate.
 
         Implementations must advance ``state`` when they consume input. Returning
         a node without advancing state raises :exc:`RuntimeError`.
 
         :param parser: Active parser.
         :param state: Current block state.
-        :param match: Match object from the compiled block opener.
+        :param candidate: Candidate line and match object from dispatch.
         :returns: Parsed node, or ``None`` if the rule declines the match.
         """
         raise NotImplementedError
@@ -68,12 +92,14 @@ class BlockRule(Rule):
 class ContinueRule(Rule):
     """Base class for rules that transform paragraph continuations."""
 
-    def matches(self, line: str) -> bool:
-        """Return whether a line should be checked by this continuation rule."""
+    def match_candidate(self, line: str) -> ContinueCandidate | None:
+        """Return a paragraph continuation candidate for ``line``."""
         raise NotImplementedError
 
-    def parse_paragraph_continuation(self, parser: Parser, state: BlockState, lines: list[str]) -> Node | None:
-        """Parse a paragraph continuation.
+    def parse_paragraph_continuation(
+        self, parser: Parser, state: BlockState, lines: list[str], candidate: ContinueCandidate
+    ) -> Node | None:
+        """Parse a paragraph continuation candidate.
 
         Returning ``None`` declines the continuation and must leave ``state``
         unchanged. Returning a replacement node requires advancing ``state``.
@@ -83,6 +109,7 @@ class ContinueRule(Rule):
         :param parser: Active parser.
         :param state: Current block state positioned at the continuation line.
         :param lines: Paragraph lines collected so far.
+        :param candidate: Candidate line and optional match from dispatch.
         :returns: Replacement node, or ``None`` to keep parsing the paragraph.
         """
         raise NotImplementedError

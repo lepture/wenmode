@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from io import StringIO
 
 import pytest
@@ -10,7 +9,7 @@ from wenmode.headings import HeadingIdTransform
 from wenmode.nodes import Node, Position
 from wenmode.parser import Parser
 from wenmode.presets import commonmark, github, streaming
-from wenmode.rules import AtxHeading, BlockRule, Footnote, Image, Link, List, RootTransform, Rule, Table
+from wenmode.rules import AtxHeading, BlockCandidate, BlockRule, Footnote, Image, Link, List, RootTransform, Rule, Table
 from wenmode.state import StreamBlockState, StreamLineBuffer
 
 
@@ -26,7 +25,7 @@ class OneLineProbeRule(BlockRule):
         super().__init__()
         self.states: list[StreamBlockState] = []
 
-    def parse(self, parser, state, match: re.Match[str]) -> Node | None:
+    def parse(self, parser, state, candidate: BlockCandidate) -> Node | None:
         assert isinstance(state, StreamBlockState)
         self.states.append(state)
         state.advance()
@@ -41,7 +40,7 @@ class LookaheadProbeRule(BlockRule):
         super().__init__()
         self.states: list[StreamBlockState] = []
 
-    def parse(self, parser, state, match: re.Match[str]) -> Node | None:
+    def parse(self, parser, state, candidate: BlockCandidate) -> Node | None:
         if isinstance(state, StreamBlockState):
             self.states.append(state)
         if state.has(1):

@@ -11,7 +11,7 @@ from wenmode.renderers import MarkdownRenderer, RenderContext
 from wenmode.renderers.asciidoc import AsciiDocRenderContext, AsciiDocRenderer
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer, indent_block
-from wenmode.rules import Blockquote, BlockRule
+from wenmode.rules import BlockCandidate, Blockquote, BlockRule
 
 from .._parser.source import SourceMap
 from .._parser.state import BlockState
@@ -53,7 +53,7 @@ class GithubAlertBlockquote(BlockRule):
         names = '|'.join(re.escape(name) for name in sorted(self.alerts, key=len, reverse=True))
         self.alert_re = re.compile(rf'^\[!(?P<name>{names})](?:[ \t]*(?:\r?\n|$))', re.I)
 
-    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> BlockquoteNode | GithubAlertNode:
+    def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> BlockquoteNode | GithubAlertNode:
         source = state.source.collect()
         text = Blockquote.parse_text(parser, state, source)
         source_map = source.map()

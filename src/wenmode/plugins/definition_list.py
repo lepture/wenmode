@@ -9,7 +9,7 @@ from wenmode.renderers import MarkdownRenderer, RenderContext
 from wenmode.renderers.asciidoc import AsciiDocRenderContext, AsciiDocRenderer
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer, indent_block
-from wenmode.rules import ContinueRule, Rule
+from wenmode.rules import ContinueCandidate, ContinueRule, Rule
 
 from .._parser.source import SourceCollector
 from .._parser.state import BlockState
@@ -55,15 +55,15 @@ class DefinitionListRule(ContinueRule):
 
     name = 'definition_list'
 
-    def matches(self, line: str) -> bool:
-        return line.lstrip(' \t').startswith(':')
+    def match_candidate(self, line: str) -> ContinueCandidate | None:
+        match = DESCRIPTION_RE.match(line)
+        if match is None:
+            return None
+        return ContinueCandidate(line, match)
 
     def parse_paragraph_continuation(
-        self, parser: Parser, state: BlockState, lines: list[str]
+        self, parser: Parser, state: BlockState, lines: list[str], candidate: ContinueCandidate
     ) -> DefinitionListNode | None:
-        if parse_description_line(state.line) is None:
-            return None
-
         term_start_index = state.index - len(lines)
         children: list[Node] = create_terms(parser, lines, state, term_start_index)
         children.extend(parse_descriptions(parser, state))

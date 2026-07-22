@@ -4,7 +4,17 @@ import re
 
 from wenmode import Parser, Wenmode
 from wenmode.nodes import Node, Root
-from wenmode.rules import AtxHeading, Blockquote, BlockRule, Footnote, Link, NodeTransform, RootTransform, Rule
+from wenmode.rules import (
+    AtxHeading,
+    BlockCandidate,
+    Blockquote,
+    BlockRule,
+    Footnote,
+    Link,
+    NodeTransform,
+    RootTransform,
+    Rule,
+)
 from wenmode.state import BlockState, StateKey, StateStore
 
 TERMS = StateKey('tests.terms', lambda: {})
@@ -21,7 +31,7 @@ class TermDefinition(BlockRule):
     def __init__(self) -> None:
         super().__init__('term_definition', r'[ \t]{0,3}@term\[')
 
-    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
+    def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> Node | None:
         term = TERM_RE.match(state.line.rstrip('\r\n'))
         if term is None:
             return None

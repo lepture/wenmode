@@ -9,7 +9,7 @@ from wenmode.nodes import Node, Parent, Position, Text
 from wenmode.renderers import render_node_children
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer
-from wenmode.rules import BlockRule, RootTransform, Rule
+from wenmode.rules import BlockCandidate, BlockRule, RootTransform, Rule
 
 from .._parser.state import BlockState
 from .._parser.store import StateKey
@@ -62,7 +62,7 @@ class AbbreviationDefinitionRule(BlockRule):
     name = 'abbreviation_definition'
     pattern = r'[ \t]{0,3}\*\['
 
-    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> None:
+    def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> None:
         parsed = parse_abbreviation_definition(state, state.index)
         if parsed is None:
             return None

@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Literal, TypeAlias, cast
 
 from wenmode.nodes import Literal as LiteralNode
 from wenmode.nodes import Node, Parent
-from wenmode.rules import BlockRule
+from wenmode.rules import BlockCandidate, BlockRule
 
 from .._parser.state import BlockState
 
@@ -43,8 +43,8 @@ class BlockFenced(BlockRule):
         self._node_factory = _fenced_node_factory(self)
         super().__init__(name=name, pattern=rf'[ \t]{{0,3}}{re.escape(opener)}')
 
-    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
-        opener_content = _parse_opener_content(state.line, self, match)
+    def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> Node | None:
+        opener_content = _parse_opener_content(state.line, self, candidate.match)
         if opener_content is None:
             return None
 

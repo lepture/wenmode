@@ -10,7 +10,7 @@ from wenmode.renderers import MarkdownRenderer, RenderContext
 from wenmode.renderers.asciidoc import AsciiDocRenderContext, AsciiDocRenderer
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer, indent_block
-from wenmode.rules import BlockRule, Rule
+from wenmode.rules import BlockCandidate, BlockRule, Rule
 from wenmode.rules.blocks.html import HTML_SCRIPT_STYLE_RE, HtmlBlock
 from wenmode.utils import compile_disallowed_html_filter, filter_disallowed_html, unquote_attribute_value
 
@@ -69,13 +69,13 @@ class HtmlContainer(BlockRule):
         self.disallowed_html_filter = compile_disallowed_html_filter(disallowed_tags)
         self.fallback = HtmlBlock(disallowed_tags=disallowed_tags)
 
-    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node:
+    def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> Node:
         if state.depth >= parser.max_container_depth - 1:
-            return self.fallback.parse(parser, state, match)
+            return self.fallback.parse(parser, state, candidate)
         parsed = parse_html_container(parser, state, self.disallowed_html_filter)
         if parsed is not None:
             return parsed
-        return self.fallback.parse(parser, state, match)
+        return self.fallback.parse(parser, state, candidate)
 
 
 def parse_html_container(

@@ -8,7 +8,7 @@ from wenmode.nodes import Html
 from wenmode.utils import compile_disallowed_html_filter, filter_disallowed_html
 
 from ..._parser.state import BlockState
-from ..base import BlockRule
+from ..base import BlockCandidate, BlockRule
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
@@ -139,7 +139,7 @@ class HtmlBlock(BlockRule):
         super().__init__()
         self.disallowed_html_filter = compile_disallowed_html_filter(disallowed_tags)
 
-    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Html:
+    def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> Html:
         first = state.line
         stripped = first.rstrip('\r\n').lstrip(' \t')
 

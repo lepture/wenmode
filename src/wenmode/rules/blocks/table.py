@@ -8,7 +8,7 @@ from wenmode.nodes import Table as TableNode
 from wenmode.utils import count_indent, is_escaped
 
 from ..._parser.state import BlockState
-from ..base import BlockRule
+from ..base import BlockCandidate, BlockRule
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
@@ -37,7 +37,7 @@ class Table(BlockRule):
         super().__init__()
         self.require_body_pipe = require_body_pipe
 
-    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> TableNode | None:
+    def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> TableNode | None:
         if not state.has(1):
             return None
 

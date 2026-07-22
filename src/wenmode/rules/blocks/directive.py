@@ -10,7 +10,7 @@ from wenmode.nodes import Node, Paragraph
 
 from ..._parser.source import SourceCollector
 from ..._parser.state import BlockState
-from ..base import BlockRule
+from ..base import BlockCandidate, BlockRule
 from ..directives import parse_directive_head
 
 if TYPE_CHECKING:
@@ -33,7 +33,7 @@ class LeafDirective(BlockRule):
     name = 'leaf_directive'
     pattern = r' {0,3}::(?=[A-Za-z])'
 
-    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
+    def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> Node | None:
         line = state.line.rstrip('\r\n')
         head = cast(str, parse_leaf_directive_head(line))
         parsed = parse_directive_head(head, 0)
@@ -66,7 +66,7 @@ class ContainerDirective(BlockRule):
     name = 'container_directive'
     pattern = r' {0,3}:{3,}(?=[A-Za-z])'
 
-    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
+    def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> Node | None:
         line = state.line.rstrip('\r\n')
         opener = cast(re.Match[str], CONTAINER_DIRECTIVE_RE.match(line))
         fence = opener.group('fence')

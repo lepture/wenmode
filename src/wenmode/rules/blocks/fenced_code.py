@@ -7,7 +7,7 @@ from wenmode.nodes import Code, Node, Paragraph
 from wenmode.utils import normalize_label_text
 
 from ..._parser.state import BlockState
-from ..base import BlockRule
+from ..base import BlockCandidate, BlockRule
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
@@ -31,7 +31,7 @@ class FencedCode(BlockRule):
     name = 'fenced_code'
     pattern = r' {0,3}(?:`{3,}|~{3,})'
 
-    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node:
+    def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> Node:
         opener = cast(re.Match[str], FENCE_OPENER_RE.match(state.line.rstrip('\r\n')))
         indent = len(opener.group('indent').replace('\t', '    '))
         fence = opener.group('fence')

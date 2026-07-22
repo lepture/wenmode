@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, cast
 from wenmode.nodes import Heading, Node
 
 from ..._parser.state import BlockState
-from ..base import BlockRule, ContinueRule
+from ..base import BlockCandidate, BlockRule, ContinueCandidate, ContinueRule
 from ..transforms import NodeTransform
 
 if TYPE_CHECKING:
@@ -36,7 +36,7 @@ class AtxHeading(BlockRule):
         super().__init__()
         self.node_transforms = list(transforms)
 
-    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Heading:
+    def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> Heading:
         line = state.line.rstrip('\r\n')
         parsed = cast(tuple[str, str, int], parse_atx_heading_line(line))
         marker, content, content_start = parsed
@@ -68,14 +68,17 @@ class SetextHeading(ContinueRule):
         super().__init__()
         self.node_transforms = list(transforms)
 
-    def matches(self, line: str) -> bool:
-        stripped = line.lstrip(' ')
-        return stripped.startswith(('=', '-'))
-
-    def parse_paragraph_continuation(self, parser: Parser, state: BlockState, lines: list[str]) -> Node | None:
-        marker = SETEXT_HEADING_RE.match(state.line)
+    def match_candidate(self, line: str) -> ContinueCandidate | None:
+        marker = SETEXT_HEADING_RE.match(line)
         if marker is None:
             return None
+        return ContinueCandidate(line, marker)
+
+    def parse_paragraph_continuation(
+        self, parser: Parser, state: BlockState, lines: list[str], candidate: ContinueCandidate
+    ) -> Node | None:
+        marker = candidate.match
+        assert marker is not None
 
         start_index = state.index - len(lines)
         state.advance()

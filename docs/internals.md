@@ -157,14 +157,15 @@ sequences are also read-only. Use `Parser.register_rule()` or
 `Parser.register_rules()` to change the parser configuration; registration
 rebuilds all compiled rule views.
 
-`BlockRule` instances provide a block opener pattern and a `parse()` method.
-They receive the parser, current block state, and the matched opener.
+`BlockRule` instances provide a block opener pattern and parse from a
+`BlockCandidate`. The candidate contains the current line and the rule-specific
+regex match created during block dispatch.
 
-`ContinueRule` instances can inspect paragraph continuation lines. This is used
-for syntax where a paragraph can become another block, such as setext headings.
-Returning `None` declines the continuation and must leave `BlockState.index`
-unchanged. Returning a replacement node must advance the state past the accepted
-input.
+`ContinueRule` instances produce a `ContinueCandidate` from paragraph
+continuation lines. This is used for syntax where a paragraph can become
+another block, such as setext headings. Returning `None` declines the
+continuation and must leave `BlockState.index` unchanged. Returning a
+replacement node must advance the state past the accepted input.
 
 `InlineRule` instances provide candidate discovery through literal `opener`
 values or `search_candidate()`, then parse from an `InlineCandidate`. They

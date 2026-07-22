@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from wenmode.headings import HeadingIdTransform
 
-from .base import BlockRule, ContinueRule, InlineCandidate, InlineRule, Rule
+from .base import BlockCandidate, BlockRule, ContinueCandidate, ContinueRule, InlineCandidate, InlineRule, Rule
 from .blocks.blockquote import Blockquote
 from .blocks.directive import ContainerDirective, LeafDirective
 from .blocks.fenced_code import FencedCode
@@ -28,10 +28,12 @@ __all__ = [
     'AtxHeading',
     'Autolink',
     'BackslashEscape',
+    'BlockCandidate',
     'Blockquote',
     'BlockRule',
     'CharacterReference',
     'ContainerDirective',
+    'ContinueCandidate',
     'ContinueRule',
     'Emphasis',
     'ExtendedAutolink',

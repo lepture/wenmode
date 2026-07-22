@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import re
 from typing import TYPE_CHECKING, ClassVar
 
 from wenmode.nodes import ThematicBreak as ThematicBreakNode
 
 from ..._parser.state import BlockState
-from ..base import BlockRule
+from ..base import BlockCandidate, BlockRule
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
@@ -30,6 +29,6 @@ class ThematicBreak(BlockRule):
         r'| {0,3}_[ \t]*_[ \t]*_[ \t_]*$'
     )
 
-    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> ThematicBreakNode:
+    def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> ThematicBreakNode:
         state.advance()
         return ThematicBreakNode()

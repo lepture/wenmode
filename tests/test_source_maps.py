@@ -4,7 +4,7 @@ import re
 
 from wenmode import Parser, Wenmode
 from wenmode.nodes import Node, Paragraph, Parent, Text
-from wenmode.rules import AtxHeading, BlockRule, InlineCandidate, InlineCode, InlineRule, SetextHeading
+from wenmode.rules import AtxHeading, BlockCandidate, BlockRule, InlineCandidate, InlineCode, InlineRule, SetextHeading
 from wenmode.state import BlockState, SourceMap, SourceSegment
 
 
@@ -22,7 +22,7 @@ class SyntheticInlineSourceRule(BlockRule):
         self.text = text
         self.source = source
 
-    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
+    def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> Node | None:
         state.advance()
         return BoxNode([Paragraph(children=parser.parse_inlines(self.text, state, source=self.source))])
 
@@ -30,7 +30,7 @@ class SyntheticInlineSourceRule(BlockRule):
 class SyntheticBlockSourceRule(SyntheticInlineSourceRule):
     name = 'synthetic_block_source'
 
-    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
+    def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> Node | None:
         state.advance()
         return BoxNode(parser.parse_blocks(self.text, state, source=self.source))
 
@@ -182,7 +182,7 @@ def test_nested_block_and_inline_source_maps_share_parent_state() -> None:
         name = 'box'
         pattern = r'[ \t]{0,3}::box[ \t]*$'
 
-        def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
+        def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> Node | None:
             state.advance()
             lines: list[str] = []
             source = state.source.collect()
@@ -252,7 +252,7 @@ def test_wenmode_collected_nested_paragraph_positions_trim_source() -> None:
         name = 'trim_box'
         pattern = r'::trim[ \t]*$'
 
-        def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
+        def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> Node | None:
             state.advance()
             lines: list[str] = []
             source = state.source.collect()
@@ -279,7 +279,7 @@ def test_wenmode_collected_noncontiguous_nested_paragraph_positions_trim_source(
         name = 'split_paragraph'
         pattern = r'::split[ \t]*$'
 
-        def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
+        def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> Node | None:
             state.advance()
             source = state.source.collect()
 
@@ -345,7 +345,7 @@ def test_wenmode_collected_noncontiguous_source_maps_inline_positions() -> None:
         name = 'split_source'
         pattern = r'::split '
 
-        def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> Node | None:
+        def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> Node | None:
             line = state.line
             first_start = line.index('alpha')
             code_start = line.index('`beta`')

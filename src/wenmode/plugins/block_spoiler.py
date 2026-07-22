@@ -10,7 +10,7 @@ from wenmode.renderers.asciidoc import AsciiDocRenderContext, AsciiDocRenderer
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.markdown import render_prefixed_block
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer, indent_block
-from wenmode.rules import BlockRule, Rule
+from wenmode.rules import BlockCandidate, BlockRule, Rule
 from wenmode.utils import expand_leading_tabs
 
 from .._parser.state import BlockState
@@ -38,7 +38,7 @@ class BlockSpoilerRule(BlockRule):
     name = 'block_spoiler'
     pattern = r'[ \t]{0,3}>!'
 
-    def parse(self, parser: Parser, state: BlockState, match: re.Match[str]) -> BlockSpoilerNode:
+    def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> BlockSpoilerNode:
         if state.depth >= parser.max_container_depth - 1:
             return BlockSpoilerNode(children=self.parse_shallow(parser, state))
 
