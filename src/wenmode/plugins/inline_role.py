@@ -22,9 +22,7 @@ class RoleRule(InlineRule):
     opener = '{'
 
     def parse(self, parser: Parser, text: str, start: int, state: BlockState) -> tuple[Node | None, int]:
-        if start + 1 >= len(text) or text[start] != '{' or not text[start + 1].isascii() or not text[start + 1].isalpha():
-            return None, start
-        parsed = parse_role(text, start)
+        parsed = _parse_role(text, start)
         if parsed is None:
             return None, start
 
@@ -40,10 +38,7 @@ class RoleRule(InlineRule):
         )
 
 
-def parse_role(text: str, start: int = 0) -> tuple[str, str, int, int, int] | None:
-    if start >= len(text) or text[start] != '{':
-        return None
-
+def _parse_role(text: str, start: int) -> tuple[str, str, int, int, int] | None:
     name_end = text.find('}', start + 1)
     if name_end == -1:
         return None
