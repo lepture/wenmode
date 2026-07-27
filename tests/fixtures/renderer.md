@@ -59,7 +59,7 @@ Hello *em* **strong** ``code`` :math:`x + y` `link </url>`__ |image-1|
 <p>“Hello <strong>world</strong>” and <code>&quot;code&quot; -- ...</code> <a href="/url" title="--">link</a> <img src="/img.png" alt="alt" title="title -- ..." /></p>
 
 .markdown
-"Hello\.\.\." \-\- it's \< 6 & more\.
+"Hello..." -- it's \< 6 & more.
 
 "Hello **world**" and `"code" -- ...` [link](/url "--") ![alt](/img.png "title -- ...")
 
@@ -93,7 +93,7 @@ Hello *em* **strong** ``code`` :math:`x + y` `link </url>`__ |image-1|
 <p>“Hello…” -- ok</p>
 
 .markdown
-"Hello\.\.\." \-\- ok
+"Hello..." -- ok
 
 .rst
 "Hello..." -- ok
@@ -596,7 +596,7 @@ afootnote:one[note]
 </section>
 
 .markdown
-[^a\<b]: \<note\>
+[^a\<b]: \<note>
 
 [^a\<b]
 
@@ -755,7 +755,7 @@ Body.
 
 .markdown
 :::note[Important]{.warning}
-Body\.
+Body.
 :::
 
 .rst
@@ -912,7 +912,7 @@ HTML ~~gone~~ ==mark== ^^insert^^ ^2^ ~n~ [漢(kan)] >! secret !< :kbd[Ctrl+C]
 <p><abbr title="HyperText">HTML</abbr> <del>gone</del> <mark>mark</mark> <ins>insert</ins> <sup>2</sup> <sub>n</sub> <ruby>漢<rt>kan</rt></ruby> <span class="spoiler">secret</span> Ctrl+C</p>
 
 .markdown
-HTML ~~gone~~ ==mark== ^^insert^^ ^2^ ~n~ [漢(kan)] >! secret !< :kbd[Ctrl\+C]
+HTML ~~gone~~ ==mark== ^^insert^^ ^2^ ~n~ [漢(kan)] >! secret !< :kbd[Ctrl+C]
 
 .rst
 :abbr:`HTML (HyperText)` gone mark insert :sup:`2` :sub:`n` 漢 (kan) secret :kbd:`Ctrl+C`
@@ -1625,11 +1625,11 @@ Link: [a <b>](</a b(1)> "a \"quote\"") ![x*y](</img path(1).png> "img \"t\"")
 <p>Link: <a href="/a%20b(1)" title="a &quot;quote&quot;">a &lt;b&gt;</a> <img src="/img%20path(1).png" alt="x*y" title="img &quot;t&quot;" /></p>
 
 .markdown
-Escaped: \` \* \_ \{ \} \[ \] \< \> \( \) \# \+ \- \. \! \|\.
+Escaped: \` \* \_ \{ \} \[ \] \< > ( ) # + - . ! \|.
 
-Code: `  padded  ` and `` `tick` ``\.
+Code: `  padded  ` and `` `tick` ``.
 
-Link: [a \<b\>](</a%20b(1)> "a \"quote\"") ![x\*y](</img%20path(1).png> "img \"t\"")
+Link: [a \<b>](</a%20b(1)> "a \"quote\"") ![x\*y](</img%20path(1).png> "img \"t\"")
 
 .rst
 Escaped: \` \* _ { } [ ] < > ( ) # + - . ! \|.
@@ -1838,7 +1838,7 @@ two</div>
 .markdown
 <div>one
 
-two\</div\>
+two\</div>
 
 .rst
 .. raw:: html

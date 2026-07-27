@@ -230,6 +230,15 @@ def test_markdown_renderer_renders_directive_flag_attribute_from_markdown() -> N
     assert app.render('```{note}\n:flag:\n```\n') == ':::note{flag}\n:::\n'
 
 
+def test_markdown_renderer_uses_minimal_plain_text_escaping() -> None:
+    app = Wenmode(renderer=MarkdownRenderer())
+
+    assert app.render('Hello, world! This is file-name (v1.2).\n') == 'Hello, world! This is file-name (v1.2).\n'
+    assert app.render('\\# not a heading\n\\- not a list\n1\\. not a list\n\\> not a quote\n') == (
+        '\\# not a heading\n\\- not a list\n1\\. not a list\n\\> not a quote\n'
+    )
+
+
 def test_markdown_renderer_renders_wrapped_link_destination_from_markdown() -> None:
     app = Wenmode(github, renderer=MarkdownRenderer())
 

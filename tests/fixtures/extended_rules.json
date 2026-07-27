@@ -114,7 +114,7 @@
     ],
     "markdown": "A >! hidden *thing* !< appears.\n",
     "html": "<p>A <span class=\"spoiler\">hidden <em>thing</em></span> appears.</p>\n",
-    "markdown_output": "A >! hidden *thing* !< appears\\.\n"
+    "markdown_output": "A >! hidden *thing* !< appears.\n"
   },
   {
     "name": "block spoiler parses block content",
@@ -133,7 +133,7 @@
     ],
     "markdown": "The HTML spec is maintained by W3C.\n\n*[HTML]: Hyper Text Markup Language\n*[W3C]: Consortium\n",
     "html": "<p>The <abbr title=\"Hyper Text Markup Language\">HTML</abbr> spec is maintained by <abbr title=\"Consortium\">W3C</abbr>.</p>\n",
-    "markdown_output": "The HTML spec is maintained by W3C\\.\n"
+    "markdown_output": "The HTML spec is maintained by W3C.\n"
   },
   {
     "name": "definition list parses emphasis in descriptions",

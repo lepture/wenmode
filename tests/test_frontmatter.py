@@ -187,7 +187,7 @@ def test_frontmatter_plugin_renders_before_markdown_footnotes() -> None:
     app = Wenmode(github, renderer=MarkdownRenderer()).use(frontmatter)
 
     assert app.render('---\ntitle: Hello\n---\n\nText[^a].\n\n[^a]: Note.\n') == (
-        '---\ntitle: Hello\n---\n\nText[^a]\\.\n\n[^a]: Note\\.\n'
+        '---\ntitle: Hello\n---\n\nText[^a].\n\n[^a]: Note.\n'
     )
 
 

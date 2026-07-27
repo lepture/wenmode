@@ -36,8 +36,38 @@ from wenmode.nodes import (
 from ._shared import render_table_cell_content
 from .base import BaseRenderer, RenderContext
 
-ESCAPABLE_TEXT_RE = re.compile(r'([\\`*_{}\[\]<>()#+\-.!|])')
+ESCAPABLE_TEXT_RE = re.compile(r'([\\`*_{}\[\]<|])')
+LINE_START_MARKER_RE = re.compile(
+    r'(?m)^( {0,3})(?:(#{1,6})(?=[ \t]|$)|(>)(?=[ \t>]|$)|([-+])(?=[ \t]|$)|(\d{1,9})([.)])(?=[ \t]|$))'
+)
+SETEXT_MARKER_RE = re.compile(r'(?m)^( {0,3})((?:-+[ \t]*)+|(?:=+[ \t]*)+)$')
 DESTINATION_WRAP_RE = re.compile(r'[\s()]')
+
+
+def escape_line_start_marker(match: re.Match[str]) -> str:
+    indent = match.group(1)
+    heading = match.group(2)
+    blockquote = match.group(3)
+    unordered = match.group(4)
+    ordered_number = match.group(5)
+    ordered_marker = match.group(6)
+    if heading is not None:
+        return indent + '\\' + heading
+    if blockquote is not None:
+        return indent + '\\>'
+    if unordered is not None:
+        return indent + '\\' + unordered
+    assert ordered_number is not None and ordered_marker is not None
+    return indent + ordered_number + '\\' + ordered_marker
+
+
+def escape_setext_marker(match: re.Match[str]) -> str:
+    return match.group(1) + '\\' + match.group(2)
+
+
+def escape_block_starts(value: str) -> str:
+    value = LINE_START_MARKER_RE.sub(escape_line_start_marker, value)
+    return SETEXT_MARKER_RE.sub(escape_setext_marker, value)
 
 
 class MarkdownRenderer(BaseRenderer):
@@ -74,7 +104,7 @@ class MarkdownRenderer(BaseRenderer):
         parts: list[str] = []
         for child in item.children:
             if isinstance(child, Paragraph):
-                parts.append(self.render_children(child.children, context))
+                parts.append(escape_block_starts(self.render_children(child.children, context)))
             else:
                 parts.append(self.render_node(child, context).rstrip('\n'))
         if item.spread:
@@ -110,7 +140,7 @@ def render_root(renderer: MarkdownRenderer, node: Root, context: RenderContext) 
 
 @MarkdownRenderer.register('paragraph')
 def render_paragraph(renderer: MarkdownRenderer, node: Paragraph, context: RenderContext) -> str:
-    return renderer.render_children(node.children, context) + '\n\n'
+    return escape_block_starts(renderer.render_children(node.children, context)) + '\n\n'
 
 
 @MarkdownRenderer.register('heading')

@@ -127,7 +127,7 @@ def test_cli_renders_markdown_format(tmp_path, capsys) -> None:
     assert main(['render', '--format', 'markdown', str(source)]) == 0
 
     captured = capsys.readouterr()
-    assert captured.out == '# Hello\n\nA **bold** word\\.\n'
+    assert captured.out == '# Hello\n\nA **bold** word.\n'
 
 
 def test_cli_html_output_escapes_raw_html_and_sanitizes_urls_by_default(tmp_path, capsys) -> None:

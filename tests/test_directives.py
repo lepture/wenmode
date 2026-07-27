@@ -216,7 +216,7 @@ def test_markdown_renderer_outputs_directives() -> None:
     markdown = ':i[inline]{.x} and {role}`text`\n\n::hr[leaf]{flag}\n\n:::note[Title]{#n}\nBody.\n:::\n'
 
     assert app.render(markdown) == (
-        ':i[inline]{.x} and :role[text]\n\n::hr[leaf]{flag}\n\n:::note[Title]{#n}\nBody\\.\n:::\n'
+        ':i[inline]{.x} and :role[text]\n\n::hr[leaf]{flag}\n\n:::note[Title]{#n}\nBody.\n:::\n'
     )
 
 
@@ -224,7 +224,7 @@ def test_fenced_directive_serializes_as_container_directive() -> None:
     app = configured_app(['fenced_directive'], renderer=MarkdownRenderer())
     markdown = '```{note} Important\n:class: warning\n\nBody.\n```\n'
 
-    assert app.render(markdown) == ':::note[Important]{.warning}\nBody\\.\n:::\n'
+    assert app.render(markdown) == ':::note[Important]{.warning}\nBody.\n:::\n'
 
 
 def test_fenced_code_stays_code_when_not_directive() -> None:
@@ -236,7 +236,7 @@ def test_fenced_code_stays_code_when_not_directive() -> None:
 def test_fenced_directive_order_is_before_fenced_code() -> None:
     app = configured_app(['fenced_code', 'fenced_directive'], renderer=MarkdownRenderer())
 
-    assert app.render('```{note} Important\nBody.\n```\n') == (':::note[Important]\nBody\\.\n:::\n')
+    assert app.render('```{note} Important\nBody.\n```\n') == (':::note[Important]\nBody.\n:::\n')
 
 
 def test_fenced_literal_directive_preserves_code_block_body() -> None:
