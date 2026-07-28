@@ -40,7 +40,7 @@ ESCAPABLE_TEXT_RE = re.compile(r'([\\`*_{}\[\]<|])')
 LINE_START_MARKER_RE = re.compile(
     r'(?m)^( {0,3})(?:(#{1,6})(?=[ \t]|$)|(>)(?=[ \t>]|$)|([-+])(?=[ \t]|$)|(\d{1,9})([.)])(?=[ \t]|$))'
 )
-SETEXT_MARKER_RE = re.compile(r'(?m)^( {0,3})((?:-+[ \t]*)+|(?:=+[ \t]*)+)$')
+SETEXT_MARKER_RE = re.compile(r'(?m)^( {0,3})(-[- \t]*|=[= \t]*)$')
 DESTINATION_WRAP_RE = re.compile(r'[\s()]')
 
 
