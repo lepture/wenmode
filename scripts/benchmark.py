@@ -15,6 +15,7 @@ from typing import Callable
 import commonmark as commonmark_py
 import markdown
 import markdown2
+import mistletoe
 import mistune
 from markdown_it import MarkdownIt
 from marko.ext.gfm import gfm as marko_gfm
@@ -214,6 +215,7 @@ def make_targets() -> list[Target]:
         Target('wenmode-core', __version__, wenmode_core.render),
         Target('wenmode-all', __version__, wenmode_all.render),
         Target('mistune', version('mistune'), mistune_renderer),
+        Target('mistletoe', version('mistletoe'), mistletoe.markdown),
         Target('python-markdown', version('markdown'), lambda text: python_markdown.reset().convert(text)),
         Target('markdown-it-py', version('markdown-it-py'), markdown_it.render),
         Target('markdown2', version('markdown2'), markdown2_renderer.convert),

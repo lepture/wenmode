@@ -775,6 +775,15 @@ wheels = [
 ]
 
 [[package]]
+name = "mistletoe"
+version = "1.6.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/17/ea/ee6e364d62197e427f1d260500eac659a8855df207a77f74451658d749f3/mistletoe-1.6.0.tar.gz", hash = "sha256:92f066c4720a25fa24bf260e6413702bbff3a5b8a93af314cb6cd8589726a8e1", size = 113730 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e0/5c/3681c676d79726e3b8b72bc78e83ac472b0c96e3c99b28d72b9470f12170/mistletoe-1.6.0-py3-none-any.whl", hash = "sha256:53f9dfb859e9b2d309915d0f06c3876253d1e24d568d0b728a32679eb4f0a187", size = 55931 },
+]
+
+[[package]]
 name = "mistune"
 version = "3.3.3"
 source = { registry = "https://pypi.org/simple" }
@@ -1375,6 +1384,7 @@ benchmark = [
     { name = "markdown-it-py" },
     { name = "markdown2" },
     { name = "marko" },
+    { name = "mistletoe" },
     { name = "mistune" },
 ]
 docs = [
@@ -1405,6 +1415,7 @@ benchmark = [
     { name = "markdown-it-py", specifier = ">=4.0.0" },
     { name = "markdown2", specifier = ">=2.5.0" },
     { name = "marko", specifier = ">=2.2.0" },
+    { name = "mistletoe", specifier = ">=1.5.0" },
     { name = "mistune", specifier = ">=3.1.4" },
 ]
 docs = [

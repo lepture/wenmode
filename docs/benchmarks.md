@@ -1,5 +1,5 @@
 ---
-description: Benchmark Wenmode against Mistune, Python-Markdown, markdown-it-py, markdown2, Marko, and commonmark.py across documentation, book, and edge-case Markdown workloads.
+description: Benchmark Wenmode against Mistune, mistletoe, Python-Markdown, markdown-it-py, markdown2, Marko, and commonmark.py across documentation, book, and edge-case Markdown workloads.
 ---
 
 (benchmarks)=
@@ -18,9 +18,9 @@ Run the benchmark suite from the repository root:
 uv run --locked --group benchmark python scripts/benchmark.py --case all
 ```
 
-The script compares Markdown-to-HTML throughput across Wenmode and the parser
-libraries covered by the migration guides. It reports best time, mean time,
-throughput, and relative speed versus `wenmode-core`.
+The script compares Markdown-to-HTML throughput across Wenmode and common
+Python Markdown parser libraries. It reports best time, mean time, throughput,
+and relative speed versus `wenmode-core`.
 
 ## Cases
 
@@ -43,6 +43,7 @@ reused across render calls.
 | `wenmode-core` | `Wenmode([Table, *commonmark], HTMLRenderer(escape=False, sanitize_urls=False))` |
 | `wenmode-all` | `github` plus directives, front matter, math, definition lists, abbreviations, spoilers, ruby, and extra formatting rules |
 | `mistune` | `mistune.create_markdown(renderer='html', plugins=['table', 'speedup'])` |
+| `mistletoe` | `mistletoe.markdown`, which renders HTML and supports pipe tables by default |
 | `python-markdown` | one reusable `markdown.Markdown(extensions=['tables', 'sane_lists'])`, reset before each conversion |
 | `markdown-it-py` | `MarkdownIt('commonmark', {'html': True}).enable('table')` |
 | `markdown2` | one reusable `markdown2.Markdown(extras=['tables'])` |
@@ -63,8 +64,9 @@ Wenmode application enables many optional features.
 
 | Library | Version |
 | --- | ---: |
-| wenmode | 0.11.0 |
+| wenmode | 0.13.1 |
 | mistune | 3.3.3 |
+| mistletoe | 1.6.0 |
 | python-markdown | 3.10.2 |
 | markdown-it-py | 4.2.0 |
 | markdown2 | 2.5.5 |
@@ -78,30 +80,33 @@ time is better. `vs core` is relative to `wenmode-core`.
 
 | Case | Bytes | Library | Mean | MB/s | vs core |
 | --- | ---: | --- | ---: | ---: | ---: |
-| docs | 135,115 | wenmode-core | 18.08ms | 7.84 | 1.00x |
-| docs | 135,115 | wenmode-all | 20.70ms | 6.56 | 0.87x |
-| docs | 135,115 | mistune | 25.42ms | 5.85 | 0.71x |
-| docs | 135,115 | python-markdown | 76.18ms | 1.84 | 0.24x |
-| docs | 135,115 | markdown-it-py | 39.21ms | 3.61 | 0.46x |
-| docs | 135,115 | markdown2 | 158.86ms | 0.88 | 0.11x |
-| docs | 135,115 | marko | 144.15ms | 1.00 | 0.13x |
-| docs | 135,115 | commonmark.py | 90.95ms | 1.63 | 0.20x |
-| rust-book | 1,226,076 | wenmode-core | 168.82ms | 7.80 | 1.00x |
-| rust-book | 1,226,076 | wenmode-all | 181.23ms | 7.08 | 0.93x |
-| rust-book | 1,226,076 | mistune | 222.76ms | 5.60 | 0.76x |
-| rust-book | 1,226,076 | python-markdown | 588.23ms | 2.10 | 0.29x |
-| rust-book | 1,226,076 | markdown-it-py | 337.53ms | 3.69 | 0.50x |
-| rust-book | 1,226,076 | markdown2 | 4.129s | 0.30 | 0.04x |
-| rust-book | 1,226,076 | marko | 1.107s | 1.12 | 0.15x |
-| rust-book | 1,226,076 | commonmark.py | 10.046s | 0.12 | 0.02x |
-| progit | 502,090 | wenmode-core | 28.90ms | 17.95 | 1.00x |
-| progit | 502,090 | wenmode-all | 36.45ms | 15.32 | 0.79x |
-| progit | 502,090 | mistune | 45.41ms | 11.94 | 0.64x |
-| progit | 502,090 | python-markdown | 138.27ms | 3.72 | 0.21x |
-| progit | 502,090 | markdown-it-py | 71.63ms | 7.73 | 0.40x |
-| progit | 502,090 | markdown2 | 1.429s | 0.35 | 0.02x |
-| progit | 502,090 | marko | 338.29ms | 1.52 | 0.09x |
-| progit | 502,090 | commonmark.py | 339.19ms | 1.52 | 0.09x |
+| docs | 137,185 | wenmode-core | 21.90ms | 6.98 | 1.00x |
+| docs | 137,185 | wenmode-all | 25.81ms | 5.47 | 0.85x |
+| docs | 137,185 | mistune | 26.50ms | 5.27 | 0.83x |
+| docs | 137,185 | mistletoe | 55.55ms | 2.51 | 0.39x |
+| docs | 137,185 | python-markdown | 82.21ms | 1.75 | 0.27x |
+| docs | 137,185 | markdown-it-py | 44.19ms | 3.28 | 0.50x |
+| docs | 137,185 | markdown2 | 175.09ms | 0.79 | 0.13x |
+| docs | 137,185 | marko | 152.80ms | 0.91 | 0.14x |
+| docs | 137,185 | commonmark.py | 99.19ms | 1.44 | 0.22x |
+| rust-book | 1,226,057 | wenmode-core | 173.13ms | 7.21 | 1.00x |
+| rust-book | 1,226,057 | wenmode-all | 198.07ms | 6.34 | 0.87x |
+| rust-book | 1,226,057 | mistune | 229.78ms | 5.47 | 0.75x |
+| rust-book | 1,226,057 | mistletoe | 486.00ms | 2.54 | 0.36x |
+| rust-book | 1,226,057 | python-markdown | 615.24ms | 2.01 | 0.28x |
+| rust-book | 1,226,057 | markdown-it-py | 346.85ms | 3.58 | 0.50x |
+| rust-book | 1,226,057 | markdown2 | 4.119s | 0.30 | 0.04x |
+| rust-book | 1,226,057 | marko | 1.133s | 1.09 | 0.15x |
+| rust-book | 1,226,057 | commonmark.py | 9.819s | 0.13 | 0.02x |
+| progit | 502,090 | wenmode-core | 28.08ms | 17.97 | 1.00x |
+| progit | 502,090 | wenmode-all | 36.76ms | 15.12 | 0.76x |
+| progit | 502,090 | mistune | 45.31ms | 12.07 | 0.62x |
+| progit | 502,090 | mistletoe | 152.88ms | 3.40 | 0.18x |
+| progit | 502,090 | python-markdown | 147.62ms | 3.52 | 0.19x |
+| progit | 502,090 | markdown-it-py | 74.66ms | 7.37 | 0.38x |
+| progit | 502,090 | markdown2 | 1.462s | 0.34 | 0.02x |
+| progit | 502,090 | marko | 344.93ms | 1.47 | 0.08x |
+| progit | 502,090 | commonmark.py | 333.43ms | 1.58 | 0.08x |
 
 Benchmark numbers are hardware- and corpus-dependent. Use the command above in
 your own environment before making performance-sensitive migration decisions.
