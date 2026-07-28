@@ -15,11 +15,15 @@ releases.
 This page records notable changes for released versions. Add unreleased entries
 here while preparing a release, then move them under the final version heading.
 
-## 0.13.1
+## 0.13.2
 
 Released **Jul 28, 2026**.
 
-**Fixed**
+- Fix regex pattern for setext heading of markdown renderer.
+
+## 0.13.1
+
+Released **Jul 28, 2026**.
 
 - Avoid over-escaping plain punctuation in Markdown renderer text output.
 
