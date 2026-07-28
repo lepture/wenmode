@@ -569,3 +569,17 @@ def test_markdown_renderer_uses_setext_for_carriage_return_heading_text() -> Non
 
     assert markdown == 'Foo\rBar\n===\n'
     assert Wenmode(renderer=HTMLRenderer()).render(markdown) == HTMLRenderer().render(root)
+
+
+@pytest.mark.parametrize('marker', ['---', '- - -', '===', '= = ='])
+def test_markdown_renderer_escapes_setext_markers(marker: str) -> None:
+    root = Root(children=[Paragraph(children=[Text(value=marker)])])
+
+    assert MarkdownRenderer().render(root) == '\\' + marker + '\n'
+
+
+def test_markdown_renderer_handles_long_non_setext_marker() -> None:
+    marker = '-' * 100_000 + 'x'
+    root = Root(children=[Paragraph(children=[Text(value=marker)])])
+
+    assert MarkdownRenderer().render(root) == marker + '\n'
