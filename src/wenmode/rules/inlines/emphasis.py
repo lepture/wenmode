@@ -106,10 +106,7 @@ def split_text_node(
     while pos < len(text):
         if text[pos] not in '*_':
             next_pos = next_delimiter_run(text, pos)
-            if node.position is None:
-                position = None
-            else:
-                position = Position(start=node.position.start + pos, end=node.position.start + next_pos)
+            position = text_node_position(node, pos, next_pos)
             parts.append(TextNode(value=text[pos:next_pos], position=position))
             pos = next_pos
             continue
@@ -124,14 +121,19 @@ def split_text_node(
         opener = can_open(source, absolute, run_length, marker, cjk_friendly=cjk_friendly)
         closer = can_close(source, absolute, run_length, marker, cjk_friendly=cjk_friendly)
         part_index = len(parts)
-        if node.position is None:
-            position = None
-        else:
-            position = Position(start=node.position.start + pos, end=node.position.start + end)
+        position = text_node_position(node, pos, end)
         parts.append(TextNode(value=text[pos:end], position=position))
         if opener or closer:
             delimiters.append(Delimiter(part_index, marker, delimiter_length, opener, closer, delimiter_length))
         pos = end
+
+
+def text_node_position(node: TextNode, start: int, end: int) -> Position | None:
+    if node._source_position is not None:
+        return node._source_position(start, end)
+    if node.position is None:
+        return None
+    return Position(start=node.position.start + start, end=node.position.start + end)
 
 
 def next_delimiter_run(text: str, start: int) -> int:

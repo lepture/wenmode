@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import bisect
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from typing import Any, ClassVar
 
@@ -217,6 +217,7 @@ class Text(Literal):
     """Plain text node."""
 
     _parse_emphasis: bool = True
+    _source_position: Callable[[int, int], Position] | None = field(default=None, repr=False, compare=False)
     type: str = 'text'
 
 

@@ -89,6 +89,8 @@ class InlineParser:
                 else:
                     if source is not None and node.position is None:
                         node.position = source.position(start, end)
+                    if source is not None and isinstance(node, Text) and node.value == text[start:end]:
+                        node._source_position = source.slice(start, end).position
                     nodes.append(node)
                     pos = end
             return self._finalize_inline_nodes(nodes)
@@ -97,14 +99,17 @@ class InlineParser:
                 state.pop_inline_source()
 
     def _finalize_inline_nodes(self, nodes: list[Node]) -> list[Node]:
-        nodes = merge_text(nodes)
+        # Emphasis can split text across noncontiguous source segments, so it
+        # must consume each text node's source mapper before adjacent text merges.
         if self._rule_set.emphasis_rule is not None and contains_emphasis_marker(nodes):
             nodes = self._rule_set.emphasis_rule.parse_emphasis_sequence(
                 nodes, max_depth=self._parser.max_container_depth
             )
-        else:
-            return nodes
-        return merge_text(nodes)
+        nodes = merge_text(nodes)
+        for node in nodes:
+            if isinstance(node, Text):
+                node._source_position = None
+        return nodes
 
     def _parse_inline_candidate(
         self, text: str, start: int, state: BlockState, rules: Sequence[MatchedInlineRule]
@@ -196,6 +201,7 @@ def text_node(text: str, start: int, end: int, source: SourceMap | None) -> Text
     node = Text(value=text[start:end])
     if source is not None:
         node.position = source.position(start, end)
+        node._source_position = source.slice(start, end).position
     return node
 
 

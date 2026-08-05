@@ -106,6 +106,43 @@ def test_iterable_setext_heading_maps_trimmed_inline_positions() -> None:
     }
 
 
+@pytest.mark.parametrize(
+    ('markdown', 'emphasis_positions', 'emphasis_values'),
+    [
+        ('> *a*\n> *b*\n> *c*\n', [(2, 5), (8, 11), (14, 17)], ['*a*', '*b*', '*c*']),
+        ('>> *a*\n>> *b*\n', [(3, 6), (10, 13)], ['*a*', '*b*']),
+        ('>*a*\n>*b*\n', [(1, 4), (6, 9)], ['*a*', '*b*']),
+    ],
+    ids=['multiline', 'nested', 'no-space'],
+)
+def test_blockquote_inline_positions_account_for_each_line_prefix(
+    markdown: str, emphasis_positions: list[tuple[int, int]], emphasis_values: list[str]
+) -> None:
+    root = Wenmode(positions=True).parse(markdown)
+    paragraph = root.children[0]
+    while paragraph.type == 'blockquote':
+        paragraph = paragraph.children[0]
+
+    positions = [
+        (child.position.start, child.position.end)
+        for child in paragraph.children
+        if child.type == 'emphasis' and child.position is not None
+    ]
+
+    assert positions == emphasis_positions
+    assert [markdown[start:end] for start, end in positions] == emphasis_values
+
+
+def test_emphasis_position_spans_noncontiguous_blockquote_source_segments() -> None:
+    markdown = '> *a\n> b*\n'
+    emphasis = Wenmode(positions=True).parse(markdown).children[0].children[0].children[0]
+
+    assert emphasis.position is not None
+    assert (emphasis.position.start, emphasis.position.end) == (2, 9)
+    assert emphasis.children[0].position is not None
+    assert (emphasis.children[0].position.start, emphasis.children[0].position.end) == (3, 8)
+
+
 @pytest.mark.parametrize('line_ending', ['\n', '\r\n', '\r'], ids=['lf', 'crlf', 'cr'])
 def test_iterable_source_positions_match_string_line_endings(line_ending: str) -> None:
     markdown = (

@@ -783,8 +783,8 @@
                         },
                         "end": {
                           "line": 2,
-                          "column": 1,
-                          "offset": 6
+                          "column": 3,
+                          "offset": 8
                         }
                       },
                       "value": "one\n"
@@ -794,13 +794,13 @@
                       "position": {
                         "start": {
                           "line": 2,
-                          "column": 1,
-                          "offset": 6
+                          "column": 3,
+                          "offset": 8
                         },
                         "end": {
                           "line": 2,
-                          "column": 8,
-                          "offset": 13
+                          "column": 10,
+                          "offset": 15
                         }
                       },
                       "children": [
@@ -809,13 +809,13 @@
                           "position": {
                             "start": {
                               "line": 2,
-                              "column": 3,
-                              "offset": 8
+                              "column": 5,
+                              "offset": 10
                             },
                             "end": {
                               "line": 2,
-                              "column": 6,
-                              "offset": 11
+                              "column": 8,
+                              "offset": 13
                             }
                           },
                           "value": "two"
@@ -1110,8 +1110,8 @@
                     },
                     "end": {
                       "line": 2,
-                      "column": 10,
-                      "offset": 28
+                      "column": 13,
+                      "offset": 31
                     }
                   },
                   "value": "\ncontinued"
@@ -1954,8 +1954,8 @@
                     },
                     "end": {
                       "line": 4,
-                      "column": 10,
-                      "offset": 41
+                      "column": 12,
+                      "offset": 43
                     }
                   },
                   "value": "\ncontinued"
@@ -2064,8 +2064,8 @@
                     },
                     "end": {
                       "line": 2,
-                      "column": 10,
-                      "offset": 26
+                      "column": 12,
+                      "offset": 28
                     }
                   },
                   "value": "\ncontinued"
