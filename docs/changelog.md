@@ -15,6 +15,14 @@ releases.
 This page records notable changes for released versions. Add unreleased entries
 here while preparing a release, then move them under the final version heading.
 
+## 0.13.3
+
+Released **Aug 5, 2026**.
+
+- Preserve accurate emphasis and text source positions across noncontiguous
+  nested source segments, including multiline blockquotes, list continuations,
+  block spoilers, and footnote definitions.
+
 ## 0.13.2
 
 Released **Jul 28, 2026**.
