@@ -38,7 +38,40 @@ html_theme_options = {
     'github_url': 'https://github.com/lepture/wenmode',
     'x_url': 'https://twitter.com/lepture',
     'bluesky_url': 'https://bsky.app/profile/lepture.com',
-    'nav_links': [{'title': 'Docs', 'url': 'usage'}, {'title': 'Support me', 'url': 'sponsors'}],
+    'nav_links': [
+        {
+            "title": "Projects",
+            "children": [
+                {
+                    "title": "Shibuya",
+                    "url": "https://shibuya.lepture.com/",
+                    "summary": "A responsive, good looking with modern design documentation theme for Sphinx.",
+                },
+                {
+                    "title": "Pygments Styles",
+                    "url": "https://pygments-styles.org/",
+                    "summary": "A curated collection of Pygments styles based on VS Code themes.",
+                },
+                {
+                    "title": "Sphinx Iconify",
+                    "url": "https://sphinx-iconify.lepture.com/",
+                    "summary": "A sphinx extension to use <code>&lt;iconify-icon&gt;</code> web component.",
+                },
+                {
+                    "title": "Mistune",
+                    "url": "http://mistune.lepture.com/",
+                    "summary": "A fast yet powerful Python Markdown parser with renderers and plugins.",
+                },
+                {
+                    "title": "Wenmode",
+                    "url": "http://wenmode.lepture.com/",
+                    "summary": "A fast, composable Markdown parser and renderer toolkit.",
+                },
+            ],
+        },
+        {'title': 'Docs', 'url': 'usage'},
+        {'title': 'Support me', 'url': 'sponsors'},
+    ],
 }
 
 html_context = {'source_type': 'github', 'source_user': 'lepture', 'source_repo': 'wenmode'}
