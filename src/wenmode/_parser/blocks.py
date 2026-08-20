@@ -14,7 +14,8 @@ from .state import BlockState
 if TYPE_CHECKING:
     from wenmode.parser import Parser
 
-    from .rule_base import BlockRule, ContinueRule, NodeTransform
+    from .rule_base import BlockRule, ContinueRule
+    from .transforms import NodeTransform
 
 
 class BlockParser:

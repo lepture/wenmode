@@ -277,7 +277,7 @@ def apply_task_list_marker(item: ListItem) -> None:
     if not item.children or not isinstance(item.children[0], Paragraph):
         return
 
-    paragraph = cast(Paragraph, item.children[0])
+    paragraph = item.children[0]
     if not paragraph.children or not isinstance(paragraph.children[0], Text):
         return
 

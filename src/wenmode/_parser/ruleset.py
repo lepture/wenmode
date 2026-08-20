@@ -7,7 +7,8 @@ from typing import Protocol, TypeVar, cast
 
 from wenmode.nodes import Node
 
-from .rule_base import BlockRule, ContinueRule, InlineRule, RootTransform, Rule
+from .rule_base import BlockRule, ContinueRule, InlineRule, Rule
+from .transforms import RootTransform
 
 T = TypeVar('T', bound=Rule)
 InlineOpenerRules = dict[str, list[InlineRule]]

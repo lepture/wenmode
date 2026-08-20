@@ -187,12 +187,11 @@ def process_flat_non_nested_delimiters(
 def can_use_flat_delimiters(parts: list[Node], delimiters: list[Delimiter], max_depth: int) -> bool:
     if max_depth <= 0 or len(delimiters) < 2:
         return False
-    return all(
-        delimiter.length == 1
-        and isinstance(parts[delimiter.index], TextNode)
-        and len(parts[delimiter.index].value) == 1
-        for delimiter in delimiters
-    )
+    for delimiter in delimiters:
+        part = parts[delimiter.index]
+        if delimiter.length != 1 or not isinstance(part, TextNode) or len(part.value) != 1:
+            return False
+    return True
 
 
 def find_flat_matches(
