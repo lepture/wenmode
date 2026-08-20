@@ -6,8 +6,7 @@ from wenmode.nodes import Node
 from wenmode.nodes import TextDirective as TextDirectiveNode
 from wenmode.rules import InlineCandidate, InlineRule
 from wenmode.rules.inlines.directive import NAME_RE
-
-from .._parser.state import BlockState
+from wenmode.state import BlockState
 
 if TYPE_CHECKING:
     from wenmode import Wenmode

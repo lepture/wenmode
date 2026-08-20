@@ -10,8 +10,7 @@ from wenmode.nodes import LiteralDirective as LiteralDirectiveNode
 from wenmode.nodes import Node
 from wenmode.rules import BlockCandidate, BlockRule
 from wenmode.rules.blocks.directive import collect_until_with_source, directive_label_children
-
-from .._parser.state import BlockState
+from wenmode.state import BlockState
 
 if TYPE_CHECKING:
     from wenmode import Wenmode

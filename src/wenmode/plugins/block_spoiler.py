@@ -11,9 +11,9 @@ from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.markdown import render_prefixed_block
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer
 from wenmode.rules import BlockCandidate, BlockRule, Rule
+from wenmode.state import BlockState
 from wenmode.utils import expand_leading_tabs, indent_block
 
-from .._parser.state import BlockState
 from .types import RendererHandlers
 
 if TYPE_CHECKING:

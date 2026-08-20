@@ -10,9 +10,8 @@ from wenmode.renderers.base import RenderContext
 from wenmode.renderers.markdown import MarkdownRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer
 from wenmode.rules import BlockCandidate, BlockRule, RootTransform, Rule
+from wenmode.state import BlockState, StateKey
 
-from .._parser.state import BlockState
-from .._parser.store import StateKey
 from .types import RendererHandlers
 
 if TYPE_CHECKING:

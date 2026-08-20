@@ -10,8 +10,8 @@ from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer
 from wenmode.rules import InlineCandidate, InlineRule, Rule
 from wenmode.rules.delimiters import find_delimited_span
+from wenmode.state import BlockState
 
-from .._parser.state import BlockState
 from .types import RendererHandlers
 
 if TYPE_CHECKING:
