@@ -15,6 +15,29 @@ releases.
 This page records notable changes for released versions. Add unreleased entries
 here while preparing a release, then move them under the final version heading.
 
+## 0.14.0
+
+Released **Aug 20, 2026**.
+
+**Breaking Changes**
+
+- Stop re-exporting `HeadingIdTransform` from `wenmode.rules`; import it from
+  `wenmode.headings` instead.
+- Move parser-only rule base classes and transforms under `wenmode._parser`.
+  Custom rules should import the public APIs from `wenmode.rules` rather than
+  importing from the old `wenmode.rules.base` or `wenmode.rules.transforms`
+  modules.
+- Rename the internal `RuleSet.block_openers` field to
+  `RuleSet.block_openers_re`.
+
+**Changed**
+
+- Consolidate shared parser-state, HTML, and indentation helpers behind their
+  public `wenmode.state` and `wenmode.utils` modules.
+- Simplify emphasis delimiter processing and reduce its complexity without
+  changing CommonMark parsing behavior.
+- Use explicit `re.I` compile flags for case-insensitive regular expressions.
+
 ## 0.13.3
 
 Released **Aug 5, 2026**.

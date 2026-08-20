@@ -64,8 +64,8 @@ Wenmode application enables many optional features.
 
 | Library | Version |
 | --- | ---: |
-| wenmode | 0.13.1 |
-| mistune | 3.3.3 |
+| wenmode | 0.14.0 |
+| mistune | 3.3.4 |
 | mistletoe | 1.6.0 |
 | python-markdown | 3.10.2 |
 | markdown-it-py | 4.2.0 |
@@ -80,33 +80,33 @@ time is better. `vs core` is relative to `wenmode-core`.
 
 | Case | Bytes | Library | Mean | MB/s | vs core |
 | --- | ---: | --- | ---: | ---: | ---: |
-| docs | 137,185 | wenmode-core | 21.90ms | 6.98 | 1.00x |
-| docs | 137,185 | wenmode-all | 25.81ms | 5.47 | 0.85x |
-| docs | 137,185 | mistune | 26.50ms | 5.27 | 0.83x |
-| docs | 137,185 | mistletoe | 55.55ms | 2.51 | 0.39x |
-| docs | 137,185 | python-markdown | 82.21ms | 1.75 | 0.27x |
-| docs | 137,185 | markdown-it-py | 44.19ms | 3.28 | 0.50x |
-| docs | 137,185 | markdown2 | 175.09ms | 0.79 | 0.13x |
-| docs | 137,185 | marko | 152.80ms | 0.91 | 0.14x |
-| docs | 137,185 | commonmark.py | 99.19ms | 1.44 | 0.22x |
-| rust-book | 1,226,057 | wenmode-core | 173.13ms | 7.21 | 1.00x |
-| rust-book | 1,226,057 | wenmode-all | 198.07ms | 6.34 | 0.87x |
-| rust-book | 1,226,057 | mistune | 229.78ms | 5.47 | 0.75x |
-| rust-book | 1,226,057 | mistletoe | 486.00ms | 2.54 | 0.36x |
-| rust-book | 1,226,057 | python-markdown | 615.24ms | 2.01 | 0.28x |
-| rust-book | 1,226,057 | markdown-it-py | 346.85ms | 3.58 | 0.50x |
-| rust-book | 1,226,057 | markdown2 | 4.119s | 0.30 | 0.04x |
-| rust-book | 1,226,057 | marko | 1.133s | 1.09 | 0.15x |
-| rust-book | 1,226,057 | commonmark.py | 9.819s | 0.13 | 0.02x |
-| progit | 502,090 | wenmode-core | 28.08ms | 17.97 | 1.00x |
-| progit | 502,090 | wenmode-all | 36.76ms | 15.12 | 0.76x |
-| progit | 502,090 | mistune | 45.31ms | 12.07 | 0.62x |
-| progit | 502,090 | mistletoe | 152.88ms | 3.40 | 0.18x |
-| progit | 502,090 | python-markdown | 147.62ms | 3.52 | 0.19x |
-| progit | 502,090 | markdown-it-py | 74.66ms | 7.37 | 0.38x |
-| progit | 502,090 | markdown2 | 1.462s | 0.34 | 0.02x |
-| progit | 502,090 | marko | 344.93ms | 1.47 | 0.08x |
-| progit | 502,090 | commonmark.py | 333.43ms | 1.58 | 0.08x |
+| docs | 138,514 | wenmode-core | 21.05ms | 6.91 | 1.00x |
+| docs | 138,514 | wenmode-all | 24.74ms | 5.81 | 0.85x |
+| docs | 138,514 | mistune | 25.26ms | 5.54 | 0.83x |
+| docs | 138,514 | mistletoe | 53.46ms | 2.60 | 0.39x |
+| docs | 138,514 | python-markdown | 78.48ms | 1.84 | 0.27x |
+| docs | 138,514 | markdown-it-py | 42.04ms | 3.44 | 0.50x |
+| docs | 138,514 | markdown2 | 181.37ms | 0.78 | 0.12x |
+| docs | 138,514 | marko | 173.29ms | 0.87 | 0.12x |
+| docs | 138,514 | commonmark.py | 115.60ms | 1.39 | 0.18x |
+| rust-book | 1,226,057 | wenmode-core | 168.42ms | 7.54 | 1.00x |
+| rust-book | 1,226,057 | wenmode-all | 187.55ms | 6.72 | 0.90x |
+| rust-book | 1,226,057 | mistune | 224.58ms | 5.60 | 0.75x |
+| rust-book | 1,226,057 | mistletoe | 468.09ms | 2.63 | 0.36x |
+| rust-book | 1,226,057 | python-markdown | 588.85ms | 2.10 | 0.29x |
+| rust-book | 1,226,057 | markdown-it-py | 337.24ms | 3.71 | 0.50x |
+| rust-book | 1,226,057 | markdown2 | 4.117s | 0.30 | 0.04x |
+| rust-book | 1,226,057 | marko | 1.092s | 1.12 | 0.15x |
+| rust-book | 1,226,057 | commonmark.py | 9.831s | 0.13 | 0.02x |
+| progit | 502,090 | wenmode-core | 29.05ms | 17.30 | 1.00x |
+| progit | 502,090 | wenmode-all | 38.04ms | 14.70 | 0.76x |
+| progit | 502,090 | mistune | 46.85ms | 11.87 | 0.62x |
+| progit | 502,090 | mistletoe | 147.81ms | 3.53 | 0.20x |
+| progit | 502,090 | python-markdown | 139.58ms | 3.73 | 0.21x |
+| progit | 502,090 | markdown-it-py | 74.58ms | 7.73 | 0.39x |
+| progit | 502,090 | markdown2 | 1.452s | 0.35 | 0.02x |
+| progit | 502,090 | marko | 331.42ms | 1.54 | 0.09x |
+| progit | 502,090 | commonmark.py | 338.07ms | 1.61 | 0.09x |
 
 Benchmark numbers are hardware- and corpus-dependent. Use the command above in
 your own environment before making performance-sensitive migration decisions.
