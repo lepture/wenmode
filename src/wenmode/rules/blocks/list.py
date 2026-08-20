@@ -8,9 +8,9 @@ from wenmode.nodes import List as ListNode
 from wenmode.nodes import ListItem, Node, Paragraph, Position, Text
 from wenmode.utils import count_indent, count_indent_from, expand_leading_tabs
 
+from ..._parser.rule_base import BlockCandidate, BlockRule, Rule
 from ..._parser.source import SourceCollector, SourceMap
 from ..._parser.state import BlockState
-from ..base import BlockCandidate, BlockRule, Rule
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
@@ -277,7 +277,7 @@ def apply_task_list_marker(item: ListItem) -> None:
     if not item.children or not isinstance(item.children[0], Paragraph):
         return
 
-    paragraph = item.children[0]
+    paragraph = cast(Paragraph, item.children[0])
     if not paragraph.children or not isinstance(paragraph.children[0], Text):
         return
 

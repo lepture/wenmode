@@ -4,13 +4,12 @@ import re
 from typing import TYPE_CHECKING
 
 from wenmode.nodes import Node
-from wenmode.nodes import Text as TextNode
 from wenmode.nodes import TextDirective as TextDirectiveNode
 
-from ..._parser.source import SourceMap
+from ..._parser.inlines import parse_text_children
+from ..._parser.rule_base import InlineCandidate, InlineRule
 from ..._parser.state import BlockState
 from ..._parser.store import StateKey
-from ..base import InlineCandidate, InlineRule
 from ..directives import parse_attributes
 
 if TYPE_CHECKING:
@@ -45,26 +44,16 @@ class TextDirective(InlineRule):
 
         name, label, attributes, end, label_start, label_end = parsed
         if label is not None and label_start is not None and label_end is not None:
-            children = parse_text_directive_children(
-                parser, label, state, parser.inline_source(text, state, label_start, label_end)
+            children = parse_text_children(
+                parser,
+                TEXT_DIRECTIVE_DEPTH,
+                label,
+                state,
+                parser.inline_source(text, state, label_start, label_end),
             )
         else:
             children = []
         return TextDirectiveNode(name=name, attributes=attributes, children=children), end
-
-
-def parse_text_directive_children(
-    parser: Parser, label: str, state: BlockState, source: SourceMap | None
-) -> list[Node]:
-    depth = state.store.get(TEXT_DIRECTIVE_DEPTH)
-    if depth >= parser.max_container_depth:
-        return [TextNode(value=label)]
-
-    state.store.set(TEXT_DIRECTIVE_DEPTH, depth + 1)
-    try:
-        return parser.parse_inlines(label, state, source=source)
-    finally:
-        state.store.set(TEXT_DIRECTIVE_DEPTH, depth)
 
 
 def parse_text_directive_head(

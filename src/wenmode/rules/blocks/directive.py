@@ -8,9 +8,9 @@ from wenmode.nodes import ContainerDirective as ContainerDirectiveNode
 from wenmode.nodes import LeafDirective as LeafDirectiveNode
 from wenmode.nodes import Node, Paragraph
 
+from ..._parser.rule_base import BlockCandidate, BlockRule
 from ..._parser.source import SourceCollector
 from ..._parser.state import BlockState
-from ..base import BlockCandidate, BlockRule
 from ..directives import parse_directive_head
 
 if TYPE_CHECKING:

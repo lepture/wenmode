@@ -7,8 +7,8 @@ from wenmode.nodes import Node, TableCell, TableRow
 from wenmode.nodes import Table as TableNode
 from wenmode.utils import count_indent, is_escaped
 
+from ..._parser.rule_base import BlockCandidate, BlockRule
 from ..._parser.state import BlockState
-from ..base import BlockCandidate, BlockRule
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser

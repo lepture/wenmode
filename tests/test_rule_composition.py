@@ -10,7 +10,9 @@ from wenmode.nodes import Node, Parent
 from wenmode.presets import github
 from wenmode.rules import (
     AtxHeading,
+    BlockCandidate,
     Blockquote,
+    BlockRule,
     Emphasis,
     Footnote,
     HtmlBlock,
@@ -20,7 +22,6 @@ from wenmode.rules import (
     SetextHeading,
     ThematicBreak,
 )
-from wenmode.rules.base import BlockCandidate, BlockRule
 
 
 @dataclass

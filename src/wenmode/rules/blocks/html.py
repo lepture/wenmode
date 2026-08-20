@@ -13,8 +13,8 @@ from wenmode.utils import (
 )
 from wenmode.utils.html import BLOCK_TAGS
 
+from ..._parser.rule_base import BlockCandidate, BlockRule
 from ..._parser.state import BlockState
-from ..base import BlockCandidate, BlockRule
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser

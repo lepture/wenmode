@@ -5,9 +5,9 @@ import string
 from typing import TYPE_CHECKING, cast
 
 from ._parser.store import StateKey
+from ._parser.transforms import NodeTransform
 from .ast import find_all, plain_text
 from .nodes import Heading, Node
-from .rules.transforms import NodeTransform
 
 if TYPE_CHECKING:
     from ._parser.state import BlockState

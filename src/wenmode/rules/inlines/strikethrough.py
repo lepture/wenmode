@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 
 from wenmode.nodes import Delete, Node
 
+from ..._parser.rule_base import InlineCandidate, InlineRule
 from ..._parser.state import BlockState
-from ..base import InlineCandidate, InlineRule
 from ..delimiters import find_delimited_span
 
 if TYPE_CHECKING:

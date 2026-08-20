@@ -2,7 +2,16 @@ from __future__ import annotations
 
 from wenmode.headings import HeadingIdTransform
 
-from .base import BlockCandidate, BlockRule, ContinueCandidate, ContinueRule, InlineCandidate, InlineRule, Rule
+from .._parser.rule_base import (
+    BlockCandidate,
+    BlockRule,
+    ContinueCandidate,
+    ContinueRule,
+    InlineCandidate,
+    InlineRule,
+    Rule,
+)
+from .._parser.transforms import NodeTransform, RootTransform
 from .blocks.blockquote import Blockquote
 from .blocks.directive import ContainerDirective, LeafDirective
 from .blocks.fenced_code import FencedCode
@@ -22,7 +31,6 @@ from .inlines.link import Image, Link
 from .inlines.strikethrough import Strikethrough
 from .inlines.text import BackslashEscape, CharacterReference, HardBreak
 from .references import ReferenceDefinition
-from .transforms import NodeTransform, RootTransform
 
 __all__ = [
     'AtxHeading',

@@ -4,11 +4,12 @@ from collections.abc import Generator, Sequence
 from typing import TYPE_CHECKING, cast
 
 from wenmode.nodes import Node, Text
-from wenmode.rules import InlineCandidate, InlineRule
 
+from .rule_base import InlineCandidate, InlineRule
 from .ruleset import RuleSet
 from .source import SourceMap
 from .state import BlockState
+from .store import StateKey
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
@@ -244,3 +245,21 @@ def contains_emphasis_marker(nodes: list[Node]) -> bool:
         if isinstance(node, Text) and node._parse_emphasis and ('*' in node.value or '_' in node.value):
             return True
     return False
+
+
+def parse_text_children(
+    parser: Parser,
+    store_key: StateKey[int],
+    label: str,
+    state: BlockState,
+    source: SourceMap | None,
+) -> list[Node]:
+    depth = state.store.get(store_key)
+    if depth >= parser.max_container_depth:
+        return [Text(value=label)]
+
+    state.store.set(store_key, depth + 1)
+    try:
+        return parser.parse_inlines(label, state, source=source)
+    finally:
+        state.store.set(store_key, depth)

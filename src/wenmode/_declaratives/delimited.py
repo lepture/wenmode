@@ -6,11 +6,10 @@ from typing import TYPE_CHECKING, cast
 
 from wenmode.nodes import Literal as LiteralNode
 from wenmode.nodes import Node, Parent
-from wenmode.nodes import Text as TextNode
-from wenmode.rules import InlineCandidate, InlineRule
 from wenmode.utils import is_escaped
 
-from .._parser.source import SourceMap
+from .._parser.inlines import parse_text_children
+from .._parser.rule_base import InlineCandidate, InlineRule
 from .._parser.state import BlockState
 from .._parser.store import StateKey
 
@@ -169,8 +168,12 @@ class InlineDelimited(InlineRule):
 
     def _create_node(self, parser: Parser, text: str, state: BlockState, value_start: int, value_end: int) -> Node:
         value = text[value_start:value_end]
-        children = parse_delimited_children(
-            parser, value, state, parser.inline_source(text, state, value_start, value_end)
+        children = parse_text_children(
+            parser,
+            DECLARATIVE_INLINE_DEPTH,
+            value,
+            state,
+            parser.inline_source(text, state, value_start, value_end),
         )
         return self._node_factory(children=children)
 
@@ -256,18 +259,6 @@ def _validate_delimiters(opener: str, closer: str) -> None:
         raise ValueError('opener must not be empty')
     if not closer:
         raise ValueError('closer must not be empty')
-
-
-def parse_delimited_children(parser: Parser, value: str, state: BlockState, source: SourceMap | None) -> list[Node]:
-    depth = state.store.get(DECLARATIVE_INLINE_DEPTH)
-    if depth >= parser.max_container_depth:
-        return [TextNode(value=value)]
-
-    state.store.set(DECLARATIVE_INLINE_DEPTH, depth + 1)
-    try:
-        return parser.parse_inlines(value, state, source=source)
-    finally:
-        state.store.set(DECLARATIVE_INLINE_DEPTH, depth)
 
 
 def find_content_range(

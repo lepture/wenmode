@@ -8,10 +8,10 @@ from wenmode.nodes import FootnoteDefinition as FootnoteDefinitionNode
 from wenmode.nodes import FootnoteReference, Node, Root
 from wenmode.utils import count_indent, normalize_label, normalize_label_text
 
+from .._parser.rule_base import BlockCandidate, BlockRule, InlineCandidate, InlineRule
 from .._parser.source import SourceCollector
 from .._parser.store import StateKey
-from .base import BlockCandidate, BlockRule, InlineCandidate, InlineRule
-from .transforms import RootTransform
+from .._parser.transforms import RootTransform
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser

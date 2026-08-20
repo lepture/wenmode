@@ -6,7 +6,8 @@ from dataclasses import dataclass
 from typing import Protocol, TypeVar, cast
 
 from wenmode.nodes import Node
-from wenmode.rules import BlockRule, ContinueRule, InlineRule, RootTransform, Rule
+
+from .rule_base import BlockRule, ContinueRule, InlineRule, RootTransform, Rule
 
 T = TypeVar('T', bound=Rule)
 InlineOpenerRules = dict[str, list[InlineRule]]

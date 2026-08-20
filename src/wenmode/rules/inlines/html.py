@@ -7,8 +7,8 @@ from urllib.parse import quote
 from wenmode.nodes import Html, Link, Node, Text
 from wenmode.utils import compile_disallowed_html_filter, filter_disallowed_html
 
+from ..._parser.rule_base import InlineCandidate, InlineRule
 from ..._parser.state import BlockState
-from ..base import InlineCandidate, InlineRule
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser

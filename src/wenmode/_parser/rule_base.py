@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, ClassVar, TypeAlias, Union, cast
 
 from wenmode.nodes import Node
 
-from .._parser.state import BlockState
+from .state import BlockState
 from .transforms import NodeTransform, RootTransform
 
 if TYPE_CHECKING:

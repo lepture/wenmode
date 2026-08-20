@@ -14,8 +14,8 @@ from wenmode.utils.cjk import (
     is_punctuation,
 )
 
+from ..._parser.rule_base import InlineCandidate, InlineRule
 from ..._parser.state import BlockState
-from ..base import InlineCandidate, InlineRule
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser

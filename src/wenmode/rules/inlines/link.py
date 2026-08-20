@@ -10,10 +10,10 @@ from wenmode.nodes import Link as LinkNode
 from wenmode.utils import is_escaped, normalize_label_text, normalize_uri_text
 from wenmode.utils.text import parse_angle_destination, parse_bare_destination_result
 
+from ..._parser.rule_base import InlineCandidate, InlineRule
 from ..._parser.source import SourceMap
 from ..._parser.state import BlockState
 from ..._parser.store import StateKey
-from ..base import InlineCandidate, InlineRule
 from ..references import REFERENCES_KEY, ReferenceDefinition, ReferenceTransform, resolve_state_reference
 from .code import find_matching_backtick_run
 from .html import EMAIL_RE, HTML_RE, URI_RE

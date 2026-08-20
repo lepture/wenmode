@@ -7,9 +7,9 @@ from typing import TYPE_CHECKING
 from wenmode.utils import normalize_label, normalize_label_text, normalize_uri_text
 from wenmode.utils.text import parse_angle_destination, parse_bare_destination
 
+from .._parser.rule_base import BlockCandidate, BlockRule
 from .._parser.store import StateKey
-from .base import BlockCandidate, BlockRule
-from .transforms import RootTransform
+from .._parser.transforms import RootTransform
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser

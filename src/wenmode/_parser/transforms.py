@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from wenmode.nodes import Node, Root
     from wenmode.parser import Parser
 
-    from .._parser.state import BlockState
+    from .state import BlockState
 
 class RootTransform:
     """Base class for document-wide transforms attached by rules.

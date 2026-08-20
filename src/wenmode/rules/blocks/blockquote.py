@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING
 from wenmode.nodes import Blockquote as BlockquoteNode
 from wenmode.utils import expand_leading_tabs
 
+from ..._parser.rule_base import BlockCandidate, BlockRule
 from ..._parser.state import BlockState
-from ..base import BlockCandidate, BlockRule
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser

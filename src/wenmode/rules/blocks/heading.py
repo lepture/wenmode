@@ -6,9 +6,9 @@ from typing import TYPE_CHECKING, cast
 
 from wenmode.nodes import Heading, Node
 
+from ..._parser.rule_base import BlockCandidate, BlockRule, ContinueCandidate, ContinueRule
 from ..._parser.state import BlockState
-from ..base import BlockCandidate, BlockRule, ContinueCandidate, ContinueRule
-from ..transforms import NodeTransform
+from ..._parser.transforms import NodeTransform
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
