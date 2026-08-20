@@ -5,6 +5,7 @@ from .html import filter_disallowed_html as filter_disallowed_html
 from .indentation import count_indent as count_indent
 from .indentation import count_indent_from as count_indent_from
 from .indentation import expand_leading_tabs as expand_leading_tabs
+from .indentation import indent_block as indent_block
 from .text import character_reference_from_codepoint as character_reference_from_codepoint
 from .text import decode_character_references as decode_character_references
 from .text import is_escaped as is_escaped
@@ -20,6 +21,7 @@ __all__ = [
     'count_indent_from',
     'decode_character_references',
     'expand_leading_tabs',
+    'indent_block',
     'filter_disallowed_html',
     'is_escaped',
     'normalize_label',

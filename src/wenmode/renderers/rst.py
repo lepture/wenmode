@@ -32,6 +32,7 @@ from wenmode.nodes import (
     TextDirective,
     ThematicBreak,
 )
+from wenmode.utils import indent_block
 
 from ._shared import footnote_label, render_table_cell_content, table_rows
 from .base import BaseRenderer, RenderContext
@@ -395,16 +396,6 @@ def render_footnote_definition(renderer: RSTRenderer, node: FootnoteDefinition, 
         else:
             continuation_lines.append('\n')
     return f'.. [#{label}] {lines[0]}\n' + ''.join(continuation_lines) + '\n'
-
-
-def indent_block(value: str, prefix: str) -> str:
-    lines: list[str] = []
-    for line in value.splitlines():
-        if line:
-            lines.append(prefix + line)
-        else:
-            lines.append('')
-    return '\n'.join(lines)
 
 
 def render_indented_block(renderer: RSTRenderer, node: Parent, context: RSTRenderContext) -> str:

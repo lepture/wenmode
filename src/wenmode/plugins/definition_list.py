@@ -8,8 +8,9 @@ from wenmode.nodes import Node, Paragraph, Parent
 from wenmode.renderers import MarkdownRenderer, RenderContext
 from wenmode.renderers.asciidoc import AsciiDocRenderContext, AsciiDocRenderer
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
-from wenmode.renderers.rst import RSTRenderContext, RSTRenderer, indent_block
+from wenmode.renderers.rst import RSTRenderContext, RSTRenderer
 from wenmode.rules import ContinueCandidate, ContinueRule, Rule
+from wenmode.utils import indent_block
 
 from .._parser.source import SourceCollector
 from .._parser.state import BlockState

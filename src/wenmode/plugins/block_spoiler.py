@@ -9,9 +9,9 @@ from wenmode.renderers import MarkdownRenderer, RenderContext
 from wenmode.renderers.asciidoc import AsciiDocRenderContext, AsciiDocRenderer
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.markdown import render_prefixed_block
-from wenmode.renderers.rst import RSTRenderContext, RSTRenderer, indent_block
+from wenmode.renderers.rst import RSTRenderContext, RSTRenderer
 from wenmode.rules import BlockCandidate, BlockRule, Rule
-from wenmode.utils import expand_leading_tabs
+from wenmode.utils import expand_leading_tabs, indent_block
 
 from .._parser.state import BlockState
 from .types import RendererHandlers

@@ -34,3 +34,13 @@ def count_indent_from(text: str, start_column: int) -> int:
         else:
             break
     return column
+
+
+def indent_block(value: str, prefix: str) -> str:
+    lines: list[str] = []
+    for line in value.splitlines():
+        if line:
+            lines.append(prefix + line)
+        else:
+            lines.append('')
+    return '\n'.join(lines)
