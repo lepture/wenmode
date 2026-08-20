@@ -18,9 +18,9 @@ def is_paragraph_interrupt(
     rule_set: RuleSet, max_container_depth: int, line: str, state: BlockState | None = None
 ) -> bool:
     """Return whether a line starts a block that can interrupt a paragraph."""
-    if rule_set.block_openers is None:
+    if rule_set.block_openers_re is None:
         return False
-    match = rule_set.block_openers.match(line)
+    match = rule_set.block_openers_re.match(line)
     if match is None:
         return False
 

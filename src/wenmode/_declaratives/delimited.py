@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-"""Configurable delimited inline rules."""
 from bisect import bisect_left
 from collections.abc import Callable
 from typing import TYPE_CHECKING, cast

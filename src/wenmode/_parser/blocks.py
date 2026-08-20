@@ -137,9 +137,9 @@ class BlockParser:
         return self._parse_matching_block_rule(state, match)
 
     def _block_opener_match(self, line: str, state: BlockState) -> re.Match[str] | None:
-        if self._rule_set.block_openers is None:
+        if self._rule_set.block_openers_re is None:
             return None
-        match = self._rule_set.block_openers.match(line)
+        match = self._rule_set.block_openers_re.match(line)
         if match is None:
             return None
         if self.container_depth_exceeded(cast(str, match.lastgroup), state):

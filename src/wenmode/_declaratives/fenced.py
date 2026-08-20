@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-"""Configurable fenced block rules."""
-
 import re
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Literal, TypeAlias, cast

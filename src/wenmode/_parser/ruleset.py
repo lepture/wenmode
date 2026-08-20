@@ -35,7 +35,7 @@ class RuleSet:
     opener_inline_rules: InlineOpenerRules
     search_inline_rules: list[InlineRule]
     inline_opener_re: re.Pattern[str] | None
-    block_openers: re.Pattern[str] | None
+    block_openers_re: re.Pattern[str] | None
 
     @classmethod
     def from_rules(cls, registered_rules: list[Rule]) -> RuleSet:
@@ -63,8 +63,8 @@ class RuleSet:
             inline_rule_order={rule.name: index for index, rule in enumerate(inline_rules)},
             opener_inline_rules=opener_inline_rules,
             search_inline_rules=search_inline_rules,
-            inline_opener_re=compile_inline_opener_re(opener_inline_rules),
-            block_openers=compile_block_openers(block_rules),
+            inline_opener_re=compile_inline_opener(opener_inline_rules),
+            block_openers_re=compile_block_openers(block_rules),
         )
 
 
@@ -113,13 +113,6 @@ def collect_root_transforms(rules: list[Rule]) -> list[RootTransform]:
     return transforms
 
 
-def compile_block_openers(rules: list[BlockRule]) -> re.Pattern[str] | None:
-    patterns = [f'(?P<{rule.name}>{rule.pattern})' for rule in rules]
-    if patterns:
-        return re.compile('|'.join(patterns))
-    return None
-
-
 def prepare_inline_dispatch(rules: list[InlineRule]) -> tuple[InlineOpenerRules, list[InlineRule]]:
     opener_rules: InlineOpenerRules = {}
     search: list[InlineRule] = []
@@ -134,7 +127,14 @@ def prepare_inline_dispatch(rules: list[InlineRule]) -> tuple[InlineOpenerRules,
     return opener_rules, search
 
 
-def compile_inline_opener_re(rules: InlineOpenerRules) -> re.Pattern[str] | None:
+def compile_block_openers(rules: list[BlockRule]) -> re.Pattern[str] | None:
+    patterns = [f'(?P<{rule.name}>{rule.pattern})' for rule in rules]
+    if patterns:
+        return re.compile('|'.join(patterns))
+    return None
+
+
+def compile_inline_opener(rules: InlineOpenerRules) -> re.Pattern[str] | None:
     if not rules:
         return None
     return re.compile(f'[{re.escape("".join(rules))}]')
