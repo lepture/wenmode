@@ -72,8 +72,12 @@ def parse_emphasis_sequence(nodes: list[Node], cjk_friendly: bool = False, max_d
             source_pos += source_length(node)
 
     if process_flat_non_nested_delimiters(parts, delimiters, max_depth=max_depth):
-        return [part for part in parts if not (isinstance(part, TextNode) and part.value == '')]
+        return without_empty_text_nodes(parts)
     process_delimiters(parts, delimiters, max_depth=max_depth)
+    return without_empty_text_nodes(parts)
+
+
+def without_empty_text_nodes(parts: list[Node]) -> list[Node]:
     return [part for part in parts if not (isinstance(part, TextNode) and part.value == '')]
 
 
@@ -105,27 +109,52 @@ def split_text_node(
     pos = 0
     while pos < len(text):
         if text[pos] not in '*_':
-            next_pos = next_delimiter_run(text, pos)
-            position = text_node_position(node, pos, next_pos)
-            parts.append(TextNode(value=text[pos:next_pos], position=position))
-            pos = next_pos
+            pos = append_plain_text(node, text, pos, parts)
             continue
 
-        marker = text[pos]
-        end = pos
-        while end < len(text) and text[end] == marker:
-            end += 1
-        run_length = end - pos
-        delimiter_length = run_length
-        absolute = source_start + pos
-        opener = can_open(source, absolute, run_length, marker, cjk_friendly=cjk_friendly)
-        closer = can_close(source, absolute, run_length, marker, cjk_friendly=cjk_friendly)
-        part_index = len(parts)
-        position = text_node_position(node, pos, end)
-        parts.append(TextNode(value=text[pos:end], position=position))
-        if opener or closer:
-            delimiters.append(Delimiter(part_index, marker, delimiter_length, opener, closer, delimiter_length))
-        pos = end
+        pos = append_delimiter_run(
+            node,
+            text,
+            pos,
+            source,
+            source_start,
+            parts,
+            delimiters,
+            cjk_friendly,
+        )
+
+
+def append_plain_text(node: TextNode, text: str, start: int, parts: list[Node]) -> int:
+    end = next_delimiter_run(text, start)
+    position = text_node_position(node, start, end)
+    parts.append(TextNode(value=text[start:end], position=position))
+    return end
+
+
+def append_delimiter_run(
+    node: TextNode,
+    text: str,
+    start: int,
+    source: str,
+    source_start: int,
+    parts: list[Node],
+    delimiters: list[Delimiter],
+    cjk_friendly: bool,
+) -> int:
+    marker = text[start]
+    end = start
+    while end < len(text) and text[end] == marker:
+        end += 1
+    run_length = end - start
+    absolute = source_start + start
+    opener = can_open(source, absolute, run_length, marker, cjk_friendly=cjk_friendly)
+    closer = can_close(source, absolute, run_length, marker, cjk_friendly=cjk_friendly)
+    part_index = len(parts)
+    position = text_node_position(node, start, end)
+    parts.append(TextNode(value=text[start:end], position=position))
+    if opener or closer:
+        delimiters.append(Delimiter(part_index, marker, run_length, opener, closer, run_length))
+    return end
 
 
 def text_node_position(node: TextNode, start: int, end: int) -> Position | None:
@@ -146,40 +175,60 @@ def next_delimiter_run(text: str, start: int) -> int:
 def process_flat_non_nested_delimiters(
     parts: list[Node], delimiters: list[Delimiter], max_depth: int = 20
 ) -> bool:
+    if not can_use_flat_delimiters(parts, delimiters, max_depth):
+        return False
+
+    matches = find_flat_matches(parts, delimiters, max_depth)
+    if matches is None:
+        return False
+    return replace_flat_matches(parts, matches)
+
+
+def can_use_flat_delimiters(parts: list[Node], delimiters: list[Delimiter], max_depth: int) -> bool:
     if max_depth <= 0 or len(delimiters) < 2:
         return False
-    for delimiter in delimiters:
-        if delimiter.length != 1:
-            return False
-        part = parts[delimiter.index]
-        if not isinstance(part, TextNode) or len(part.value) != 1:
-            return False
+    return all(
+        delimiter.length == 1
+        and isinstance(parts[delimiter.index], TextNode)
+        and len(parts[delimiter.index].value) == 1
+        for delimiter in delimiters
+    )
 
+
+def find_flat_matches(
+    parts: list[Node], delimiters: list[Delimiter], max_depth: int
+) -> list[tuple[int, int, EmphasisNode]] | None:
     matches: list[tuple[int, int, EmphasisNode]] = []
     opener_stacks: dict[str, list[int]] = {'*': [], '_': []}
     for closer_pos, closer in enumerate(delimiters):
-        matched = False
         if closer.can_close:
-            stack = opener_stacks[closer.marker]
-            while stack:
-                opener_pos = stack.pop()
-                opener = delimiters[opener_pos]
-                if not is_matching_opener(opener, closer):
-                    continue
+            opener_pos = pop_flat_opener(delimiters, closer, opener_stacks[closer.marker])
+            if opener_pos is not None:
                 if closer_pos - opener_pos > 2:
-                    return False
+                    return None
+                opener = delimiters[opener_pos]
                 node = flat_emphasis_node(parts, opener, closer, max_depth)
                 if node is None:
-                    return False
+                    return None
                 matches.append((opener.index, closer.index, node))
-                matched = True
-                break
-        if not matched and closer.can_open:
+                continue
+        if closer.can_open:
             opener_stacks[closer.marker].append(closer_pos)
 
     if not matches:
-        return False
+        return None
+    return matches
 
+
+def pop_flat_opener(delimiters: list[Delimiter], closer: Delimiter, stack: list[int]) -> int | None:
+    while stack:
+        opener_pos = stack.pop()
+        if is_matching_opener(delimiters[opener_pos], closer):
+            return opener_pos
+    return None
+
+
+def replace_flat_matches(parts: list[Node], matches: list[tuple[int, int, EmphasisNode]]) -> bool:
     result: list[Node] = []
     index = 0
     for opener_index, closer_index, node in matches:
@@ -394,15 +443,24 @@ def _neighbors(text: str, start: int, size: int) -> tuple[str, str]:
 
 
 def _flanking(previous: str, next_char: str, cjk_friendly: bool = False) -> tuple[bool, bool]:
-    prev_ws, next_ws = previous.isspace(), next_char.isspace()
     if cjk_friendly:
-        prev_p, next_p = is_non_cjk_punctuation(previous), is_non_cjk_punctuation(next_char)
-        prev_cjk = is_cjk_character(previous) or is_ideographic_variation_selector(previous)
-        next_cjk = is_cjk_character(next_char)
-        left = (not next_ws) and (not next_p or prev_ws or prev_p or prev_cjk)
-        right = (not prev_ws) and (not prev_p or next_ws or next_p or next_cjk)
-        return left, right
+        return _cjk_flanking(previous, next_char)
 
+    return _standard_flanking(previous, next_char)
+
+
+def _cjk_flanking(previous: str, next_char: str) -> tuple[bool, bool]:
+    prev_ws, next_ws = previous.isspace(), next_char.isspace()
+    prev_p, next_p = is_non_cjk_punctuation(previous), is_non_cjk_punctuation(next_char)
+    prev_cjk = is_cjk_character(previous) or is_ideographic_variation_selector(previous)
+    next_cjk = is_cjk_character(next_char)
+    left = (not next_ws) and (not next_p or prev_ws or prev_p or prev_cjk)
+    right = (not prev_ws) and (not prev_p or next_ws or next_p or next_cjk)
+    return left, right
+
+
+def _standard_flanking(previous: str, next_char: str) -> tuple[bool, bool]:
+    prev_ws, next_ws = previous.isspace(), next_char.isspace()
     prev_p, next_p = is_punctuation(previous), is_punctuation(next_char)
     left = (not next_ws) and (not next_p or prev_ws or prev_p)
     right = (not prev_ws) and (not prev_p or next_ws or next_p)
