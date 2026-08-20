@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from wenmode.headings import HeadingIdTransform
-
 from .._parser.rule_base import (
     BlockCandidate,
     BlockRule,
@@ -49,7 +47,6 @@ __all__ = [
     'Footnote',
     'FootnoteDefinition',
     'HardBreak',
-    'HeadingIdTransform',
     'HtmlBlock',
     'Image',
     'IndentedCode',
