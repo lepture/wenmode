@@ -8,7 +8,7 @@ def compile_disallowed_html_filter(tags: Sequence[str]) -> re.Pattern[str] | Non
     if not tags:
         return None
     tag_pattern = '|'.join(re.escape(tag) for tag in tags)
-    return re.compile(rf'(?i)<(?=/?(?:{tag_pattern})(?:\s|/?>|$))')
+    return re.compile(rf'<(?=/?(?:{tag_pattern})(?:\s|/?>|$))', re.I)
 
 
 def filter_disallowed_html(value: str, pattern: re.Pattern[str] | None) -> str:

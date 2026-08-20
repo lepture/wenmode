@@ -26,15 +26,17 @@ if TYPE_CHECKING:
 HtmlContainerAttributeValue: TypeAlias = str | bool
 
 HTML_CONTAINER_OPENER_RE = re.compile(
-    r'(?i)^[ \t]{0,3}<'
+    r'^[ \t]{0,3}<'
     r'(?P<name>[a-z][a-z0-9-]*)'
     r'(?P<attrs>(?:\s+[a-z_:][a-z0-9_.:-]*(?:\s*=\s*(?:[^\s"\'=<>`]+|\'[^\']*\'|"[^"]*"))?)*)'
-    r'\s*>[ \t]*(?:\r?\n)?$'
+    r'\s*>[ \t]*(?:\r?\n)?$',
+    re.I,
 )
 HTML_ATTRIBUTE_RE = re.compile(
-    r'(?i)\s+'
+    r'\s+'
     r'(?P<name>[a-z_:][a-z0-9_.:-]*)'
-    r'(?:\s*=\s*(?P<value>[^\s"\'=<>`]+|\'[^\']*\'|"[^"]*"))?'
+    r'(?:\s*=\s*(?P<value>[^\s"\'=<>`]+|\'[^\']*\'|"[^"]*"))?',
+    re.I,
 )
 VOID_TAGS = frozenset(
     {'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'}
@@ -160,7 +162,7 @@ def find_matching_close_index(state: BlockState, name: str) -> int | None:
 
 
 def container_closer_re(name: str) -> re.Pattern[str]:
-    return re.compile(rf'(?i)^[ \t]{{0,3}}</{re.escape(name)}\s*>[ \t]*(?:\r?\n)?$')
+    return re.compile(rf'^[ \t]{{0,3}}</{re.escape(name)}\s*>[ \t]*(?:\r?\n)?$', re.I)
 
 
 def is_container_closer(line: str, name: str) -> bool:

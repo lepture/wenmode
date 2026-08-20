@@ -10,7 +10,7 @@ ListMarker = tuple[str | None, str]
 
 LIST_MARKER_RE = re.compile(r'^[ \t]{0,3}(?:(?P<bullet>[*+-])|(?P<ordered>\d{1,9})[.)])(?:[ \t]+|$)')
 HTML_TAG_START_RE = re.compile(r'</?[A-Za-z]')
-HTML_PARAGRAPH_INTERRUPT_RE = re.compile(r'(?i)<(?:script|pre|style|textarea)(?:\s|>|$)')
+HTML_PARAGRAPH_INTERRUPT_RE = re.compile(r'<(?:script|pre|style|textarea)(?:\s|>|$)', re.I)
 PUNCTUATION = set(string.punctuation)
 
 
