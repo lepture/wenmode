@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable
-from typing import cast
+from collections.abc import Iterable
 
 from .rules import (
     AtxHeading,
@@ -123,13 +122,13 @@ def create_preset(
     position of the rule they replace. Use ``append`` for rules that are not
     present in the base preset.
     """
-    remove_names = {_rule_name(rule) for rule in remove}
+    remove_names = {rule.name for rule in remove}
     replacements = _replacement_map(replace)
     replaced: set[str] = set()
 
     rules = list(prepend)
     for rule in base:
-        name = _rule_name(rule)
+        name = rule.name
         if name in remove_names:
             continue
         replacement = replacements.get(name)
@@ -151,17 +150,8 @@ def create_preset(
 def _replacement_map(rules: Iterable[RuleSpec]) -> dict[str, RuleSpec]:
     replacements: dict[str, RuleSpec] = {}
     for rule in rules:
-        name = _rule_name(rule)
+        name = rule.name
         if name in replacements:
             raise ValueError(f'duplicate replacement rule: {name}')
         replacements[name] = rule
     return replacements
-
-
-def _rule_name(rule: RuleSpec) -> str:
-    if isinstance(rule, Rule):
-        return rule.name
-    name = getattr(rule, 'name', None)
-    if isinstance(name, str):
-        return name
-    return cast(Callable[[], Rule], rule)().name
