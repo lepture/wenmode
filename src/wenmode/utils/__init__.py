@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from .html import compile_disallowed_html_filter as compile_disallowed_html_filter
 from .html import filter_disallowed_html as filter_disallowed_html
+from .html import is_html_block_tag as is_html_block_tag
+from .html import startswith_html_pre_tag as startswith_html_pre_tag
 from .indentation import count_indent as count_indent
 from .indentation import count_indent_from as count_indent_from
 from .indentation import expand_leading_tabs as expand_leading_tabs
@@ -23,6 +25,8 @@ __all__ = [
     'expand_leading_tabs',
     'indent_block',
     'filter_disallowed_html',
+    'is_html_block_tag',
+    'startswith_html_pre_tag',
     'is_escaped',
     'normalize_label',
     'normalize_label_text',

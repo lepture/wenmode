@@ -11,8 +11,15 @@ from wenmode.renderers.asciidoc import AsciiDocRenderContext, AsciiDocRenderer
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer
 from wenmode.rules import BlockCandidate, BlockRule, Rule
-from wenmode.rules.blocks.html import HTML_SCRIPT_STYLE_RE, HtmlBlock
-from wenmode.utils import compile_disallowed_html_filter, filter_disallowed_html, indent_block, unquote_attribute_value
+from wenmode.rules.blocks.html import HtmlBlock
+from wenmode.utils import (
+    compile_disallowed_html_filter,
+    filter_disallowed_html,
+    indent_block,
+    startswith_html_pre_tag,
+    unquote_attribute_value,
+)
+from wenmode.utils.html import VOID_TAGS
 
 from .._parser.source import SourceCollector
 from .._parser.state import BlockState
@@ -37,9 +44,6 @@ HTML_ATTRIBUTE_RE = re.compile(
     r'(?P<name>[a-z_:][a-z0-9_.:-]*)'
     r'(?:\s*=\s*(?P<value>[^\s"\'=<>`]+|\'[^\']*\'|"[^"]*"))?',
     re.I,
-)
-VOID_TAGS = frozenset(
-    {'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'}
 )
 
 
@@ -88,7 +92,7 @@ def parse_html_container(
         return None
 
     name, attributes, opening = opener
-    if name in VOID_TAGS or HTML_SCRIPT_STYLE_RE.match(opening.lstrip(' \t')):
+    if name in VOID_TAGS or startswith_html_pre_tag(opening.lstrip(' \t')):
         return None
 
     close_index = find_matching_close_index(state, name)

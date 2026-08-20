@@ -3,6 +3,8 @@ from __future__ import annotations
 import re
 import string
 
+from wenmode.utils import is_html_block_tag
+
 from .ruleset import RuleSet
 from .state import BlockState
 
@@ -61,8 +63,6 @@ def parse_list_marker(line: str) -> ListMarker | None:
 
 
 def html_block_interrupts_paragraph(line: str) -> bool:
-    from wenmode.rules.blocks.html import is_html_block_tag
-
     stripped = line.lstrip(' \t')
     if is_html_block_tag(stripped):
         return True

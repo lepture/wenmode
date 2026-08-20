@@ -5,7 +5,13 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from wenmode.nodes import Html
-from wenmode.utils import compile_disallowed_html_filter, filter_disallowed_html
+from wenmode.utils import (
+    compile_disallowed_html_filter,
+    filter_disallowed_html,
+    is_html_block_tag,
+    startswith_html_pre_tag,
+)
+from wenmode.utils.html import BLOCK_TAGS
 
 from ..._parser.state import BlockState
 from ..base import BlockCandidate, BlockRule
@@ -13,78 +19,10 @@ from ..base import BlockCandidate, BlockRule
 if TYPE_CHECKING:
     from wenmode.parser import Parser
 
-
-BLOCK_TAGS = (
-    'address',
-    'article',
-    'aside',
-    'base',
-    'basefont',
-    'blockquote',
-    'body',
-    'caption',
-    'center',
-    'col',
-    'colgroup',
-    'dd',
-    'details',
-    'dialog',
-    'dir',
-    'div',
-    'dl',
-    'dt',
-    'fieldset',
-    'figcaption',
-    'figure',
-    'footer',
-    'form',
-    'frame',
-    'frameset',
-    'h1',
-    'h2',
-    'h3',
-    'h4',
-    'h5',
-    'h6',
-    'head',
-    'header',
-    'hr',
-    'html',
-    'iframe',
-    'legend',
-    'li',
-    'link',
-    'main',
-    'menu',
-    'menuitem',
-    'nav',
-    'noframes',
-    'ol',
-    'optgroup',
-    'option',
-    'p',
-    'param',
-    'search',
-    'section',
-    'summary',
-    'table',
-    'tbody',
-    'td',
-    'tfoot',
-    'th',
-    'thead',
-    'title',
-    'tr',
-    'track',
-    'ul',
-)
-BLOCK_TAGS_PATTERN = '|'.join(BLOCK_TAGS)
-HTML_BLOCK_TAG_RE = re.compile(rf'^</?(?:{BLOCK_TAGS_PATTERN})(?:\s|/?>|$)', re.I)
-HTML_SCRIPT_STYLE_RE = re.compile(r'^<(script|pre|style|textarea)(?:\s|>|$)', re.I)
 HTML_OPEN_TAG_RE = re.compile(r'^<([a-z][a-z0-9-]*)', re.I)
 HTML_DECLARATION_RE = re.compile(r'^<![A-Z]')
 HTML_BLOCK_SCRIPT_STYLE_PATTERN = r'(?i:script(?:\s|>|$)|pre(?:\s|>|$)|style(?:\s|>|$))'
-HTML_BLOCK_TAG_PATTERN = rf'(?i:/?(?:{BLOCK_TAGS_PATTERN})(?:\s|/?>|$))'
+HTML_BLOCK_TAG_PATTERN = rf'(?i:/?(?:{"|".join(BLOCK_TAGS)})(?:\s|/?>|$))'
 HTML_BLOCK_COMPLETE_OPEN_TAG_PATTERN = (
     r'(?i:[a-z][a-z0-9-]*(?:\s+[a-z_:][a-z0-9_.:-]*(?:\s*=\s*(?:[^\s"\'=<>`]+|\'[^\']*\'|"[^"]*"))?)*\s*/?>[ \t]*$)'
 )
@@ -147,7 +85,7 @@ class HtmlBlock(BlockRule):
         end_pattern = html_end_pattern(stripped)
         if end_pattern is not None:
             lines = collect_until_html_end(state, end_pattern)
-            if HTML_SCRIPT_STYLE_RE.match(stripped):
+            if startswith_html_pre_tag(stripped):
                 return Html(value=''.join(lines))
             return self.html_node(''.join(lines))
 
@@ -168,7 +106,7 @@ class HtmlBlock(BlockRule):
 
 
 def html_end_pattern(line: str) -> re.Pattern[str] | None:
-    if HTML_SCRIPT_STYLE_RE.match(line) is not None:
+    if startswith_html_pre_tag(line):
         tag = HTML_OPEN_TAG_RE.match(line)
         if tag is not None:
             return re.compile(rf'</{tag.group(1)}\s*>', re.I)
@@ -237,10 +175,6 @@ def unclosed_script_style_end_pattern(line: str) -> re.Pattern[str] | None:
 def preserves_nested_raw_html(line: str) -> bool:
     tag = HTML_OPEN_TAG_RE.match(line)
     return tag is not None and tag.group(1).lower() in PRESERVE_NESTED_RAW_TAGS
-
-
-def is_html_block_tag(line: str) -> bool:
-    return HTML_BLOCK_TAG_RE.match(line) is not None
 
 
 def is_complete_html_tag(line: str) -> bool:
