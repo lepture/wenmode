@@ -107,6 +107,14 @@ EDGE_CASES = {
         (100, 1000, 10000),
         streaming_app,
     ),
+    'deeply-indented-list': EdgeCase(
+        'deeply-indented-list',
+        'containers',
+        lambda size: '\n'.join('  ' * index + '- item' for index in range(size)),
+        commonmark_app,
+        (100, 1000, 3000),
+        streaming_app,
+    ),
     'blockquote-depth-boundary': EdgeCase(
         'blockquote-depth-boundary',
         'containers',

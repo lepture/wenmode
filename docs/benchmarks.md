@@ -121,7 +121,7 @@ uv run --group benchmark python scripts/benchmark_edges.py
 ```
 
 Each case uses sizes appropriate to its structure. The suite includes deep and
-alternating containers, nested link and image labels, long code-span runs,
+deeply indented lists, alternating containers, nested link and image labels, long code-span runs,
 code-span runs inside link labels, invalid inline closers, list interruption
 and continuation candidates, references, footnotes, nested HTML containers,
 long HTML tag names, and wide tables. Select one case or custom sizes when

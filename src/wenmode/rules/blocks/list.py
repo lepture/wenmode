@@ -371,14 +371,43 @@ def update_open_fence(line: str, fence_char: str, fence_size: int) -> tuple[str,
 
 
 def has_continuation_indent(line: str, columns: int) -> bool:
-    return count_indent(line) >= columns
+    width = 0
+    for char in line:
+        if char == ' ':
+            width += 1
+        elif char == '\t':
+            width += 4 - width % 4
+        else:
+            break
+        if width >= columns:
+            return True
+    return False
 
 
 def strip_continuation_indent(line: str, columns: int) -> str:
-    expanded = expand_leading_tabs(line)
-    if len(expanded) >= columns:
-        return expanded[columns:]
-    return ''
+    width = 0
+    index = 0
+    while index < len(line) and width < columns:
+        char = line[index]
+        if char == ' ':
+            width += 1
+        elif char == '\t':
+            width += 4 - width % 4
+        else:
+            break
+        index += 1
+
+    if width < columns:
+        return ''
+
+    prefix = ' ' * (width - columns)
+    if index < len(line) and line[index] == ' ':
+        if '\t' not in line[index:]:
+            return prefix + line[index:]
+    elif index == len(line) or line[index] != '\t':
+        return prefix + line[index:]
+
+    return prefix + expand_leading_tabs(line[index:], width)
 
 
 def continuation_source_offset(line: str, columns: int) -> int:

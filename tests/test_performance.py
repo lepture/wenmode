@@ -130,6 +130,12 @@ def test_deep_lists_scale_nearly_linearly() -> None:
     assert_scales_nearly_linearly(lambda size: '- ' * size + 'text\n', commonmark, 1000, 2000)
 
 
+def test_deeply_indented_lists_scale_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(
+        lambda size: '\n'.join('  ' * index + '- item' for index in range(size)), commonmark, 1000, 2000
+    )
+
+
 def test_plain_text_inline_dispatch_scales_nearly_linearly() -> None:
     assert_scales_nearly_linearly(lambda size: 'a' * size + '\n', commonmark, 8000, 16000)
 
