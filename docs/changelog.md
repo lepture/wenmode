@@ -15,12 +15,15 @@ releases.
 This page records notable changes for released versions. Add unreleased entries
 here while preparing a release, then move them under the final version heading.
 
-## Unreleased
+## 0.14.1
 
-**Performance**
+Released **Aug 24, 2026**.
+
 
 - Optimize deeply indented list parsing by avoiding repeated scans of complete
   line indentation.
+- Preserve Markdown inline delimiter boundaries when serializing text next to
+  emphasis and strong nodes.
 
 ## 0.14.0
 
