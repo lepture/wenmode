@@ -33,7 +33,6 @@ from wenmode.nodes import (
     ThematicBreak,
 )
 
-from ._shared import render_table_cell_content
 from .base import BaseRenderer, RenderContext
 
 ESCAPABLE_TEXT_RE = re.compile(r'([\\`*_{}\[\]<|])')
@@ -104,16 +103,33 @@ class MarkdownRenderer(BaseRenderer):
         parts: list[str] = []
         for child in item.children:
             if isinstance(child, Paragraph):
-                parts.append(escape_block_starts(self.render_children(child.children, context)))
+                parts.append(escape_block_starts(self.render_inline_children(child.children, context)))
             else:
                 parts.append(self.render_node(child, context).rstrip('\n'))
         if item.spread:
             return '\n\n'.join(parts)
         return '\n'.join(parts)
 
+    def render_inline_children(self, children: list[Node], context: RenderContext) -> str:
+        """Render inline children with delimiter boundary context."""
+        parts: list[str] = []
+        for index, child in enumerate(children):
+            if isinstance(child, Text):
+                next_child = children[index + 1] if index + 1 < len(children) else None
+                parts.append(self.escape_text_node(child.value, next_child))
+            else:
+                parts.append(self.render_node(child, context))
+        return ''.join(parts)
+
     def escape_text(self, value: str) -> str:
         """Escape Markdown punctuation in plain text."""
         return ESCAPABLE_TEXT_RE.sub(r'\\\1', value)
+
+    def escape_text_node(self, value: str, next_node: Node | None = None) -> str:
+        """Escape text while preserving a delimiter next to emphasis."""
+        if isinstance(next_node, (Emphasis, Strong)) and value.endswith('*'):
+            return self.escape_text(value[:-1]) + '*'
+        return self.escape_text(value)
 
     def escape_destination(self, value: str) -> str:
         """Escape a link or image destination."""
@@ -140,12 +156,12 @@ def render_root(renderer: MarkdownRenderer, node: Root, context: RenderContext) 
 
 @MarkdownRenderer.register('paragraph')
 def render_paragraph(renderer: MarkdownRenderer, node: Paragraph, context: RenderContext) -> str:
-    return escape_block_starts(renderer.render_children(node.children, context)) + '\n\n'
+    return escape_block_starts(renderer.render_inline_children(node.children, context)) + '\n\n'
 
 
 @MarkdownRenderer.register('heading')
 def render_heading(renderer: MarkdownRenderer, node: Heading, context: RenderContext) -> str:
-    text = renderer.render_children(node.children, context)
+    text = renderer.render_inline_children(node.children, context)
     if node.depth in (1, 2) and ('\n' in text or '\r' in text):
         underline = '=' if node.depth == 1 else '-'
         return f'{text}\n{underline * 3}\n\n'
@@ -182,7 +198,7 @@ def render_list(renderer: MarkdownRenderer, node: List, context: RenderContext) 
 
 @MarkdownRenderer.register('delete')
 def render_delete(renderer: MarkdownRenderer, node: Delete, context: RenderContext) -> str:
-    return f'~~{renderer.render_children(node.children, context)}~~'
+    return f'~~{renderer.render_inline_children(node.children, context)}~~'
 
 
 @MarkdownRenderer.register('textDirective')
@@ -256,7 +272,7 @@ def render_directive_label(renderer: MarkdownRenderer, node: Node, context: Rend
     if not isinstance(node, Parent):
         return ''
     if node.children:
-        return '[' + renderer.render_children(node.children, context).strip() + ']'
+        return '[' + renderer.render_inline_children(node.children, context).strip() + ']'
     return ''
 
 
@@ -295,13 +311,20 @@ def render_table(renderer: MarkdownRenderer, node: Table, context: RenderContext
     header = _normalize_table_row(node.children[0], len(node.align))
     body = [_normalize_table_row(row, len(node.align)) for row in node.children[1:]]
     lines = [
-        '| ' + ' | '.join(render_table_cell_content(renderer, cell, context) for cell in header) + ' |',
+        '| ' + ' | '.join(render_markdown_table_cell_content(renderer, cell, context) for cell in header) + ' |',
         '| ' + ' | '.join(_delimiter_for_align(align) for align in node.align) + ' |',
     ]
     lines.extend(
-        '| ' + ' | '.join(render_table_cell_content(renderer, cell, context) for cell in row) + ' |' for row in body
+        '| ' + ' | '.join(render_markdown_table_cell_content(renderer, cell, context) for cell in row) + ' |'
+        for row in body
     )
     return '\n'.join(lines) + '\n\n'
+
+
+def render_markdown_table_cell_content(
+    renderer: MarkdownRenderer, cell: TableCell, context: RenderContext
+) -> str:
+    return renderer.render_inline_children(cell.children, context).replace('\n', ' ').strip()
 
 
 def _normalize_table_row(row: Node, size: int) -> list[TableCell]:
@@ -390,12 +413,12 @@ def render_inline_code(renderer: MarkdownRenderer, node: InlineCode, context: Re
 
 @MarkdownRenderer.register('strong')
 def render_strong(renderer: MarkdownRenderer, node: Strong, context: RenderContext) -> str:
-    return f'**{renderer.render_children(node.children, context)}**'
+    return f'**{renderer.render_inline_children(node.children, context)}**'
 
 
 @MarkdownRenderer.register('emphasis')
 def render_emphasis(renderer: MarkdownRenderer, node: Emphasis, context: RenderContext) -> str:
-    return f'*{renderer.render_children(node.children, context)}*'
+    return f'*{renderer.render_inline_children(node.children, context)}*'
 
 
 @MarkdownRenderer.register('link')
@@ -404,7 +427,7 @@ def render_link(renderer: MarkdownRenderer, node: Link, context: RenderContext) 
         title = f' "{renderer.escape_title(node.title)}"'
     else:
         title = ''
-    return f'[{renderer.render_children(node.children, context)}]({renderer.escape_destination(node.url)}{title})'
+    return f'[{renderer.render_inline_children(node.children, context)}]({renderer.escape_destination(node.url)}{title})'
 
 
 @MarkdownRenderer.register('image')
