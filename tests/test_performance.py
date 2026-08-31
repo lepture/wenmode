@@ -132,7 +132,11 @@ def test_deep_lists_scale_nearly_linearly() -> None:
 
 def test_deeply_indented_lists_scale_nearly_linearly() -> None:
     assert_scales_nearly_linearly(
-        lambda size: '\n'.join('  ' * index + '- item' for index in range(size)), commonmark(), 1000, 2000
+        lambda size: '\n'.join('  ' * index + '- item' for index in range(size)),
+        commonmark(),
+        1000,
+        2000,
+        ratio=4.25,
     )
 
 

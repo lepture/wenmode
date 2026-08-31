@@ -46,7 +46,7 @@ def iter_runnable_python_blocks() -> list[object]:
             if any(snippet in code for snippet in SKIP_SNIPPETS):
                 continue
             line = text.count('\n', 0, match.start()) + 1
-            label = f'{path.relative_to(ROOT)}:{line}:block-{index}'
+            label = f'{path.relative_to(ROOT).as_posix()}:{line}:block-{index}'
             params.append(pytest.param(label, code, id=label))
     return params
 
@@ -58,7 +58,7 @@ def iter_compilable_myst_python_blocks() -> list[object]:
         for index, match in enumerate(MYST_PYTHON_BLOCK_RE.finditer(text), start=1):
             code = strip_myst_code_block_options(match.group('body'))
             line = text.count('\n', 0, match.start()) + 1
-            label = f'{path.relative_to(ROOT)}:{line}:code-block-{index}'
+            label = f'{path.relative_to(ROOT).as_posix()}:{line}:code-block-{index}'
             params.append(pytest.param(label, code, id=label))
     return params
 
