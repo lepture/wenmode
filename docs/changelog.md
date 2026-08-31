@@ -15,9 +15,9 @@ releases.
 This page records notable changes for released versions. Add unreleased entries
 here while preparing a release, then move them under the final version heading.
 
-## Unreleased
+## 0.15.0
 
-**Changed**
+Released **Aug 31, 2026**.
 
 - Change `commonmark`, `github`, and `streaming` into preset factory functions
   so every call creates isolated configured rule instances. Call presets before
@@ -29,9 +29,6 @@ here while preparing a release, then move them under the final version heading.
 - Narrow the `wenmode.state` public facade to extension-facing state and source
   mapping types. Former concrete tracker and streaming implementation exports
   remain available temporarily with deprecation warnings.
-
-**Fixed**
-
 - Apply `from_ast()` depth budgets to nested mappings and lists in node `data`
   and extension fields, rejecting deeply nested metadata before Python's
   recursion limit.
