@@ -78,8 +78,8 @@ docs = [
     "sphinx-iconify; python_version >= '3.11'",
 ]
 lint = [
-    "mypy>=2.1.0",
-    "ruff>=0.15.17",
+    "mypy>=2.3.0",
+    "ruff>=0.16.0",
 ]
 release = [
     "twine>=6.0.0",
