@@ -462,17 +462,33 @@ def test_html_renderer_keeps_safe_percent_encoded_urls() -> None:
     )
 
 
+def test_html_renderer_omits_malformed_link_and_image_urls() -> None:
+    node = Paragraph(
+        children=[
+            Link(url='http://%5B', children=[Text(value='bad')]),
+            Text(value=' '),
+            Image(url='http://[', alt='bad'),
+        ]
+    )
+
+    assert HTMLRenderer().render(node) == '<p><a>bad</a> <img alt="bad" /></p>\n'
+    assert Wenmode().render('[bad](http://%5B)\n') == '<p><a>bad</a></p>\n'
+
+
 def test_html_renderer_can_disable_url_sanitization_for_trusted_content() -> None:
     node = Paragraph(
         children=[
             Link(url='javascript:alert(1)', children=[Text(value='bad')]),
             Text(value=' '),
             Image(url='javascript:alert(2)', alt='bad'),
+            Text(value=' '),
+            Link(url='http://%5B', children=[Text(value='trusted')]),
         ]
     )
 
     assert HTMLRenderer(sanitize_urls=False).render(node) == (
-        '<p><a href="javascript:alert(1)">bad</a> <img src="javascript:alert(2)" alt="bad" /></p>\n'
+        '<p><a href="javascript:alert(1)">bad</a> <img src="javascript:alert(2)" alt="bad" /> '
+        '<a href="http://%5B">trusted</a></p>\n'
     )
 
 

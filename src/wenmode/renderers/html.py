@@ -179,8 +179,11 @@ class HTMLRenderer(BaseRenderer):
         if not self.sanitize_urls:
             return value
 
-        normalized = normalize_url_for_scheme_check(value)
-        scheme = urlsplit(normalized).scheme.lower()
+        try:
+            normalized = normalize_url_for_scheme_check(value)
+            scheme = urlsplit(normalized).scheme.lower()
+        except ValueError:
+            return None
         if scheme and scheme not in self.allowed_url_schemes:
             return None
         return value
