@@ -61,7 +61,7 @@ and {ref}`custom-plugins` are intended to be stable through the beta period:
 - `Parser.parse_blocks()`, `Parser.parse_inlines()`,
   `Parser.is_paragraph_interrupt()`, and `Parser.inline_source()` for custom
   rules that need nested parsing or paragraph-interruption checks.
-- `BlockState`, `StateKey`, `StateStore`, `SourceMap`, and source trackers from
+- `BlockState`, `StateKey`, `StateStore`, `SourceMap`, and `SourceTracker` from
   `wenmode.state` for custom rules that need per-parse extension state or
   source-position mapping.
 - Public helper modules such as `wenmode.ast`, `wenmode.headings`, and
@@ -82,8 +82,8 @@ Prefer importing public extension APIs from these modules:
 - `wenmode.renderers` for renderer base classes, built-in renderers, contexts,
   and renderer handler hooks.
 - `wenmode.nodes` for documented node dataclasses.
-- `wenmode.state` for `BlockState`, `StateKey`, `SourceMap`, and related source
-  tracking helpers used by custom rules.
+- `wenmode.state` for `BlockState`, `StateKey`, `SourceMap`, `SourceTracker`,
+  and related source mapping helpers used by custom rules.
 
 Modules under `wenmode._parser` are private implementation details. They hold
 the compiled rule-set, block parser, inline parser, and paragraph-interruption

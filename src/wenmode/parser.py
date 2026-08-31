@@ -6,7 +6,14 @@ from types import MappingProxyType
 from ._parser.blocks import BlockParser
 from ._parser.inlines import InlineParser
 from ._parser.ruleset import RuleSet, resolve_rule
-from ._parser.source import LineSource, NullSourceTracker, PositionSourceTracker, SourceMap, StreamPositionSourceTracker
+from ._parser.source import (
+    LineSource,
+    NullSourceTracker,
+    PositionSourceTracker,
+    SourceMap,
+    SourceTracker,
+    StreamPositionSourceTracker,
+)
 from ._parser.state import BlockState, StreamBlockState, StreamLineBuffer
 from ._streaming import StreamingUnsupportedError as StreamingUnsupportedError
 from ._streaming import assert_streaming_supported
@@ -161,7 +168,7 @@ class Parser:
         return self._block_parser.parse_blocks(text, parent_state, source)
 
     def _create_block_state(self, source: LineSource, defer_inlines: bool) -> BlockState:
-        source_tracker: NullSourceTracker
+        source_tracker: SourceTracker
         if isinstance(source, str):
             lines = source.splitlines(keepends=True)
             if self.positions:

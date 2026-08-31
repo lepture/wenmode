@@ -3,7 +3,7 @@ from __future__ import annotations
 from bisect import bisect_left
 from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Protocol, cast
 
 from wenmode.nodes import Position
 
@@ -208,6 +208,26 @@ class SourceCollector:
     def map(self) -> SourceMap | None:
         """Return the collected source map, if source tracking is enabled."""
         return None
+
+
+class SourceTracker(Protocol):
+    """Track source positions for parser state."""
+
+    def bind(self, state: BlockState) -> None: ...
+
+    def offset_at_index(self, index: int) -> int | None: ...
+
+    def offset_at_line_offset(self, index: int, offset: int) -> int | None: ...
+
+    def position_between(self, start_index: int, end_index: int) -> Position | None: ...
+
+    def line_position(self, index: int, start: int, end: int) -> Position | None: ...
+
+    def line_text(self, index: int, offset: int, text: str) -> SourceMap | None: ...
+
+    def paragraph(self, lines: list[str], start_index: int) -> SourceMap | None: ...
+
+    def collect(self) -> SourceCollector: ...
 
 
 class NullSourceCollector(SourceCollector):

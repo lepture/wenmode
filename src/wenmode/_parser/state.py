@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 
 from wenmode.nodes import Node
 
-from .source import NullSourceTracker, SourceMap
+from .source import NullSourceTracker, SourceMap, SourceTracker
 from .store import StateStore
 
 
@@ -114,7 +114,7 @@ class BlockState:
 
     lines: list[str]
     index: int = 0
-    source: NullSourceTracker = field(default_factory=NullSourceTracker)
+    source: SourceTracker = field(default_factory=NullSourceTracker)
     store: StateStore = field(default_factory=StateStore)
     depth: int = 0
     defer_inlines: bool = False

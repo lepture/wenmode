@@ -26,6 +26,9 @@ here while preparing a release, then move them under the final version heading.
   temporarily supported with a deprecation warning and will be removed in 1.0.
 - Test Python 3.13 on macOS and Windows, continuously verify the DOCX integration
   example, and align the documented PyPy support with the PyPy 3.11 CI job.
+- Narrow the `wenmode.state` public facade to extension-facing state and source
+  mapping types. Former concrete tracker and streaming implementation exports
+  remain available temporarily with deprecation warnings.
 
 **Fixed**
 
