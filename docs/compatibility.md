@@ -23,8 +23,9 @@ helpers or incidental HTML formatting details not described in the docs.
 
 ## Python support
 
-Wenmode supports Python 3.10 and newer. The test matrix and package metadata
-cover CPython 3.10, 3.11, 3.12, 3.13, and 3.14, plus PyPy 3.10 and 3.11.
+Wenmode supports Python 3.10 and newer. The Linux test matrix and package
+metadata cover CPython 3.10, 3.11, 3.12, 3.13, and 3.14, plus PyPy 3.11.
+Python 3.13 is also tested on macOS and Windows.
 
 Documentation tooling currently requires Python 3.11 or newer because the docs
 dependency group follows the supported versions of Sphinx and the selected

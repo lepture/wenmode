@@ -24,6 +24,8 @@ here while preparing a release, then move them under the final version heading.
   passing them to `Wenmode`, `Parser`, or `create_preset`, for example
   `Wenmode(github())`. Passing a built-in preset function directly remains
   temporarily supported with a deprecation warning and will be removed in 1.0.
+- Test Python 3.13 on macOS and Windows, continuously verify the DOCX integration
+  example, and align the documented PyPy support with the PyPy 3.11 CI job.
 
 **Fixed**
 

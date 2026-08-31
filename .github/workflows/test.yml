@@ -79,6 +79,35 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
+  platform:
+    name: Test on ${{ matrix.os }}
+    needs: lint
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+          - windows-latest
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade uv
+
+      - name: Run tests
+        run: uv run --locked --group test pytest -q
+
   sonar:
     needs: test
     runs-on: ubuntu-latest
@@ -118,6 +147,7 @@ jobs:
       matrix:
         example:
           - wenmode-fastapi
+          - wenmode-docx
           - wenmode-mkdocs
           - wenmode-myst
 
