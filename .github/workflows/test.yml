@@ -106,7 +106,12 @@ jobs:
         run: python -m pip install --upgrade uv
 
       - name: Run tests
-        run: uv run --locked --group test pytest -q
+        if: matrix.os != 'macos-latest'
+        run: uv run --locked --python 3.13 --group test pytest -q
+
+      - name: Run tests on macOS (skip performance)
+        if: matrix.os == 'macos-latest'
+        run: uv run --locked --python 3.13 --group test pytest -q --ignore=tests/test_performance.py
 
   sonar:
     needs: test
