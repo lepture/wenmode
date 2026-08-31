@@ -66,11 +66,13 @@ The same checks apply to core `html` nodes, registered `htmlContainer` nodes,
 and generic nodes using the reserved `htmlContainer` type. Other unknown node
 types keep their extension data.
 
-Restoration also applies default resource budgets to serialized AST mappings:
-root node depth is `1`, each nested node mapping increases depth by `1`, and
-each restored node mapping counts against the node budget. The defaults are
-`max_depth=100` and `max_nodes=100_000`. These limits apply to built-in,
-plugin, and generic unknown nodes.
+Restoration also applies default resource budgets to serialized AST mappings.
+The root node has depth `1`; each nested node and each mapping or list inside
+`data` or an extension field increases depth by `1`. The `children` list that
+connects parent and child nodes does not add another level. Each restored node
+mapping counts against the node budget. The defaults are `max_depth=100` and
+`max_nodes=100_000`. These limits apply to built-in, plugin, and generic unknown
+nodes and their extension metadata.
 
 Pass `max_depth=None` or `max_nodes=None` only across a trusted input boundary.
 Disabling one budget does not disable the other budget, reference-cycle

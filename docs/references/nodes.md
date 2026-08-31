@@ -148,10 +148,12 @@ instances by default so tools can round-trip data they do not understand. Pass
 `unknown="error"` to reject unsupported node types instead.
 
 Restoration is resource-bounded by default for serialized AST mappings. The
-root node has depth `1`, every nested node mapping increases depth by `1`, and
-every restored node mapping counts toward the node budget, including built-in
-nodes, plugin nodes, and generic unknown nodes. The default budgets are
-`max_depth=100` and `max_nodes=100_000`:
+root node has depth `1`. Every nested node and every mapping or list inside
+`data` or an extension field increases depth by `1`; the `children` list that
+connects parent and child nodes does not add another level. Every restored node
+mapping counts toward the node budget, including built-in nodes, plugin nodes,
+and generic unknown nodes. The default budgets are `max_depth=100` and
+`max_nodes=100_000`:
 
 ```python
 node = from_ast(serialized_ast, max_depth=100, max_nodes=100_000)

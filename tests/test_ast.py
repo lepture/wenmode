@@ -52,6 +52,16 @@ def node_chain(depth: int, node_type: str = 'paragraph') -> dict[str, object]:
     return ast
 
 
+def mapping_chain(depth: int) -> dict[str, object]:
+    value: dict[str, object] = {}
+    current = value
+    for _index in range(depth - 1):
+        child: dict[str, object] = {}
+        current['nested'] = child
+        current = child
+    return value
+
+
 @pytest.mark.parametrize(
     ('node_type', 'node_class', 'ast'),
     BUILTIN_NODE_SHAPES,
@@ -269,6 +279,27 @@ def test_from_ast_enforces_max_depth_boundary() -> None:
 
     with pytest.raises(ValueError, match='^AST exceeds maximum depth of 4$'):
         from_ast(node_chain(5), max_depth=4)
+
+
+@pytest.mark.parametrize(
+    'ast',
+    [
+        {'type': 'custom', 'data': {'outer': {'items': []}}},
+        {'type': 'custom', 'metadata': [{'details': []}]},
+    ],
+)
+def test_from_ast_enforces_max_depth_for_metadata_containers(ast: dict[str, object]) -> None:
+    assert from_ast(ast, max_depth=4).to_ast() == ast
+
+    with pytest.raises(ValueError, match='^AST exceeds maximum depth of 3$'):
+        from_ast(ast, max_depth=3)
+
+
+def test_from_ast_rejects_deep_data_before_python_recursion_limit() -> None:
+    ast = {'type': 'custom', 'data': mapping_chain(120)}
+
+    with pytest.raises(ValueError, match='^AST exceeds maximum depth of 100$'):
+        from_ast(ast)
 
 
 def test_from_ast_enforces_max_node_count_boundary() -> None:

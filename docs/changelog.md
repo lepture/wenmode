@@ -25,6 +25,12 @@ here while preparing a release, then move them under the final version heading.
   `Wenmode(github())`. Passing a built-in preset function directly remains
   temporarily supported with a deprecation warning and will be removed in 1.0.
 
+**Fixed**
+
+- Apply `from_ast()` depth budgets to nested mappings and lists in node `data`
+  and extension fields, rejecting deeply nested metadata before Python's
+  recursion limit.
+
 ## 0.14.1
 
 Released **Aug 24, 2026**.

@@ -202,8 +202,7 @@ def _matches(node: Node, matcher: NodeMatcher | None) -> bool:
 
 
 def _restore_ast_node(data: Mapping[str, Any], context: _RestorationContext, depth: int) -> Node:
-    if context.max_depth is not None and depth > context.max_depth:
-        raise ValueError(f'AST exceeds maximum depth of {context.max_depth}')
+    _check_depth(context, depth)
     if context.max_nodes is not None and context.node_count >= context.max_nodes:
         raise ValueError(f'AST exceeds maximum node count of {context.max_nodes}')
     context.node_count += 1
@@ -236,7 +235,7 @@ def _restore_ast_node(data: Mapping[str, Any], context: _RestorationContext, dep
             if key == 'data':
                 if value is not None and not isinstance(value, Mapping):
                     raise TypeError('AST node "data" must be a mapping')
-                attrs[key] = _plain_mapping_from_ast(value, context) if isinstance(value, Mapping) else value
+                attrs[key] = _plain_mapping_from_ast(value, context, depth + 1) if isinstance(value, Mapping) else value
                 continue
             attrs[key] = _ast_value_from_ast(value, context, depth)
 
@@ -257,13 +256,14 @@ def _ast_value_from_ast(value: Any, context: _RestorationContext, depth: int) ->
     if isinstance(value, Mapping) and isinstance(value.get('type'), str):
         return _restore_ast_node(value, context, depth + 1)
     if isinstance(value, Mapping):
-        return _ast_mapping_from_ast(value, context, depth)
+        return _ast_mapping_from_ast(value, context, depth + 1)
     if isinstance(value, list):
-        return _ast_list_from_ast(value, context, depth)
+        return _ast_list_from_ast(value, context, depth + 1)
     return value
 
 
 def _ast_mapping_from_ast(value: Mapping[str, Any], context: _RestorationContext, depth: int) -> dict[str, Any]:
+    _check_depth(context, depth)
     token = _enter_container(value, context)
     try:
         return {key: _ast_value_from_ast(item, context, depth) for key, item in value.items()}
@@ -272,6 +272,7 @@ def _ast_mapping_from_ast(value: Mapping[str, Any], context: _RestorationContext
 
 
 def _ast_list_from_ast(value: list[Any], context: _RestorationContext, depth: int) -> list[Any]:
+    _check_depth(context, depth)
     token = _enter_container(value, context)
     try:
         return [_ast_value_from_ast(item, context, depth) for item in value]
@@ -279,26 +280,28 @@ def _ast_list_from_ast(value: list[Any], context: _RestorationContext, depth: in
         _leave_container(token, context)
 
 
-def _plain_value_from_ast(value: Any, context: _RestorationContext) -> Any:
+def _plain_value_from_ast(value: Any, context: _RestorationContext, depth: int) -> Any:
     if isinstance(value, Mapping):
-        return _plain_mapping_from_ast(value, context)
+        return _plain_mapping_from_ast(value, context, depth + 1)
     if isinstance(value, list):
-        return _plain_list_from_ast(value, context)
+        return _plain_list_from_ast(value, context, depth + 1)
     return value
 
 
-def _plain_mapping_from_ast(value: Mapping[str, Any], context: _RestorationContext) -> dict[str, Any]:
+def _plain_mapping_from_ast(value: Mapping[str, Any], context: _RestorationContext, depth: int) -> dict[str, Any]:
+    _check_depth(context, depth)
     token = _enter_container(value, context)
     try:
-        return {key: _plain_value_from_ast(item, context) for key, item in value.items()}
+        return {key: _plain_value_from_ast(item, context, depth) for key, item in value.items()}
     finally:
         _leave_container(token, context)
 
 
-def _plain_list_from_ast(value: list[Any], context: _RestorationContext) -> list[Any]:
+def _plain_list_from_ast(value: list[Any], context: _RestorationContext, depth: int) -> list[Any]:
+    _check_depth(context, depth)
     token = _enter_container(value, context)
     try:
-        return [_plain_value_from_ast(item, context) for item in value]
+        return [_plain_value_from_ast(item, context, depth) for item in value]
     finally:
         _leave_container(token, context)
 
@@ -313,6 +316,11 @@ def _enter_container(value: Mapping[str, Any] | list[Any], context: _Restoration
 
 def _leave_container(token: int, context: _RestorationContext) -> None:
     context.active_containers.remove(token)
+
+
+def _check_depth(context: _RestorationContext, depth: int) -> None:
+    if context.max_depth is not None and depth > context.max_depth:
+        raise ValueError(f'AST exceeds maximum depth of {context.max_depth}')
 
 
 def _validate_restored_node(node: Node, *, allow_internal_metadata: bool) -> None:
