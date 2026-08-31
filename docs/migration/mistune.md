@@ -60,7 +60,7 @@ In Wenmode, keep a reusable `Wenmode` object:
 from wenmode import Wenmode
 from wenmode.presets import github
 
-wen = Wenmode(github)
+wen = Wenmode(github())
 html = wen.render(text)
 ```
 
@@ -89,7 +89,7 @@ html = markdown(text)
 from wenmode import Wenmode
 from wenmode.presets import github
 
-wen = Wenmode(github)
+wen = Wenmode(github())
 html = wen.render(text)
 ```
 

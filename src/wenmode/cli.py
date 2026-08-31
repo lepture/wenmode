@@ -30,18 +30,11 @@ from .plugins import (
     subscript,
     superscript,
 )
-from .presets import commonmark, github, streaming
+from .presets import PresetFactory, commonmark, github, streaming
 from .renderers import AsciiDocRenderer, HTMLRenderer, MarkdownRenderer, RSTRenderer
-from .rules import Rule
 from .wenmode import Wenmode
 
-RuleList = Sequence[type[Rule] | Rule]
-
-PRESETS: dict[str, RuleList] = {
-    'commonmark': cast(RuleList, commonmark),
-    'github': cast(RuleList, github),
-    'streaming': cast(RuleList, streaming),
-}
+PRESETS: dict[str, PresetFactory] = {'commonmark': commonmark, 'github': github, 'streaming': streaming}
 
 BUILTIN_PLUGINS: dict[str, ModuleType] = {
     'abbr': abbr,
@@ -181,7 +174,7 @@ def run_render(args: argparse.Namespace) -> int:
     source = read_source(str(args.source))
     renderer = create_renderer(str(args.format), unsafe_html=bool(args.unsafe_html), unsafe_urls=bool(args.unsafe_urls))
     wen = Wenmode(
-        PRESETS[str(args.preset)],
+        PRESETS[str(args.preset)](),
         renderer=renderer,
         plugins=resolve_builtin_plugins(cast(Sequence[str] | None, args.plugin)),
     )
@@ -193,7 +186,7 @@ def run_render(args: argparse.Namespace) -> int:
 def run_ast(args: argparse.Namespace) -> int:
     source = read_source(str(args.source))
     wen = Wenmode(
-        PRESETS[str(args.preset)],
+        PRESETS[str(args.preset)](),
         plugins=resolve_builtin_plugins(cast(Sequence[str] | None, args.plugin)),
         positions=bool(args.positions),
     )

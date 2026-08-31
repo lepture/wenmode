@@ -56,15 +56,15 @@ html = md.render(text)
 from wenmode import Wenmode
 from wenmode.presets import github
 
-html = Wenmode(github).render(text)
+html = Wenmode(github()).render(text)
 ```
 
 ## Preset and option mapping
 
 | markdown-it-py behavior | Wenmode replacement |
 | --- | --- |
-| `MarkdownIt('commonmark')` | `Wenmode()` or `Wenmode(commonmark)` |
-| `MarkdownIt('gfm-like')` | `Wenmode(github)` for GFM syntax |
+| `MarkdownIt('commonmark')` | `Wenmode()` or `Wenmode(commonmark())` |
+| `MarkdownIt('gfm-like')` | `Wenmode(github())` for GFM syntax |
 | `.enable('table')` | `Table` rule or `github` preset |
 | `.enable('strikethrough')` | `Strikethrough` rule or `github` preset |
 | `html=True` | raw HTML rules plus `HTMLRenderer(escape=False)` for trusted input |
@@ -217,7 +217,7 @@ send(html)
 from wenmode import Wenmode
 from wenmode.presets import streaming
 
-for chunk in Wenmode(streaming).stream(text):
+for chunk in Wenmode(streaming()).stream(text):
     send(chunk)
 ```
 

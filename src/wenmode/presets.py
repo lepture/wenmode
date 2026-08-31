@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
+import warnings
+from collections.abc import Callable, Iterable
+from typing import cast
 
 from .rules import (
     AtxHeading,
@@ -28,6 +30,7 @@ from .rules import (
 )
 
 RuleSpec = type[Rule] | Rule
+PresetFactory = Callable[[], tuple[RuleSpec, ...]]
 
 GFM_DISALLOWED_HTML_TAGS: tuple[str, ...] = (
     'title',
@@ -41,75 +44,105 @@ GFM_DISALLOWED_HTML_TAGS: tuple[str, ...] = (
     'plaintext',
 )
 
-commonmark: tuple[RuleSpec, ...] = (
-    ThematicBreak,
-    FencedCode,
-    IndentedCode,
-    HtmlBlock,
-    List,
-    AtxHeading,
-    SetextHeading,
-    Blockquote,
-    HardBreak,
-    Autolink,
-    RawHtml,
-    BackslashEscape,
-    CharacterReference,
-    Image,
-    Link,
-    InlineCode,
-    Emphasis,
-)
 
-streaming: tuple[RuleSpec, ...] = (
-    Table(require_body_pipe=False),
-    ThematicBreak,
-    FencedCode,
-    IndentedCode,
-    HtmlBlock,
-    List,
-    AtxHeading,
-    SetextHeading,
-    Blockquote,
-    HardBreak,
-    Autolink,
-    RawHtml,
-    BackslashEscape,
-    CharacterReference,
-    Image(references=False),
-    Link(references=False),
-    InlineCode,
-    Strikethrough,
-    Emphasis,
-)
+def commonmark() -> tuple[RuleSpec, ...]:
+    """Create the CommonMark-oriented rule preset."""
+    return (
+        ThematicBreak,
+        FencedCode,
+        IndentedCode,
+        HtmlBlock,
+        List,
+        AtxHeading,
+        SetextHeading,
+        Blockquote,
+        HardBreak,
+        Autolink,
+        RawHtml,
+        BackslashEscape,
+        CharacterReference,
+        Image,
+        Link,
+        InlineCode,
+        Emphasis,
+    )
 
-github: tuple[RuleSpec, ...] = (
-    Table(require_body_pipe=False),
-    ThematicBreak,
-    FencedCode,
-    IndentedCode,
-    HtmlBlock(disallowed_tags=GFM_DISALLOWED_HTML_TAGS),
-    List(task=True),
-    AtxHeading,
-    SetextHeading,
-    Blockquote,
-    HardBreak,
-    Autolink,
-    RawHtml(disallowed_tags=GFM_DISALLOWED_HTML_TAGS, comment_style='gfm'),
-    BackslashEscape,
-    CharacterReference,
-    Footnote,
-    Image,
-    Link,
-    InlineCode,
-    Strikethrough,
-    Emphasis,
-    ExtendedAutolink,
-)
+
+def streaming() -> tuple[RuleSpec, ...]:
+    """Create the streaming-compatible rule preset."""
+    return (
+        Table(require_body_pipe=False),
+        ThematicBreak,
+        FencedCode,
+        IndentedCode,
+        HtmlBlock,
+        List,
+        AtxHeading,
+        SetextHeading,
+        Blockquote,
+        HardBreak,
+        Autolink,
+        RawHtml,
+        BackslashEscape,
+        CharacterReference,
+        Image(references=False),
+        Link(references=False),
+        InlineCode,
+        Strikethrough,
+        Emphasis,
+    )
+
+
+def github() -> tuple[RuleSpec, ...]:
+    """Create the GitHub-flavored Markdown rule preset."""
+    return (
+        Table(require_body_pipe=False),
+        ThematicBreak,
+        FencedCode,
+        IndentedCode,
+        HtmlBlock(disallowed_tags=GFM_DISALLOWED_HTML_TAGS),
+        List(task=True),
+        AtxHeading,
+        SetextHeading,
+        Blockquote,
+        HardBreak,
+        Autolink,
+        RawHtml(disallowed_tags=GFM_DISALLOWED_HTML_TAGS, comment_style='gfm'),
+        BackslashEscape,
+        CharacterReference,
+        Footnote,
+        Image,
+        Link,
+        InlineCode,
+        Strikethrough,
+        Emphasis,
+        ExtendedAutolink,
+    )
+
+
+def _resolve_builtin_preset(value: Iterable[RuleSpec] | PresetFactory, /, *, stacklevel: int) -> Iterable[RuleSpec]:
+    factory: PresetFactory | None = None
+    if value is commonmark:
+        factory = commonmark
+    elif value is github:
+        factory = github
+    elif value is streaming:
+        factory = streaming
+
+    if factory is None:
+        return cast(Iterable[RuleSpec], value)
+
+    warnings.warn(
+        f'Passing {factory.__name__} without calling it is deprecated and will be removed in 1.0; '
+        f'use {factory.__name__}() instead.',
+        DeprecationWarning,
+        stacklevel=stacklevel,
+    )
+    return factory()
 
 
 def create_preset(
-    base: Iterable[RuleSpec],
+    base: Iterable[RuleSpec] | PresetFactory,
     *,
     prepend: Iterable[RuleSpec] = (),
     remove: Iterable[RuleSpec] = (),
@@ -120,8 +153,12 @@ def create_preset(
 
     Rules are matched by their stable ``name``. Replacement rules keep the
     position of the rule they replace. Use ``append`` for rules that are not
-    present in the base preset.
+    present in the base preset. Passing a built-in preset function without
+    calling it is deprecated; pass the result of ``commonmark()``, ``github()``,
+    or ``streaming()`` instead.
     """
+    base = _resolve_builtin_preset(base, stacklevel=3)
+
     remove_names = {rule.name for rule in remove}
     replacements = _replacement_map(replace)
     replaced: set[str] = set()

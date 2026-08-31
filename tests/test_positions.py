@@ -155,14 +155,14 @@ def test_iterable_source_positions_match_string_line_endings(line_ending: str) -
         f'- one{line_ending}'
         f'- two{line_ending}'
     )
-    app = Wenmode(github, positions=True)
+    app = Wenmode(github(), positions=True)
 
     assert app.parse(iter(markdown.splitlines(keepends=True))).to_ast() == app.parse(markdown).to_ast()
 
 
 def test_parse_iter_positions_stay_absolute_after_table_and_list_lookahead() -> None:
     markdown = '| a | b |\n| --- | --- |\n| c | d |\n\n- one\n- two\n'
-    nodes = list(Wenmode(streaming, positions=True).parser.parse_iter(iter(markdown.splitlines(keepends=True))))
+    nodes = list(Wenmode(streaming(), positions=True).parser.parse_iter(iter(markdown.splitlines(keepends=True))))
 
     assert [node.type for node in nodes] == ['table', 'list']
     assert nodes[0].to_ast()['position'] == {'start': {'offset': 0}, 'end': {'offset': 34}}

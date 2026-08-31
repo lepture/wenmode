@@ -12,15 +12,17 @@ Markdown, or streaming output.
 
 ---
 
-Presets are named rule lists. Use this page to choose or derive a Markdown
-dialect; use {ref}`plugins` when syntax needs new nodes or renderer behavior,
-and {ref}`rule-matrix` when you need exact rule membership.
+Presets are functions that create named rule lists. Call a preset each time you
+configure a parser so configured rules belong to that parser. Use this page to
+choose or derive a Markdown dialect; use {ref}`plugins` when syntax needs new
+nodes or renderer behavior, and {ref}`rule-matrix` when you need exact rule
+membership.
 
 ```python
 from wenmode import Wenmode
 from wenmode.presets import github
 
-wen = Wenmode(github)
+wen = Wenmode(github())
 ```
 
 In most applications, choose one preset first, then add plugins or custom rules
@@ -43,7 +45,7 @@ only for the syntax that preset does not cover.
 from wenmode import Wenmode
 from wenmode.presets import commonmark
 
-wen = Wenmode(commonmark)
+wen = Wenmode(commonmark())
 ```
 
 It enables the core Markdown features expected from a CommonMark-oriented
@@ -62,7 +64,7 @@ features.
 from wenmode import Wenmode
 from wenmode.presets import github
 
-wen = Wenmode(github)
+wen = Wenmode(github())
 ```
 
 It adds tables, strikethrough, task list items, extended autolinks, and
@@ -78,7 +80,7 @@ handling with the GFM disallowed HTML tag list.
 from wenmode import Wenmode
 from wenmode.presets import streaming
 
-wen = Wenmode(streaming)
+wen = Wenmode(streaming())
 text = '''
 # Title
 
@@ -109,10 +111,11 @@ missing document-wide context.
 A preset is a reusable rule sequence. Create a custom one when your product needs a
 smaller or stricter dialect than `commonmark`, `github`, or `streaming`.
 
-The built-in presets are read-only. Use `create_preset()` to derive a mutable
-rule list instead of changing a built-in preset in place. Pass the derived list
-to `Wenmode()`, or use `Parser.register_rule()` and `Parser.register_rules()` to
-update an existing parser explicitly.
+Each built-in preset call returns a read-only tuple with freshly configured rule
+instances. Use `create_preset()` to derive a mutable rule list instead of
+changing the returned tuple in place. Pass the derived list to `Wenmode()`, or
+use `Parser.register_rule()` and `Parser.register_rules()` to update an existing
+parser explicitly.
 
 Keep custom dialects in one module so the editor preview, API renderer,
 background jobs, and tests all use the same Markdown behavior.
@@ -123,7 +126,7 @@ from wenmode.presets import commonmark, create_preset
 from wenmode.rules import HtmlBlock, Image, Link, RawHtml, Strikethrough
 
 product_preset = create_preset(
-    commonmark,
+    commonmark(),
     remove=[HtmlBlock, RawHtml],
     replace=[Image(references=False), Link(references=False)],
     append=[Strikethrough],

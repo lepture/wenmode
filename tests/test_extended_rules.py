@@ -23,7 +23,7 @@ class ExtendedRuleExample(TypedDict, total=False):
 
 def app_for_example(example: ExtendedRuleExample, renderer: MarkdownRenderer | None = None) -> Wenmode:
     if 'preset' in example:
-        return Wenmode(EXTENDED_PRESETS[example['preset']], renderer=renderer)
+        return Wenmode(EXTENDED_PRESETS[example['preset']](), renderer=renderer)
     return configured_app(example['rules'], renderer=renderer)
 
 

@@ -56,7 +56,7 @@ text = '''
 A [link](https://example.com).
 '''
 
-root = Wenmode(github).parse(text)
+root = Wenmode(github()).parse(text)
 
 headings = find_all(root, Heading)
 links = find_all(root, 'link')

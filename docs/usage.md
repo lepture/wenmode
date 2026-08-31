@@ -150,7 +150,7 @@ assert ast['children'][0]['children'][1] == {
 }
 ```
 
-The same option is available on `Parser(commonmark, positions=True)` when you
+The same option is available on `Parser(commonmark(), positions=True)` when you
 use parser and renderer objects separately.
 
 Parsed nodes store source ranges as 0-based offsets. `Root.to_ast()` converts
@@ -221,7 +221,7 @@ Use `Parser` directly when you want parsing and rendering to be separate steps.
 from wenmode import HTMLRenderer, Parser
 from wenmode.presets import commonmark
 
-parser = Parser(commonmark)
+parser = Parser(commonmark())
 text = '# Hello'
 
 tree = parser.parse(text)
@@ -245,7 +245,7 @@ parsed and rendered.
 from wenmode import Wenmode
 from wenmode.presets import streaming
 
-wen = Wenmode(streaming)
+wen = Wenmode(streaming())
 
 text = '''
 # Hello
@@ -278,12 +278,12 @@ Check custom configurations before streaming:
 from wenmode import Wenmode
 from wenmode.presets import commonmark, streaming
 
-wen = Wenmode(streaming)
+wen = Wenmode(streaming())
 
 assert wen.supports_streaming is True
 assert wen.streaming_blockers() == []
 
-wen = Wenmode(commonmark)
+wen = Wenmode(commonmark())
 
 assert wen.supports_streaming is False
 assert wen.streaming_blockers() == ['reference']

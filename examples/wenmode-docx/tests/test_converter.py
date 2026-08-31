@@ -42,14 +42,14 @@ def test_save_markdown_as_docx_creates_readable_file(tmp_path: Path) -> None:
 def test_docx_renderer_can_be_used_with_wenmode() -> None:
     renderer = DOCXRenderer()
 
-    document = Wenmode(github, renderer=renderer).render('# Rendered\n\nFrom a renderer.\n')
+    document = Wenmode(github(), renderer=renderer).render('# Rendered\n\nFrom a renderer.\n')
 
     assert [paragraph.text for paragraph in document.paragraphs] == ['Rendered', 'From a renderer.']
 
 
 def test_docx_renderer_can_be_reused_without_sharing_document_state() -> None:
     renderer = DOCXRenderer()
-    wen = Wenmode(github, renderer=renderer)
+    wen = Wenmode(github(), renderer=renderer)
 
     first = wen.render('# First\n')
     second = wen.render('# Second\n')
@@ -73,7 +73,7 @@ def test_docx_renderer_outputs_word_hyperlink_and_bottom_border() -> None:
 
 def test_docx_renderer_uses_default_table_style_unless_configured() -> None:
     plain = markdown_to_docx('| A |\n| --- |\n| B |\n')
-    styled = DOCXRenderer(table_style='Table Grid').render(Wenmode(github).parse('| A |\n| --- |\n| B |\n'))
+    styled = DOCXRenderer(table_style='Table Grid').render(Wenmode(github()).parse('| A |\n| --- |\n| B |\n'))
 
     assert plain.tables[0].style.name == 'Normal Table'
     assert styled.tables[0].style.name == 'Table Grid'

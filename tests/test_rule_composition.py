@@ -231,7 +231,7 @@ def test_footnote_definitions_are_plain_text_without_footnote_rule() -> None:
 
 
 def test_github_preset_enables_footnotes_with_links() -> None:
-    app = Wenmode(github)
+    app = Wenmode(github())
 
     html = app.render('[link](/url) and a[^one]\n\n[^one]: note\n')
 

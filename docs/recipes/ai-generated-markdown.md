@@ -36,7 +36,7 @@ the complete document, such as reference-style links and footnotes.
 from wenmode import Wenmode
 from wenmode.presets import streaming
 
-wen = Wenmode(streaming)
+wen = Wenmode(streaming())
 ```
 
 If the answer uses reference-style links, footnotes, or document-wide
@@ -76,7 +76,7 @@ ALLOWED_NODE_TYPES = {
     'thematicBreak',
 }
 
-wen = Wenmode(streaming, renderer=HTMLRenderer())
+wen = Wenmode(streaming(), renderer=HTMLRenderer())
 
 
 def filter_node(node: Node) -> Node | None:
@@ -145,7 +145,7 @@ whole generated answer, filter or transform the root node, then render it.
 from wenmode import HTMLRenderer, Wenmode
 from wenmode.presets import github
 
-wen = Wenmode(github, renderer=HTMLRenderer())
+wen = Wenmode(github(), renderer=HTMLRenderer())
 markdown = '''
 # Answer
 

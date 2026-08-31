@@ -45,7 +45,7 @@ from wenmode.presets import commonmark
 from wenmode.rules import ContainerDirective, LeafDirective, TextDirective
 
 wen = Wenmode([
-    *commonmark,
+    *commonmark(),
     TextDirective,
     LeafDirective,
     ContainerDirective,
@@ -118,7 +118,7 @@ from wenmode.directives import Admonition
 from wenmode.presets import commonmark
 from wenmode.rules import ContainerDirective
 
-wen = Wenmode([*commonmark, ContainerDirective])
+wen = Wenmode([*commonmark(), ContainerDirective])
 wen.register_directive_renderer(Admonition())
 text = '''
 :::note[Title]
@@ -142,7 +142,7 @@ from wenmode.presets import commonmark
 from wenmode.rules import AtxHeading, ContainerDirective, LeafDirective
 
 wen = Wenmode(
-    [*commonmark, AtxHeading(transforms=[HeadingIdTransform()]), LeafDirective, ContainerDirective],
+    [*commonmark(), AtxHeading(transforms=[HeadingIdTransform()]), LeafDirective, ContainerDirective],
     directives=[Abbreviation(), Admonition(), Details(), Figure(), TableOfContents()],
 )
 ```
@@ -252,7 +252,7 @@ markdown = '''# Title
 ### Options
 ### Example
 '''
-root = Parser(commonmark).parse(markdown)
+root = Parser(commonmark()).parse(markdown)
 add_heading_ids(root, slugger=Slugger(), min_depth=2)
 
 toc = collect_toc(root, min_depth=2, max_depth=3)

@@ -61,7 +61,7 @@ html = renderer.render(root)
 from wenmode import HTMLRenderer, Parser
 from wenmode.presets import commonmark
 
-parser = Parser(commonmark)
+parser = Parser(commonmark())
 root = parser.parse(text)
 html = HTMLRenderer().render(root)
 ```
@@ -111,7 +111,7 @@ html = commonmark.commonmark(text)
 from wenmode import Wenmode
 from wenmode.presets import github
 
-html = Wenmode(github).render(text)
+html = Wenmode(github()).render(text)
 ```
 
 Use `github` when the migrated code is ready for the full GFM preset. Use custom

@@ -22,7 +22,7 @@ from wenmode import Wenmode
 from wenmode.presets import github
 from wenmode.plugins import block_math, inline_math
 
-wen = Wenmode(github, plugins=[inline_math, block_math])
+wen = Wenmode(github(), plugins=[inline_math, block_math])
 ```
 
 Use this page to enable built-in plugins and configure plugins with important
@@ -191,7 +191,7 @@ from wenmode import Wenmode
 from wenmode.plugins import cjk_friendly
 from wenmode.presets import github
 
-wen = Wenmode(github, plugins=[cjk_friendly])
+wen = Wenmode(github(), plugins=[cjk_friendly])
 
 assert wen.render('请看 https://example.com。\n') == (
     '<p>请看 <a href="https://example.com">https://example.com</a>。</p>\n'

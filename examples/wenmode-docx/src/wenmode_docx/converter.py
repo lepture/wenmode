@@ -57,7 +57,7 @@ def markdown_to_docx(source: str, document: DocumentObject | None = None) -> Doc
     """
     renderer = DOCXRenderer()
     context = DOCXRenderContext(document=document if document is not None else Document())
-    root = Wenmode(github, renderer=renderer).parse(source)
+    root = Wenmode(github(), renderer=renderer).parse(source)
     return renderer.render(root, context)
 
 

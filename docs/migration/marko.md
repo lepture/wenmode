@@ -57,7 +57,7 @@ Use a configured Wenmode instance:
 from wenmode import Wenmode
 from wenmode.presets import github
 
-wen = Wenmode(github)
+wen = Wenmode(github())
 html = wen.render(text)
 ```
 
@@ -170,7 +170,7 @@ Start with Wenmode's `github` preset:
 from wenmode import Wenmode
 from wenmode.presets import github
 
-html = Wenmode(github).render(text)
+html = Wenmode(github()).render(text)
 ```
 
 For a smaller dialect, pass only the rule classes or configured rule instances

@@ -67,7 +67,7 @@ def large_probe_lines(count: int):
 
 
 def test_parser_accepts_synchronous_text_streams() -> None:
-    app = Wenmode(github)
+    app = Wenmode(github())
     markdown = '# Title\n\nA [link][x] and a note[^one].\n\n[x]: /url\n[^one]: note\n'
     expected = app.render(markdown)
 
@@ -195,7 +195,7 @@ def test_stream_list_blank_line_lookahead() -> None:
 
 
 def test_streaming_preset_disables_references() -> None:
-    app = Wenmode(streaming)
+    app = Wenmode(streaming())
 
     assert 'reference_definition' not in app.parser.rules
     assert app.render('[x](/url) and ![alt](/img.png)\n') == (
@@ -205,7 +205,7 @@ def test_streaming_preset_disables_references() -> None:
 
 
 def test_wenmode_stream_matches_full_render_for_streaming_preset() -> None:
-    wen = Wenmode(streaming)
+    wen = Wenmode(streaming())
     markdown = '# Title\n\nA [link](/url) and ~~old~~ text.\n\n| A | B |\n| --- | --- |\n| x | y |\n\n- one\n- two\n'
 
     assert ''.join(wen.stream(markdown)) == wen.render(markdown)
@@ -214,7 +214,7 @@ def test_wenmode_stream_matches_full_render_for_streaming_preset() -> None:
 
 
 def test_streaming_preset_supports_table_and_strikethrough() -> None:
-    html = Wenmode(streaming).render('| A | B |\n| --- | --- |\nx | ~~old~~\n')
+    html = Wenmode(streaming()).render('| A | B |\n| --- | --- |\nx | ~~old~~\n')
 
     assert '<table>' in html
     assert '<td><del>old</del></td>' in html
@@ -229,7 +229,7 @@ def test_wenmode_stream_does_not_read_entire_input_before_first_chunk() -> None:
             consumed += 1
             yield line
 
-    stream = Wenmode(streaming).stream(chunks())
+    stream = Wenmode(streaming()).stream(chunks())
 
     assert next(stream) == '<h1>Title</h1>\n'
     assert consumed == 1
@@ -237,10 +237,10 @@ def test_wenmode_stream_does_not_read_entire_input_before_first_chunk() -> None:
 
 def test_wenmode_stream_rejects_unsupported_rules() -> None:
     with pytest.raises(StreamingUnsupportedError, match='reference'):
-        next(Wenmode(commonmark).stream('[x]\n\n[x]: /url\n'))
+        next(Wenmode(commonmark()).stream('[x]\n\n[x]: /url\n'))
 
     with pytest.raises(StreamingUnsupportedError, match='footnote, reference'):
-        next(Wenmode(github).stream('a[^one]\n\n[^one]: note\n'))
+        next(Wenmode(github()).stream('a[^one]\n\n[^one]: note\n'))
 
     with pytest.raises(StreamingUnsupportedError, match='footnote'):
         next(Wenmode([Footnote]).stream('a[^one]\n\n[^one]: note\n'))
@@ -272,8 +272,8 @@ def test_parse_iter_rejects_custom_non_deferred_root_transform() -> None:
 
 
 def test_parser_and_wenmode_report_streaming_support() -> None:
-    streamable = Wenmode(streaming)
-    full_document = Wenmode(github)
+    streamable = Wenmode(streaming())
+    full_document = Wenmode(github())
 
     assert streamable.supports_streaming is True
     assert streamable.parser.supports_streaming is True

@@ -88,7 +88,7 @@ def test_builtin_plugins_expose_node_lists() -> None:
 
 
 def test_parsed_plugin_ast_round_trips_through_plugin_registry() -> None:
-    app = Wenmode(github, plugins=PLUGIN_ROUND_TRIP_TARGETS)
+    app = Wenmode(github(), plugins=PLUGIN_ROUND_TRIP_TARGETS)
 
     ast = app.parse(PLUGIN_ROUND_TRIP_MARKDOWN).to_ast()
     restored = from_ast(ast, nodes=collect_plugin_nodes(PLUGIN_ROUND_TRIP_TARGETS))
@@ -98,7 +98,7 @@ def test_parsed_plugin_ast_round_trips_through_plugin_registry() -> None:
 
 
 def test_walk_yields_nodes_in_depth_first_order() -> None:
-    root = Wenmode(github).parse('# Title\n\nA [link](/url) and ![alt](/img.png).\n')
+    root = Wenmode(github()).parse('# Title\n\nA [link](/url) and ![alt](/img.png).\n')
 
     assert [node.type for node in walk(root)] == [
         'root',
@@ -141,7 +141,7 @@ def test_find_returns_first_matching_node() -> None:
 
 
 def test_find_all_matches_type_strings_classes_tuples_and_predicates() -> None:
-    root = Wenmode(github).parse('# Title\n\n## Deep\n\nA [link](/url) and ![alt](/img.png).\n')
+    root = Wenmode(github()).parse('# Title\n\n## Deep\n\nA [link](/url) and ![alt](/img.png).\n')
 
     headings = find_all(root, Heading)
     media = find_all(root, ('link', 'image'))
@@ -178,7 +178,7 @@ def test_plain_text_separates_block_siblings() -> None:
 
 
 def test_plain_text_keeps_inline_children_concatenated() -> None:
-    root = Wenmode(github).parse('# A *strong* [link](/url)\n\n- first\n- second\n')
+    root = Wenmode(github()).parse('# A *strong* [link](/url)\n\n- first\n- second\n')
     heading = find(root, Heading)
 
     assert heading is not None
@@ -187,7 +187,7 @@ def test_plain_text_keeps_inline_children_concatenated() -> None:
 
 
 def test_from_ast_round_trips_builtin_nodes() -> None:
-    app = Wenmode(github)
+    app = Wenmode(github())
     ast = app.parse('# Title\n\nA [link](/url) and ![alt](/img.png).\n\n| A | B |\n| --- | --- |\nx | y\n').to_ast()
 
     restored = from_ast(ast)

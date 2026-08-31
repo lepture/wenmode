@@ -68,7 +68,7 @@ def test_plugin_state_is_created_per_parse() -> None:
 
 
 def test_streaming_preset_supports_streaming_compatible_plugins() -> None:
-    app = Wenmode(streaming).use(block_math).use(inline_math).use(block_spoiler).use(inline_spoiler).use(github_alert)
+    app = Wenmode(streaming()).use(block_math).use(inline_math).use(block_spoiler).use(inline_spoiler).use(github_alert)
     markdown = 'A $x$ and >! hidden !<.\n\n> [!NOTE]\n> stream\n\n- [x] done\n'
 
     assert ''.join(app.stream(markdown)) == app.render(markdown)
@@ -77,7 +77,7 @@ def test_streaming_preset_supports_streaming_compatible_plugins() -> None:
 
 def test_streaming_rejects_plugins_with_deferred_transforms() -> None:
     with pytest.raises(StreamingUnsupportedError, match='deferred inline transforms'):
-        next(Wenmode(streaming).use(abbr).stream('HTML\n\n*[HTML]: HyperText\n'))
+        next(Wenmode(streaming()).use(abbr).stream('HTML\n\n*[HTML]: HyperText\n'))
 
 
 @pytest.mark.parametrize('rule', [Link, Footnote])
@@ -198,7 +198,7 @@ def test_default_html_policy_escapes_raw_html_and_sanitizes_urls_after_parse() -
 
 
 def test_github_nested_disallowed_html_is_escaped_once() -> None:
-    html = Wenmode(github).render('<div>\n<script>alert(1)</script>\n</div>\n')
+    html = Wenmode(github()).render('<div>\n<script>alert(1)</script>\n</div>\n')
 
     assert '<script>' not in html
     assert '</script>' not in html
@@ -208,7 +208,7 @@ def test_github_nested_disallowed_html_is_escaped_once() -> None:
 
 def test_streaming_positions_remain_offset_only_for_plugin_nodes() -> None:
     parser = (
-        Wenmode(streaming, positions=True)
+        Wenmode(streaming(), positions=True)
         .use(block_math)
         .use(inline_math)
         .use(block_spoiler)

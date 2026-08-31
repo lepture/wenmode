@@ -54,7 +54,7 @@ from wenmode.presets import github
 from wenmode_docx import DOCXRenderer
 
 renderer = DOCXRenderer()
-document = Wenmode(github, renderer=renderer).render("# Draft\n\nBody text.")
+document = Wenmode(github(), renderer=renderer).render("# Draft\n\nBody text.")
 document.save("draft.docx")
 ```
 

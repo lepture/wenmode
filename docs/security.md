@@ -16,7 +16,7 @@ Wenmode parses Markdown into an AST and then renders the AST. The renderer
 controls most security behavior. The enabled rules also control whether raw HTML
 enters the AST.
 
-For untrusted content, use the default `Wenmode()` or `Wenmode(github)` with the
+For untrusted content, use the default `Wenmode()` or `Wenmode(github())` with the
 default `HTMLRenderer()`. Before you change renderer options, identify the code
 that validates raw HTML and URLs in your application.
 
@@ -183,7 +183,7 @@ reach the renderer.
 from wenmode import Wenmode
 from wenmode.presets import github
 
-wen = Wenmode(github)
+wen = Wenmode(github())
 text = '''
 <script>alert(1)</script>
 '''
@@ -210,7 +210,7 @@ from wenmode import Wenmode
 from wenmode.presets import commonmark, create_preset
 from wenmode.rules import HtmlBlock, RawHtml
 
-safe_rules = create_preset(commonmark, remove=[HtmlBlock, RawHtml])
+safe_rules = create_preset(commonmark(), remove=[HtmlBlock, RawHtml])
 wen = Wenmode(safe_rules)
 text = '<span>text</span>'
 expected = '''

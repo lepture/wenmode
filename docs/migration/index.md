@@ -89,9 +89,9 @@ configuration, dependency versions, and corpus descriptions, see
 | Existing behavior | Wenmode replacement |
 | --- | --- |
 | Markdown string to HTML string | `Wenmode().render(text)` |
-| CommonMark-style parser | `Wenmode()` or `Parser(commonmark)` |
-| GitHub-flavored Markdown | `Wenmode(github)` |
-| Streaming HTML chunks | `Wenmode(streaming).stream(text)` |
+| CommonMark-style parser | `Wenmode()` or `Parser(commonmark())` |
+| GitHub-flavored Markdown | `Wenmode(github())` |
+| Streaming HTML chunks | `Wenmode(streaming()).stream(text)` |
 | Raw HTML passthrough | `Wenmode(renderer=HTMLRenderer(escape=False))` |
 | Disable raw HTML syntax entirely | remove `HtmlBlock` and `RawHtml` from the rule list |
 | AST as plain data | `Wenmode().parse(text).to_ast()` |

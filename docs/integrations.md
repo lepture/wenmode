@@ -33,7 +33,7 @@ from wenmode.presets import github
 
 class MarkdownService:
     def __init__(self, wen: Wenmode | None = None) -> None:
-        self.wen = wen if wen is not None else Wenmode(github)
+        self.wen = wen if wen is not None else Wenmode(github())
 
     def render_comment(self, text: str) -> str:
         return self.wen.render(text)
@@ -79,7 +79,7 @@ from wenmode.plugins import block_math, frontmatter, inline_math
 from wenmode.presets import commonmark, create_preset
 from wenmode.rules import HtmlBlock, RawHtml
 
-product_rules = create_preset(commonmark, remove=[HtmlBlock, RawHtml])
+product_rules = create_preset(commonmark(), remove=[HtmlBlock, RawHtml])
 product_plugins = [frontmatter, inline_math, block_math]
 
 

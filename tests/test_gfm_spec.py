@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
+
 import pytest
 
 from tests.helpers import SpecExample, load_fixture
@@ -18,7 +20,7 @@ def test_gfm_spec(example: SpecExample) -> None:
     assert parser.render(example['markdown']) == example['html']
 
 
-def rules_for_example(example: SpecExample) -> list[type[Rule] | Rule]:
+def rules_for_example(example: SpecExample) -> Iterable[type[Rule] | Rule]:
     if example['section'] == '6.8 Autolinks':
-        return create_preset(github, remove=[ExtendedAutolink])
-    return github
+        return create_preset(github(), remove=[ExtendedAutolink])
+    return github()

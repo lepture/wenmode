@@ -57,7 +57,7 @@ Use a reusable Wenmode instance instead:
 from wenmode import Wenmode
 from wenmode.presets import github
 
-wen = Wenmode(github)
+wen = Wenmode(github())
 html = wen.render(text)
 ```
 
@@ -88,7 +88,7 @@ for features not covered by that preset:
 from wenmode import Wenmode
 from wenmode.presets import github
 
-wen = Wenmode(github)
+wen = Wenmode(github())
 html = wen.render(text)
 ```
 
@@ -122,7 +122,7 @@ html = markdown.markdown(text, extensions=['tables'])
 from wenmode import Wenmode
 from wenmode.presets import github
 
-html = Wenmode(github).render(text)
+html = Wenmode(github()).render(text)
 ```
 
 The `github` preset brings in the broader GFM feature set, not just tables. If

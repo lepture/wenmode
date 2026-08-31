@@ -92,7 +92,7 @@ has been parsed. Use the `streaming` preset:
 from wenmode import Wenmode
 from wenmode.presets import streaming
 
-wen = Wenmode(streaming)
+wen = Wenmode(streaming())
 ```
 
 If you build a custom streaming rule list, avoid `Footnote`,
@@ -105,7 +105,7 @@ Inspect the configured parser when the blocker is not obvious:
 from wenmode import Wenmode
 from wenmode.presets import github
 
-wen = Wenmode(github)
+wen = Wenmode(github())
 
 assert wen.supports_streaming is False
 assert wen.streaming_blockers() == ['footnote', 'reference']
@@ -120,7 +120,7 @@ set, or enable the individual standard rules listed in {ref}`rule-matrix`.
 from wenmode import Wenmode
 from wenmode.presets import github
 
-wen = Wenmode(github)
+wen = Wenmode(github())
 ```
 
 ## Reference-style links stay as text

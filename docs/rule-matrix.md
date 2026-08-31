@@ -94,7 +94,7 @@ accepts colon fences.
 ## Streaming compatibility
 
 Streaming works only when enabled rules do not need deferred document-wide inline
-resolution. Avoid these when using `Wenmode(streaming).stream(...)`:
+resolution. Avoid these when using `Wenmode(streaming()).stream(...)`:
 
 - `Link(references=True)` and `Image(references=True)`, because they attach
   `ReferenceTransform`.

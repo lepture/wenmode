@@ -195,37 +195,37 @@ def test_renderer_examples(example: RendererExample) -> None:
 
 
 def test_asciidoc_renderer_renders_empty_blockquote_from_markdown() -> None:
-    app = Wenmode(github, renderer=AsciiDocRenderer())
+    app = Wenmode(github(), renderer=AsciiDocRenderer())
 
     assert app.render('>\n') == '____\n____\n'
 
 
 def test_asciidoc_renderer_renders_empty_code_block_from_markdown() -> None:
-    app = Wenmode(github, renderer=AsciiDocRenderer())
+    app = Wenmode(github(), renderer=AsciiDocRenderer())
 
     assert app.render('```\n```\n') == '----\n----\n'
 
 
 def test_asciidoc_renderer_renders_html_block_from_markdown() -> None:
-    app = Wenmode(github, renderer=AsciiDocRenderer())
+    app = Wenmode(github(), renderer=AsciiDocRenderer())
 
     assert app.render('<div>\nx\n</div>\n') == '++++\n<div>\nx\n</div>\n++++\n'
 
 
 def test_asciidoc_renderer_renders_image_title_from_markdown() -> None:
-    app = Wenmode(github, renderer=AsciiDocRenderer())
+    app = Wenmode(github(), renderer=AsciiDocRenderer())
 
     assert app.render('![Alt](/img "A title")\n') == 'image:/img[Alt,title="A title"]\n'
 
 
 def test_asciidoc_renderer_renders_inline_code_with_plus_from_markdown() -> None:
-    app = Wenmode(github, renderer=AsciiDocRenderer())
+    app = Wenmode(github(), renderer=AsciiDocRenderer())
 
     assert app.render('`a+b`\n') == '++a+b++\n'
 
 
 def test_markdown_renderer_renders_directive_flag_attribute_from_markdown() -> None:
-    app = Wenmode(github, renderer=MarkdownRenderer(), plugins=[fenced_directive])
+    app = Wenmode(github(), renderer=MarkdownRenderer(), plugins=[fenced_directive])
 
     assert app.render('```{note}\n:flag:\n```\n') == ':::note{flag}\n:::\n'
 
@@ -240,7 +240,7 @@ def test_markdown_renderer_uses_minimal_plain_text_escaping() -> None:
 
 
 def test_markdown_renderer_renders_wrapped_link_destination_from_markdown() -> None:
-    app = Wenmode(github, renderer=MarkdownRenderer())
+    app = Wenmode(github(), renderer=MarkdownRenderer())
 
     assert app.render('[x](<a b> "ti\\"tle")\n') == '[x](a%20b "ti\\"tle")\n'
 
@@ -286,7 +286,7 @@ def test_renderer_class_root_hooks_block_streaming_by_default() -> None:
         return ':after'
 
     renderer = LocalRenderer()
-    app = Wenmode(streaming, renderer=renderer)
+    app = Wenmode(streaming(), renderer=renderer)
 
     assert renderer.supports_streaming is False
     assert renderer.streaming_blockers() == ['root:post']
@@ -300,7 +300,7 @@ def test_renderer_class_root_hooks_block_streaming_by_default() -> None:
 def test_renderer_dynamic_root_hooks_block_streaming(hook_name: str) -> None:
     renderer = HTMLRenderer()
     renderer.register_handler(hook_name, lambda renderer, node, context: '')
-    app = Wenmode(streaming, renderer=renderer)
+    app = Wenmode(streaming(), renderer=renderer)
 
     assert renderer.supports_streaming is False
     assert renderer.streaming_blockers() == [hook_name]
@@ -311,7 +311,7 @@ def test_renderer_dynamic_root_hooks_block_streaming(hook_name: str) -> None:
 
 
 def test_html_root_post_hook_is_safe_to_omit_during_supported_streaming() -> None:
-    app = Wenmode(streaming, renderer=HTMLRenderer())
+    app = Wenmode(streaming(), renderer=HTMLRenderer())
     markdown = '# Title\n\nBody with ![alt](/img.png).\n'
 
     assert app.renderer.streaming_blockers() == []
@@ -320,7 +320,7 @@ def test_html_root_post_hook_is_safe_to_omit_during_supported_streaming() -> Non
 
 
 def test_rst_root_post_hook_is_safe_to_omit_for_direct_streaming_images() -> None:
-    app = Wenmode(streaming, renderer=RSTRenderer())
+    app = Wenmode(streaming(), renderer=RSTRenderer())
 
     assert app.renderer.streaming_blockers() == []
     assert app.supports_streaming is True

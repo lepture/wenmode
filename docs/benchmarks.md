@@ -40,7 +40,7 @@ reused across render calls.
 
 | Target | Configuration |
 | --- | --- |
-| `wenmode-core` | `Wenmode([Table, *commonmark], HTMLRenderer(escape=False, sanitize_urls=False))` |
+| `wenmode-core` | `Wenmode([Table, *commonmark()], HTMLRenderer(escape=False, sanitize_urls=False))` |
 | `wenmode-all` | `github` plus directives, front matter, math, definition lists, abbreviations, spoilers, ruby, and extra formatting rules |
 | `mistune` | `mistune.create_markdown(renderer='html', plugins=['table', 'speedup'])` |
 | `mistletoe` | `mistletoe.markdown`, which renders HTML and supports pipe tables by default |

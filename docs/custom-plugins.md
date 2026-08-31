@@ -412,7 +412,7 @@ schedule work with `state.defer_inline_callback()`. Rule sets with deferred
 inline parsing cannot be used with streaming output.
 
 If a plugin is intended for streaming output, test it through
-`Wenmode(streaming, plugins=[plugin]).stream(...)` or through an equivalent
+`Wenmode(streaming(), plugins=[plugin]).stream(...)` or through an equivalent
 custom streaming rule list.
 
 ## Testing Plugins

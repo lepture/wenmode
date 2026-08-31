@@ -137,7 +137,7 @@ def test_leading_tabs_before_block_markers_count_as_indented_code(markdown: str,
 def test_leading_tabs_before_table_rows_count_as_indented_code() -> None:
     markdown = '\ta | b\n\t--- | ---\n\tx | y\n'
 
-    assert Wenmode(github).render(markdown) == '<pre><code>a | b\n--- | ---\nx | y\n</code></pre>\n'
+    assert Wenmode(github()).render(markdown) == '<pre><code>a | b\n--- | ---\nx | y\n</code></pre>\n'
 
 
 def test_leading_tabs_before_fenced_directive_count_as_indented_code() -> None:

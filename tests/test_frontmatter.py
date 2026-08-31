@@ -19,7 +19,7 @@ def test_frontmatter_plugin_stores_metadata_on_root_data() -> None:
 
 @pytest.mark.parametrize('renderer', [MarkdownRenderer(), RSTRenderer(), AsciiDocRenderer()])
 def test_frontmatter_plugin_blocks_streaming_before_metadata_is_lost(renderer) -> None:
-    app = Wenmode(streaming, renderer=renderer).use(frontmatter)
+    app = Wenmode(streaming(), renderer=renderer).use(frontmatter)
     stream = app.stream('---\ntitle: Hello\n---\n\n# Hi\n')
 
     assert app.supports_streaming is False
@@ -184,7 +184,7 @@ def test_frontmatter_plugin_renders_rst_empty_docinfo_values() -> None:
 
 
 def test_frontmatter_plugin_renders_before_markdown_footnotes() -> None:
-    app = Wenmode(github, renderer=MarkdownRenderer()).use(frontmatter)
+    app = Wenmode(github(), renderer=MarkdownRenderer()).use(frontmatter)
 
     assert app.render('---\ntitle: Hello\n---\n\nText[^a].\n\n[^a]: Note.\n') == (
         '---\ntitle: Hello\n---\n\nText[^a].\n\n[^a]: Note.\n'
@@ -192,7 +192,7 @@ def test_frontmatter_plugin_renders_before_markdown_footnotes() -> None:
 
 
 def test_frontmatter_plugin_renders_before_rst_footnotes() -> None:
-    app = Wenmode(github, renderer=RSTRenderer()).use(frontmatter)
+    app = Wenmode(github(), renderer=RSTRenderer()).use(frontmatter)
 
     assert app.render('---\ntitle: Hello\n---\n\nText[^a].\n\n[^a]: Note.\n') == (
         ':title: Hello\n\nText[#a]_.\n\n.. [#a] Note.\n'

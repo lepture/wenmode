@@ -12,6 +12,6 @@ from wenmode.presets import commonmark
 )
 def test_commonmark_spec(example: SpecExample) -> None:
     renderer = HTMLRenderer(escape=False, sanitize_urls=False)
-    parser = Wenmode(commonmark, renderer)
+    parser = Wenmode(commonmark(), renderer)
 
     assert parser.render(example['markdown']) == example['html']

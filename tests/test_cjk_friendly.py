@@ -36,10 +36,10 @@ def test_cjk_friendly_keeps_intraword_underscore_restriction() -> None:
 def test_cjk_friendly_trims_cjk_punctuation_from_extended_autolinks() -> None:
     source = '请看 https://example.com/path。\n'
 
-    assert Wenmode(github).render(source) == (
+    assert Wenmode(github()).render(source) == (
         '<p>请看 <a href="https://example.com/path%E3%80%82">https://example.com/path。</a></p>\n'
     )
-    assert Wenmode(github, plugins=[cjk_friendly]).render(source) == (
+    assert Wenmode(github(), plugins=[cjk_friendly]).render(source) == (
         '<p>请看 <a href="https://example.com/path">https://example.com/path</a>。</p>\n'
     )
 

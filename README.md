@@ -208,7 +208,7 @@ separately:
 from wenmode import HTMLRenderer, Parser
 from wenmode.presets import commonmark
 
-parser = Parser(commonmark)
+parser = Parser(commonmark())
 text = '# Hello'
 
 tree = parser.parse(text)
@@ -223,7 +223,7 @@ task lists, strikethrough, extended autolinks, and footnotes:
 from wenmode import Wenmode
 from wenmode.presets import github
 
-wen = Wenmode(github)
+wen = Wenmode(github())
 ```
 
 Use built-in plugins for non-standard syntax, document metadata, and rendering
@@ -328,7 +328,7 @@ parsed and rendered:
 from wenmode import Wenmode
 from wenmode.presets import streaming
 
-wen = Wenmode(streaming)
+wen = Wenmode(streaming())
 
 text = '''
 # Hello

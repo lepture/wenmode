@@ -61,43 +61,43 @@ def assert_scales_nearly_linearly(
 
 
 def test_unmatched_link_openers_do_not_rescan_suffixes() -> None:
-    assert_scales_nearly_linearly(lambda size: '[' * size + '\n', commonmark)
+    assert_scales_nearly_linearly(lambda size: '[' * size + '\n', commonmark())
 
 
 def test_nested_link_label_brackets_do_not_parse_labels_recursively() -> None:
-    assert_scales_nearly_linearly(lambda size: '[' * size + 'a' + ']' * size + '(/u)\n', commonmark, 200, 400)
+    assert_scales_nearly_linearly(lambda size: '[' * size + 'a' + ']' * size + '(/u)\n', commonmark(), 200, 400)
 
 
 def test_balanced_link_label_brackets_without_destination_scale_nearly_linearly() -> None:
-    assert_scales_nearly_linearly(lambda size: '[' * size + 'a' + ']' * size + '\n', commonmark, 1000, 2000)
+    assert_scales_nearly_linearly(lambda size: '[' * size + 'a' + ']' * size + '\n', commonmark(), 1000, 2000)
 
 
 def test_repeated_link_suffixes_do_not_rescan_outer_labels() -> None:
-    assert_scales_nearly_linearly(lambda size: '[' * size + 'a' + '](/u)' * size + '\n', commonmark, 500, 1000)
+    assert_scales_nearly_linearly(lambda size: '[' * size + 'a' + '](/u)' * size + '\n', commonmark(), 500, 1000)
 
 
 def test_nested_image_alt_brackets_do_not_parse_unbounded_recursively() -> None:
-    assert_scales_nearly_linearly(lambda size: '![' * size + 'a' + '](/u)' * size + '\n', commonmark, 200, 400)
+    assert_scales_nearly_linearly(lambda size: '![' * size + 'a' + '](/u)' * size + '\n', commonmark(), 200, 400)
 
 
 def test_malformed_image_labels_without_destinations_scale_nearly_linearly() -> None:
-    assert_scales_nearly_linearly(lambda size: '![' * size + 'a' + ']' * size + '\n', commonmark, 1000, 2000)
+    assert_scales_nearly_linearly(lambda size: '![' * size + 'a' + ']' * size + '\n', commonmark(), 1000, 2000)
 
 
 def test_repeated_empty_label_unclosed_destinations_scale_nearly_linearly() -> None:
-    assert_scales_nearly_linearly(lambda size: '[](' * size + '\n', commonmark, 1000, 2000)
+    assert_scales_nearly_linearly(lambda size: '[](' * size + '\n', commonmark(), 1000, 2000)
 
 
 def test_failed_footnote_like_links_do_not_rescan_suffixes() -> None:
-    assert_scales_nearly_linearly(lambda size: '[^x' * size + '\n', github)
+    assert_scales_nearly_linearly(lambda size: '[^x' * size + '\n', github())
 
 
 def test_dense_emphasis_delimiters_scale_nearly_linearly() -> None:
-    assert_scales_nearly_linearly(lambda size: '*a' * size + '\n', commonmark)
+    assert_scales_nearly_linearly(lambda size: '*a' * size + '\n', commonmark())
 
 
 def test_flat_mixed_emphasis_delimiters_scale_nearly_linearly() -> None:
-    assert_scales_nearly_linearly(lambda size: '*a_b' * size + '\n', commonmark, 1000, 2000)
+    assert_scales_nearly_linearly(lambda size: '*a_b' * size + '\n', commonmark(), 1000, 2000)
 
 
 def test_unmatched_code_span_runs_scale_nearly_linearly() -> None:
@@ -123,25 +123,25 @@ def test_link_label_code_span_runs_scale_nearly_linearly() -> None:
 
 
 def test_deep_blockquotes_scale_nearly_linearly() -> None:
-    assert_scales_nearly_linearly(lambda size: '> ' * size + 'text\n', commonmark, 1000, 2000)
+    assert_scales_nearly_linearly(lambda size: '> ' * size + 'text\n', commonmark(), 1000, 2000)
 
 
 def test_deep_lists_scale_nearly_linearly() -> None:
-    assert_scales_nearly_linearly(lambda size: '- ' * size + 'text\n', commonmark, 1000, 2000)
+    assert_scales_nearly_linearly(lambda size: '- ' * size + 'text\n', commonmark(), 1000, 2000)
 
 
 def test_deeply_indented_lists_scale_nearly_linearly() -> None:
     assert_scales_nearly_linearly(
-        lambda size: '\n'.join('  ' * index + '- item' for index in range(size)), commonmark, 1000, 2000
+        lambda size: '\n'.join('  ' * index + '- item' for index in range(size)), commonmark(), 1000, 2000
     )
 
 
 def test_plain_text_inline_dispatch_scales_nearly_linearly() -> None:
-    assert_scales_nearly_linearly(lambda size: 'a' * size + '\n', commonmark, 8000, 16000)
+    assert_scales_nearly_linearly(lambda size: 'a' * size + '\n', commonmark(), 8000, 16000)
 
 
 def test_repeated_hard_break_dispatch_scales_nearly_linearly() -> None:
-    assert_scales_nearly_linearly(lambda size: 'a  \n' * size, commonmark, 4000, 8000, ratio=3.0, slack=0.01)
+    assert_scales_nearly_linearly(lambda size: 'a  \n' * size, commonmark(), 4000, 8000, ratio=3.0, slack=0.01)
 
 
 def test_positioned_hard_breaks_scale_nearly_linearly() -> None:

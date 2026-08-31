@@ -21,7 +21,7 @@ bare URL autolinks, footnotes, and GFM disallowed HTML handling.
 from wenmode import Wenmode
 from wenmode.presets import github
 
-wen = Wenmode(github)
+wen = Wenmode(github())
 text = '''
 - [x] done
 
@@ -50,7 +50,7 @@ from wenmode import Wenmode
 from wenmode.plugins import github_alert
 from wenmode.presets import github
 
-wen = Wenmode(github, plugins=[github_alert])
+wen = Wenmode(github(), plugins=[github_alert])
 text = '''
 > [!NOTE]
 > **Read** this before deploying.
@@ -71,7 +71,7 @@ from wenmode import Wenmode
 from wenmode.plugins import github_alert
 from wenmode.presets import github
 
-wen = Wenmode(github, plugins=[github_alert.configure(html_style='admonition')])
+wen = Wenmode(github(), plugins=[github_alert.configure(html_style='admonition')])
 text = '''
 > [!WARNING]
 > Check the migration notes.
@@ -91,7 +91,7 @@ from wenmode import Wenmode
 from wenmode.plugins import github_alert
 from wenmode.presets import github
 
-wen = Wenmode(github, plugins=[
+wen = Wenmode(github(), plugins=[
     github_alert.configure(alerts={'think': 'Thinking'})
 ])
 

@@ -15,6 +15,16 @@ releases.
 This page records notable changes for released versions. Add unreleased entries
 here while preparing a release, then move them under the final version heading.
 
+## Unreleased
+
+**Changed**
+
+- Change `commonmark`, `github`, and `streaming` into preset factory functions
+  so every call creates isolated configured rule instances. Call presets before
+  passing them to `Wenmode`, `Parser`, or `create_preset`, for example
+  `Wenmode(github())`. Passing a built-in preset function directly remains
+  temporarily supported with a deprecation warning and will be removed in 1.0.
+
 ## 0.14.1
 
 Released **Aug 24, 2026**.

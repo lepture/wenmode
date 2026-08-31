@@ -11,6 +11,7 @@ from ._parser.state import BlockState, StreamBlockState, StreamLineBuffer
 from ._streaming import StreamingUnsupportedError as StreamingUnsupportedError
 from ._streaming import assert_streaming_supported
 from .nodes import Node, Root
+from .presets import PresetFactory, _resolve_builtin_preset
 from .rules import BlockRule, InlineRule, RootTransform, Rule
 
 __all__ = ['Parser', 'StreamingUnsupportedError']
@@ -23,13 +24,14 @@ class Parser:
     definitions, footnotes, abbreviation definitions, and deferred inline queues
     is created for each parse.
 
-    :param rules: Rule classes or configured rule instances to enable.
+    :param rules: Rule classes or configured rule instances to enable. Passing a
+        built-in preset function without calling it is deprecated.
     :param positions: Attach source positions to parsed nodes when ``True``.
     """
 
     max_container_depth = 20
 
-    def __init__(self, rules: Iterable[type[Rule] | Rule], positions: bool = False) -> None:
+    def __init__(self, rules: Iterable[type[Rule] | Rule] | PresetFactory, positions: bool = False) -> None:
         self.positions = positions
         self._registered_rules: list[Rule] = []
         self._ruleset = RuleSet.from_rules([])
@@ -39,7 +41,7 @@ class Parser:
         self._root_transforms: tuple[RootTransform, ...] = tuple(self._ruleset.root_transforms)
         self._inline_parser = InlineParser(self, self._ruleset)
         self._block_parser = BlockParser(self, self._ruleset)
-        self.register_rules(rules)
+        self.register_rules(_resolve_builtin_preset(rules, stacklevel=3))
 
     @property
     def rules(self) -> Mapping[str, Rule]:

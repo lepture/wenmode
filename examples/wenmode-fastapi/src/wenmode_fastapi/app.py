@@ -9,7 +9,7 @@ from fastapi.responses import HTMLResponse, StreamingResponse
 from wenmode import Wenmode
 from wenmode.presets import streaming
 
-preview = Wenmode(streaming)
+preview = Wenmode(streaming())
 
 app = FastAPI(title='Wenmode FastAPI streaming example')
 

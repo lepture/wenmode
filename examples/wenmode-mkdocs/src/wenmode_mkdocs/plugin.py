@@ -29,12 +29,7 @@ ADMONITION_NAMES = (
 
 def create_wenmode() -> Wenmode:
     app = Wenmode(
-        [
-            TextDirective,
-            LeafDirective,
-            ContainerDirective,
-            *github,
-        ],
+        [TextDirective, LeafDirective, ContainerDirective, *github()],
         renderer=HTMLRenderer(directives=[Admonition(names=ADMONITION_NAMES), Details(), Figure(), TableOfContents()]),
         plugins=[definition_list, fenced_directive, frontmatter, heading_ids, inline_math, block_math],
     )

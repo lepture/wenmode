@@ -121,7 +121,7 @@ The parser exposes enabled rules as a dictionary.
 from wenmode import Parser
 from wenmode.presets import commonmark
 
-parser = Parser(commonmark)
+parser = Parser(commonmark())
 
 if 'emphasis' in parser.rules:
     print('emphasis is enabled')

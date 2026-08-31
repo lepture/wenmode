@@ -19,7 +19,7 @@ DIRECTIVE_FENCES = ('`', '~', ':')
 
 
 wen = Wenmode(
-    [FencedDirectiveRule(literal_names=LITERAL_BODY_DIRECTIVES, fence=DIRECTIVE_FENCES), *github],
+    [FencedDirectiveRule(literal_names=LITERAL_BODY_DIRECTIVES, fence=DIRECTIVE_FENCES), *github()],
     renderer=RSTRenderer(),
     plugins=[definition_list, frontmatter, inline_role, inline_math, block_math, target],
 )
