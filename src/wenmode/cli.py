@@ -145,9 +145,16 @@ def configure_standard_streams() -> None:
         if not callable(reconfigure):
             continue
         try:
-            reconfigure(encoding='utf-8')
+            reconfigure(encoding='utf-8', newline='')
         except (OSError, ValueError):
             continue
+
+
+def format_os_error(error: OSError) -> str:
+    """Format an OS error without quoting or escaping filesystem paths."""
+    if error.filename is None:
+        return str(error)
+    return f'[Errno {error.errno}] {error.strerror}: {error.filename}'
 
 
 def create_renderer(
@@ -207,7 +214,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.command == 'ast':
             return run_ast(args)
     except OSError as exc:
-        parser.exit(1, f'wenmode: {exc}\n')
+        parser.exit(1, f'wenmode: {format_os_error(exc)}\n')
     except ValueError as exc:
         parser.exit(2, f'wenmode: {exc}\n')
 
