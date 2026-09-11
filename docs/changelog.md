@@ -15,6 +15,18 @@ releases.
 This page records notable changes for released versions. Add unreleased entries
 here while preparing a release, then move them under the final version heading.
 
+## Unreleased
+
+- Add `HTMLRenderer(soft_break="br")` for Mistune-compatible hard-wrapped
+  paragraph line breaks.
+- Add `Strikethrough(allow_single_tilde=False)` for double-tilde-only
+  deletion spans.
+- Fix paragraph interruption when an earlier overlapping block rule, such as a
+  table candidate, declines to interrupt but a later rule can interrupt.
+- Fix list tightness around trailing blank lines, dedented non-initial ordered
+  markers, and lazy continuation after indented code blocks.
+- Exclude trailing straight quotes from extended autolinks.
+
 ## 0.15.0
 
 Released **Aug 31, 2026**.
