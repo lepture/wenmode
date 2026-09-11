@@ -138,13 +138,17 @@ starting point:
 | Mistune behavior | Wenmode replacement |
 | --- | --- |
 | `table` | `github` preset or `Table` rule |
-| `strikethrough` | `github` preset or `Strikethrough` rule |
+| `strikethrough` | `github` preset or `Strikethrough(allow_single_tilde=False)` rule |
 | `footnotes` | `github` preset or `Footnote` rule |
 | `url` / bare autolinks | `github` preset or `ExtendedAutolink` rule |
 | custom inline plugin | custom `InlineRule` |
 | custom block plugin | custom `BlockRule` or `ContinueRule` |
 | plugin state | `StateKey` and `BlockState.store` |
 | renderer plugin | renderer handler registered with `HTMLRenderer.register()` or another renderer class |
+
+The `github` preset retains Wenmode's default single- and double-tilde
+strikethrough behavior. Use `Strikethrough(allow_single_tilde=False)` when
+matching Mistune's double-tilde-only behavior matters.
 
 ## AST migration
 

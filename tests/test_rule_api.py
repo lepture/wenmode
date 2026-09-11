@@ -223,6 +223,14 @@ def test_strikethrough_trigger_only_rule_parses_single_and_double_tildes() -> No
     )
 
 
+def test_strikethrough_can_disable_single_tilde_spans() -> None:
+    rule = Strikethrough(allow_single_tilde=False)
+
+    assert render(Parser([rule]), '~~x~~ ~y~ ~~~z~~~ ~~~~\n') == (
+        '<p><del>x</del> ~y~ ~~~z~~~ ~~~~</p>\n'
+    )
+
+
 def test_rule_subclasses_can_define_identity_as_class_attributes() -> None:
     class BangBlock(BlockRule):
         name = 'bang_block'

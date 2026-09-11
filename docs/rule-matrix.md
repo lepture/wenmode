@@ -40,7 +40,7 @@ rules to enable. For syntax examples and default HTML output, use the
 | `Emphasis` | inline | yes | yes | yes | `emphasis`, `strong` | none |
 | `Table` | block | no | configured | configured | `table`, `tableRow`, `tableCell` | `require_body_pipe=True` |
 | `Footnote` | inline + transform | no | yes | no | `footnoteReference`, `footnoteDefinition` | none |
-| `Strikethrough` | inline | no | yes | yes | `delete` | none |
+| `Strikethrough` | inline | no | yes | yes | `delete` | `allow_single_tilde=True` |
 | `ExtendedAutolink` | inline | no | yes | no | `link` | none |
 | `LeafDirective` | block | no | no | no | `leafDirective` | none |
 | `ContainerDirective` | block | no | no | no | `containerDirective` | none |

@@ -15,6 +15,9 @@ if TYPE_CHECKING:
 class Strikethrough(InlineRule):
     """Parse deletion spans delimited by tildes.
 
+    :param allow_single_tilde: Parse single-tilde spans in addition to
+        double-tilde spans.
+
     Markdown syntax:
 
     .. code-block:: markdown
@@ -25,8 +28,14 @@ class Strikethrough(InlineRule):
     name = 'strikethrough'
     opener = '~'
 
+    def __init__(self, allow_single_tilde: bool = True) -> None:
+        super().__init__()
+        self.allow_single_tilde = allow_single_tilde
+
     def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
         start = candidate.start
+        if not self.allow_single_tilde and not text.startswith('~~', start):
+            return None, start
         parsed = find_delimited_span(text, start, '~', max_run=2, reject_adjacent=True)
         if parsed is None:
             return None, start
