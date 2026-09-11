@@ -23,7 +23,7 @@ EXTENDED_AUTOLINK_RE = (
     r'(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+'
     r')'
 )
-TRAILING_PUNCTUATION = '?!.,:*_~'
+TRAILING_PUNCTUATION = "?!.,:*_~'\""
 URL_PREFIXES = ('http://', 'https://', 'mailto:', 'xmpp:', 'www.')
 EMAIL_LOCAL_CHARS = frozenset("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.!#$%&'*+/=?^_`{|}~-")
 ENTITY_SUFFIX_RE = re.compile(r'&[A-Za-z][A-Za-z0-9]*;$')

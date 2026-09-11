@@ -140,6 +140,15 @@ def test_leading_tabs_before_table_rows_count_as_indented_code() -> None:
     assert Wenmode(github()).render(markdown) == '<pre><code>a | b\n--- | ---\nx | y\n</code></pre>\n'
 
 
+@pytest.mark.parametrize(('quote', 'rendered_quote'), [('"', '&quot;'), ("'", "'")])
+def test_extended_autolink_trims_trailing_quote(quote: str, rendered_quote: str) -> None:
+    markdown = f'x {quote}https://a/b{quote}\n'
+
+    assert Wenmode(github()).render(markdown) == (
+        f'<p>x {rendered_quote}<a href="https://a/b">https://a/b</a>{rendered_quote}</p>\n'
+    )
+
+
 def test_leading_tabs_before_fenced_directive_count_as_indented_code() -> None:
     markdown = '\t```{note}\n\ttext\n\t```\n'
 
