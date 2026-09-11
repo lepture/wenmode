@@ -15,8 +15,15 @@ releases.
 This page records notable changes for released versions. Add unreleased entries
 here while preparing a release, then move them under the final version heading.
 
-## Unreleased
+## 0.15.1
 
+Released **Sep 11, 2026**.
+
+- Avoid per-character inline parsing attempts when multi-character
+  `InlineDelimited` or `InlineLiteral` openers such as `>!`, `==`, or `{%` are
+  absent.
+- Make `InlineDelimited(reject_longer_run=False)` consistently allow adjacent
+  delimiter characters in both general and optimized parsing paths.
 - Add `HTMLRenderer(soft_break="br")` for Mistune-compatible hard-wrapped
   paragraph line breaks.
 - Add `Strikethrough(allow_single_tilde=False)` for double-tilde-only
