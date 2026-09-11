@@ -27,9 +27,16 @@ def is_paragraph_interrupt(
         return False
 
     rule_name = match.lastgroup
-    if rule_name is None or container_depth_exceeded(rule_name, state, max_container_depth):
+    if rule_name is None:
         return False
-    return block_opener_interrupts_paragraph(rule_name, line)
+
+    start = rule_set.block_rule_order[rule_name]
+    for rule in rule_set.block_rules[start:]:
+        if rule.match_candidate(line) is None or container_depth_exceeded(rule.name, state, max_container_depth):
+            continue
+        if block_opener_interrupts_paragraph(rule.name, line):
+            return True
+    return False
 
 
 def block_opener_interrupts_paragraph(rule_name: str, line: str) -> bool:
