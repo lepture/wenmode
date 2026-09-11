@@ -140,6 +140,48 @@ def test_leading_tabs_before_table_rows_count_as_indented_code() -> None:
     assert Wenmode(github()).render(markdown) == '<pre><code>a | b\n--- | ---\nx | y\n</code></pre>\n'
 
 
+def test_github_table_candidate_does_not_mask_list_interrupt() -> None:
+    markdown = 'a\n- b | c\n'
+
+    assert Wenmode(github()).render(markdown) == '<p>a</p>\n<ul>\n<li>b | c</li>\n</ul>\n'
+
+
+def test_github_overlapping_list_and_table_opener_keeps_table_precedence() -> None:
+    markdown = 'a\n- a | b\n--- | ---\n'
+
+    assert Wenmode(github()).render(markdown) == (
+        '<p>a</p>\n<table>\n<thead>\n<tr>\n<th>- a</th>\n<th>b</th>\n</tr>\n</thead>\n</table>\n'
+    )
+
+
+@pytest.mark.parametrize(
+    ('markdown', 'html'),
+    [
+        (
+            '- a\n- b\n\n1. c\n',
+            '<ul>\n<li>a</li>\n<li>b</li>\n</ul>\n<ol>\n<li>c</li>\n</ol>\n',
+        ),
+        ('- a\n- b\n\n\ntext\n', '<ul>\n<li>a</li>\n<li>b</li>\n</ul>\n<p>text</p>\n'),
+    ],
+)
+def test_trailing_blank_lines_do_not_make_list_loose(markdown: str, html: str) -> None:
+    assert Wenmode().render(markdown) == html
+
+
+def test_dedented_noninitial_ordered_marker_starts_a_new_list() -> None:
+    markdown = '  - a\n2. b\n'
+
+    assert Wenmode().render(markdown) == '<ul>\n<li>a</li>\n</ul>\n<ol start="2">\n<li>b</li>\n</ol>\n'
+
+
+def test_indented_code_block_cannot_be_lazily_continued() -> None:
+    markdown = '+ x\n\n      code\n@@ y\n'
+
+    assert Wenmode().render(markdown) == (
+        '<ul>\n<li>\n<p>x</p>\n<pre><code>code\n</code></pre>\n</li>\n</ul>\n<p>@@ y</p>\n'
+    )
+
+
 @pytest.mark.parametrize(('quote', 'rendered_quote'), [('"', '&quot;'), ("'", "'")])
 def test_extended_autolink_trims_trailing_quote(quote: str, rendered_quote: str) -> None:
     markdown = f'x {quote}https://a/b{quote}\n'

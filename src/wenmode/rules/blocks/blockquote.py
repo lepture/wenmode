@@ -8,6 +8,7 @@ from wenmode.utils import expand_leading_tabs
 
 from ..._parser.rule_base import BlockCandidate, BlockRule
 from ..._parser.state import BlockState
+from ._util import starts_nonparagraph_block
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
@@ -70,21 +71,3 @@ class Blockquote(BlockRule):
         source = state.source.collect()
         text = self.parse_text(parser, state, source)
         return BlockquoteNode(children=parser.parse_blocks(text, parent_state=state, source=source.map()))
-
-
-def starts_nonparagraph_block(parser: Parser, line: str) -> bool:
-    rule_names = {
-        'atx_heading',
-        'container_directive',
-        'fenced_code',
-        'fenced_directive',
-        'indented_code',
-        'leaf_directive',
-        'list',
-        'thematic_break',
-    }
-    for name in rule_names:
-        rule = parser.rules.get(name)
-        if isinstance(rule, BlockRule) and rule.compiled.match(line):
-            return True
-    return False

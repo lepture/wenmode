@@ -196,20 +196,12 @@ b
 <p>quote</p>
 </blockquote>
 <ul>
-<li>
-<p>one</p>
-</li>
-<li>
-<p>two</p>
-</li>
+<li>one</li>
+<li>two</li>
 </ul>
 <ol start="3">
-<li>
-<p>three</p>
-</li>
-<li>
-<p>four</p>
-</li>
+<li>three</li>
+<li>four</li>
 </ol>
 <ul>
 <li>
@@ -230,11 +222,9 @@ b</p>
 > quote
 
 - one
-
 - two
 
 3. three
-
 4. four
 
 - loose
@@ -256,11 +246,9 @@ b
    quote
 
 - one
-
 - two
 
 3. three
-
 4. four
 
 - loose
@@ -284,11 +272,9 @@ quote
 ____
 
 * one
-
 * two
 
 . three
-
 . four
 
 * loose

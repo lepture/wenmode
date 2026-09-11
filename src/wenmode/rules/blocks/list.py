@@ -11,6 +11,7 @@ from wenmode.utils import count_indent, count_indent_from, expand_leading_tabs
 from ..._parser.rule_base import BlockCandidate, BlockRule, Rule
 from ..._parser.source import SourceCollector, SourceMap
 from ..._parser.state import BlockState
+from ._util import starts_nonparagraph_block
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
@@ -67,7 +68,7 @@ class List(BlockRule):
             marker = parse_list_item_marker(line, style, bool(items), thematic_break)
             if marker is None:
                 break
-            item_text, source, item_spread = collect_list_item(parser, state, marker, first_nonblank_cache)
+            item_text, source, item_spread = collect_list_item(parser, state, marker, style, first_nonblank_cache)
             spread = spread or item_spread
             item = ListItem(
                 children=parser.parse_blocks(item_text, parent_state=state, source=source), spread=item_spread
@@ -132,7 +133,11 @@ def marker_matches_style(marker: re.Match[str], style: ListMarkerStyle) -> bool:
 
 
 def collect_list_item(
-    parser: Parser, state: BlockState, marker: re.Match[str], first_nonblank_cache: dict[int, str | None]
+    parser: Parser,
+    state: BlockState,
+    marker: re.Match[str],
+    style: ListMarkerStyle,
+    first_nonblank_cache: dict[int, str | None],
 ) -> tuple[str, SourceMap | None, bool]:
     marker_indent, content_indent, first_line = first_list_item_line(marker)
     lines = [first_line]
@@ -142,11 +147,12 @@ def collect_list_item(
     item_spread = False
     item_has_nested_marker = line_has_list_marker(first_line)
     fence_char, fence_size = update_open_fence(first_line, '', 0)
+    can_lazy_continue = first_line.strip() != '' and not starts_nonparagraph_block(parser, first_line)
 
     while not state.done:
         line = state.line
         next_marker = MARKER_RE.match(line.rstrip('\r\n'))
-        if next_marker is not None and count_indent(next_marker.group('indent')) == marker_indent:
+        if next_marker is not None and count_indent(next_marker.group('indent')) <= marker_indent:
             break
         if line.strip() == '':
             item_spread, consumed = consume_blank_list_line(
@@ -155,12 +161,14 @@ def collect_list_item(
                 lines,
                 content_indent,
                 marker_indent,
+                style,
                 item_has_nested_marker,
                 first_nonblank_cache,
                 fence_char,
                 item_spread,
             )
             if consumed:
+                can_lazy_continue = False
                 continue
             break
         if has_continuation_indent(line, content_indent):
@@ -168,10 +176,17 @@ def collect_list_item(
             source.add(state.index, continuation_source_offset(line, content_indent), text)
             lines.append(text)
             item_has_nested_marker = item_has_nested_marker or line_has_list_marker(text)
+            was_in_fence = bool(fence_char)
             fence_char, fence_size = update_open_fence(text, fence_char, fence_size)
+            if was_in_fence or fence_char:
+                can_lazy_continue = False
+            elif can_lazy_continue:
+                can_lazy_continue = not parser.is_paragraph_interrupt(text)
+            else:
+                can_lazy_continue = text.strip() != '' and not starts_nonparagraph_block(parser, text)
             state.advance()
             continue
-        if is_lazy_list_continuation(parser, state, lines):
+        if is_lazy_list_continuation(parser, state, can_lazy_continue):
             source.add(state.index, 0, line)
             lines.append(line)
             item_has_nested_marker = item_has_nested_marker or line_has_list_marker(line)
@@ -183,8 +198,8 @@ def collect_list_item(
     return ''.join(lines), source.map(), item_spread
 
 
-def is_lazy_list_continuation(parser: Parser, state: BlockState, lines: list[str]) -> bool:
-    return lines[-1].strip() != '' and not parser.is_paragraph_interrupt(state.line, state)
+def is_lazy_list_continuation(parser: Parser, state: BlockState, can_continue: bool) -> bool:
+    return can_continue and not parser.is_paragraph_interrupt(state.line, state)
 
 
 def consume_blank_list_line(
@@ -193,6 +208,7 @@ def consume_blank_list_line(
     lines: list[str],
     content_indent: int,
     marker_indent: int,
+    style: ListMarkerStyle,
     item_has_nested_marker: bool,
     first_nonblank_cache: dict[int, str | None],
     fence_char: str,
@@ -200,14 +216,15 @@ def consume_blank_list_line(
 ) -> tuple[bool, bool]:
     blank_index = state.index
     state.advance()
-    if current_list_marker(state) is not None:
+    next_marker = current_list_marker(state)
+    if next_marker is not None and marker_matches_style(next_marker, style):
         item_spread = True
     if not item_has_content(lines):
         return item_spread, False
     if not should_keep_blank_in_item(state, content_indent, marker_indent):
         return item_spread, False
     if not fence_char and blank_belongs_to_item(
-        state, content_indent, marker_indent, item_has_nested_marker, first_nonblank_cache
+        state, content_indent, marker_indent, style, item_has_nested_marker, first_nonblank_cache
     ):
         item_spread = True
     lines.append('\n')
@@ -311,18 +328,23 @@ def blank_belongs_to_item(
     state: BlockState,
     content_indent: int,
     marker_indent: int,
+    style: ListMarkerStyle,
     item_has_nested_marker: bool,
     first_nonblank_cache: dict[int, str | None],
 ) -> bool:
     if state.done:
-        return True
+        return False
     line = first_nonblank_from_current(state, first_nonblank_cache)
     if line is None:
-        return True
+        return False
     marker = MARKER_RE.match(line.rstrip('\r\n'))
     if marker is not None:
-        return count_indent(marker.group('indent')) <= marker_indent
-    return count_indent(line) <= content_indent or not item_has_nested_marker
+        indent = count_indent(marker.group('indent'))
+        if indent == marker_indent:
+            return marker_matches_style(marker, style)
+        return indent >= content_indent
+    indent = count_indent(line)
+    return indent >= content_indent and (indent == content_indent or not item_has_nested_marker)
 
 
 def first_nonblank_from_current(state: BlockState, cache: dict[int, str | None]) -> str | None:

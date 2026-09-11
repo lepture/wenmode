@@ -145,12 +145,12 @@
     "html": "<ul>\n<li>\n<p>a</p>\n<p>b</p>\n</li>\n<li>\n<p>c</p>\n</li>\n</ul>\n"
   },
   {
-    "name": "list keeps trailing blanks inside final loose item",
+    "name": "trailing blanks do not make final list item loose",
     "rules": [
       "list"
     ],
     "markdown": "- a\n\n\n",
-    "html": "<ul>\n<li>\n<p>a</p>\n</li>\n</ul>\n"
+    "html": "<ul>\n<li>a</li>\n</ul>\n"
   },
   {
     "name": "abbreviation multiline title consumes continuations",
