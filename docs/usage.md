@@ -197,6 +197,18 @@ Wenmode currently provides:
 - `AsciiDocRenderer`, for serializing the AST to AsciiDoc.
 - `BaseRenderer`, a small dispatch-based base class for custom renderers.
 
+Use `HTMLRenderer(soft_break="br")` to render ordinary Markdown line endings
+as `<br />`, while keeping the default HTML safety settings:
+
+```python
+from wenmode import HTMLRenderer, Wenmode
+
+wen = Wenmode(renderer=HTMLRenderer(soft_break="br"))
+html = wen.render("first line\nsecond line\n")
+
+assert html == "<p>first line<br />\nsecond line</p>\n"
+```
+
 `MarkdownRenderer`, `RSTRenderer`, and `AsciiDocRenderer` serialize the AST to
 canonical markup. They are not source-preserving formatters; syntax details that
 are not represented in the AST may be normalized or omitted.

@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
-from typing import Any, Protocol, cast
+from typing import Any, Literal, Protocol, cast
 from urllib.parse import quote, unquote, urlsplit
 
 from wenmode.nodes import (
@@ -40,6 +40,7 @@ from .base import BaseRenderer, RenderContext
 
 HtmlAttrValue = str | int | bool | None
 SOFT_BREAK_SPACE_RE = re.compile(r'(?<! ) (?=\r?\n)')
+SOFT_BREAK_RE = re.compile(r'\r?\n')
 HTML_ATTR_NAME_RE = re.compile(r'^[A-Za-z_:][A-Za-z0-9_.:-]*$')
 
 
@@ -85,6 +86,8 @@ class HTMLRenderer(BaseRenderer):
     :param sanitize_attrs: Drop event handler and style attribute names when
         ``True``.
     :param directives: Directive renderers to register at construction time.
+    :param soft_break: Render soft line breaks as newlines with ``"newline"``
+        or HTML line breaks with ``"br"``.
     """
 
     name = 'html'
@@ -97,11 +100,13 @@ class HTMLRenderer(BaseRenderer):
         sanitize_urls: bool = True,
         sanitize_attrs: bool = True,
         directives: Iterable[DirectiveHtmlRenderer] = (),
+        soft_break: Literal['newline', 'br'] = 'newline',
     ) -> None:
         super().__init__()
         self.escape_enabled = escape
         self.sanitize_urls = sanitize_urls
         self.sanitize_attrs = sanitize_attrs
+        self.soft_break = soft_break
         self.directives: dict[tuple[str, str], DirectiveHtmlRenderer] = {}
         for directive in directives:
             self.register_directive_renderer(directive)
@@ -435,7 +440,10 @@ def render_html(renderer: HTMLRenderer, node: Html, context: HTMLRenderContext) 
 
 @HTMLRenderer.register('text')
 def render_text(renderer: HTMLRenderer, node: Text, context: HTMLRenderContext) -> str:
-    return renderer.escape_html(SOFT_BREAK_SPACE_RE.sub('', node.value))
+    value = renderer.escape_html(SOFT_BREAK_SPACE_RE.sub('', node.value))
+    if renderer.soft_break == 'br':
+        return SOFT_BREAK_RE.sub('<br />\n', value)
+    return value
 
 
 @HTMLRenderer.register('inlineCode')

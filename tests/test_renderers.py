@@ -77,6 +77,12 @@ def test_restored_html_preserves_internal_escaping_for_trusted_ast() -> None:
     assert HTMLRenderer().render(node) == '&lt;em&gt;safe&lt;/em&gt;'
 
 
+def test_html_renderer_can_render_soft_breaks_as_html_breaks() -> None:
+    app = Wenmode(renderer=HTMLRenderer(soft_break='br'))
+
+    assert app.render('one\ntwo  \nthree\n') == '<p>one<br />\ntwo<br />\nthree</p>\n'
+
+
 def test_restored_html_container_preserves_internal_escaping_for_trusted_ast() -> None:
     ast = {
         'type': 'htmlContainer',

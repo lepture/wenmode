@@ -130,6 +130,34 @@ keep the default renderer for user-authored content.
 To keep raw HTML syntax as text in the AST, remove `HtmlBlock` and `RawHtml`
 from the rule list instead of relying only on renderer escaping.
 
+## Hard-wrapped line breaks
+
+Mistune's `hard_wrap=True` turns ordinary line endings inside paragraphs into
+HTML line breaks:
+
+```{code-block} python
+:caption: mistune
+
+import mistune
+
+markdown = mistune.create_markdown(hard_wrap=True)
+html = markdown(text)
+```
+
+Configure Wenmode's HTML renderer to produce the same line-break behavior:
+
+```{code-block} python
+:caption: wenmode
+
+from wenmode import HTMLRenderer, Wenmode
+
+wen = Wenmode(renderer=HTMLRenderer(soft_break="br"))
+html = wen.render(text)
+```
+
+The default `HTMLRenderer(soft_break="newline")` keeps soft line endings as
+newlines. Explicit Markdown hard breaks render as `<br />` in either mode.
+
 ## Plugin mapping
 
 Mistune plugins do not map one-to-one to Wenmode APIs. Use this table as a
