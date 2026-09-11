@@ -7,7 +7,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, replace
 
 from wenmode import Wenmode
-from wenmode.plugins import block_spoiler, fenced_directive, html_container, inline_math
+from wenmode.plugins import block_spoiler, fenced_directive, html_container, inline_math, inline_spoiler
 from wenmode.presets import commonmark, github, streaming
 from wenmode.rules import ContainerDirective, Footnote, Table, TextDirective
 
@@ -60,6 +60,10 @@ def block_spoiler_app(positions: bool) -> Wenmode:
 
 def streaming_block_spoiler_app(positions: bool) -> Wenmode:
     return Wenmode(streaming, plugins=[block_spoiler], positions=positions)
+
+
+def spoiler_app(positions: bool) -> Wenmode:
+    return Wenmode(commonmark(), plugins=[block_spoiler, inline_spoiler], positions=positions)
 
 
 def inline_math_app(positions: bool) -> Wenmode:
@@ -138,6 +142,13 @@ EDGE_CASES = {
         block_spoiler_app,
         (100, 1000, 10000),
         streaming_block_spoiler_app,
+    ),
+    'spoiler-prefixes-in-containers': EdgeCase(
+        'spoiler-prefixes-in-containers',
+        'containers',
+        lambda size: ''.join('>' * index + ' ' + '- ' * index + 'item\n' for index in range(1, size + 1)),
+        spoiler_app,
+        (100, 500, 1500),
     ),
     'unmatched-links': EdgeCase(
         'unmatched-links',

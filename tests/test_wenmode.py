@@ -8,10 +8,11 @@ import pytest
 from tests.helpers import max_type_depth, text_values
 from wenmode import Parser, Wenmode
 from wenmode.directives import Admonition
-from wenmode.nodes import Literal, Parent
+from wenmode.nodes import Literal, Node, Parent
 from wenmode.plugins import BlockFenced, InlineDelimited, InlineLiteral, inline_math, mark, ruby, smartypants
 from wenmode.renderers import HTMLRenderer, RenderContext
-from wenmode.rules import AtxHeading, ContainerDirective, Link
+from wenmode.rules import AtxHeading, ContainerDirective, InlineCandidate, Link
+from wenmode.state import BlockState
 
 
 @dataclass
@@ -79,6 +80,31 @@ def test_wenmode_installs_declarative_plugin() -> None:
     assert mark.rules[0].opening_delimiter == '=='
     assert wen.render('==marked *text*==\n') == '<p><mark>marked <em>text</em></mark></p>\n'
     assert wen.render('===not marked===\n') == '<p>===not marked===</p>\n'
+
+
+def test_multichar_inline_delimiter_ignores_partial_opener_matches() -> None:
+    class CountingDelimited(InlineDelimited):
+        parse_calls = 0
+
+        def parse(
+            self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState
+        ) -> tuple[Node | None, int]:
+            self.parse_calls += 1
+            return super().parse(parser, text, candidate, state)
+
+    rule = CountingDelimited(
+        name='counting_delimited',
+        node=CustomBlockParent,
+        opener='>!',
+        closer='!<',
+    )
+    parser = Parser([rule])
+
+    parser.parse('>' * 1000 + '\n')
+    assert rule.parse_calls == 0
+
+    parser.parse('>!spoiler!<\n')
+    assert rule.parse_calls == 1
 
 
 def test_wenmode_installs_declarative_plugin_handlers() -> None:

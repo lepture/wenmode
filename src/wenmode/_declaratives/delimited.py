@@ -89,6 +89,14 @@ class InlineDelimited(InlineRule):
         else:
             self._parse_impl = self._parse_general
         super().__init__(name=name, opener=opener[0])
+        if len(opener) > 1:
+            self.openers = ()
+
+    def search_candidate(self, text: str, pos: int = 0) -> InlineCandidate | None:
+        start = text.find(self.opening_delimiter, pos)
+        if start == -1:
+            return None
+        return InlineCandidate(start)
 
     def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
         start = candidate.start
