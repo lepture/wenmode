@@ -4,8 +4,8 @@ from .html import compile_disallowed_html_filter as compile_disallowed_html_filt
 from .html import filter_disallowed_html as filter_disallowed_html
 from .html import is_html_block_tag as is_html_block_tag
 from .html import startswith_html_pre_tag as startswith_html_pre_tag
-from .indentation import count_indent as count_indent
 from .indentation import count_indent_from as count_indent_from
+from .indentation import count_indent_width as count_indent_width
 from .indentation import expand_leading_tabs as expand_leading_tabs
 from .indentation import indent_block as indent_block
 from .text import character_reference_from_codepoint as character_reference_from_codepoint
@@ -19,8 +19,8 @@ from .text import unquote_attribute_value as unquote_attribute_value
 __all__ = [
     'character_reference_from_codepoint',
     'compile_disallowed_html_filter',
-    'count_indent',
     'count_indent_from',
+    'count_indent_width',
     'decode_character_references',
     'expand_leading_tabs',
     'indent_block',

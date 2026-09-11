@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from wenmode.nodes import Code
-from wenmode.utils import count_indent
+from wenmode.utils import count_indent_from, count_indent_width
 
 from ..._parser.rule_base import BlockCandidate, BlockRule
 from ..._parser.state import BlockState
@@ -30,7 +30,7 @@ class IndentedCode(BlockRule):
 
         while not state.done:
             line = state.line
-            if count_indent(line) < 4:
+            if count_indent_from(line) < 4:
                 if line.strip() == '':
                     lines.append('\n')
                     state.advance()
@@ -46,17 +46,7 @@ class IndentedCode(BlockRule):
 
 
 def strip_indent(line: str, columns: int) -> str:
-    column = 0
-    index = 0
-    while index < len(line) and column < columns:
-        char = line[index]
-        if char == ' ':
-            column += 1
-        elif char == '\t':
-            column += 4 - column % 4
-        else:
-            break
-        index += 1
-    if column > columns:
-        return ' ' * (column - columns) + line[index:]
+    width, index = count_indent_width(line, columns)
+    if width > columns:
+        return ' ' * (width - columns) + line[index:]
     return line[index:]

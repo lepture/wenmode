@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, cast
 
 from wenmode.nodes import List as ListNode
 from wenmode.nodes import ListItem, Node, Paragraph, Position, Text
-from wenmode.utils import count_indent, count_indent_from, expand_leading_tabs
+from wenmode.utils import count_indent_from, count_indent_width, expand_leading_tabs
 
 from ..._parser.rule_base import BlockCandidate, BlockRule, Rule
 from ..._parser.source import SourceCollector, SourceMap
@@ -152,7 +152,7 @@ def collect_list_item(
     while not state.done:
         line = state.line
         next_marker = MARKER_RE.match(line.rstrip('\r\n'))
-        if next_marker is not None and count_indent(next_marker.group('indent')) <= marker_indent:
+        if next_marker is not None and count_indent_from(next_marker.group('indent')) <= marker_indent:
             break
         if line.strip() == '':
             item_spread, consumed = consume_blank_list_line(
@@ -233,7 +233,7 @@ def consume_blank_list_line(
 
 
 def first_list_item_line(marker: re.Match[str]) -> tuple[int, int, str]:
-    marker_indent = count_indent(marker.group('indent'))
+    marker_indent = count_indent_from(marker.group('indent'))
     marker_width = len(marker.group('marker'))
     content_indent = marker_indent + marker_width + 1
     rest = marker.string[marker.end() :]
@@ -255,7 +255,7 @@ def first_list_item_line(marker: re.Match[str]) -> tuple[int, int, str]:
 
 def collect_shallow_item_text(state: BlockState, marker: re.Match[str]) -> str:
     text_lines = [marker.string[marker.end() :]]
-    marker_indent = count_indent(marker.group('indent'))
+    marker_indent = count_indent_from(marker.group('indent'))
     state.advance()
     while not state.done and not is_same_indent_list_marker(state.line, marker_indent):
         if state.line.strip():
@@ -280,7 +280,7 @@ def current_list_marker(state: BlockState) -> re.Match[str] | None:
 
 def is_same_indent_list_marker(line: str, marker_indent: int) -> bool:
     marker = MARKER_RE.match(line.rstrip('\r\n'))
-    return marker is not None and count_indent(marker.group('indent')) == marker_indent
+    return marker is not None and count_indent_from(marker.group('indent')) == marker_indent
 
 
 def schedule_task_list_marker(state: BlockState, item: ListItem) -> None:
@@ -317,9 +317,9 @@ def should_keep_blank_in_item(state: BlockState, content_indent: int, marker_ind
     if state.line.strip() == '':
         return True
     marker = MARKER_RE.match(state.line.rstrip('\r\n'))
-    if marker is not None and count_indent(marker.group('indent')) == marker_indent:
+    if marker is not None and count_indent_from(marker.group('indent')) == marker_indent:
         return True
-    if marker is not None and count_indent(marker.group('indent')) < content_indent:
+    if marker is not None and count_indent_from(marker.group('indent')) < content_indent:
         return False
     return has_continuation_indent(state.line, content_indent)
 
@@ -339,11 +339,11 @@ def blank_belongs_to_item(
         return False
     marker = MARKER_RE.match(line.rstrip('\r\n'))
     if marker is not None:
-        indent = count_indent(marker.group('indent'))
+        indent = count_indent_from(marker.group('indent'))
         if indent == marker_indent:
             return marker_matches_style(marker, style)
         return indent >= content_indent
-    indent = count_indent(line)
+    indent = count_indent_from(line)
     return indent >= content_indent and (indent == content_indent or not item_has_nested_marker)
 
 
@@ -407,17 +407,7 @@ def has_continuation_indent(line: str, columns: int) -> bool:
 
 
 def strip_continuation_indent(line: str, columns: int) -> str:
-    width = 0
-    index = 0
-    while index < len(line) and width < columns:
-        char = line[index]
-        if char == ' ':
-            width += 1
-        elif char == '\t':
-            width += 4 - width % 4
-        else:
-            break
-        index += 1
+    width, index = count_indent_width(line, columns)
 
     if width < columns:
         return ''

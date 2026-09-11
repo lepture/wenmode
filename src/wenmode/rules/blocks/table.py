@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from wenmode.nodes import Node, TableCell, TableRow
 from wenmode.nodes import Table as TableNode
-from wenmode.utils import count_indent, is_escaped
+from wenmode.utils import count_indent_from, is_escaped
 
 from ..._parser.rule_base import BlockCandidate, BlockRule
 from ..._parser.state import BlockState
@@ -43,7 +43,7 @@ class Table(BlockRule):
 
         header_line = state.line.rstrip('\r\n')
         delimiter_line = state.peek(1).rstrip('\r\n')
-        if count_indent(header_line) >= 4 or count_indent(delimiter_line) >= 4 or not has_unescaped_pipe(header_line):
+        if count_indent_from(header_line) >= 4 or count_indent_from(delimiter_line) >= 4 or not has_unescaped_pipe(header_line):
             return None
 
         header_cells = split_table_row_spans(header_line)
@@ -60,7 +60,7 @@ class Table(BlockRule):
             line = state.line.rstrip('\r\n')
             if (
                 line.strip() == ''
-                or count_indent(line) >= 4
+                or count_indent_from(line) >= 4
                 or parser.is_paragraph_interrupt(line, state)
                 or (self.require_body_pipe and not has_unescaped_pipe(line))
             ):

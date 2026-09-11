@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 from wenmode.nodes import FootnoteDefinition as FootnoteDefinitionNode
 from wenmode.nodes import FootnoteReference, Node, Root
-from wenmode.utils import count_indent, normalize_label, normalize_label_text
+from wenmode.utils import count_indent_from, normalize_label, normalize_label_text
 
 from .._parser.rule_base import BlockCandidate, BlockRule, InlineCandidate, InlineRule
 from .._parser.source import SourceCollector
@@ -149,7 +149,7 @@ def collect_definition_lines(state: BlockState, rest_start: int, rest: str, sour
             if collect_blank_continuations(state, lines, source):
                 continue
             break
-        if count_indent(line) < 2:
+        if count_indent_from(line) < 2:
             break
         offset = indent_offset(line, 2)
         text = line[offset:]
@@ -167,7 +167,7 @@ def collect_blank_continuations(state: BlockState, lines: list[str], source: Sou
         if line.strip() == '':
             cursor += 1
             continue
-        if count_indent(line) < 2:
+        if count_indent_from(line) < 2:
             return False
         while state.index < cursor:
             lines.append('\n')

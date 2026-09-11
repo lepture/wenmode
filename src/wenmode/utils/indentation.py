@@ -20,11 +20,7 @@ def expand_leading_tabs(line: str, start_column: int = 0) -> str:
     return ''.join(parts) + line[index:]
 
 
-def count_indent(text: str) -> int:
-    return count_indent_from(text, 0)
-
-
-def count_indent_from(text: str, start_column: int) -> int:
+def count_indent_from(text: str, start_column: int = 0) -> int:
     column = start_column
     for char in text:
         if char == ' ':
@@ -34,6 +30,21 @@ def count_indent_from(text: str, start_column: int) -> int:
         else:
             break
     return column
+
+
+def count_indent_width(line: str, columns: int) -> tuple[int, int]:
+    width = 0
+    index = 0
+    while index < len(line) and width < columns:
+        char = line[index]
+        if char == ' ':
+            width += 1
+        elif char == '\t':
+            width += 4 - width % 4
+        else:
+            break
+        index += 1
+    return width, index
 
 
 def indent_block(value: str, prefix: str) -> str:
