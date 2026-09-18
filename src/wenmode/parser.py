@@ -15,6 +15,7 @@ from ._parser.source import (
     StreamPositionSourceTracker,
 )
 from ._parser.state import BlockState, StreamBlockState, StreamLineBuffer
+from ._parser.transforms import NODE_TRANSFORM_FINALIZATION
 from ._streaming import StreamingUnsupportedError as StreamingUnsupportedError
 from ._streaming import assert_streaming_supported
 from .nodes import Node, Root
@@ -115,6 +116,7 @@ class Parser:
         :returns: Parsed document root.
         """
         state = self._create_block_state(source, defer_inlines=self._ruleset.defer_inlines)
+        state.store.set(NODE_TRANSFORM_FINALIZATION, True)
         root = Root(children=self._block_parser.parse_nodes(state))
         if self.positions:
             root._line_starts = create_line_starts(state.lines)
@@ -124,6 +126,12 @@ class Parser:
         self._inline_parser.resolve_pending(state)
         for transform in self.root_transforms:
             transform.transform(self, root, state)
+        finalized: set[str] = set()
+        for rule in self.rules.values():
+            for node_transform in rule.node_transforms:
+                if node_transform.name not in finalized:
+                    node_transform.finalize(self, root, state)
+                    finalized.add(node_transform.name)
         return root
 
     def parse_iter(self, source: LineSource) -> Iterator[Node]:

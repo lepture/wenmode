@@ -89,6 +89,14 @@ assert html == expected.lstrip()
 
 For already-parsed trees, use `add_heading_ids()`.
 
+Full-document parsing and `add_heading_ids()` reserve explicit IDs on headings,
+directives, and raw HTML before resolving collisions with generated heading IDs.
+Explicit IDs are preserved, including any duplicates you provide. Raw HTML IDs
+are conservatively reserved even when the renderer escapes raw HTML.
+
+Incremental parsing cannot reserve IDs from content that has not arrived yet.
+Use a full-document parse when generated IDs must avoid later explicit IDs.
+
 ```python
 from wenmode import HTMLRenderer, Wenmode
 from wenmode.headings import Slugger, add_heading_ids

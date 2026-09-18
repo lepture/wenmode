@@ -10,6 +10,7 @@ from wenmode.plugins import (
     block_math,
     definition_list,
     fenced_directive,
+    heading_ids,
     html_container,
     inline_math,
     inline_spoiler,
@@ -19,6 +20,7 @@ from wenmode.plugins import (
 from wenmode.presets import commonmark, github
 from wenmode.rules import (
     AtxHeading,
+    ContainerDirective,
     ExtendedAutolink,
     Footnote,
     HardBreak,
@@ -225,6 +227,16 @@ def test_github_mark_and_autolink_searches_scale_nearly_linearly() -> None:
 
 def test_github_insert_and_autolink_searches_scale_nearly_linearly() -> None:
     assert_scales_nearly_linearly(lambda size: '^^a^^' * size, github(), 4000, 8000, plugins=[insert])
+
+
+def test_heading_id_collision_resolution_scales_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(
+        lambda size: '# Alpha\n\n' * size + ':::figure{#alpha}\n:::\n',
+        [AtxHeading, ContainerDirective],
+        2000,
+        4000,
+        plugins=[heading_ids],
+    )
 
 
 def test_text_directive_candidates_scale_nearly_linearly() -> None:

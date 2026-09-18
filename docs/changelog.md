@@ -23,6 +23,8 @@ here while preparing a release, then move them under the final version heading.
 - Cache inline search results per rule to avoid repeated autolink scans when
   combined with mark, insert, and other searchable delimiter rules.
 - Prevent generated heading slug suffixes from colliding with other heading IDs.
+- Keep generated heading IDs distinct from explicit heading, directive, and raw
+  HTML IDs during full-document parsing and `add_heading_ids()`.
 
 ## 0.15.1
 
