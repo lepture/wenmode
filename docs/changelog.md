@@ -20,6 +20,8 @@ here while preparing a release, then move them under the final version heading.
 - Avoid quadratic delimiter index updates when parsing repeated nested emphasis.
 - Avoid repeated emphasis scans across subtrees that reach the nesting limit.
 - Cache failed multiline reference-title scans without truncating valid titles.
+- Cache inline search results per rule to avoid repeated autolink scans when
+  combined with mark, insert, and other searchable delimiter rules.
 
 ## 0.15.1
 

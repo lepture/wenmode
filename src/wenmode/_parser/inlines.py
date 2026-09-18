@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Generator, Sequence
-from typing import TYPE_CHECKING, cast
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
 from wenmode.nodes import Node, Text
 
@@ -14,9 +15,16 @@ from .store import StateKey
 if TYPE_CHECKING:
     from wenmode.parser import Parser
 
-InlineSearchCache = dict[str, object]
 MatchedInlineRule = tuple[InlineRule, InlineCandidate]
 InlineCandidateGroup = tuple[int, Sequence[MatchedInlineRule]]
+
+
+@dataclass
+class InlineSearchCache:
+    text: str | None = None
+    pos: int = 0
+    found: InlineCandidateGroup | None = None
+    candidates: dict[str, InlineCandidate | None] = field(default_factory=dict)
 
 
 class InlineParser:
@@ -62,7 +70,7 @@ class InlineParser:
 
     def _parse_inline_nodes(self, text: str, state: BlockState, source: SourceMap | None) -> list[Node]:
         nodes: list[Node] = []
-        search_cache: InlineSearchCache = {}
+        search_cache = InlineSearchCache()
         pos = 0
 
         if source is not None:
@@ -151,20 +159,25 @@ class InlineParser:
     def _search_inline_candidate(
         self, text: str, pos: int, search_cache: InlineSearchCache
     ) -> InlineCandidateGroup | None:
-        cached_text = search_cache.get('text')
-        cached_pos = search_cache.get('pos')
-        cached_found = search_cache.get('found')
-        if cached_text is text and isinstance(cached_pos, int) and cached_pos <= pos:
-            if cached_found is None:
+        if search_cache.text is text and search_cache.pos <= pos:
+            if search_cache.found is None:
                 return None
-            cached = cast(InlineCandidateGroup, cached_found)
-            if pos <= cached[0]:
-                return cached
+            if pos <= search_cache.found[0]:
+                return search_cache.found
+        else:
+            search_cache.candidates.clear()
 
         found_start: int | None = None
         found_rules: list[MatchedInlineRule] = []
         for rule in self._rule_set.search_inline_rules:
-            candidate = rule.search_candidate(text, pos)
+            if rule.name in search_cache.candidates:
+                candidate = search_cache.candidates[rule.name]
+                if candidate is not None and candidate.start < pos:
+                    candidate = rule.search_candidate(text, pos)
+                    search_cache.candidates[rule.name] = candidate
+            else:
+                candidate = rule.search_candidate(text, pos)
+                search_cache.candidates[rule.name] = candidate
             if candidate is None:
                 continue
             start = candidate.start
@@ -177,9 +190,9 @@ class InlineParser:
             found: InlineCandidateGroup | None = None
         else:
             found = (found_start, tuple(found_rules))
-        search_cache['text'] = text
-        search_cache['pos'] = pos
-        search_cache['found'] = found
+        search_cache.text = text
+        search_cache.pos = pos
+        search_cache.found = found
         return found
 
     def _merge_inline_rules(

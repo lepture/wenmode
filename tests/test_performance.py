@@ -13,6 +13,7 @@ from wenmode.plugins import (
     html_container,
     inline_math,
     inline_spoiler,
+    insert,
     mark,
 )
 from wenmode.presets import commonmark, github
@@ -216,6 +217,14 @@ def test_inline_math_invalid_digit_closers_scale_nearly_linearly() -> None:
 
 def test_declarative_inline_invalid_closers_scale_nearly_linearly() -> None:
     assert_scales_nearly_linearly(lambda size: '==x ' * size + '==' * size + '\n', [], 500, 1000, plugins=[mark])
+
+
+def test_github_mark_and_autolink_searches_scale_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(lambda size: '==a==' * size, github(), 4000, 8000, plugins=[mark])
+
+
+def test_github_insert_and_autolink_searches_scale_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(lambda size: '^^a^^' * size, github(), 4000, 8000, plugins=[insert])
 
 
 def test_text_directive_candidates_scale_nearly_linearly() -> None:

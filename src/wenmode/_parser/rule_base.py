@@ -149,6 +149,11 @@ class InlineRule(Rule):
         self.compiled = re.compile(self.pattern if self.pattern is not None else r'(?!)')
 
     def search_candidate(self, text: str, pos: int = 0) -> InlineCandidate | None:
+        """Return the first candidate at or after ``pos`` in immutable source text.
+
+        The parser may reuse a future candidate or a no-match result as it
+        advances through the same source, independently of other rules.
+        """
         if self.pattern is None:
             return None
         match = self.compiled.search(text, pos)
