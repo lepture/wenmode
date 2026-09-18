@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from wenmode import Wenmode
-from wenmode.headings import HeadingIdTransform
+from wenmode.headings import HeadingIdTransform, Slugger
 from wenmode.plugins import heading_ids
 from wenmode.rules import AtxHeading, SetextHeading
 from wenmode.toc import render_toc_html
@@ -18,6 +18,32 @@ def test_heading_id_transform_dedupes_atx_and_setext_headings() -> None:
     app = Wenmode([AtxHeading(transforms=[transform]), SetextHeading(transforms=[transform])])
 
     assert app.render('# Intro\n\nIntro\n-----\n') == '<h1 id="intro">Intro</h1>\n<h2 id="intro-1">Intro</h2>\n'
+
+
+def test_heading_ids_do_not_collide_with_existing_numbered_title() -> None:
+    app = Wenmode(plugins=[heading_ids])
+
+    assert app.render('# Alpha\n\n# Alpha-1\n\n# Alpha\n') == (
+        '<h1 id="alpha">Alpha</h1>\n<h1 id="alpha-1">Alpha-1</h1>\n<h1 id="alpha-2">Alpha</h1>\n'
+    )
+
+
+def test_heading_ids_do_not_reuse_generated_suffix_as_new_base() -> None:
+    app = Wenmode(plugins=[heading_ids])
+
+    assert app.render('# Alpha\n\n# Alpha\n\n# Alpha-1\n') == (
+        '<h1 id="alpha">Alpha</h1>\n<h1 id="alpha-1">Alpha</h1>\n<h1 id="alpha-1-1">Alpha-1</h1>\n'
+    )
+
+
+def test_slugger_skips_reserved_suffixes() -> None:
+    slugger = Slugger()
+    slugger.use('alpha-1')
+    slugger.use('alpha-2')
+
+    assert slugger.slug('Alpha') == 'alpha'
+    assert slugger.slug('Alpha') == 'alpha-3'
+    assert slugger.slug('Alpha') == 'alpha-4'
 
 
 def test_heading_id_transform_uses_fresh_slugger_per_parse() -> None:

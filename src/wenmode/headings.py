@@ -26,19 +26,24 @@ class Slugger:
 
     def __init__(self) -> None:
         self.seen: dict[str, int] = {}
+        self.used: set[str] = set()
 
     def slug(self, value: str) -> str:
         """Return a unique slug for a heading title."""
         base = slugify(value)
         index = self.seen.get(base, 0)
+        slug = base if index == 0 else f'{base}-{index}'
+        while slug in self.used:
+            index += 1
+            slug = f'{base}-{index}'
         self.seen[base] = index + 1
-        if index == 0:
-            return base
-        return f'{base}-{index}'
+        self.used.add(slug)
+        return slug
 
     def use(self, value: str) -> None:
         """Mark an existing slug as already used."""
         self.seen[value] = self.seen.get(value, 0) + 1
+        self.used.add(value)
 
 
 class HeadingIdTransform(NodeTransform):
