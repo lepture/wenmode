@@ -100,6 +100,14 @@ def test_flat_mixed_emphasis_delimiters_scale_nearly_linearly() -> None:
     assert_scales_nearly_linearly(lambda size: '*a_b' * size + '\n', commonmark(), 1000, 2000)
 
 
+def test_repeated_nested_mixed_emphasis_scales_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(lambda size: '*_a_*' * size + '\n', commonmark(), 2000, 4000)
+
+
+def test_positioned_nested_mixed_emphasis_scales_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(lambda size: '*_a_*' * size + '\n', commonmark(), 2000, 4000, positions=True)
+
+
 def test_unmatched_code_span_runs_scale_nearly_linearly() -> None:
     assert_scales_nearly_linearly(
         lambda size: '`' * size + 'text' + '`' * (size - 1) + '\n',

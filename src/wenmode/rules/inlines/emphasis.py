@@ -57,6 +57,42 @@ class Delimiter:
     orig_length: int
 
 
+class DelimiterParts:
+    """Keep delimiter indices stable while collapsing matched spans."""
+
+    def __init__(self, nodes: list[Node], delimiters: list[Delimiter]) -> None:
+        self.nodes = nodes
+        self.next_indices = list(range(1, len(nodes) + 1))
+        self.delimiters = {delimiter.index: delimiter for delimiter in delimiters}
+
+    def children(self, opener: Delimiter, closer: Delimiter) -> list[Node]:
+        children: list[Node] = []
+        index = self.next_indices[opener.index]
+        while index < closer.index:
+            children.append(self.nodes[index])
+            index = self.next_indices[index]
+        return children
+
+    def replace(self, opener: Delimiter, closer: Delimiter, node: Node) -> None:
+        first = self.next_indices[opener.index]
+        index = first
+        while index < closer.index:
+            delimiter = self.delimiters.get(index)
+            if delimiter is not None:
+                delimiter.length = 0
+            index = self.next_indices[index]
+        self.nodes[first] = node
+        self.next_indices[first] = closer.index
+
+    def flatten(self) -> list[Node]:
+        result: list[Node] = []
+        index = 0
+        while index < len(self.nodes):
+            result.append(self.nodes[index])
+            index = self.next_indices[index]
+        return result
+
+
 def parse_emphasis_sequence(nodes: list[Node], cjk_friendly: bool = False, max_depth: int = 20) -> list[Node]:
     parts: list[Node] = []
     delimiters: list[Delimiter] = []
@@ -253,6 +289,7 @@ def flat_emphasis_node(
 
 
 def process_delimiters(parts: list[Node], delimiters: list[Delimiter], max_depth: int = 20) -> None:
+    linked_parts = DelimiterParts(parts, delimiters)
     closer_pos = 0
     openers_bottom: dict[tuple[str, int, bool], int] = {}
     while closer_pos < len(delimiters):
@@ -269,16 +306,20 @@ def process_delimiters(parts: list[Node], delimiters: list[Delimiter], max_depth
             closer_pos += 1
             continue
 
-        use_length, opener_text, closer_text = prepare_delimiter_match(parts, opener, closer, max_depth)
+        children = linked_parts.children(opener, closer)
+        use_length, opener_text, closer_text = prepare_delimiter_match(
+            parts, opener, closer, max_depth, children=children
+        )
         if use_length == 0 or opener_text is None or closer_text is None:
             closer_pos += 1
             continue
 
-        apply_delimiter_match(parts, delimiters, opener, closer, use_length, opener_text, closer_text)
+        apply_delimiter_match(linked_parts, children, opener, closer, use_length, opener_text, closer_text)
         if opener.can_open or closer.can_close:
             closer_pos = max(opener_pos, openers_bottom.get(opener_key, 0))
         else:
             closer_pos += 1
+    parts[:] = linked_parts.flatten()
 
 
 def find_matching_opener(
@@ -303,7 +344,7 @@ def is_matching_opener(candidate: Delimiter, closer: Delimiter) -> bool:
 
 
 def prepare_delimiter_match(
-    parts: list[Node], opener: Delimiter, closer: Delimiter, max_depth: int = 20
+    parts: list[Node], opener: Delimiter, closer: Delimiter, max_depth: int = 20, *, children: list[Node] | None = None
 ) -> tuple[int, TextNode | None, TextNode | None]:
     if opener.length >= 2 and closer.length >= 2:
         length = 2
@@ -313,9 +354,11 @@ def prepare_delimiter_match(
         length = 1
     if length == 1 and not has_emphasis_enabled(parts, opener, closer):
         return 0, None, None
-    if not has_content(parts, opener.index + 1, closer.index):
+    if children is None:
+        children = parts[opener.index + 1 : closer.index]
+    if not has_content(children):
         return 0, None, None
-    if emphasis_depth(parts[opener.index + 1 : closer.index]) >= max_depth:
+    if emphasis_depth(children) >= max_depth:
         return 0, None, None
 
     opener_text = parts[opener.index]
@@ -326,15 +369,14 @@ def prepare_delimiter_match(
 
 
 def apply_delimiter_match(
-    parts: list[Node],
-    delimiters: list[Delimiter],
+    parts: DelimiterParts,
+    children: list[Node],
     opener: Delimiter,
     closer: Delimiter,
     use_length: int,
     opener_text: TextNode,
     closer_text: TextNode,
 ) -> None:
-    old_closer_index = closer.index
     node_position = emphasis_position(opener_text, closer_text, use_length)
     if opener_text.position is None:
         remaining_opener_position = None
@@ -353,29 +395,13 @@ def apply_delimiter_match(
     opener_text.position = remaining_opener_position
     closer_text.position = remaining_closer_position
 
-    children = parts[opener.index + 1 : closer.index]
     if use_length == 2:
         node: Node = StrongNode(children=children)
     else:
         node = EmphasisNode(children=children)
     node.position = node_position
-    parts[opener.index + 1 : old_closer_index] = [node]
-    update_delimiter_indices(delimiters, opener, closer, old_closer_index)
+    parts.replace(opener, closer, node)
     update_delimiter_lengths(opener, closer, use_length)
-
-
-def update_delimiter_indices(
-    delimiters: list[Delimiter], opener: Delimiter, closer: Delimiter, old_closer_index: int
-) -> None:
-    removed = old_closer_index - opener.index - 2
-    closer.index = opener.index + 2
-    if not removed:
-        return
-    for delimiter in delimiters:
-        if opener.index < delimiter.index < old_closer_index:
-            delimiter.length = 0
-        elif delimiter.index >= old_closer_index:
-            delimiter.index -= removed
 
 
 def update_delimiter_lengths(opener: Delimiter, closer: Delimiter, use_length: int) -> None:
@@ -401,8 +427,8 @@ def text_value(node: Node) -> str:
     return ''
 
 
-def has_content(parts: list[Node], start: int, end: int) -> bool:
-    return any(not isinstance(part, TextNode) or part.value != '' for part in parts[start:end])
+def has_content(parts: list[Node]) -> bool:
+    return any(not isinstance(part, TextNode) or part.value != '' for part in parts)
 
 
 def emphasis_depth(nodes: list[Node]) -> int:

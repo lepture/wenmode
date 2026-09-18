@@ -15,6 +15,10 @@ releases.
 This page records notable changes for released versions. Add unreleased entries
 here while preparing a release, then move them under the final version heading.
 
+## Unreleased
+
+- Avoid quadratic delimiter index updates when parsing repeated nested emphasis.
+
 ## 0.15.1
 
 Released **Sep 11, 2026**.
