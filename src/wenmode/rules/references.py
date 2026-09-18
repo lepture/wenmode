@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from wenmode.utils import normalize_label, normalize_label_text, normalize_uri_text
@@ -30,6 +30,17 @@ class ReferenceState:
 
 ReferenceCache = dict[str, ReferenceState]
 REFERENCES_KEY = StateKey[ReferenceCache]('wenmode.references', lambda: {})
+
+
+@dataclass
+class ReferenceTitleScanCache:
+    """Retain source identity and delimiter-specific failed line ranges."""
+
+    source: list[str]
+    failures: dict[str, tuple[int, int]] = field(default_factory=dict)
+
+
+REFERENCE_TITLE_SCANS = StateKey[dict[int, ReferenceTitleScanCache]]('wenmode.reference.title_scans', lambda: {})
 
 
 class ReferenceDefinition(BlockRule):
@@ -161,6 +172,13 @@ def parse_multiline_reference_title(
     if closer is None:
         return None, index
 
+    scans = state.store.get(REFERENCE_TITLE_SCANS)
+    cache = scans.get(id(state.lines))
+    if cache is None:
+        cache = ReferenceTitleScanCache(state.lines)
+        scans[id(state.lines)] = cache
+    scan_start = index
+
     title_parts: list[str] = []
     escaped = False
     line = first_line
@@ -178,11 +196,19 @@ def parse_multiline_reference_title(
                 title = ''.join(title_parts[:-1])
                 return (normalize_label_text(title), line[position + 1 :]), index
 
+        # Escaping resets at each continuation line, so a failed suffix can be
+        # reused regardless of the preceding title opener or trailing backslash.
+        failed_range = cache.failures.get(closer)
+        if failed_range is not None and failed_range[0] <= index < failed_range[1]:
+            return None, failed_range[1]
+
         if not state.has_index(index):
+            cache.failures[closer] = (scan_start, index)
             return None, index
 
         line = state.line_at(index).rstrip('\r\n')
         if line.strip() == '':
+            cache.failures[closer] = (scan_start, index)
             return None, index
 
         title_parts.append('\n')

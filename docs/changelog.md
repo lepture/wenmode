@@ -19,6 +19,7 @@ here while preparing a release, then move them under the final version heading.
 
 - Avoid quadratic delimiter index updates when parsing repeated nested emphasis.
 - Avoid repeated emphasis scans across subtrees that reach the nesting limit.
+- Cache failed multiline reference-title scans without truncating valid titles.
 
 ## 0.15.1
 

@@ -236,6 +236,10 @@ def test_unclosed_multiline_reference_title_scales_nearly_linearly() -> None:
     assert_scales_nearly_linearly(lambda size: '[x]: /url "\n' + 'a\n' * size + '\n[x]\n', [Link], 1000, 2000)
 
 
+def test_repeated_unclosed_reference_titles_do_not_rescan_document_suffixes() -> None:
+    assert_scales_nearly_linearly(lambda size: '[a]: /u (\n# h\n' * size, commonmark(), 1000, 2000)
+
+
 def test_unclosed_inline_link_title_escapes_scale_nearly_linearly() -> None:
     assert_scales_nearly_linearly(lambda size: '[x](/url "' + '\\!' * size + '\n', [Link], 4000, 8000)
 
