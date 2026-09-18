@@ -227,6 +227,24 @@ def test_long_emphasis_runs_do_not_exceed_container_depth() -> None:
     assert app.render_node(root).startswith('<p>' + '*' * 960)
 
 
+def test_depth_rejected_emphasis_preserves_following_local_matches() -> None:
+    app = Wenmode()
+    app.parser.max_container_depth = 1
+
+    assert app.render('****a**** x* *ok* _yes_') == (
+        '<p>**<strong>a</strong>** x* <em>ok</em> <em>yes</em></p>\n'
+    )
+
+
+def test_depth_rejected_emphasis_preserves_revisited_rule_of_three_matches() -> None:
+    app = Wenmode()
+    app.parser.max_container_depth = 2
+
+    assert app.render('******_*.*.a**a*!*b**') == (
+        '<p>****<em><em>_</em>.</em>.a*<em>a*!<em>b</em></em></p>\n'
+    )
+
+
 def test_deep_link_label_brackets_do_not_recurse_before_destination_check() -> None:
     markdown = '[' * 1000 + 'a' + ']' * 1000 + '(/u)\n'
 

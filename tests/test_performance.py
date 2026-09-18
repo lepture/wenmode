@@ -108,6 +108,15 @@ def test_positioned_nested_mixed_emphasis_scales_nearly_linearly() -> None:
     assert_scales_nearly_linearly(lambda size: '*_a_*' * size + '\n', commonmark(), 2000, 4000, positions=True)
 
 
+def test_depth_rejected_emphasis_does_not_rescan_capped_subtrees() -> None:
+    assert_scales_nearly_linearly(
+        lambda size: '*' * 42 + 'a' + '*' * 42 + ' ' + 'x* ' * size,
+        commonmark(),
+        2000,
+        4000,
+    )
+
+
 def test_unmatched_code_span_runs_scale_nearly_linearly() -> None:
     assert_scales_nearly_linearly(
         lambda size: '`' * size + 'text' + '`' * (size - 1) + '\n',

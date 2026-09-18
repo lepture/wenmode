@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from bisect import bisect_left
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -55,6 +56,46 @@ class Delimiter:
     can_open: bool
     can_close: bool
     orig_length: int
+    depth_barrier: int | None = None
+
+
+class DelimiterOpeners:
+    """Index opener categories and skip permanently exhausted delimiters."""
+
+    def __init__(self, delimiters: list[Delimiter]) -> None:
+        self.delimiters = delimiters
+        self.groups: dict[tuple[str, int, bool], tuple[list[int], list[int]]] = {}
+        for position, delimiter in enumerate(delimiters):
+            if not delimiter.can_open:
+                continue
+            key = (delimiter.marker, delimiter.orig_length % 3, delimiter.can_close)
+            positions, previous = self.groups.setdefault(key, ([], []))
+            previous.append(len(positions) - 1)
+            positions.append(position)
+
+    def find(self, closer: Delimiter, closer_pos: int, bottom: int) -> tuple[int, Delimiter | None]:
+        opener_pos = -1
+        closer_remainder = closer.orig_length % 3
+        for (marker, remainder, can_close), (positions, previous) in self.groups.items():
+            if marker != closer.marker:
+                continue
+            if (can_close or closer.can_open) and (remainder + closer_remainder) % 3 == 0 and remainder != 0:
+                continue
+            index = bisect_left(positions, closer_pos) - 1
+            exhausted: list[int] = []
+            while index >= 0:
+                candidate = self.delimiters[positions[index]]
+                if candidate.can_open and candidate.length > 0:
+                    break
+                exhausted.append(index)
+                index = previous[index]
+            for removed in exhausted:
+                previous[removed] = index
+            if index >= 0 and positions[index] >= bottom:
+                opener_pos = max(opener_pos, positions[index])
+        if opener_pos < 0:
+            return opener_pos, None
+        return opener_pos, self.delimiters[opener_pos]
 
 
 class DelimiterParts:
@@ -83,6 +124,15 @@ class DelimiterParts:
             index = self.next_indices[index]
         self.nodes[first] = node
         self.next_indices[first] = closer.index
+
+    def depth_barrier(self, opener: Delimiter, closer: Delimiter, max_depth: int) -> int | None:
+        barrier = None
+        index = self.next_indices[opener.index]
+        while index < closer.index:
+            if emphasis_depth([self.nodes[index]]) >= max_depth:
+                barrier = index
+            index = self.next_indices[index]
+        return barrier
 
     def flatten(self) -> list[Node]:
         result: list[Node] = []
@@ -290,6 +340,7 @@ def flat_emphasis_node(
 
 def process_delimiters(parts: list[Node], delimiters: list[Delimiter], max_depth: int = 20) -> None:
     linked_parts = DelimiterParts(parts, delimiters)
+    openers = DelimiterOpeners(delimiters)
     closer_pos = 0
     openers_bottom: dict[tuple[str, int, bool], int] = {}
     while closer_pos < len(delimiters):
@@ -300,17 +351,23 @@ def process_delimiters(parts: list[Node], delimiters: list[Delimiter], max_depth
 
         opener_key = (closer.marker, closer.length % 3, closer.can_open)
         opener_bottom = openers_bottom.get(opener_key, 0)
-        opener_pos, opener = find_matching_opener(delimiters, closer, closer_pos, opener_bottom)
+        opener_pos, opener = openers.find(closer, closer_pos, opener_bottom)
         if opener is None:
             openers_bottom[opener_key] = closer_pos
             closer_pos += 1
             continue
 
+        if opener.depth_barrier is not None and closer.index > opener.depth_barrier:
+            closer_pos += 1
+            continue
         children = linked_parts.children(opener, closer)
         use_length, opener_text, closer_text = prepare_delimiter_match(
             parts, opener, closer, max_depth, children=children
         )
         if use_length == 0 or opener_text is None or closer_text is None:
+            # A later closer cannot make this span shallower. Cache only this
+            # opener's rejection; other openers and revisited closers stay valid.
+            opener.depth_barrier = linked_parts.depth_barrier(opener, closer, max_depth)
             closer_pos += 1
             continue
 
@@ -320,18 +377,6 @@ def process_delimiters(parts: list[Node], delimiters: list[Delimiter], max_depth
         else:
             closer_pos += 1
     parts[:] = linked_parts.flatten()
-
-
-def find_matching_opener(
-    delimiters: list[Delimiter], closer: Delimiter, closer_pos: int, opener_bottom: int
-) -> tuple[int, Delimiter | None]:
-    opener_pos = closer_pos - 1
-    while opener_pos >= opener_bottom:
-        candidate = delimiters[opener_pos]
-        if is_matching_opener(candidate, closer):
-            return opener_pos, candidate
-        opener_pos -= 1
-    return opener_pos, None
 
 
 def is_matching_opener(candidate: Delimiter, closer: Delimiter) -> bool:

@@ -18,6 +18,7 @@ here while preparing a release, then move them under the final version heading.
 ## Unreleased
 
 - Avoid quadratic delimiter index updates when parsing repeated nested emphasis.
+- Avoid repeated emphasis scans across subtrees that reach the nesting limit.
 
 ## 0.15.1
 
