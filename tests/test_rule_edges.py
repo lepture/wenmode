@@ -115,7 +115,7 @@ def test_emphasis_multiple_of_three_uses_original_delimiter_length(markdown: str
         ('_a*b_a*b\n', '<p>_a<em>b_a</em>b</p>\n'),
     ],
 )
-def test_flat_mixed_emphasis_fast_path_preserves_semantics(markdown: str, html: str) -> None:
+def test_mixed_emphasis_preserves_semantics(markdown: str, html: str) -> None:
     assert Wenmode().render(markdown) == html
 
 

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import re
 from bisect import bisect_left
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from wenmode.nodes import Emphasis as EmphasisNode
@@ -22,6 +23,7 @@ if TYPE_CHECKING:
     from wenmode.parser import Parser
 
 _PLACEHOLDER_TEXT = '\ufffc'
+_TEXT_PARTS = re.compile(r'\*+|_+|[^*_]+')
 
 
 class Emphasis(InlineRule):
@@ -41,7 +43,9 @@ class Emphasis(InlineRule):
         super().__init__()
         self.cjk_friendly = cjk_friendly
 
-    def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
+    def parse(
+        self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState
+    ) -> tuple[Node | None, int]:
         return None, candidate.start
 
     def parse_emphasis_sequence(self, nodes: list[Node], max_depth: int = 20) -> list[Node]:
@@ -49,201 +53,264 @@ class Emphasis(InlineRule):
 
 
 @dataclass(slots=True)
-class Delimiter:
+class _Part:
+    node: Node
     index: int
+    depth: int
+    next: _Part | None = field(default=None, kw_only=True)
+
+
+@dataclass(slots=True)
+class _Delimiter(_Part):
+    """A linked part with immutable flanking metadata and mutable availability.
+
+    Keep the original text separately: folding can replace this part's node
+    with a subtree, but only after retiring it as a matching delimiter.
+    """
+
+    text: TextNode
     marker: str
-    length: int
     can_open: bool
     can_close: bool
-    orig_length: int
+    original_length: int
+    active: bool = True
     depth_barrier: int | None = None
 
+    @property
+    def length(self) -> int:
+        return len(self.text.value)
 
-class DelimiterOpeners:
-    """Index opener categories and skip permanently exhausted delimiters."""
+    def consume(self, size: int, *, opening: bool) -> None:
+        text = self.text
+        if text.position is not None:
+            start, end = text.position.start, text.position.start + len(text.value)
+            text.position = Position(start=start, end=end - size) if opening else Position(start=start + size, end=end)
+        text.value = text.value[:-size] if opening else text.value[size:]
+        if not text.value:
+            self.active = False
 
-    def __init__(self, delimiters: list[Delimiter]) -> None:
+
+@dataclass(slots=True)
+class _OpenerGroup:
+    remainder: int
+    can_close: bool
+    positions: list[int] = field(default_factory=list)
+    previous: list[int] = field(default_factory=list)
+
+    def append(self, position: int) -> None:
+        self.previous.append(len(self.positions) - 1)
+        self.positions.append(position)
+
+    def find_before(self, delimiters: list[_Delimiter], position: int) -> int | None:
+        index = bisect_left(self.positions, position) - 1
+        if index < 0:
+            return None
+        if delimiters[self.positions[index]].active:
+            return self.positions[index]
+        exhausted: list[int] = []
+        while index >= 0 and not delimiters[self.positions[index]].active:
+            exhausted.append(index)
+            index = self.previous[index]
+        # Exhaustion is permanent. Compress these links so later searches do
+        # not repeatedly walk the same removed delimiter range.
+        for removed in exhausted:
+            self.previous[removed] = index
+        return self.positions[index] if index >= 0 else None
+
+
+class _OpenerIndex:
+    """Find eligible openers without scanning intervening closer-only runs."""
+
+    def __init__(self, delimiters: list[_Delimiter]) -> None:
         self.delimiters = delimiters
-        self.groups: dict[tuple[str, int, bool], tuple[list[int], list[int]]] = {}
+        groups: dict[tuple[str, int, bool], _OpenerGroup] = {}
+        single_runs = all(delimiter.original_length == 1 for delimiter in delimiters)
         for position, delimiter in enumerate(delimiters):
-            if not delimiter.can_open:
+            if delimiter.can_open:
+                # Two single-character runs cannot violate the rule of three,
+                # so their flanking categories can share one lookup group.
+                key = (delimiter.marker, delimiter.original_length % 3, delimiter.can_close and not single_runs)
+                group = groups.get(key)
+                if group is None:
+                    group = groups[key] = _OpenerGroup(key[1], key[2])
+                group.append(position)
+        self.groups: dict[str, list[_OpenerGroup]] = {'*': [], '_': []}
+        for (marker, _, _), group in groups.items():
+            self.groups[marker].append(group)
+
+    def find(self, closer: _Delimiter, position: int, bottom: int) -> int | None:
+        opener = None
+        remainder = closer.original_length % 3
+        for group in self.groups[closer.marker]:
+            # Consumption and retirement never change an opener's lookup
+            # category or the original lengths used by the rule of three.
+            if (group.can_close or closer.can_open) and (group.remainder + remainder) % 3 == 0 and group.remainder != 0:
                 continue
-            key = (delimiter.marker, delimiter.orig_length % 3, delimiter.can_close)
-            positions, previous = self.groups.setdefault(key, ([], []))
-            previous.append(len(positions) - 1)
-            positions.append(position)
+            candidate = group.find_before(self.delimiters, position)
+            if candidate is not None and candidate >= bottom and (opener is None or candidate > opener):
+                opener = candidate
+        return opener
 
-    def find(self, closer: Delimiter, closer_pos: int, bottom: int) -> tuple[int, Delimiter | None]:
-        opener_pos = -1
-        closer_remainder = closer.orig_length % 3
-        for (marker, remainder, can_close), (positions, previous) in self.groups.items():
-            if marker != closer.marker:
+
+@dataclass(slots=True)
+class _Span:
+    """A proposed match; contained delimiters retire only after acceptance."""
+
+    children: list[Node]
+    depth: int = 0
+    has_content: bool = False
+    barrier: int | None = None
+    retired_delimiters: list[_Delimiter] | None = None
+
+
+class _EmphasisSequence:
+    """Scan once, then collapse matches without shifting source-order indices.
+
+    Part and delimiter indices never change. Active parts form a forward chain;
+    retired parts may remain in the opener index but never become active again.
+    Each part caches its subtree's emphasis depth, updated only when wrapping it.
+    """
+
+    def __init__(self, nodes: list[Node], cjk_friendly: bool, max_depth: int) -> None:
+        self.head: _Part | None = None
+        self.tail: _Part | None = None
+        self.part_count = 0
+        self.delimiters: list[_Delimiter] = []
+        self.max_depth = max_depth
+        source = ''.join(node.value if isinstance(node, TextNode) else _PLACEHOLDER_TEXT for node in nodes)
+        offset = 0
+        for node in nodes:
+            if isinstance(node, TextNode):
+                if node._parse_emphasis:
+                    self._split_text(node, source, offset, cjk_friendly)
+                else:
+                    self._append(_Part(node, self.part_count, 0))
+                offset += len(node.value)
+            else:
+                depth = _node_emphasis_depth(node) if isinstance(node, Parent) else 0
+                self._append(_Part(node, self.part_count, depth))
+                offset += len(_PLACEHOLDER_TEXT)
+
+    def _append(self, part: _Part) -> None:
+        if self.tail is None:
+            self.head = part
+        else:
+            self.tail.next = part
+        self.tail = part
+        self.part_count += 1
+
+    def _split_text(self, node: TextNode, source: str, offset: int, cjk_friendly: bool) -> None:
+        for match in _TEXT_PARTS.finditer(node.value):
+            start, end = match.span()
+            value = match.group()
+            marker = value[0]
+            token = TextNode(value=value, position=_text_position(node, start, end))
+            if marker in '*_':
+                can_open, can_close = _delimiter_flags(source, offset + start, end - start, marker, cjk_friendly)
+                if can_open or can_close:
+                    delimiter = _Delimiter(
+                        node=token,
+                        index=self.part_count,
+                        depth=0,
+                        text=token,
+                        marker=marker,
+                        can_open=can_open,
+                        can_close=can_close,
+                        original_length=end - start,
+                    )
+                    self.delimiters.append(delimiter)
+                    self._append(delimiter)
+                    continue
+            self._append(_Part(token, self.part_count, 0))
+
+    def process(self) -> list[Node]:
+        if self.max_depth <= 0 or len(self.delimiters) < 2:
+            return self._result()
+        openers = _OpenerIndex(self.delimiters)
+        bottoms: dict[tuple[str, int, bool], int] = {}
+        position = 0
+        while position < len(self.delimiters):
+            closer = self.delimiters[position]
+            if not closer.active or not closer.can_close:
+                position += 1
                 continue
-            if (can_close or closer.can_open) and (remainder + closer_remainder) % 3 == 0 and remainder != 0:
+            key = (closer.marker, closer.length % 3, closer.can_open)
+            opener_position = openers.find(closer, position, bottoms.get(key, 0))
+            if opener_position is None:
+                bottoms[key] = position
+                position += 1
                 continue
-            index = bisect_left(positions, closer_pos) - 1
-            exhausted: list[int] = []
-            while index >= 0:
-                candidate = self.delimiters[positions[index]]
-                if candidate.can_open and candidate.length > 0:
-                    break
-                exhausted.append(index)
-                index = previous[index]
-            for removed in exhausted:
-                previous[removed] = index
-            if index >= 0 and positions[index] >= bottom:
-                opener_pos = max(opener_pos, positions[index])
-        if opener_pos < 0:
-            return opener_pos, None
-        return opener_pos, self.delimiters[opener_pos]
+            opener = self.delimiters[opener_position]
+            if opener.depth_barrier is not None and closer.index > opener.depth_barrier:
+                position += 1
+                continue
+            span = self._span(opener, closer)
+            if not span.has_content or span.depth >= self.max_depth:
+                # Cache only this opener's failed span: other openers and
+                # closers revisited before the saturated subtree remain valid.
+                opener.depth_barrier = span.barrier
+                position += 1
+                continue
+            self._collapse(opener, closer, span)
+            if (opener.active and opener.can_open) or (closer.active and closer.can_close):
+                position = max(opener_position, bottoms.get(key, 0))
+            else:
+                position += 1
+        return self._result()
 
-
-class DelimiterParts:
-    """Keep delimiter indices stable while collapsing matched spans."""
-
-    def __init__(self, nodes: list[Node], delimiters: list[Delimiter]) -> None:
-        self.nodes = nodes
-        self.next_indices = list(range(1, len(nodes) + 1))
-        self.delimiters = {delimiter.index: delimiter for delimiter in delimiters}
-
-    def children(self, opener: Delimiter, closer: Delimiter) -> list[Node]:
+    def _span(self, opener: _Delimiter, closer: _Delimiter) -> _Span:
         children: list[Node] = []
-        index = self.next_indices[opener.index]
-        while index < closer.index:
-            children.append(self.nodes[index])
-            index = self.next_indices[index]
-        return children
-
-    def replace(self, opener: Delimiter, closer: Delimiter, node: Node) -> None:
-        first = self.next_indices[opener.index]
-        index = first
-        while index < closer.index:
-            delimiter = self.delimiters.get(index)
-            if delimiter is not None:
-                delimiter.length = 0
-            index = self.next_indices[index]
-        self.nodes[first] = node
-        self.next_indices[first] = closer.index
-
-    def depth_barrier(self, opener: Delimiter, closer: Delimiter, max_depth: int) -> int | None:
+        depth = 0
+        has_content = False
         barrier = None
-        index = self.next_indices[opener.index]
-        while index < closer.index:
-            if emphasis_depth([self.nodes[index]]) >= max_depth:
-                barrier = index
-            index = self.next_indices[index]
-        return barrier
+        retired: list[_Delimiter] | None = None
+        part = opener.next
+        while part is not None and part is not closer:
+            children.append(part.node)
+            if part.depth > depth:
+                depth = part.depth
+            has_content = has_content or not isinstance(part.node, TextNode) or bool(part.node.value)
+            if part.depth >= self.max_depth:
+                barrier = part.index
+            if isinstance(part, _Delimiter) and part.active:
+                if retired is None:
+                    retired = []
+                retired.append(part)
+            part = part.next
+        return _Span(children, depth, has_content, barrier, retired)
 
-    def flatten(self) -> list[Node]:
+    def _collapse(self, opener: _Delimiter, closer: _Delimiter, span: _Span) -> None:
+        size = 2 if opener.length >= 2 and closer.length >= 2 else 1
+        position = _emphasis_position(opener.text, closer.text, size)
+        opener.consume(size, opening=True)
+        closer.consume(size, opening=False)
+        node = StrongNode(children=span.children) if size == 2 else EmphasisNode(children=span.children)
+        node.position = position
+
+        first = opener.next
+        assert first is not None
+        if span.retired_delimiters is not None:
+            for delimiter in span.retired_delimiters:
+                delimiter.active = False
+        first.node = node
+        first.depth = span.depth + 1
+        first.next = closer
+
+    def _result(self) -> list[Node]:
         result: list[Node] = []
-        index = 0
-        while index < len(self.nodes):
-            result.append(self.nodes[index])
-            index = self.next_indices[index]
+        part = self.head
+        while part is not None:
+            if not isinstance(part.node, TextNode) or part.node.value:
+                result.append(part.node)
+            part = part.next
         return result
 
 
 def parse_emphasis_sequence(nodes: list[Node], cjk_friendly: bool = False, max_depth: int = 20) -> list[Node]:
-    parts: list[Node] = []
-    delimiters: list[Delimiter] = []
-    source = source_text(nodes)
-
-    source_pos = 0
-    for node in nodes:
-        if isinstance(node, TextNode) and node._parse_emphasis:
-            split_text_node(node, source, source_pos, parts, delimiters, cjk_friendly=cjk_friendly)
-            source_pos += len(node.value)
-        else:
-            parts.append(node)
-            source_pos += source_length(node)
-
-    if process_flat_non_nested_delimiters(parts, delimiters, max_depth=max_depth):
-        return without_empty_text_nodes(parts)
-    process_delimiters(parts, delimiters, max_depth=max_depth)
-    return without_empty_text_nodes(parts)
+    return _EmphasisSequence(nodes, cjk_friendly, max_depth).process()
 
 
-def without_empty_text_nodes(parts: list[Node]) -> list[Node]:
-    return [part for part in parts if not (isinstance(part, TextNode) and part.value == '')]
-
-
-def source_text(nodes: list[Node]) -> str:
-    values = []
-    for node in nodes:
-        if isinstance(node, TextNode):
-            values.append(node.value)
-        else:
-            values.append(_PLACEHOLDER_TEXT)
-    return ''.join(values)
-
-
-def source_length(node: Node) -> int:
-    if isinstance(node, TextNode):
-        return len(node.value)
-    return len(_PLACEHOLDER_TEXT)
-
-
-def split_text_node(
-    node: TextNode,
-    source: str,
-    source_start: int,
-    parts: list[Node],
-    delimiters: list[Delimiter],
-    cjk_friendly: bool = False,
-) -> None:
-    text = node.value
-    pos = 0
-    while pos < len(text):
-        if text[pos] not in '*_':
-            pos = append_plain_text(node, text, pos, parts)
-            continue
-
-        pos = append_delimiter_run(
-            node,
-            text,
-            pos,
-            source,
-            source_start,
-            parts,
-            delimiters,
-            cjk_friendly,
-        )
-
-
-def append_plain_text(node: TextNode, text: str, start: int, parts: list[Node]) -> int:
-    end = next_delimiter_run(text, start)
-    position = text_node_position(node, start, end)
-    parts.append(TextNode(value=text[start:end], position=position))
-    return end
-
-
-def append_delimiter_run(
-    node: TextNode,
-    text: str,
-    start: int,
-    source: str,
-    source_start: int,
-    parts: list[Node],
-    delimiters: list[Delimiter],
-    cjk_friendly: bool,
-) -> int:
-    marker = text[start]
-    end = start
-    while end < len(text) and text[end] == marker:
-        end += 1
-    run_length = end - start
-    absolute = source_start + start
-    opener = can_open(source, absolute, run_length, marker, cjk_friendly=cjk_friendly)
-    closer = can_close(source, absolute, run_length, marker, cjk_friendly=cjk_friendly)
-    part_index = len(parts)
-    position = text_node_position(node, start, end)
-    parts.append(TextNode(value=text[start:end], position=position))
-    if opener or closer:
-        delimiters.append(Delimiter(part_index, marker, run_length, opener, closer, run_length))
-    return end
-
-
-def text_node_position(node: TextNode, start: int, end: int) -> Position | None:
+def _text_position(node: TextNode, start: int, end: int) -> Position | None:
     if node._source_position is not None:
         return node._source_position(start, end)
     if node.position is None:
@@ -251,272 +318,31 @@ def text_node_position(node: TextNode, start: int, end: int) -> Position | None:
     return Position(start=node.position.start + start, end=node.position.start + end)
 
 
-def next_delimiter_run(text: str, start: int) -> int:
-    index = start
-    while index < len(text) and text[index] not in '*_':
-        index += 1
-    return index
-
-
-def process_flat_non_nested_delimiters(
-    parts: list[Node], delimiters: list[Delimiter], max_depth: int = 20
-) -> bool:
-    if not can_use_flat_delimiters(parts, delimiters, max_depth):
-        return False
-
-    matches = find_flat_matches(parts, delimiters, max_depth)
-    if matches is None:
-        return False
-    return replace_flat_matches(parts, matches)
-
-
-def can_use_flat_delimiters(parts: list[Node], delimiters: list[Delimiter], max_depth: int) -> bool:
-    if max_depth <= 0 or len(delimiters) < 2:
-        return False
-    for delimiter in delimiters:
-        part = parts[delimiter.index]
-        if delimiter.length != 1 or not isinstance(part, TextNode) or len(part.value) != 1:
-            return False
-    return True
-
-
-def find_flat_matches(
-    parts: list[Node], delimiters: list[Delimiter], max_depth: int
-) -> list[tuple[int, int, EmphasisNode]] | None:
-    matches: list[tuple[int, int, EmphasisNode]] = []
-    opener_stacks: dict[str, list[int]] = {'*': [], '_': []}
-    for closer_pos, closer in enumerate(delimiters):
-        if closer.can_close:
-            opener_pos = pop_flat_opener(delimiters, closer, opener_stacks[closer.marker])
-            if opener_pos is not None:
-                if closer_pos - opener_pos > 2:
-                    return None
-                opener = delimiters[opener_pos]
-                node = flat_emphasis_node(parts, opener, closer, max_depth)
-                if node is None:
-                    return None
-                matches.append((opener.index, closer.index, node))
-                continue
-        if closer.can_open:
-            opener_stacks[closer.marker].append(closer_pos)
-
-    if not matches:
-        return None
-    return matches
-
-
-def pop_flat_opener(delimiters: list[Delimiter], closer: Delimiter, stack: list[int]) -> int | None:
-    while stack:
-        opener_pos = stack.pop()
-        if is_matching_opener(delimiters[opener_pos], closer):
-            return opener_pos
-    return None
-
-
-def replace_flat_matches(parts: list[Node], matches: list[tuple[int, int, EmphasisNode]]) -> bool:
-    result: list[Node] = []
-    index = 0
-    for opener_index, closer_index, node in matches:
-        if opener_index < index:
-            return False
-        result.extend(parts[index:opener_index])
-        result.append(node)
-        index = closer_index + 1
-    result.extend(parts[index:])
-    parts[:] = result
-    return True
-
-
-def flat_emphasis_node(
-    parts: list[Node], opener: Delimiter, closer: Delimiter, max_depth: int
-) -> EmphasisNode | None:
-    use_length, opener_text, closer_text = prepare_delimiter_match(parts, opener, closer, max_depth)
-    if use_length != 1 or opener_text is None or closer_text is None:
-        return None
-    node = EmphasisNode(children=parts[opener.index + 1 : closer.index])
-    node.position = emphasis_position(opener_text, closer_text, 1)
-    return node
-
-
-def process_delimiters(parts: list[Node], delimiters: list[Delimiter], max_depth: int = 20) -> None:
-    linked_parts = DelimiterParts(parts, delimiters)
-    openers = DelimiterOpeners(delimiters)
-    closer_pos = 0
-    openers_bottom: dict[tuple[str, int, bool], int] = {}
-    while closer_pos < len(delimiters):
-        closer = delimiters[closer_pos]
-        if not closer.can_close or closer.length == 0:
-            closer_pos += 1
-            continue
-
-        opener_key = (closer.marker, closer.length % 3, closer.can_open)
-        opener_bottom = openers_bottom.get(opener_key, 0)
-        opener_pos, opener = openers.find(closer, closer_pos, opener_bottom)
-        if opener is None:
-            openers_bottom[opener_key] = closer_pos
-            closer_pos += 1
-            continue
-
-        if opener.depth_barrier is not None and closer.index > opener.depth_barrier:
-            closer_pos += 1
-            continue
-        children = linked_parts.children(opener, closer)
-        use_length, opener_text, closer_text = prepare_delimiter_match(
-            parts, opener, closer, max_depth, children=children
-        )
-        if use_length == 0 or opener_text is None or closer_text is None:
-            # A later closer cannot make this span shallower. Cache only this
-            # opener's rejection; other openers and revisited closers stay valid.
-            opener.depth_barrier = linked_parts.depth_barrier(opener, closer, max_depth)
-            closer_pos += 1
-            continue
-
-        apply_delimiter_match(linked_parts, children, opener, closer, use_length, opener_text, closer_text)
-        if opener.can_open or closer.can_close:
-            closer_pos = max(opener_pos, openers_bottom.get(opener_key, 0))
-        else:
-            closer_pos += 1
-    parts[:] = linked_parts.flatten()
-
-
-def is_matching_opener(candidate: Delimiter, closer: Delimiter) -> bool:
-    return (
-        candidate.marker == closer.marker
-        and candidate.can_open
-        and candidate.length > 0
-        and can_match_delimiters(candidate, closer)
-    )
-
-
-def prepare_delimiter_match(
-    parts: list[Node], opener: Delimiter, closer: Delimiter, max_depth: int = 20, *, children: list[Node] | None = None
-) -> tuple[int, TextNode | None, TextNode | None]:
-    if opener.length >= 2 and closer.length >= 2:
-        length = 2
-    else:
-        length = 1
-    if length == 2 and not has_strong_enabled(parts, opener, closer):
-        length = 1
-    if length == 1 and not has_emphasis_enabled(parts, opener, closer):
-        return 0, None, None
-    if children is None:
-        children = parts[opener.index + 1 : closer.index]
-    if not has_content(children):
-        return 0, None, None
-    if emphasis_depth(children) >= max_depth:
-        return 0, None, None
-
-    opener_text = parts[opener.index]
-    closer_text = parts[closer.index]
-    if not isinstance(opener_text, TextNode) or not isinstance(closer_text, TextNode):
-        return 0, None, None
-    return length, opener_text, closer_text
-
-
-def apply_delimiter_match(
-    parts: DelimiterParts,
-    children: list[Node],
-    opener: Delimiter,
-    closer: Delimiter,
-    use_length: int,
-    opener_text: TextNode,
-    closer_text: TextNode,
-) -> None:
-    node_position = emphasis_position(opener_text, closer_text, use_length)
-    if opener_text.position is None:
-        remaining_opener_position = None
-    else:
-        remaining_opener_position = Position(
-            start=opener_text.position.start, end=opener_text.position.start + len(opener_text.value) - use_length
-        )
-    if closer_text.position is None:
-        remaining_closer_position = None
-    else:
-        remaining_closer_position = Position(
-            start=closer_text.position.start + use_length, end=closer_text.position.start + len(closer_text.value)
-        )
-    opener_text.value = opener_text.value[: len(opener_text.value) - use_length]
-    closer_text.value = closer_text.value[use_length:]
-    opener_text.position = remaining_opener_position
-    closer_text.position = remaining_closer_position
-
-    if use_length == 2:
-        node: Node = StrongNode(children=children)
-    else:
-        node = EmphasisNode(children=children)
-    node.position = node_position
-    parts.replace(opener, closer, node)
-    update_delimiter_lengths(opener, closer, use_length)
-
-
-def update_delimiter_lengths(opener: Delimiter, closer: Delimiter, use_length: int) -> None:
-    opener.length -= use_length
-    closer.length -= use_length
-    if opener.length == 0:
-        opener.can_open = False
-    if closer.length == 0:
-        closer.can_close = False
-
-
-def has_strong_enabled(parts: list[Node], opener: Delimiter, closer: Delimiter) -> bool:
-    return len(text_value(parts[opener.index])) >= 2 and len(text_value(parts[closer.index])) >= 2
-
-
-def has_emphasis_enabled(parts: list[Node], opener: Delimiter, closer: Delimiter) -> bool:
-    return bool(text_value(parts[opener.index]) and text_value(parts[closer.index]))
-
-
-def text_value(node: Node) -> str:
-    if isinstance(node, TextNode):
-        return node.value
-    return ''
-
-
-def has_content(parts: list[Node]) -> bool:
-    return any(not isinstance(part, TextNode) or part.value != '' for part in parts)
-
-
-def emphasis_depth(nodes: list[Node]) -> int:
+def _node_emphasis_depth(node: Node) -> int:
     max_depth = 0
-    stack: list[tuple[Node, int]] = [(node, 0) for node in nodes]
+    stack = [(node, 0)]
     while stack:
         node, parent_depth = stack.pop()
-        if isinstance(node, (EmphasisNode, StrongNode)):
-            depth = parent_depth + 1
-            if depth > max_depth:
-                max_depth = depth
-        else:
-            depth = parent_depth
+        depth = parent_depth + 1 if isinstance(node, (EmphasisNode, StrongNode)) else parent_depth
+        max_depth = max(max_depth, depth)
         if isinstance(node, Parent):
             stack.extend((child, depth) for child in node.children)
     return max_depth
 
 
-def emphasis_position(opener: TextNode, closer: TextNode, size: int) -> Position | None:
+def _emphasis_position(opener: TextNode, closer: TextNode, size: int) -> Position | None:
     if opener.position is None or closer.position is None:
         return None
     return Position(start=opener.position.end - size, end=closer.position.start + size)
 
 
-def can_match_delimiters(opener: Delimiter, closer: Delimiter) -> bool:
-    if opener.can_close or closer.can_open:
-        open_length = opener.orig_length
-        close_length = closer.orig_length
-        return (open_length + close_length) % 3 != 0 or open_length % 3 == 0 and close_length % 3 == 0
-    return True
-
-
-def _neighbors(text: str, start: int, size: int) -> tuple[str, str]:
+def _delimiter_flags(text: str, start: int, size: int, marker: str, cjk_friendly: bool) -> tuple[bool, bool]:
     previous = text[start - 1] if start > 0 else '\n'
     next_char = text[start + size] if start + size < len(text) else '\n'
-    return previous, next_char
-
-
-def _flanking(previous: str, next_char: str, cjk_friendly: bool = False) -> tuple[bool, bool]:
-    if cjk_friendly:
-        return _cjk_flanking(previous, next_char)
-
-    return _standard_flanking(previous, next_char)
+    left, right = _cjk_flanking(previous, next_char) if cjk_friendly else _standard_flanking(previous, next_char)
+    if marker == '_':
+        return left and (not right or is_punctuation(previous)), right and (not left or is_punctuation(next_char))
+    return left, right
 
 
 def _cjk_flanking(previous: str, next_char: str) -> tuple[bool, bool]:
@@ -535,19 +361,3 @@ def _standard_flanking(previous: str, next_char: str) -> tuple[bool, bool]:
     left = (not next_ws) and (not next_p or prev_ws or prev_p)
     right = (not prev_ws) and (not prev_p or next_ws or next_p)
     return left, right
-
-
-def can_open(text: str, start: int, size: int, marker: str, cjk_friendly: bool = False) -> bool:
-    previous, next_char = _neighbors(text, start, size)
-    left, right = _flanking(previous, next_char, cjk_friendly=cjk_friendly)
-    if marker == '_':
-        return left and (not right or is_punctuation(previous))
-    return left
-
-
-def can_close(text: str, start: int, size: int, marker: str, cjk_friendly: bool = False) -> bool:
-    previous, next_char = _neighbors(text, start, size)
-    left, right = _flanking(previous, next_char, cjk_friendly=cjk_friendly)
-    if marker == '_':
-        return right and (not left or is_punctuation(next_char))
-    return right
