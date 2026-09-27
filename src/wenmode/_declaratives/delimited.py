@@ -8,7 +8,6 @@ from wenmode.nodes import Literal as LiteralNode
 from wenmode.nodes import Node, Parent
 from wenmode.utils import is_escaped
 
-from .._parser.inlines import parse_text_children
 from .._parser.rule_base import InlineCandidate, InlineRule
 from .._parser.state import BlockState
 from .._parser.store import StateKey
@@ -18,7 +17,6 @@ if TYPE_CHECKING:
 
 ClosingDelimiterCache = dict[tuple[int, int], tuple[str, object, list[int]]]
 InlineParse = Callable[['Parser', str, int, BlockState], tuple[Node | None, int]]
-DECLARATIVE_INLINE_DEPTH = StateKey[int]('wenmode.declarative.inline_depth', lambda: 0)
 DECLARATIVE_CLOSING_DELIMITERS = StateKey[ClosingDelimiterCache]('wenmode.declarative.closing_delimiters', lambda: {})
 
 
@@ -201,9 +199,7 @@ class InlineDelimited(DelimitedRule):
 
     def create_node(self, parser: Parser, text: str, state: BlockState, value_start: int, value_end: int) -> Node:
         value = text[value_start:value_end]
-        children = parse_text_children(
-            parser, DECLARATIVE_INLINE_DEPTH, value, state, parser.inline_source(text, state, value_start, value_end)
-        )
+        children = parser.parse_inlines(value, state, source=parser.inline_source(text, state, value_start, value_end))
         return self._node_factory(children=children)
 
 

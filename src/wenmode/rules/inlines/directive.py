@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 from wenmode.nodes import Node
 from wenmode.nodes import TextDirective as TextDirectiveNode
 
-from ..._parser.inlines import parse_text_children
 from ..._parser.rule_base import InlineCandidate, InlineRule
 from ..._parser.state import BlockState
 from ..._parser.store import StateKey
@@ -19,7 +18,6 @@ if TYPE_CHECKING:
 NAME_RE = re.compile(r'[A-Za-z][A-Za-z0-9_-]*')
 DirectiveBracketCache = dict[int, tuple[str, dict[int, int], dict[int, int]]]
 DIRECTIVE_BRACKET_CACHE = StateKey[DirectiveBracketCache]('wenmode.inline.directive_brackets', lambda: {})
-TEXT_DIRECTIVE_DEPTH = StateKey[int]('wenmode.inline.text_directive_depth', lambda: 0)
 
 
 class TextDirective(InlineRule):
@@ -44,12 +42,10 @@ class TextDirective(InlineRule):
 
         name, label, attributes, end, label_start, label_end = parsed
         if label is not None and label_start is not None and label_end is not None:
-            children = parse_text_children(
-                parser,
-                TEXT_DIRECTIVE_DEPTH,
+            children = parser.parse_inlines(
                 label,
-                state,
-                parser.inline_source(text, state, label_start, label_end),
+                state=state,
+                source=parser.inline_source(text, state, label_start, label_end)
             )
         else:
             children = []

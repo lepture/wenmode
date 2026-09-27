@@ -8,8 +8,9 @@ import pytest
 from tests.helpers import load_fixture
 from tests.plugin_helpers import STANDARD_RULES, configured_app
 from wenmode import Wenmode
+from wenmode.nodes import Position, Text
 from wenmode.presets import github, streaming
-from wenmode.rules import ContainerDirective
+from wenmode.rules import ContainerDirective, TextDirective
 
 POSITION_RULE_NAMES = {
     *(name for name in STANDARD_RULES if name not in {'atx_heading_id', 'link_no_references'}),
@@ -104,6 +105,20 @@ def test_iterable_setext_heading_maps_trimmed_inline_positions() -> None:
         'start': {'line': 1, 'column': 5, 'offset': 4},
         'end': {'line': 1, 'column': 10, 'offset': 9},
     }
+
+
+def test_inline_depth_boundary_preserves_literal_position() -> None:
+    app = Wenmode([TextDirective], positions=True)
+    app.parser.max_container_depth = 1
+
+    paragraph = app.parse(':x[:x[:x[a]]]\n').children[0]
+    outer = paragraph.children[0]
+    inner = outer.children[0]
+    literal = inner.children[0]
+
+    assert isinstance(literal, Text)
+    assert literal.value == ':x[a]'
+    assert literal.position == Position(6, 11)
 
 
 @pytest.mark.parametrize(

@@ -10,7 +10,6 @@ from .rule_base import InlineCandidate, InlineRule
 from .ruleset import RuleSet
 from .source import SourceMap
 from .state import BlockState
-from .store import StateKey
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
@@ -42,7 +41,15 @@ class InlineParser:
             return self._defer_inline_parse(text, state, source)
 
         inline_source = source if self._parser.positions else None
-        return self._parse_inline_nodes(text, state, inline_source)
+        inline_state = state._deferred
+        depth = inline_state.inline_parse_depth
+        if depth > 0 and depth > self._parser.max_container_depth:
+            return _literal_inline_nodes(text, inline_source)
+        inline_state.inline_parse_depth = depth + 1
+        try:
+            return self._parse_inline_nodes(text, state, inline_source)
+        finally:
+            inline_state.inline_parse_depth = depth
 
     def resolve_pending(self, state: BlockState) -> None:
         state.defer_inlines = False
@@ -219,6 +226,14 @@ def text_node(text: str, start: int, end: int, source: SourceMap | None) -> Text
     return node
 
 
+def _literal_inline_nodes(text: str, source: SourceMap | None) -> list[Node]:
+    if not text:
+        return []
+    node = text_node(text, 0, len(text), source)
+    node._source_position = None
+    return [node]
+
+
 def merge_text(nodes: list[Node]) -> list[Node]:
     merged: list[Node] = []
     text_node_: Text | None = None
@@ -258,21 +273,3 @@ def contains_emphasis_marker(nodes: list[Node]) -> bool:
         if isinstance(node, Text) and node._parse_emphasis and ('*' in node.value or '_' in node.value):
             return True
     return False
-
-
-def parse_text_children(
-    parser: Parser,
-    store_key: StateKey[int],
-    label: str,
-    state: BlockState,
-    source: SourceMap | None,
-) -> list[Node]:
-    depth = state.store.get(store_key)
-    if depth >= parser.max_container_depth:
-        return [Text(value=label)]
-
-    state.store.set(store_key, depth + 1)
-    try:
-        return parser.parse_inlines(label, state, source=source)
-    finally:
-        state.store.set(store_key, depth)

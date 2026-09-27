@@ -196,7 +196,9 @@ class Parser:
         """Parse inline Markdown into child nodes.
 
         Custom inline, block, and continuation rules can call this method when
-        they need nested inline parsing.
+        they need nested inline parsing. Nested calls share the parser's
+        ``max_container_depth`` budget. At the boundary, input is preserved as
+        literal text instead of invoking inline rules again.
 
         :param text: Inline Markdown source.
         :param state: Current block state used for extension state, deferred

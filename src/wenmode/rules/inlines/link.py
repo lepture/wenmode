@@ -32,7 +32,6 @@ DIRECT_DESTINATION_FAILURES = StateKey[DirectDestinationFailureCache](
     'wenmode.inline.direct_destination_failures', lambda: {}
 )
 IN_LINK_DEPTH = StateKey[int]('wenmode.inline.in_link_depth', lambda: 0)
-IMAGE_ALT_DEPTH = StateKey[int]('wenmode.inline.image_alt_depth', lambda: 0)
 
 
 class Image(InlineRule):
@@ -117,15 +116,7 @@ def parse_link_children(parser: Parser, label: str, state: BlockState, source: S
 
 
 def parse_image_alt(parser: Parser, label: str, state: BlockState, source: SourceMap | None) -> str:
-    depth = state.store.get(IMAGE_ALT_DEPTH)
-    if depth >= parser.max_container_depth:
-        return label
-
-    state.store.set(IMAGE_ALT_DEPTH, depth + 1)
-    try:
-        return plain_text(parser.parse_inlines(label, state, source=source))
-    finally:
-        state.store.set(IMAGE_ALT_DEPTH, depth)
+    return plain_text(parser.parse_inlines(label, state, source=source))
 
 
 def parse_link_or_image(

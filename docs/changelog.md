@@ -17,6 +17,10 @@ here while preparing a release, then move them under the final version heading.
 
 ## Unreleased
 
+- Enforce one shared recursion budget for nested inline parsing, including
+  custom rules, while preserving boundary text and source positions.
+- Unify emphasis matching around stable delimiter links and cached subtree
+  depths, preserving CommonMark, CJK, and source-position behavior.
 - Avoid quadratic delimiter index updates when parsing repeated nested emphasis.
 - Avoid repeated emphasis scans across subtrees that reach the nesting limit.
 - Cache failed multiline reference-title scans without truncating valid titles.

@@ -96,6 +96,7 @@ class _DeferredInlineState:
     pending_inlines: list[tuple[list[Node], str, SourceMap | None]] = field(default_factory=list)
     pending_inline_callbacks: list[Callable[[], None]] = field(default_factory=list)
     inline_sources: list[SourceMap] = field(default_factory=list)
+    inline_parse_depth: int = 0
 
 
 @dataclass

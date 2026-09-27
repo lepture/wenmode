@@ -5,7 +5,7 @@ from collections.abc import Mapping
 import pytest
 
 from wenmode import HTMLRenderer, Parser, Wenmode
-from wenmode.nodes import Node, Paragraph, Text
+from wenmode.nodes import Node, Paragraph, Parent, Text
 from wenmode.rules import (
     AtxHeading,
     BlockCandidate,
@@ -550,3 +550,58 @@ def test_parse_inlines_with_explicit_state_handles_link_brackets() -> None:
 
 def test_parse_inlines_with_fresh_state_leaves_footnote_reference_text() -> None:
     assert [node.to_ast() for node in parse_inlines(Parser([Footnote]), '[^x]')] == [{'type': 'text', 'value': '[^x]'}]
+
+
+def test_recursive_custom_inline_rule_uses_shared_depth_limit() -> None:
+    class RecursiveInline(InlineRule):
+        name = 'recursive_inline'
+        opener = '{'
+
+        def parse(
+            self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState
+        ) -> tuple[Node | None, int]:
+            start = candidate.start
+            if not text.startswith('{{', start) or not text.endswith('}}'):
+                return None, start
+            children = parser.parse_inlines(text[start + 2 : -2], state)
+            return Parent(type='recursiveInline', children=children), len(text)
+
+    parser = Parser([RecursiveInline])
+    parser.max_container_depth = 3
+
+    node = parser.parse_inlines('{{' * 1000 + 'x' + '}}' * 1000, BlockState([]))[0]
+
+    depth = 0
+    while isinstance(node, Parent):
+        depth += 1
+        node = node.children[0]
+    assert depth == parser.max_container_depth + 1
+    assert isinstance(node, Text)
+    assert node.value.startswith('{{')
+
+
+def test_inline_depth_is_restored_after_rule_failure() -> None:
+    class FailsOnce(InlineRule):
+        name = 'fails_once'
+        opener = '!'
+
+        def __init__(self) -> None:
+            super().__init__()
+            self.should_fail = True
+
+        def parse(
+            self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState
+        ) -> tuple[Node | None, int]:
+            if self.should_fail:
+                self.should_fail = False
+                raise RuntimeError('expected failure')
+            return Text(value='parsed'), candidate.start + 1
+
+    parser = Parser([FailsOnce()])
+    parser.max_container_depth = 0
+    state = BlockState([])
+
+    with pytest.raises(RuntimeError, match='expected failure'):
+        parser.parse_inlines('!', state)
+
+    assert parser.parse_inlines('!', state) == [Text(value='parsed')]

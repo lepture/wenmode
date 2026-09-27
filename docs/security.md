@@ -34,6 +34,10 @@ Keep these boundaries in mind:
   links and images.
 - Parser rules decide whether raw HTML syntax becomes `html` AST nodes or plain
   text.
+- `Parser.max_container_depth` bounds recursive block and inline parsing.
+  Syntax beyond the boundary is preserved as shallow blocks or literal text.
+  Custom rules inherit this protection when they use `Parser.parse_blocks()`
+  and `Parser.parse_inlines()` for nested content.
 - `HTMLRenderer(escape=False)` and `HTMLRenderer(sanitize_urls=False)` are
   trusted-input settings.
 - If your application allows raw HTML from untrusted users, sanitize that HTML
