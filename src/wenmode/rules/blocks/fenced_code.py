@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING, cast
 
-from wenmode.nodes import Code, Node, Paragraph
+from wenmode.nodes import Code, Node
 from wenmode.utils import normalize_label_text
 
 from ..._parser.rule_base import BlockCandidate, BlockRule
@@ -31,18 +31,14 @@ class FencedCode(BlockRule):
     name = 'fenced_code'
     pattern = r' {0,3}(?:`{3,}|~{3,})'
 
-    def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> Node:
+    def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> Node | None:
         opener = cast(re.Match[str], FENCE_OPENER_RE.match(state.line.rstrip('\r\n')))
         indent = len(opener.group('indent').replace('\t', '    '))
         fence = opener.group('fence')
         fence_char = fence[0]
         info = opener.string[opener.end() :].strip()
         if fence_char == '`' and '`' in info:
-            paragraph_lines: list[str] = []
-            while not state.done and state.line.strip() != '':
-                paragraph_lines.append(state.line)
-                state.advance()
-            return Paragraph(children=parser.parse_inlines(''.join(paragraph_lines).strip(), state))
+            return None
         info = normalize_label_text(info)
         info_parts = info.split(None, 1)
         if info_parts:

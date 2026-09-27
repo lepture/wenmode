@@ -9,7 +9,7 @@ from tests.helpers import load_fixture
 from tests.plugin_helpers import STANDARD_RULES, configured_app
 from wenmode import Wenmode
 from wenmode.nodes import Position, Text
-from wenmode.presets import github, streaming
+from wenmode.presets import PresetFactory, commonmark, github, streaming
 from wenmode.rules import ContainerDirective, TextDirective
 
 POSITION_RULE_NAMES = {
@@ -119,6 +119,28 @@ def test_inline_depth_boundary_preserves_literal_position() -> None:
     assert isinstance(literal, Text)
     assert literal.value == ':x[a]'
     assert literal.position == Position(6, 11)
+
+
+@pytest.mark.parametrize('preset', [commonmark, github, streaming], ids=lambda preset: preset.__name__)
+@pytest.mark.parametrize(
+    ('markdown', 'expected'),
+    [
+        ('```inline_code```\n', [('inlineCode', 0, 17)]),
+        ('```inline code``` foo\n', [('inlineCode', 0, 17), ('text', 17, 21)]),
+        ('foo ```inline_code```\n', [('text', 0, 4), ('inlineCode', 4, 21)]),
+        ('foo ```inline code``` foo\n', [('text', 0, 4), ('inlineCode', 4, 21), ('text', 21, 25)]),
+    ],
+)
+def test_triple_backtick_inline_code_positions(
+    preset: PresetFactory, markdown: str, expected: list[tuple[str, int, int]]
+) -> None:
+    paragraph = Wenmode(preset(), positions=True).parse(markdown).children[0]
+
+    actual: list[tuple[str, int, int]] = []
+    for node in paragraph.children:
+        assert node.position is not None
+        actual.append((node.type, node.position.start, node.position.end))
+    assert actual == expected
 
 
 @pytest.mark.parametrize(

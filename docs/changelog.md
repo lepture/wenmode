@@ -17,6 +17,8 @@ here while preparing a release, then move them under the final version heading.
 
 ## Unreleased
 
+- Preserve inline source positions when a paragraph starts with three or more
+  backticks that do not form a valid fenced code block.
 - Enforce one shared recursion budget for nested inline parsing, including
   custom rules, while preserving boundary text and source positions.
 - Unify emphasis matching around stable delimiter links and cached subtree

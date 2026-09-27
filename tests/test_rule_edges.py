@@ -199,6 +199,10 @@ def test_leading_tabs_before_fenced_directive_count_as_indented_code() -> None:
     )
 
 
+def test_invalid_backtick_fence_allows_following_block_interrupt() -> None:
+    assert Wenmode().render('``` ```\n# heading\n') == '<p><code> </code></p>\n<h1>heading</h1>\n'
+
+
 @pytest.mark.parametrize(
     ('markdown', 'html'),
     [
