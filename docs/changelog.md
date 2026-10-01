@@ -15,7 +15,9 @@ releases.
 This page records notable changes for released versions. Add unreleased entries
 here while preparing a release, then move them under the final version heading.
 
-## Unreleased
+## 0.15.2
+
+Released **Oct 1, 2026**.
 
 - Keep inline source ranges aligned with escaped pipes inside GFM table cells.
 - Preserve inline source positions when a paragraph starts with three or more
