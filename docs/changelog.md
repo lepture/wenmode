@@ -17,6 +17,7 @@ here while preparing a release, then move them under the final version heading.
 
 ## Unreleased
 
+- Keep inline source ranges aligned with escaped pipes inside GFM table cells.
 - Preserve inline source positions when a paragraph starts with three or more
   backticks that do not form a valid fenced code block.
 - Enforce one shared recursion budget for nested inline parsing, including

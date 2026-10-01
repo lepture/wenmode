@@ -8,6 +8,7 @@ from wenmode.nodes import Table as TableNode
 from wenmode.utils import count_indent_from, is_escaped
 
 from ..._parser.rule_base import BlockCandidate, BlockRule
+from ..._parser.source import SourceMap
 from ..._parser.state import BlockState
 
 if TYPE_CHECKING:
@@ -80,10 +81,9 @@ def parse_cells(parser: Parser, cells: list[CellSpan], state: BlockState, line_i
     for raw, start, end in cells:
         stripped = raw.strip()
         leading = len(raw) - len(raw.lstrip())
-        text = unescape_table_pipes(stripped)
-        cell = TableCell(
-            children=parser.parse_inlines(text, state, source=state.source.line_text(line_index, start + leading, text))
-        )
+        source = state.source.line_text(line_index, start + leading, stripped)
+        text, source = unescape_table_pipes(stripped, source)
+        cell = TableCell(children=parser.parse_inlines(text, state, source=source))
         cell.position = state.source.line_position(line_index, start, end)
         parsed.append(cell)
     return parsed
@@ -161,14 +161,31 @@ def has_unescaped_pipe(line: str) -> bool:
     return any(char == '|' and not is_escaped(line, index) for index, char in enumerate(line))
 
 
-def unescape_table_pipes(value: str) -> str:
-    parts: list[str] = []
-    index = 0
-    while index < len(value):
-        if value[index] == '|' and is_escaped(value, index):
-            parts.pop()
-            parts.append('|')
-        else:
-            parts.append(value[index])
-        index += 1
-    return ''.join(parts)
+def unescape_table_pipes(value: str, source: SourceMap | None) -> tuple[str, SourceMap | None]:
+    text_parts: list[str] = []
+    source_parts: list[tuple[str, int]] = []
+    segment_start = 0
+    for index, char in enumerate(value):
+        if char != '|' or not is_escaped(value, index):
+            continue
+
+        backslash = index - 1
+        segment = value[segment_start:backslash]
+        text_parts.append(segment)
+        if source is not None:
+            if segment:
+                source_parts.append((segment, source.source_offset(segment_start)))
+            # Keep the deleted backslash as a zero-width source segment so
+            # node ranges spanning the pipe still include the escape.
+            source_parts.append(('', source.source_offset(backslash)))
+        segment_start = index
+
+    if segment_start == 0:
+        return value, source
+
+    segment = value[segment_start:]
+    text_parts.append(segment)
+    if source is not None and segment:
+        source_parts.append((segment, source.source_offset(segment_start)))
+    text = ''.join(text_parts)
+    return text, SourceMap.from_parts(source_parts) if source is not None else None

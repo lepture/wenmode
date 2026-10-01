@@ -143,6 +143,45 @@ def test_triple_backtick_inline_code_positions(
     assert actual == expected
 
 
+def test_table_escaped_pipes_preserve_inline_source_ranges() -> None:
+    source = (
+        '| col_1    | col_2   | col_3 |\n'
+        '|----------|---------|-------|\n'
+        '|`\\|foo\\|` | \\|bar\\| | baz   |\n'
+    )
+    app = Wenmode(github(), positions=True)
+
+    table = app.parse(source).children[0]
+    first, second, _ = table.children[1].children
+    code = first.children[0]
+    text = second.children[0]
+
+    assert code.value == '|foo|'
+    assert code.position == Position(63, 72)
+    assert source[code.position.start : code.position.end] == '`\\|foo\\|`'
+    assert text.value == '|bar|'
+    assert text.position == Position(75, 82)
+    assert source[text.position.start : text.position.end] == '\\|bar\\|'
+    assert app.parse(iter(source.splitlines(keepends=True))).to_ast() == app.parse(source).to_ast()
+
+
+def test_table_escaped_pipes_preserve_adjacent_inline_source_ranges() -> None:
+    source = '| c |\n| - |\n| \\|*x*\\| |\n'
+
+    cell = Wenmode(github(), positions=True).parse(source).children[0].children[1].children[0]
+
+    assert [(node.type, node.position) for node in cell.children] == [
+        ('text', Position(14, 16)),
+        ('emphasis', Position(16, 19)),
+        ('text', Position(19, 21)),
+    ]
+    assert [source[node.position.start : node.position.end] for node in cell.children if node.position is not None] == [
+        '\\|',
+        '*x*',
+        '\\|',
+    ]
+
+
 @pytest.mark.parametrize(
     ('markdown', 'emphasis_positions', 'emphasis_values'),
     [
