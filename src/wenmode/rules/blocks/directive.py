@@ -68,7 +68,7 @@ class ContainerDirective(BlockRule):
 
     def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> Node | None:
         line = state.line.rstrip('\r\n')
-        opener = cast(re.Match[str], CONTAINER_DIRECTIVE_RE.match(line))
+        opener = cast('re.Match[str]', CONTAINER_DIRECTIVE_RE.match(line))
         fence = opener.group('fence')
         head = line[opener.end() :]
         parsed = parse_directive_head(head, 0)

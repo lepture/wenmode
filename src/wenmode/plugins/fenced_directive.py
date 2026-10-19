@@ -67,7 +67,7 @@ class FencedDirectiveRule(BlockRule):
 
     def parse_directive_head(self, state: BlockState) -> tuple[str, str | None, re.Pattern[str]]:
         line = state.line.rstrip('\r\n')
-        opener = cast(re.Match[str], self._head_pattern.match(line))
+        opener = cast('re.Match[str]', self._head_pattern.match(line))
         fence = opener.group('fence')
         fence_char = fence[0]
         name = opener.group('name')

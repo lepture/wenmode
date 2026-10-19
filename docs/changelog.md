@@ -15,6 +15,11 @@ releases.
 This page records notable changes for released versions. Add unreleased entries
 here while preparing a release, then move them under the final version heading.
 
+## Unreleased
+
+- Reduce runtime type construction in parsing, source-position tracking, rendering,
+  and setup by using string type arguments in casts.
+
 ## 0.15.2
 
 Released **Oct 1, 2026**.

@@ -32,7 +32,7 @@ class FencedCode(BlockRule):
     pattern = r' {0,3}(?:`{3,}|~{3,})'
 
     def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> Node | None:
-        opener = cast(re.Match[str], FENCE_OPENER_RE.match(state.line.rstrip('\r\n')))
+        opener = cast('re.Match[str]', FENCE_OPENER_RE.match(state.line.rstrip('\r\n')))
         indent = len(opener.group('indent').replace('\t', '    '))
         fence = opener.group('fence')
         fence_char = fence[0]

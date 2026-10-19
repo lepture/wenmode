@@ -51,7 +51,7 @@ class List(BlockRule):
         self.task = task
 
     def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> ListNode:
-        first = cast(re.Match[str], MARKER_RE.match(state.line.rstrip('\r\n')))
+        first = cast('re.Match[str]', MARKER_RE.match(state.line.rstrip('\r\n')))
         if state.depth >= parser.max_container_depth - 1:
             return parse_shallow_list(parser, state, first, task=self.task)
 

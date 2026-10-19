@@ -38,7 +38,7 @@ class AtxHeading(BlockRule):
 
     def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> Heading:
         line = state.line.rstrip('\r\n')
-        parsed = cast(tuple[str, str, int], parse_atx_heading_line(line))
+        parsed = cast('tuple[str, str, int]', parse_atx_heading_line(line))
         marker, content, content_start = parsed
         if content.strip('#').strip() == '':
             content = ''

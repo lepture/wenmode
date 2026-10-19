@@ -134,7 +134,7 @@ class HTMLRenderer(BaseRenderer):
         """Render an unknown node without allowing implicit HTML markup."""
         children = getattr(node, 'children', None)
         if isinstance(children, list):
-            return self.render_children(cast(list[Node], children), context)
+            return self.render_children(cast('list[Node]', children), context)
 
         value = getattr(node, 'value', None)
         if isinstance(value, str):

@@ -394,7 +394,7 @@ def _init_field_names(node_class: type[Node]) -> set[str]:
 def _generic_node_from_attrs(node_type: str, attrs: dict[str, Any]) -> Node:
     init_kwargs = _base_init_kwargs(node_type, attrs)
     if isinstance(attrs.get('children'), list):
-        node: Node = Parent(children=cast(list[Node], attrs['children']), **init_kwargs)
+        node: Node = Parent(children=cast('list[Node]', attrs['children']), **init_kwargs)
         consumed = {'type', 'data', 'position', 'children'}
     elif isinstance(attrs.get('value'), str):
         node = Literal(value=attrs['value'], **init_kwargs)

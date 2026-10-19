@@ -80,13 +80,13 @@ def _fenced_node_factory(syntax: BlockFenced) -> FencedNodeFactory:
     if syntax.content == 'value':
         if not issubclass(node_class, LiteralNode):
             raise TypeError(f'{syntax.name!r} requires a Literal node for value content')
-        node_factory = cast(Callable[..., Node], node_class)
+        node_factory = cast('Callable[..., Node]', node_class)
         return lambda parser, state, value: node_factory(value=value)
 
     if syntax.content == 'children':
         if not issubclass(node_class, Parent):
             raise TypeError(f'{syntax.name!r} requires a Parent node for children content')
-        node_factory = cast(Callable[..., Node], node_class)
+        node_factory = cast('Callable[..., Node]', node_class)
         return lambda parser, state, value: node_factory(children=parser.parse_blocks(value, state))
 
     raise TypeError(f'{syntax.name!r} uses unsupported content mode {syntax.content!r}')

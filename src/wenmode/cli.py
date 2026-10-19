@@ -183,7 +183,7 @@ def run_render(args: argparse.Namespace) -> int:
     wen = Wenmode(
         PRESETS[str(args.preset)](),
         renderer=renderer,
-        plugins=resolve_builtin_plugins(cast(Sequence[str] | None, args.plugin)),
+        plugins=resolve_builtin_plugins(cast('Sequence[str] | None', args.plugin)),
     )
     output = wen.render(source)
     write_output(output, args.output)
@@ -194,7 +194,7 @@ def run_ast(args: argparse.Namespace) -> int:
     source = read_source(str(args.source))
     wen = Wenmode(
         PRESETS[str(args.preset)](),
-        plugins=resolve_builtin_plugins(cast(Sequence[str] | None, args.plugin)),
+        plugins=resolve_builtin_plugins(cast('Sequence[str] | None', args.plugin)),
         positions=bool(args.positions),
     )
     root = wen.parse(source)

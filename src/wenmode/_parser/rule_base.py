@@ -56,9 +56,9 @@ class Rule:
 
     def __init__(self, name: str | None = None) -> None:
         self.name = cast(str, resolve_string_attribute(self, 'name', name))
-        required_rules = cast(Sequence[RuleDependency], getattr(type(self), 'required_rules', ()))
-        root_transforms = cast(Sequence[RootTransform], getattr(type(self), 'root_transforms', ()))
-        node_transforms = cast(Sequence[NodeTransform], getattr(type(self), 'node_transforms', ()))
+        required_rules = cast('Sequence[RuleDependency]', getattr(type(self), 'required_rules', ()))
+        root_transforms = cast('Sequence[RootTransform]', getattr(type(self), 'root_transforms', ()))
+        node_transforms = cast('Sequence[NodeTransform]', getattr(type(self), 'node_transforms', ()))
         self.required_rules: list[RuleDependency] = list(required_rules)
         self.root_transforms: list[RootTransform] = list(root_transforms)
         self.node_transforms: list[NodeTransform] = list(node_transforms)

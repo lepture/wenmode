@@ -26,7 +26,7 @@ def render_node_children(renderer: BaseRenderer, node: Node, context: RenderCont
     """Render child nodes for handlers that intentionally collapse a wrapper."""
     children = getattr(node, 'children', None)
     if isinstance(children, list):
-        return renderer.render_children(cast(list[Node], children), context)
+        return renderer.render_children(cast('list[Node]', children), context)
     return ''
 
 
@@ -170,7 +170,7 @@ class BaseRenderer:
         """
         children = getattr(node, 'children', None)
         if isinstance(children, list):
-            return self.render_children(cast(list[Node], children), context)
+            return self.render_children(cast('list[Node]', children), context)
 
         value = getattr(node, 'value', None)
         if isinstance(value, str):

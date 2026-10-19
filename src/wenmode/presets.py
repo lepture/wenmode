@@ -130,7 +130,7 @@ def _resolve_builtin_preset(value: Iterable[RuleSpec] | PresetFactory, /, *, sta
         factory = streaming
 
     if factory is None:
-        return cast(Iterable[RuleSpec], value)
+        return cast('Iterable[RuleSpec]', value)
 
     warnings.warn(
         f'Passing {factory.__name__} without calling it is deprecated and will be removed in 1.0; '

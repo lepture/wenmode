@@ -51,7 +51,7 @@ class RuleSet:
         deferred_inline_transforms = tuple(transform.name for transform in root_transforms if transform.defer_inlines)
         streaming_blockers = tuple(transform.name for transform in root_transforms)
         emphasis = rules.get('emphasis')
-        emphasis_rule = cast(EmphasisRule | None, emphasis) if has_emphasis_parser(emphasis) else None
+        emphasis_rule = cast('EmphasisRule | None', emphasis) if has_emphasis_parser(emphasis) else None
         return cls(
             rules=rules,
             block_rules=block_rules,
@@ -76,7 +76,7 @@ def has_emphasis_parser(rule: Rule | None) -> bool:
 
 def resolve_rule(rule: type[Rule] | Rule) -> Rule:
     if isinstance(rule, type):
-        return cast(Callable[[], Rule], rule)()
+        return cast('Callable[[], Rule]', rule)()
     return rule
 
 

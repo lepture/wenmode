@@ -272,13 +272,13 @@ class InlineLiteral(DelimitedRule):
 def _parent_node_factory(syntax: InlineDelimited) -> Callable[..., Node]:
     if not issubclass(syntax.node, Parent):
         raise TypeError(f'{syntax.name!r} requires a Parent node for children content')
-    return cast(Callable[..., Node], syntax.node)
+    return cast('Callable[..., Node]', syntax.node)
 
 
 def _literal_node_factory(syntax: InlineLiteral) -> Callable[..., Node]:
     if not issubclass(syntax.node, LiteralNode):
         raise TypeError(f'{syntax.name!r} requires a Literal node for value content')
-    return cast(Callable[..., Node], syntax.node)
+    return cast('Callable[..., Node]', syntax.node)
 
 
 def find_content_range(text: str, start: int, syntax: DelimitedRule, state: BlockState) -> tuple[int, int, int] | None:
