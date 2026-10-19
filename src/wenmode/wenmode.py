@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Iterator
 from types import ModuleType
+from typing import Self
 
 from ._parser.source import LineSource
 from ._streaming import assert_streaming_supported, unique_blockers
@@ -149,7 +150,7 @@ class Wenmode:
         """Return transform and root hook labels that prevent streaming output."""
         return unique_blockers([*self.parser.streaming_blockers(), *self.renderer.streaming_blockers()])
 
-    def use(self, plugin: PluginModule | ModuleType) -> Wenmode:
+    def use(self, plugin: PluginModule | ModuleType) -> Self:
         """Install a plugin module or plugin object on this parser and renderer."""
         setup = getattr(plugin, 'setup', None)
         if not callable(setup):

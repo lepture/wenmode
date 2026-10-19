@@ -3,7 +3,7 @@ name = "wenmode-fastapi"
 version = "0.1.0"
 description = "Example FastAPI app that streams Wenmode-rendered Markdown previews."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "fastapi",
     "python-multipart",

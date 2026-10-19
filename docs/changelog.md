@@ -15,6 +15,12 @@ releases.
 This page records notable changes for released versions. Add unreleased entries
 here while preparing a release, then move them under the final version heading.
 
+## Unreleased
+
+- Require Python 3.11 or newer; drop Python 3.10 support.
+- Simplify Python support configuration and use standard-library `Self` for
+  fluent APIs and source-map factories.
+
 ## 0.15.3
 
 Released **Oct 19, 2026**.

@@ -7,7 +7,7 @@ authors = [
     { name = "Hsiaoming Yang", email = "me@lepture.com" }
 ]
 license = "BSD-3-Clause"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = []
 keywords = [
     "commonmark",
@@ -24,7 +24,6 @@ classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -72,10 +71,10 @@ benchmark = [
     "mistune>=3.1.4",
 ]
 docs = [
-    "sphinx; python_version >= '3.11'",
-    "shibuya; python_version >= '3.11'",
-    "sphinx-design; python_version >= '3.11'",
-    "sphinx-iconify; python_version >= '3.11'",
+    "sphinx",
+    "shibuya",
+    "sphinx-design",
+    "sphinx-iconify",
 ]
 lint = [
     "mypy>=2.3.0",
@@ -93,7 +92,7 @@ test = [
 testpaths = ["tests"]
 
 [tool.ruff]
-target-version = "py310"
+target-version = "py311"
 line-length = 120
 
 [tool.ruff.lint]
@@ -112,7 +111,7 @@ skip-magic-trailing-comma = true
 
 [tool.mypy]
 strict = true
-python_version = "3.10"
+python_version = "3.11"
 files = ["src/wenmode"]
 show_error_codes = true
 pretty = true

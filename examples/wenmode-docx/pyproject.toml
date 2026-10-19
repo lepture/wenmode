@@ -3,7 +3,7 @@ name = "wenmode-docx"
 version = "0.1.0"
 description = "Example Markdown to DOCX converter built with Wenmode and python-docx."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "python-docx",
     "wenmode",

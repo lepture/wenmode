@@ -3,7 +3,7 @@ from __future__ import annotations
 from bisect import bisect_left
 from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Protocol, cast
+from typing import TYPE_CHECKING, Protocol, Self, cast
 
 from wenmode.nodes import Position
 
@@ -68,11 +68,11 @@ class SourceMap:
         self._segment_ends = segment_ends
 
     @classmethod
-    def contiguous(cls, text: str, offset: int) -> SourceMap:
+    def contiguous(cls, text: str, offset: int) -> Self:
         return cls(text, [SourceSegment(0, len(text), offset)])
 
     @classmethod
-    def from_parts(cls, parts: list[tuple[str, int]]) -> SourceMap:
+    def from_parts(cls, parts: list[tuple[str, int]]) -> Self:
         if len(parts) == 1:
             text, source_offset = parts[0]
             return cls.contiguous(text, source_offset)

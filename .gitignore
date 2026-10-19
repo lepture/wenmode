@@ -18,4 +18,5 @@ coverage.xml
 
 demo.py
 public/
+plans/
 examples/wenmode-mkdocs/site/

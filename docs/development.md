@@ -33,8 +33,6 @@ uv run --locked --group lint mypy
 
 Build the documentation:
 
-Documentation tooling currently requires Python 3.11+.
-
 ```bash
 uv run --locked --group docs sphinx-build -b dirhtml docs docs/_build/html
 ```

@@ -7,10 +7,10 @@ import tarfile
 import tempfile
 import time
 import urllib.request
+from collections.abc import Callable
 from dataclasses import dataclass
 from importlib.metadata import version
 from pathlib import Path
-from typing import Callable
 
 import commonmark as commonmark_py
 import markdown

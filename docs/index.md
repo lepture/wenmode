@@ -117,7 +117,7 @@ suite, with documented compatibility boundaries.
 :link: compatibility
 :link-type: doc
 
-The package supports Python 3.10 and newer, including current CPython releases
+The package supports Python 3.11 and newer, including current CPython releases
 and PyPy versions covered by the project metadata.
 :::
 ::::

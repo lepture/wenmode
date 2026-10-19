@@ -3,7 +3,7 @@ name = "wenmode-mkdocs"
 version = "0.1.0"
 description = "Example MkDocs plugin that renders Markdown pages through Wenmode."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "mkdocs",
     "wenmode",
