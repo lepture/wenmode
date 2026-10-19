@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 from collections.abc import Callable, Iterable
+from statistics import median
 from typing import Any
 
 from wenmode import Wenmode
@@ -58,10 +59,21 @@ def assert_scales_nearly_linearly(
     slack: float = 0.02,
     positions: bool = False,
 ) -> None:
-    small = parse_time(factory(small_size), rules, plugins, positions=positions)
-    large = parse_time(factory(large_size), rules, plugins, positions=positions)
+    rules, plugins = tuple(rules), tuple(plugins)
+    small_samples: list[float] = []
+    large_samples: list[float] = []
+    measurements = ((factory(small_size), small_samples), (factory(large_size), large_samples))
+    # Fixed alternating pairs reduce isolated pauses and order bias without retries.
+    for sample in range(5):
+        ordered = measurements if sample % 2 == 0 else reversed(measurements)
+        for markdown, samples in ordered:
+            samples.append(parse_time(markdown, rules, plugins, positions=positions))
+    small, large = median(small_samples), median(large_samples)
 
-    assert large < small * ratio + slack
+    assert large < small * ratio + slack, (
+        f'scaling {small_size} -> {large_size}: medians {small:.6f}s -> {large:.6f}s; '
+        f'small samples={small_samples!r}, large samples={large_samples!r}, ratio={ratio}, slack={slack}'
+    )
 
 
 def test_unmatched_link_openers_do_not_rescan_suffixes() -> None:
