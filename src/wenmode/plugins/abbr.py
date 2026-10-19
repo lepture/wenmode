@@ -4,6 +4,7 @@ import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, ClassVar
 
+from wenmode._parser.depth import semantic_container_depth
 from wenmode.nodes import Node, Parent, Position, Text
 from wenmode.renderers import render_node_children
 from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
@@ -70,7 +71,7 @@ class AbbreviationTransform(RootTransform):
         if not abbreviations:
             return
         pattern = re.compile('|'.join(re.escape(label) for label in sorted(abbreviations, key=len, reverse=True)))
-        transform_abbreviations(root, abbreviations, pattern)
+        transform_abbreviations(root, abbreviations, pattern, max_depth=parser.max_container_depth)
 
 
 class AbbreviationRule(Rule):
@@ -116,17 +117,26 @@ def parse_abbreviation_continuation(line: str) -> str | None:
     return text[match.end() :]
 
 
-def transform_abbreviations(node: Parent, definitions: dict[str, AbbreviationState], pattern: re.Pattern[str]) -> None:
+def transform_abbreviations(
+    node: Parent,
+    definitions: dict[str, AbbreviationState],
+    pattern: re.Pattern[str],
+    *,
+    max_depth: int = 20,
+    depth: int = 0,
+) -> None:
     children: list[Node] = []
     changed = False
     for child in node.children:
-        if isinstance(child, Text):
+        if isinstance(child, Text) and depth < max_depth:
             replaced = replace_abbreviations(child, definitions, pattern)
             children.extend(replaced)
             changed = changed or replaced != [child]
         else:
             if isinstance(child, Parent):
-                transform_abbreviations(child, definitions, pattern)
+                transform_abbreviations(
+                    child, definitions, pattern, max_depth=max_depth, depth=depth + semantic_container_depth(child)
+                )
             children.append(child)
     if changed:
         node.children = children

@@ -213,6 +213,11 @@ def _restore_ast_node(data: Mapping[str, Any], context: _RestorationContext, dep
         if not isinstance(node_type, str) or not node_type:
             raise ValueError('AST node must include a non-empty string "type"')
 
+        node_class = context.node_lookup.get(node_type)
+        if node_class is None and context.unknown == 'error':
+            raise ValueError(f'unsupported AST node type: {node_type}')
+        _validate_ast_fields(data, node_class, context)
+
         attrs: dict[str, Any] = {}
         for key, value in data.items():
             if key.startswith('_'):
@@ -239,10 +244,7 @@ def _restore_ast_node(data: Mapping[str, Any], context: _RestorationContext, dep
                 continue
             attrs[key] = _ast_value_from_ast(value, context, depth)
 
-        node_class = context.node_lookup.get(node_type)
         if node_class is None:
-            if context.unknown == 'error':
-                raise ValueError(f'unsupported AST node type: {node_type}')
             node = _generic_node_from_attrs(node_type, attrs)
         else:
             node = _construct_node(node_class, node_type, attrs)
@@ -250,6 +252,46 @@ def _restore_ast_node(data: Mapping[str, Any], context: _RestorationContext, dep
         return node
     finally:
         _leave_container(token, context)
+
+
+def _validate_ast_fields(data: Mapping[str, Any], node_class: type[Node] | None, context: _RestorationContext) -> None:
+    """Reject impossible shallow fields before restoring descendant values."""
+    for key in data:
+        if key.startswith('_'):
+            raise ValueError(f'AST node field "{key}" is private')
+    if node_class is not None:
+        if issubclass(node_class, Literal) and 'value' in data and not isinstance(data['value'], str):
+            raise TypeError('AST literal "value" must be a string')
+        if issubclass(node_class, Heading) and 'depth' in data:
+            depth = data['depth']
+            if type(depth) is not int:
+                raise TypeError('AST heading "depth" must be an integer')
+            if not 1 <= depth <= 6:
+                raise ValueError('AST heading "depth" must be between 1 and 6')
+        if issubclass(node_class, ListNode) and data.get('start') is not None and type(data['start']) is not int:
+            raise TypeError('AST list "start" must be an integer or null')
+
+    metadata = data.get('data')
+    if metadata is not None and not isinstance(metadata, Mapping):
+        raise TypeError('AST node "data" must be a mapping')
+    if (
+        data['type'] in {'html', 'htmlContainer'}
+        and isinstance(metadata, Mapping)
+        and 'escaped' in metadata
+        and not context.allow_internal_metadata
+    ):
+        raise ValueError(
+            f'AST {data["type"]} "data.escaped" is internal metadata; '
+            'pass allow_internal_metadata=True for trusted Wenmode AST data'
+        )
+    if 'children' in data:
+        children = data['children']
+        if not isinstance(children, list):
+            raise TypeError('AST node "children" must be a list')
+        if context.max_nodes is not None and len(children) > context.max_nodes - context.node_count:
+            raise ValueError(f'AST exceeds maximum node count of {context.max_nodes}')
+        if not all(isinstance(child, Mapping) and isinstance(child.get('type'), str) for child in children):
+            raise TypeError('AST node "children" entries must be nodes')
 
 
 def _ast_value_from_ast(value: Any, context: _RestorationContext, depth: int) -> Any:

@@ -16,14 +16,14 @@ from ..._parser.state import BlockState
 from ..._parser.store import StateKey
 from ..references import REFERENCES_KEY, ReferenceDefinition, ReferenceTransform, resolve_state_reference
 from .code import BACKTICK_RUNS, BacktickCache, find_matching_backtick_run
-from .html import EMAIL_RE, HTML_RE, URI_RE
+from .html import EMAIL_RE, URI_RE, html_span_end
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
 
 
 TITLE_BLANK_LINE_RE = re.compile(r'(?:\r\n|\n|\r(?!\n))[ \t]*(?:\r\n|\n|\r(?!\n))')
-ANGLE_SPAN_RE = re.compile(rf'{URI_RE}|{EMAIL_RE}|{HTML_RE}')
+ANGLE_SPAN_RE = re.compile(rf'{URI_RE}|{EMAIL_RE}')
 ClosingBracketCache = dict[int, tuple[str, dict[int, int]]]
 LinkContainmentCache = dict[tuple[int, bool, int, int], tuple[str, list[int], list[int]]]
 DirectDestinationFailureCache = dict[int, tuple[str, int]]
@@ -189,7 +189,9 @@ def closing_bracket_map(text: str, cache: ClosingBracketCache, state: BlockState
 
 
 def build_closing_bracket_map(text: str, state: BlockState | None = None) -> dict[int, int]:
-    backtick_cache = state.store.get(BACKTICK_RUNS) if state is not None else {}
+    if state is None:
+        state = BlockState([])
+    backtick_cache = state.store.get(BACKTICK_RUNS)
     pairs: dict[int, int] = {}
     stack: list[int] = []
     index = 0
@@ -207,7 +209,7 @@ def build_closing_bracket_map(text: str, state: BlockState | None = None) -> dic
                 index += 1
             continue
         if char == '<':
-            angle_end = find_angle_span_end(text, index)
+            angle_end = find_angle_span_end(text, index, state)
             if angle_end is not None:
                 index = angle_end
                 continue
@@ -309,11 +311,12 @@ def invalid_reference_label(label: str) -> bool:
     return False
 
 
-def find_angle_span_end(text: str, start: int) -> int | None:
+def find_angle_span_end(text: str, start: int, state: BlockState | None = None) -> int | None:
     match = ANGLE_SPAN_RE.match(text, start)
-    if match is None:
-        return None
-    return match.end()
+    if match is not None:
+        return match.end()
+    # Preserve the bracket scanner's existing GFM comment grammar.
+    return html_span_end(text, start, state if state is not None else BlockState([]), 'gfm')
 
 
 def parse_direct_destination(text: str, start: int) -> tuple[str, str | None, int] | None:

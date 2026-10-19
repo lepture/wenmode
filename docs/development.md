@@ -103,3 +103,53 @@ When adding or changing a public rule or built-in plugin:
 - Update the reference page with syntax, AST shape, and HTML output.
 - Add or update a recipe when the rule supports a common integration task.
 - Run the strict docs build and docs example tests before release.
+
+
+## Parser grammar and resource boundaries
+
+Validate the grammar before collecting or normalizing a candidate. Prefer a
+normative bound, such as the numeric-reference digit count or reference-label
+length, over a cache for syntax that can already be rejected. Do not add arbitrary
+limits to valid URLs, HTML attributes, or backtick lengths. Successful scans that
+consume their searched span are already bounded by input size; cache failed
+suffix searches or index reusable closers when later candidates can revisit them.
+
+All nested Markdown must use the parser's shared semantic budget. Root content
+starts at depth zero. A content wrapper costs one level; root, paragraph, heading,
+list item, definition term/description, and table row/cell nodes are scaffolding.
+A table itself costs one level. Keep paragraph-interruption decisions outside a
+container's content context. Deferred inline work must retain its origin depth.
+
+The current nested parsing entrypoints are:
+
+| Content | Entry boundary |
+| --- | --- |
+| Blockquotes, lists, alerts, footnotes | Nested block parsing |
+| Container/fenced directives, HTML containers, block spoilers, definition descriptions | Nested block parsing |
+| Declarative block rules with children | Nested block parsing |
+| Links, image alt text, text directives, roles, strikethrough, subscript/superscript | Nested inline parsing |
+| Declarative inline rules, including inline spoilers | Nested inline parsing |
+| Directive labels, definition terms, table cells, shallow list/spoiler content | Explicit nested content context around inline parsing |
+| Emphasis and abbreviation replacement | Shared semantic node policy and remaining budget |
+
+Custom rules should call `Parser.parse_blocks()` and `Parser.parse_inlines()`.
+A block rule parsing a container label directly uses `state.nested_content()`
+around its inline call. Transforms that insert wrappers must carry semantic depth
+and leave existing text unchanged when no level remains. Boundary and exception
+regressions should cover mixed rule types, deferred references, positions, and
+streaming; a separate per-rule quota cannot replace the shared budget.
+
+Cache immutable source identity and the syntax options that affect a result.
+Keep source caches in document state, never on reusable parser/rule instances.
+Block indexes must distinguish nested states and use absolute stream indices;
+discarded lines must not invalidate future pairings. Retain ordinary matched-span
+fast paths. Add deterministic operation counts alongside bounded scaling tests.
+
+Serialized AST restoration has separate structural depth/node budgets. Validate
+known node type, scalar fields, and child shapes before allocating descendants;
+retain cycle checks and custom-node support. Do not impose the Markdown semantic
+budget on restored or trusted custom AST rendering and traversal.
+
+The resource review also considered frontmatter and literal fences (consumed
+once), definition-list and footnote scans, ruby segmentation, and parsed/restored
+AST traversal helpers. They require no additional parser cap or rescan cache.

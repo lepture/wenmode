@@ -47,9 +47,11 @@ class Table(BlockRule):
         if count_indent_from(header_line) >= 4 or count_indent_from(delimiter_line) >= 4 or not has_unescaped_pipe(header_line):
             return None
 
-        header_cells = split_table_row_spans(header_line)
         align = parse_delimiter_row(delimiter_line)
-        if align is None or len(header_cells) != len(align):
+        if align is None:
+            return None
+        header_cells = split_table_row_spans(header_line)
+        if len(header_cells) != len(align):
             return None
 
         header = TableRow(children=parse_cells(parser, header_cells, state, state.index))
@@ -78,14 +80,15 @@ class Table(BlockRule):
 
 def parse_cells(parser: Parser, cells: list[CellSpan], state: BlockState, line_index: int) -> list[Node]:
     parsed: list[Node] = []
-    for raw, start, end in cells:
-        stripped = raw.strip()
-        leading = len(raw) - len(raw.lstrip())
-        source = state.source.line_text(line_index, start + leading, stripped)
-        text, source = unescape_table_pipes(stripped, source)
-        cell = TableCell(children=parser.parse_inlines(text, state, source=source))
-        cell.position = state.source.line_position(line_index, start, end)
-        parsed.append(cell)
+    with state.nested_content():
+        for raw, start, end in cells:
+            stripped = raw.strip()
+            leading = len(raw) - len(raw.lstrip())
+            source = state.source.line_text(line_index, start + leading, stripped)
+            text, source = unescape_table_pipes(stripped, source)
+            cell = TableCell(children=parser.parse_inlines(text, state, source=source))
+            cell.position = state.source.line_position(line_index, start, end)
+            parsed.append(cell)
     return parsed
 
 
@@ -131,24 +134,12 @@ def split_table_row_spans(line: str) -> list[CellSpan]:
     cells: list[CellSpan] = []
     start = value_start
     index = value_start
-    code_marker = ''
     while index < value_end:
         char = original[index]
         if char == '\\':
             index += 2
             continue
-        if char == '`':
-            marker_end = index
-            while marker_end < value_end and original[marker_end] == '`':
-                marker_end += 1
-            marker = original[index:marker_end]
-            if code_marker == marker:
-                code_marker = ''
-            elif not code_marker:
-                code_marker = marker
-            index = marker_end
-            continue
-        if char == '|' and not code_marker:
+        if char == '|':
             cells.append((original[start:index], start, index))
             start = index + 1
         index += 1

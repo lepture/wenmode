@@ -98,7 +98,7 @@ class InlineParser:
             state.push_inline_source(source)
         try:
             while pos < len(text):
-                found = self._find_inline_candidate(text, pos, search_cache)
+                found = self._find_inline_candidate(text, pos, search_cache, state)
 
                 if found is None:
                     nodes.append(text_node(text, pos, len(text), source))
@@ -151,9 +151,9 @@ class InlineParser:
         return None, start
 
     def _find_inline_candidate(
-        self, text: str, pos: int, search_cache: InlineSearchCache
+        self, text: str, pos: int, search_cache: InlineSearchCache, state: BlockState
     ) -> InlineCandidateGroup | None:
-        found = self._search_inline_candidate(text, pos, search_cache)
+        found = self._search_inline_candidate(text, pos, search_cache, state)
         if found is not None:
             limit = found[0]
         else:
@@ -178,7 +178,7 @@ class InlineParser:
         return found
 
     def _search_inline_candidate(
-        self, text: str, pos: int, search_cache: InlineSearchCache
+        self, text: str, pos: int, search_cache: InlineSearchCache, state: BlockState
     ) -> InlineCandidateGroup | None:
         if search_cache.text is text and search_cache.pos <= pos:
             if search_cache.found is None:
@@ -194,10 +194,18 @@ class InlineParser:
             if rule.name in search_cache.candidates:
                 candidate = search_cache.candidates[rule.name]
                 if candidate is not None and candidate.start < pos:
-                    candidate = rule.search_candidate(text, pos)
+                    candidate = (
+                        rule._search_candidate(text, pos, state)
+                        if rule._stateful_search
+                        else rule.search_candidate(text, pos)
+                    )
                     search_cache.candidates[rule.name] = candidate
             else:
-                candidate = rule.search_candidate(text, pos)
+                candidate = (
+                    rule._search_candidate(text, pos, state)
+                    if rule._stateful_search
+                    else rule.search_candidate(text, pos)
+                )
                 search_cache.candidates[rule.name] = candidate
             if candidate is None:
                 continue

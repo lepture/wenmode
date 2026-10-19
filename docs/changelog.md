@@ -17,6 +17,18 @@ here while preparing a release, then move them under the final version heading.
 
 ## Unreleased
 
+- Skip impossible autolink searches early and reduce container-depth scope overhead.
+
+- Bound and unify numeric entity decoding; preserve unknown/overlong references,
+  replace invalid scalars, and retain valid Unicode control/noncharacter values.
+- Reject known-invalid serialized AST fields before restoring descendants.
+- Apply the shared nesting budget to table cells and abbreviation transforms.
+- Split GFM table cells on unescaped pipes before parsing inline code.
+- Avoid repeated suffix scans in autolinks, literal-ended HTML, roles, legacy
+  delimiters, and HTML-container pairing while preserving long valid syntax.
+- Accept multiline inline processing instructions/CDATA, CommonMark 0.31
+  ASCII-letter declarations, and valid empty GFM comments.
+
 - Require Python 3.11 or newer; drop Python 3.10 support.
 - Simplify Python support configuration and use standard-library `Self` for
   fluent APIs and source-map factories.

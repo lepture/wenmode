@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import re
+from bisect import bisect_left
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from wenmode.nodes import Link, Node, Text
@@ -8,6 +10,7 @@ from wenmode.utils.cjk import is_cjk_punctuation
 
 from ..._parser.rule_base import InlineCandidate, InlineRule
 from ..._parser.state import BlockState
+from ..._parser.store import StateKey
 from .html import normalize_uri
 
 if TYPE_CHECKING:
@@ -33,6 +36,23 @@ EMAIL_RE = re.compile(
 )
 
 
+ASCII_LOWER = str.maketrans('ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')
+ANGLE_MARK_RE = re.compile(r'[<>]')
+
+
+@dataclass
+class _AutolinkSearch:
+    text: str
+    pos: int = -1
+    url: re.Match[str] | None = None
+    angles: tuple[list[int], list[int]] | None = None
+    lower_text: str | None = None
+    prefixes: list[int] | None = None
+
+
+AUTOLINK_SEARCHES = StateKey[dict[tuple[int, int], _AutolinkSearch]]('wenmode.autolink.searches', lambda: {})
+
+
 class ExtendedAutolink(InlineRule):
     """Parse bare URL and email autolinks.
 
@@ -50,39 +70,78 @@ class ExtendedAutolink(InlineRule):
         super().__init__()
         self.cjk_friendly = cjk_friendly
 
+    def _search_candidate(self, text: str, pos: int, state: BlockState) -> InlineCandidate | None:
+        if type(self) is not ExtendedAutolink and (
+            type(self).search_candidate is not ExtendedAutolink.search_candidate
+            or type(self).search_url is not ExtendedAutolink.search_url
+            or type(self).search_email is not ExtendedAutolink.search_email
+        ):
+            return self.search_candidate(text, pos)
+        # Schemes/www prefixes and email candidates require one of these characters.
+        if pos == 0 and ':' not in text and '.' not in text and '@' not in text:
+            return None
+        # The parser starts each source at zero; absent syntax needs no document cache.
+        if pos == 0 and find_url_prefix(text, pos) is None and text.find('@', pos) == -1:
+            return None
+        searches = state.store.get(AUTOLINK_SEARCHES)
+        key = (id(text), id(self))
+        cache = searches.get(key)
+        if cache is None or cache.text is not text:
+            if pos != 0 and find_url_prefix(text, pos) is None and text.find('@', pos) == -1:
+                return None
+            cache = _AutolinkSearch(text)
+            searches[key] = cache
+        if pos < cache.pos:
+            cache.prefixes = None
+        if cache.pos < 0 or pos < cache.pos or (cache.url is not None and pos > cache.url.start()):
+            cache.url = self._search_url(text, pos, cache)
+            cache.pos = pos
+        return self._select_candidate(text, pos, cache.url)
+
     def search_candidate(self, text: str, pos: int = 0) -> InlineCandidate | None:
         url_match = self.search_url(text, pos)
         email_match = self.search_email(text, pos)
-        if email_match is None:
-            if url_match is None:
-                return None
-            return InlineCandidate(url_match.start(), url_match)
-        if url_match is None or email_match.start() < url_match.start():
+        if email_match is not None and (url_match is None or email_match.start() < url_match.start()):
             return InlineCandidate(email_match.start(), email_match)
-        return InlineCandidate(url_match.start(), url_match)
+        return InlineCandidate(url_match.start(), url_match) if url_match is not None else None
+
+    def _select_candidate(self, text: str, pos: int, url_match: re.Match[str] | None) -> InlineCandidate | None:
+        # A local part may begin before a www prefix, so include its whole token.
+        email_match = self._search_email(text, pos, url_match.end() if url_match is not None else None)
+        if email_match is not None and (url_match is None or email_match.start() < url_match.start()):
+            return InlineCandidate(email_match.start(), email_match)
+        if url_match is not None:
+            return InlineCandidate(url_match.start(), url_match)
+        return None
 
     def search_url(self, text: str, pos: int) -> re.Match[str] | None:
-        lower_text = text.lower()
-        start = find_url_prefix(lower_text, pos)
+        return self._search_url(text, pos)
+
+    def _search_url(self, text: str, pos: int, cache: _AutolinkSearch | None = None) -> re.Match[str] | None:
+        start = find_url_prefix(text, pos, cache)
         while start is not None:
-            if is_url_boundary(text, start):
+            if is_autolink_boundary(text, start) and not inside_angle_span(text, start, cache):
                 match = self.compiled.match(text, start)
             else:
                 match = None
             if match is not None:
                 return match
-            start = find_url_prefix(lower_text, start + 1)
+            start = find_url_prefix(text, start + 1, cache)
         return None
 
     def search_email(self, text: str, pos: int) -> re.Match[str] | None:
-        cursor = text.find('@', pos)
+        return self._search_email(text, pos)
+
+    def _search_email(self, text: str, pos: int, end: int | None = None) -> re.Match[str] | None:
+        limit = len(text) if end is None else end
+        cursor = text.find('@', pos, limit)
         while cursor != -1:
             start = email_start(text, cursor)
             if start >= pos and is_email_boundary(text, start):
                 match = self.compiled.match(text, start)
                 if match is not None and is_valid_bare_email_match(text, match):
                     return match
-            cursor = text.find('@', cursor + 1)
+            cursor = text.find('@', cursor + 1, limit)
         return None
 
     def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
@@ -216,12 +275,45 @@ def is_valid_bare_email_match(text: str, match: re.Match[str]) -> bool:
     return match.end() >= len(text) or text[match.end()] not in {'-', '_'}
 
 
-def find_url_prefix(lower_text: str, pos: int) -> int | None:
-    found = -1
-    for prefix in URL_PREFIXES:
-        index = lower_text.find(prefix, pos)
-        if index != -1 and (found == -1 or index < found):
-            found = index
-    if found == -1:
-        return None
-    return found
+def _lower_url_source(text: str) -> str:
+    # ASCII scheme matching must not shift indices after Unicode case expansion.
+    lower = text.lower()
+    return lower if len(lower) == len(text) else text.translate(ASCII_LOWER)
+
+
+def find_url_prefix(text: str, pos: int, cache: _AutolinkSearch | None = None) -> int | None:
+    if cache is None:
+        lower = text.lower() if text.isascii() else _lower_url_source(text)
+        found = -1
+        for prefix in URL_PREFIXES:
+            index = lower.find(prefix, pos)
+            if index != -1 and (found == -1 or index < found):
+                found = index
+        return found if found != -1 else None
+    if cache.prefixes is None:
+        cache.lower_text = _lower_url_source(text)
+        cache.prefixes = [cache.lower_text.find(prefix, pos) for prefix in URL_PREFIXES]
+    else:
+        assert cache.lower_text is not None
+        for index, prefix in enumerate(URL_PREFIXES):
+            if 0 <= cache.prefixes[index] < pos:
+                cache.prefixes[index] = cache.lower_text.find(prefix, pos)
+    found = min((index for index in cache.prefixes if index != -1), default=-1)
+    return found if found != -1 else None
+
+
+def inside_angle_span(text: str, start: int, cache: _AutolinkSearch | None) -> bool:
+    if cache is None:
+        return is_inside_angle_span(text, start)
+    if cache.angles is None:
+        openers: list[int] = []
+        closers: list[int] = []
+        for match in ANGLE_MARK_RE.finditer(text):
+            (openers if match.group() == '<' else closers).append(match.start())
+        cache.angles = openers, closers
+    openers, closers = cache.angles
+    if not openers or not closers or closers[-1] < start:
+        return False
+    opening = bisect_left(openers, start) - 1
+    closing = bisect_left(closers, start) - 1
+    return opening >= 0 and (closing < 0 or openers[opening] > closers[closing])

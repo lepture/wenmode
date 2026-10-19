@@ -10,7 +10,7 @@ ESCAPABLE = r'!"#$%&\'()*+,\-./:;<=>?@\[\\\]^_`{|}~'
 ESCAPABLE_CHARS = set(string.punctuation)
 BACKSLASH_ESCAPE_RE = re.compile(rf'\\([{ESCAPABLE}])')
 WHITESPACE_RE = re.compile(r'\s+')
-CHARACTER_REFERENCE_RE = re.compile(r'&(?:#[xX][0-9A-Fa-f]+|#\d+|[A-Za-z][A-Za-z0-9]{1,31});')
+CHARACTER_REFERENCE_RE = re.compile(r'&(?:#[xX][0-9A-Fa-f]{1,6}|#[0-9]{1,7}|[A-Za-z][A-Za-z0-9]{1,31});')
 MAX_DESTINATION_DEPTH = 20
 BARE_DESTINATION_FAST_RE = re.compile(r'[^ \t\r\n()\\]+')
 
@@ -109,8 +109,8 @@ def character_reference_from_codepoint(codepoint: int, raw: str) -> str:
     if codepoint == 0:
         return '\ufffd'
     if codepoint > 0x10FFFF or 0xD800 <= codepoint <= 0xDFFF:
-        return raw
-    return html.unescape(raw)
+        return '\ufffd'
+    return chr(codepoint)
 
 
 def is_escaped(text: str, index: int) -> bool:

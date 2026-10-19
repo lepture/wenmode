@@ -1,8 +1,16 @@
 from __future__ import annotations
 
+from bisect import bisect_left
 from dataclasses import dataclass
 
+from wenmode._parser.state import BlockState
+from wenmode._parser.store import StateKey
 from wenmode.utils import is_escaped
+
+DELIMITER_POSITIONS = StateKey[dict[tuple[int, str, bool], tuple[str, list[int]]]](
+    'wenmode.delimiter.positions', lambda: {}
+)
+DELIMITER_SPACES = StateKey[dict[tuple[int, bool], tuple[str, list[int]]]]('wenmode.delimiter.spaces', lambda: {})
 
 
 @dataclass(frozen=True, slots=True)
@@ -22,6 +30,7 @@ def find_delimited_span(
     reject_adjacent: bool = False,
     allow_spaces: bool = True,
     allow_escaped_space: bool = False,
+    state: BlockState | None = None,
 ) -> DelimitedSpan | None:
     opener = opening_delimiter(text, start, delimiter, max_run=max_run, reject_adjacent=reject_adjacent)
     if opener is None:
@@ -35,6 +44,7 @@ def find_delimited_span(
         reject_adjacent=reject_adjacent,
         allow_spaces=allow_spaces,
         allow_escaped_space=allow_escaped_space,
+        state=state,
     )
     if close is None or close == value_start:
         return None
@@ -62,12 +72,58 @@ def find_closing_delimiter(
     reject_adjacent: bool,
     allow_spaces: bool,
     allow_escaped_space: bool,
+    state: BlockState | None = None,
 ) -> int | None:
+    if state is not None:
+        cache = state.store.get(DELIMITER_POSITIONS)
+        key = (id(text), delimiter, reject_adjacent)
+        cached = cache.get(key)
+        if cached is None or cached[0] is not text:
+            positions: list[int] = []
+            close = text.find(delimiter)
+            while close != -1:
+                if not is_escaped(text, close) and not (
+                    reject_adjacent and is_part_of_longer_run(text, close, delimiter[0], len(delimiter))
+                ):
+                    positions.append(close)
+                close = text.find(delimiter, close + 1)
+            cache[key] = (text, positions)
+        else:
+            positions = cached[1]
+        index = bisect_left(positions, start)
+        if index == len(positions):
+            return None
+        close = positions[index]
+        if not allow_spaces:
+            spaces_cache = state.store.get(DELIMITER_SPACES)
+            spaces_key = (id(text), allow_escaped_space)
+            spaces = spaces_cache.get(spaces_key)
+            if spaces is None or spaces[0] is not text:
+                rejected = [
+                    index
+                    for index, char in enumerate(text)
+                    if (
+                        (char == ' ' and (index == 0 or text[index - 1] != '\\'))
+                        if allow_escaped_space
+                        else char.isspace()
+                    )
+                ]
+                spaces_cache[spaces_key] = (text, rejected)
+            else:
+                rejected = spaces[1]
+            index = bisect_left(rejected, start)
+            if (allow_escaped_space and start < close and text[start] == ' ') or (
+                index < len(rejected) and rejected[index] < close
+            ):
+                return None
+        return close
     index = start
     while index < len(text):
         close = text.find(delimiter, index)
-        space = first_rejected_space(text, index, close if close != -1 else len(text), allow_escaped_space)
-        if not allow_spaces and space is not None:
+        if (
+            not allow_spaces
+            and first_rejected_space(text, index, close if close != -1 else len(text), allow_escaped_space) is not None
+        ):
             return None
         if close == -1:
             return None

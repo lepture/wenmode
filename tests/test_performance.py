@@ -30,6 +30,7 @@ from wenmode.rules import (
     Link,
     List,
     Rule,
+    Strikethrough,
     Table,
     TextDirective,
     ThematicBreak,
@@ -363,3 +364,18 @@ def test_nested_reference_candidates_reject_lengths_before_copying_source_suffix
     assert_scales_nearly_linearly(
         lambda size: '[' * size + 'a' + ']' * size + '\n\n[x]: /u\n', commonmark(), 4000, 8000
     )
+
+
+def test_repeated_valid_url_email_mixes_scale_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(lambda size: 'https://example.com a@example.com ' * size, github(), 1000, 2000)
+
+
+def test_unclosed_inline_html_literal_families_scale_nearly_linearly() -> None:
+    from wenmode.rules import RawHtml
+
+    for opener in ['<!--', '<?', '<![CDATA[', '<!lower']:
+        assert_scales_nearly_linearly(lambda size: ('x ' + opener + ' open ') * size, [RawHtml], 1000, 2000)
+
+
+def test_escaped_legacy_delimiter_candidates_scale_nearly_linearly() -> None:
+    assert_scales_nearly_linearly(lambda size: r'\~a ' * size, [Strikethrough], 1000, 2000)

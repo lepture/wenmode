@@ -331,6 +331,13 @@ matches the CommonMark preset.
 }
 ```
 
+
+Inline processing instructions and CDATA may span lines. Declarations follow
+CommonMark 0.31's ASCII-letter grammar, including lowercase initial letters.
+The `github` preset uses this declaration grammar while retaining GFM comment
+restrictions. Empty comments (`<!---->`) are valid in both comment styles.
+
+
 ## BackslashEscape
 
 `BackslashEscape` parses backslash escapes for escapable punctuation.
@@ -384,6 +391,13 @@ Output node is `Text`, and its AST is:
   ]
 }
 ```
+
+
+Numeric character references require a semicolon and at most seven decimal or
+six hexadecimal ASCII digits. Zero and invalid scalar values become `U+FFFD`; other
+Unicode scalars retain their value. Unknown names and overlong references remain
+literal, consistently with link destinations, titles, and reference labels.
+
 
 ## HardBreak
 

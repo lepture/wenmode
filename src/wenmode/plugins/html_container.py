@@ -12,7 +12,7 @@ from wenmode.renderers.html import HTMLRenderContext, HTMLRenderer
 from wenmode.renderers.rst import RSTRenderContext, RSTRenderer
 from wenmode.rules import BlockCandidate, BlockRule, Rule
 from wenmode.rules.blocks.html import HtmlBlock
-from wenmode.state import BlockState, SourceCollector
+from wenmode.state import BlockState, SourceCollector, StateKey
 from wenmode.utils import (
     compile_disallowed_html_filter,
     filter_disallowed_html,
@@ -27,6 +27,12 @@ from .types import RendererHandlers
 if TYPE_CHECKING:
     from wenmode import Wenmode
     from wenmode.parser import Parser
+
+
+CONTAINER_PAIRS = StateKey[dict[int, tuple[BlockState, dict[tuple[str, int], int]]]](
+    'wenmode.html_container.pairs', lambda: {}
+)
+CONTAINER_CLOSE_RE = re.compile(r'^[ \t]{0,3}</([A-Za-z][A-Za-z0-9-]*)\s*>[ \t]*(?:\r?\n)?$', re.I)
 
 
 HtmlContainerAttributeValue: TypeAlias = str | bool
@@ -146,22 +152,27 @@ def parse_html_attributes(text: str) -> dict[str, HtmlContainerAttributeValue] |
 
 
 def find_matching_close_index(state: BlockState, name: str) -> int | None:
-    closer = container_closer_re(name)
-    depth = 0
-    index = state.index + 1
+    cache = state.store.get(CONTAINER_PAIRS)
+    cached = cache.get(id(state))
+    if cached is not None and cached[0] is state:
+        return cached[1].get((name, state.index))
+    pairs: dict[tuple[str, int], int] = {}
+    stacks: dict[str, list[int]] = {}
+    index = state.index
     while state.has_index(index):
         line = state.line_at(index)
         opener = parse_container_opener(line)
-        if opener is not None and opener[0] == name:
-            depth += 1
-            index += 1
-            continue
-        if closer.match(line):
-            if depth == 0:
-                return index
-            depth -= 1
+        if opener is not None:
+            stacks.setdefault(opener[0], []).append(index)
+        else:
+            closer = CONTAINER_CLOSE_RE.match(line)
+            if closer is not None:
+                stack = stacks.get(closer.group(1).lower())
+                if stack:
+                    pairs[(closer.group(1).lower(), stack.pop())] = index
         index += 1
-    return None
+    cache[id(state)] = (state, pairs)
+    return pairs.get((name, state.index))
 
 
 def container_closer_re(name: str) -> re.Pattern[str]:

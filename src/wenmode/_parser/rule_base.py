@@ -147,6 +147,11 @@ class InlineRule(Rule):
         self.opener = resolve_opener_attribute(self, opener)
         self.openers = normalize_openers(self.opener)
         self.compiled = re.compile(self.pattern if self.pattern is not None else r'(?!)')
+        self._stateful_search = type(self)._search_candidate is not InlineRule._search_candidate
+
+    def _search_candidate(self, text: str, pos: int, state: BlockState) -> InlineCandidate | None:
+        """Search with document-local state; ordinary custom rules keep their API."""
+        return self.search_candidate(text, pos)
 
     def search_candidate(self, text: str, pos: int = 0) -> InlineCandidate | None:
         """Return the first candidate at or after ``pos`` in immutable source text.

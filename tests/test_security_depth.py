@@ -9,7 +9,16 @@ from wenmode.presets import commonmark, github, streaming
 from wenmode.rules import BlockCandidate, BlockRule, ContainerDirective, InlineCandidate, InlineRule, TextDirective
 from wenmode.state import BlockState
 
-SCAFFOLDING = {'root', 'paragraph', 'heading', 'listItem', 'definitionTerm', 'definitionDescription'}
+SCAFFOLDING = {
+    'root',
+    'paragraph',
+    'heading',
+    'listItem',
+    'definitionTerm',
+    'definitionDescription',
+    'tableRow',
+    'tableCell',
+}
 
 
 def content_depth(node: Node) -> int:
@@ -201,3 +210,55 @@ def test_deferred_dispatch_keeps_the_resolving_state_depth_floor() -> None:
     assert nodes == [Text(value='[a](/u)')]
     assert state._deferred.active_depth is None
     assert not state._deferred.in_inline
+
+
+@pytest.mark.parametrize('limit', [0, 1, 2, 3, 20])
+@pytest.mark.parametrize('positions', [False, True])
+def test_tables_and_abbreviation_transforms_share_the_semantic_budget(limit: int, positions: bool) -> None:
+    from wenmode.plugins import abbr
+
+    app = Wenmode(github(), positions=positions).use(abbr)
+    app.parser.max_container_depth = limit
+    markdown = '*[HTML]: HyperText\n\n| *HTML* | HTML |\n| --- | --- |\n| HTML | **HTML** |\n\n> HTML\n'
+    root = app.parse(markdown)
+    stack = [(root, 0)]
+    while stack:
+        node, depth = stack.pop()
+        depth += int(isinstance(node, Parent) and node.type not in SCAFFOLDING)
+        assert depth <= limit
+        if isinstance(node, Parent):
+            stack.extend((child, depth) for child in node.children)
+    assert app.parse(iter(markdown.splitlines(keepends=True))).to_ast() == root.to_ast()
+
+
+def test_streaming_table_cells_keep_the_table_origin_depth_and_positions() -> None:
+    app = Wenmode(streaming(), positions=True)
+    app.parser.max_container_depth = 1
+    markdown = '| *a* |\n| --- |\n| *b* |\n'
+    root = app.parse(markdown)
+    assert root.children[0].children[0].children[0].children[0].value == '*a*'
+    assert ''.join(app.stream(markdown)) == app.render(markdown)
+
+
+@pytest.mark.parametrize('deferred', [False, True])
+def test_table_cell_failure_restores_shared_depth_and_inline_source(deferred: bool) -> None:
+    from wenmode.rules import Link, Table
+
+    states: list[BlockState] = []
+
+    class Fails(InlineRule):
+        name = 'table_failure'
+        opener = '!'
+
+        def parse(self, parser, text, candidate, state):
+            states.append(state)
+            raise RuntimeError('table failure')
+
+    parser = Parser([Table, Fails, *([Link] if deferred else [])], positions=True)
+    with pytest.raises(RuntimeError, match='table failure'):
+        parser.parse('| ! |\n| --- |\n')
+    state = states[0]
+    assert state.content_depth == state.depth == 0
+    assert state._deferred.active_depth is None
+    assert not state._deferred.in_inline
+    assert state.inline_source_for('!') is None

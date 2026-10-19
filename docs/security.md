@@ -262,3 +262,25 @@ assert html == expected.lstrip()
 The rendered HTML is the same in this simple example because the default
 renderer also escapes raw HTML nodes, but the AST shape is different: without
 `HtmlBlock` and `RawHtml`, the input remains text instead of HTML nodes.
+
+
+## Grammar-first validation
+
+Numeric character references share one decoder across inline text, labels,
+titles, and destinations. Decimal references require 1–7 ASCII digits and
+hexadecimal references 1–6; a semicolon is required. Overlong references and
+unknown entity names remain literal. Zero, surrogate code points, and values
+above Unicode's range become the replacement character. Other valid scalars
+retain their Unicode value without HTML5 control-character remapping.
+
+HTML literal endings and failed role/delimiter searches use document-local
+results; HTML-container pairing distinguishes each nested block state. These
+indexes also apply to malformed source without truncating long valid syntax.
+Inline HTML declarations follow CommonMark 0.31's ASCII-letter grammar, including
+in the `github` preset; that preset retains GFM's stricter comment grammar.
+
+Abbreviation transforms and table-cell parsing share the Markdown semantic
+budget. Definition terms/descriptions and table rows/cells are scaffolding;
+their enclosing definition list or table consumes the container level. AST
+restoration rejects known-invalid node shapes before restoring descendants and
+uses the separate structural budgets described above.

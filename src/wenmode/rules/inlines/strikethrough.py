@@ -36,7 +36,7 @@ class Strikethrough(InlineRule):
         start = candidate.start
         if not self.allow_single_tilde and not text.startswith('~~', start):
             return None, start
-        parsed = find_delimited_span(text, start, '~', max_run=2, reject_adjacent=True)
+        parsed = find_delimited_span(text, start, '~', max_run=2, reject_adjacent=True, state=state)
         if parsed is None:
             return None, start
 

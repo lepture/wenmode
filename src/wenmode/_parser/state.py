@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Iterator
-from contextlib import contextmanager
 from dataclasses import dataclass, field
+from types import TracebackType
 
 from wenmode.nodes import Node
 
@@ -101,6 +101,28 @@ class _DeferredInlineState:
     in_inline: bool = False
 
 
+class _NestedContent:
+    __slots__ = ('_state', '_previous_depth', '_previous_inline')
+
+    def __init__(self, state: BlockState) -> None:
+        self._state = state
+        self._previous_depth: int | None = None
+        self._previous_inline = False
+
+    def __enter__(self) -> None:
+        # Scope construction may precede other nesting changes.
+        state = self._state
+        context = state._deferred
+        self._previous_depth, self._previous_inline = context.active_depth, context.in_inline
+        context.active_depth, context.in_inline = state.content_depth + 1, False
+
+    def __exit__(
+        self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: TracebackType | None
+    ) -> None:
+        context = self._state._deferred
+        context.active_depth, context.in_inline = self._previous_depth, self._previous_inline
+
+
 @dataclass
 class BlockState:
     """Mutable state for one block parse.
@@ -184,16 +206,9 @@ class BlockState:
             return self.depth
         return active_depth
 
-    @contextmanager
-    def nested_content(self) -> Iterator[None]:
+    def nested_content(self) -> _NestedContent:
         """Enter container content that does not create a child block state."""
-        context = self._deferred
-        previous_depth, previous_inline = context.active_depth, context.in_inline
-        context.active_depth, context.in_inline = self.content_depth + 1, False
-        try:
-            yield
-        finally:
-            context.active_depth, context.in_inline = previous_depth, previous_inline
+        return _NestedContent(self)
 
     def defer_inline_parse(
         self, nodes: list[Node], text: str, source: SourceMap | None, depth: int | None = None

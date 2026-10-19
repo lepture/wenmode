@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from wenmode.parser import Parser
 
 HTML_OPEN_TAG_RE = re.compile(r'^<([a-z][a-z0-9-]*)', re.I)
-HTML_DECLARATION_RE = re.compile(r'^<![A-Z]')
+HTML_DECLARATION_RE = re.compile(r'^<![A-Za-z]')
 HTML_BLOCK_SCRIPT_STYLE_PATTERN = r'(?i:script(?:\s|>|$)|pre(?:\s|>|$)|style(?:\s|>|$))'
 HTML_BLOCK_TAG_PATTERN = rf'(?i:/?(?:{"|".join(BLOCK_TAGS)})(?:\s|/?>|$))'
 HTML_BLOCK_COMPLETE_OPEN_TAG_PATTERN = (

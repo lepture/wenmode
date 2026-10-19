@@ -459,6 +459,13 @@ Output nodes are `Table`, `TableRow`, and `TableCell`, and their AST is:
 }
 ```
 
+
+GFM table boundaries are determined before inline parsing. Escape every literal
+pipe within a cell, including pipes inside code spans: write `` `a\|b` `` rather
+than `` `a|b` ``. Table rows and cells are structural scaffolding; parsing cell
+content consumes the table's one semantic nesting level.
+
+
 ## Footnote
 
 `Footnote` parses inline footnote references and collects matching footnote

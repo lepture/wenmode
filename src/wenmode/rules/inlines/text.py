@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import html
-import re
 from typing import TYPE_CHECKING
 
 from wenmode.nodes import Break, Node, Text
+from wenmode.utils.text import CHARACTER_REFERENCE_RE, decode_character_references
 
 from ..._parser.rule_base import InlineCandidate, InlineRule
 from ..._parser.state import BlockState
@@ -14,7 +13,6 @@ if TYPE_CHECKING:
 
 
 ESCAPABLE = r'!"#$%&\'()*+,\-./:;<=>?@\[\\\]^_`{|}~'
-NUMERIC_CHARACTER_REFERENCE_RE = re.compile(r'&#(?P<base>[xX]?)(?P<digits>[0-9A-Fa-f]+);')
 
 
 class BackslashEscape(InlineRule):
@@ -47,25 +45,13 @@ class CharacterReference(InlineRule):
     """
 
     name = 'character_reference'
-    pattern = r'&(?:#[xX][0-9A-Fa-f]+|#[0-9]+|[A-Za-z][A-Za-z0-9]{1,31});'
+    pattern = CHARACTER_REFERENCE_RE.pattern
     opener = '&'
 
     def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
         match = candidate.match
         assert match is not None
-        value = match.group(0)
-        numeric = NUMERIC_CHARACTER_REFERENCE_RE.match(value)
-        if numeric is not None:
-            if numeric.group('base'):
-                base = 16
-            else:
-                base = 10
-            codepoint = int(numeric.group('digits'), base)
-            if codepoint == 0:
-                return Text(value='\ufffd', _parse_emphasis=False), match.end()
-            if codepoint > 0x10FFFF or 0xD800 <= codepoint <= 0xDFFF:
-                return Text(value=value, _parse_emphasis=False), match.end()
-        return Text(value=html.unescape(value), _parse_emphasis=False), match.end()
+        return Text(value=decode_character_references(match.group(0)), _parse_emphasis=False), match.end()
 
 
 class HardBreak(InlineRule):

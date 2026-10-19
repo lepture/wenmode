@@ -34,7 +34,7 @@ class SuperscriptRule(InlineRule):
 
     def parse(self, parser: Parser, text: str, candidate: InlineCandidate, state: BlockState) -> tuple[Node | None, int]:
         start = candidate.start
-        span = find_delimited_span(text, start, '^', allow_spaces=False, allow_escaped_space=True)
+        span = find_delimited_span(text, start, '^', allow_spaces=False, allow_escaped_space=True, state=state)
         if span is None:
             return None, start
         value = text[span.value_start : span.value_end].replace('\\ ', ' ')

@@ -197,3 +197,45 @@ def test_state_store_factory_key_error_propagates_without_caching_failure() -> N
             store.get(key)
         assert raised.value is failure
     assert calls == 2
+
+
+def test_nested_content_scopes_measure_depth_when_entered_after_construction() -> None:
+    state = BlockState([], depth=1)
+    outer = state.nested_content()
+    inner = state.nested_content()
+    state.depth = 3
+
+    with outer:
+        assert state.content_depth == 4
+        with inner:
+            assert state.content_depth == 5
+        assert state.content_depth == 4
+    assert state.content_depth == 3
+    assert state._deferred.active_depth is None
+
+
+def test_nested_content_exception_restores_inline_context_and_deferred_origin_depth() -> None:
+    state = BlockState([], defer_inlines=True)
+    scope = state.nested_content()
+    state._deferred.active_depth = 4
+    state._deferred.in_inline = True
+    parser = Parser([Link])
+    parser.max_container_depth = 5
+
+    with pytest.raises(RuntimeError, match='scope failure'):
+        with scope:
+            assert state.content_depth == 5
+            assert not state._deferred.in_inline
+            nodes = parser.parse_inlines('[x](/u)', state)
+            with state.nested_content():
+                assert state.content_depth == 6
+                raise RuntimeError('scope failure')
+    assert state._deferred.active_depth == 4
+    assert state._deferred.in_inline
+    assert len(state._deferred.pending_inlines) == 1
+    assert state._deferred.pending_inlines[0][3] == 5
+    parser._inline_parser.resolve_pending(state)
+    assert [node.to_ast() for node in nodes] == [{'type': 'text', 'value': '[x](/u)'}]
+    assert state._deferred.active_depth == 4
+    assert state._deferred.in_inline
+    assert not state._deferred.inline_sources

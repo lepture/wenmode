@@ -16,6 +16,7 @@ from wenmode.utils.cjk import (
     is_punctuation,
 )
 
+from ..._parser.depth import semantic_container_depth
 from ..._parser.rule_base import InlineCandidate, InlineRule
 from ..._parser.state import BlockState
 
@@ -323,7 +324,7 @@ def _node_content_depth(node: Node) -> int:
     stack = [(node, 0)]
     while stack:
         node, parent_depth = stack.pop()
-        depth = parent_depth + int(isinstance(node, Parent) and node.type not in {'paragraph', 'heading', 'listItem'})
+        depth = parent_depth + semantic_container_depth(node)
         max_depth = max(max_depth, depth)
         if isinstance(node, Parent):
             stack.extend((child, depth) for child in node.children)
