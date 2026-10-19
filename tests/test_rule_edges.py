@@ -261,7 +261,7 @@ def test_image_alt_respects_max_container_depth() -> None:
     app = Wenmode()
     app.parser.max_container_depth = 1
 
-    assert app.render('![![![a](/u)](/v)](/img)\n') == '<p><img src="/img" alt="![a](/u)" /></p>\n'
+    assert app.render('![![![a](/u)](/v)](/img)\n') == '<p><img src="/img" alt="![![a](/u)](/v)" /></p>\n'
 
 
 def test_deep_image_alt_does_not_recurse_unbounded() -> None:

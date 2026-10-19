@@ -17,6 +17,13 @@ here while preparing a release, then move them under the final version heading.
 
 ## Unreleased
 
+- Apply CommonMark label/title constraints and a bare-destination parenthesis
+  limit to stop malformed link and reference scans early.
+- Share one nesting budget across block, inline, and deferred parsing, including
+  emphasis and custom rules. Boundary content remains literal or shallow.
+- Index backtick runs and spoiler closers to avoid repeated suffix scans, and
+  reject line endings in inline spoilers even when trimming whitespace.
+
 - Reduce runtime type construction in parsing, source-position tracking, rendering,
   and setup by using string type arguments in casts.
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from bisect import bisect_left
 from collections.abc import Callable
 from typing import TYPE_CHECKING, cast
@@ -15,6 +16,8 @@ from .._parser.store import StateKey
 if TYPE_CHECKING:
     from wenmode.parser import Parser
 
+LINE_ENDING_RE = re.compile(r'[\r\n]')
+LINE_ENDINGS = StateKey[dict[int, tuple[str, list[int]]]]('wenmode.declarative.line_endings', lambda: {})
 ClosingDelimiterCache = dict[tuple[int, int], tuple[str, object, list[int]]]
 InlineParse = Callable[['Parser', str, int, BlockState], tuple[Node | None, int]]
 DECLARATIVE_CLOSING_DELIMITERS = StateKey[ClosingDelimiterCache]('wenmode.declarative.closing_delimiters', lambda: {})
@@ -178,24 +181,11 @@ class InlineDelimited(DelimitedRule):
         if content_start is None:
             return None, start
 
-        close = text.find(self.closer, content_start)
-        while close != -1:
-            if not self._is_closing_delimiter(text, close):
-                close = text.find(self.closer, close + 1)
-                continue
-
-            stripped = stripped_content_range(text, content_start, close)
-            if stripped is None:
-                close = text.find(self.closer, close + len(self.closer))
-                continue
-
-            value_start, value_end = stripped
-            if has_newline(text, value_start, value_end):
-                return None, start
-
-            node = self.create_node(parser, text, state, value_start, value_end)
-            return node, close + len(self.closer)
-        return None, start
+        content = find_content_range(text, content_start, self, state)
+        if content is None:
+            return None, start
+        close, value_start, value_end = content
+        return self.create_node(parser, text, state, value_start, value_end), close + len(self.closer)
 
     def create_node(self, parser: Parser, text: str, state: BlockState, value_start: int, value_end: int) -> Node:
         value = text[value_start:value_end]
@@ -285,6 +275,8 @@ def find_content_range(text: str, start: int, syntax: DelimitedRule, state: Bloc
     close = find_closing_delimiter(text, start, syntax, state)
     while close != -1:
         value_start, value_end = start, close
+        if not syntax.allow_newline and has_indexed_newline(text, start, close, state):
+            return None
         if syntax.strip_content:
             stripped = stripped_content_range(text, value_start, value_end)
             if stripped is None:
@@ -293,8 +285,6 @@ def find_content_range(text: str, start: int, syntax: DelimitedRule, state: Bloc
             value_start, value_end = stripped
 
         if syntax.reject_empty and value_end == value_start:
-            return None
-        if not syntax.allow_newline and has_newline(text, value_start, value_end):
             return None
         return close, value_start, value_end
     return None
@@ -345,8 +335,16 @@ def _is_delimiter_run_extended(text: str, start: int, delimiter: str) -> bool:
     )
 
 
-def has_newline(text: str, start: int, end: int) -> bool:
-    return '\n' in text[start:end] or '\r' in text[start:end]
+def has_indexed_newline(text: str, start: int, end: int, state: BlockState) -> bool:
+    cache = state.store.get(LINE_ENDINGS)
+    cached = cache.get(id(text))
+    if cached is None or cached[0] is not text:
+        positions = [match.start() for match in LINE_ENDING_RE.finditer(text)]
+        cache[id(text)] = (text, positions)
+    else:
+        positions = cached[1]
+    index = bisect_left(positions, start)
+    return index < len(positions) and positions[index] < end
 
 
 def stripped_content_range(text: str, start: int, end: int) -> tuple[int, int] | None:

@@ -44,8 +44,8 @@ class SourceMap:
         if len(segments) < 2:
             self._direct_slice_offsets = True
             self._contiguous_segments = True
-            self._segment_starts = cast('tuple[int, ...] | None', tuple(segment.start for segment in segments))
-            self._segment_ends = cast('tuple[int, ...] | None', tuple(segment.end for segment in segments))
+            self._segment_starts = cast('tuple[int, ...] | None', (segments[0].start,) if segments else ())
+            self._segment_ends = cast('tuple[int, ...] | None', (segments[0].end,) if segments else ())
             return
         starts = tuple(segment.start for segment in segments)
         ends = tuple(segment.end for segment in segments)
@@ -94,6 +94,11 @@ class SourceMap:
             offset = 0
         elif offset > self._text_length:
             offset = self._text_length
+
+        if len(self.segments) == 1:
+            segment = self.segments[0]
+            if segment.start == 0 and segment.end == self._text_length:
+                return segment.offset + offset
 
         if offset <= self.segments[0].start:
             return self.segments[0].offset

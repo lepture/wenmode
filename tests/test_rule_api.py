@@ -575,7 +575,7 @@ def test_recursive_custom_inline_rule_uses_shared_depth_limit() -> None:
     while isinstance(node, Parent):
         depth += 1
         node = node.children[0]
-    assert depth == parser.max_container_depth + 1
+    assert depth == parser.max_container_depth
     assert isinstance(node, Text)
     assert node.value.startswith('{{')
 
@@ -598,7 +598,7 @@ def test_inline_depth_is_restored_after_rule_failure() -> None:
             return Text(value='parsed'), candidate.start + 1
 
     parser = Parser([FailsOnce()])
-    parser.max_container_depth = 0
+    parser.max_container_depth = 1
     state = BlockState([])
 
     with pytest.raises(RuntimeError, match='expected failure'):

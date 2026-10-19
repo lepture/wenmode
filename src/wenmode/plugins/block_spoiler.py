@@ -39,7 +39,7 @@ class BlockSpoilerRule(BlockRule):
     pattern = r'[ \t]{0,3}>!'
 
     def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> BlockSpoilerNode:
-        if state.depth >= parser.max_container_depth - 1:
+        if state.content_depth >= parser.max_container_depth - 1:
             return BlockSpoilerNode(children=self.parse_shallow(parser, state))
 
         lines: list[str] = []
@@ -68,7 +68,8 @@ class BlockSpoilerRule(BlockRule):
         text = '\n'.join(line for line in lines if line).strip()
         if not text:
             return []
-        return [Paragraph(children=parser.parse_inlines(text, state))]
+        with state.nested_content():
+            return [Paragraph(children=parser.parse_inlines(text, state))]
 
 
 def render_html_block(renderer: HTMLRenderer, node: BlockSpoilerNode, context: HTMLRenderContext) -> str:

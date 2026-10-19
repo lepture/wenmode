@@ -31,9 +31,19 @@ class BlockParser:
     def parse_blocks(self, text: str, parent_state: BlockState, source: SourceMap | None = None) -> list[Node]:
         lines = text.splitlines(keepends=True)
         state = self._create_nested_state(lines, parent_state, source)
-        if parent_state.depth >= self._parser.max_container_depth - 1:
-            return self._parse_shallow_blocks(state)
-        return self.parse_nodes(state)
+        context = state._deferred
+        if not context.in_inline:
+            if state.depth >= self._parser.max_container_depth:
+                return self._parse_shallow_blocks(state)
+            return self.parse_nodes(state)
+        previous_depth, previous_inline = context.active_depth, context.in_inline
+        context.active_depth, context.in_inline = state.depth, False
+        try:
+            if state.depth >= self._parser.max_container_depth:
+                return self._parse_shallow_blocks(state)
+            return self.parse_nodes(state)
+        finally:
+            context.active_depth, context.in_inline = previous_depth, previous_inline
 
     def _create_nested_state(
         self, lines: list[str], parent_state: BlockState, source: SourceMap | None = None
@@ -47,7 +57,7 @@ class BlockParser:
             lines,
             source=source_tracker,
             store=parent_state.store,
-            depth=parent_state.depth + 1,
+            depth=parent_state.content_depth + 1,
             defer_inlines=parent_state.defer_inlines,
             _deferred=parent_state._deferred,
         )
@@ -106,6 +116,9 @@ class BlockParser:
                 return None
 
             start_index = state.index
+            if state.content_depth >= self._parser.max_container_depth:
+                parsed = self._parse_shallow_paragraph(state)
+                return self._with_position(parsed, state, start_index) if self._parser.positions else parsed
             line = state.line
             if interrupts.is_plain_paragraph_start(self._rule_set, line):
                 parsed = self._parse_paragraph(state)

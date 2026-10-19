@@ -51,7 +51,7 @@ def test_failed_reference_titles_do_not_hide_valid_titles_after_blank_line() -> 
 
 
 def test_multiline_reference_title_can_contain_definition_like_lines() -> None:
-    markdown = '[a]: /u (first\n[b]: /v (\nlast)\n\n[a]\n'
+    markdown = '[a]: /u "first\n[b]: /v (\nlast"\n\n[a]\n'
 
     assert Wenmode().render(markdown) == '<p><a href="/u" title="first\n[b]: /v (\nlast">a</a></p>\n'
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 
 from wenmode.nodes import Node
@@ -93,10 +94,11 @@ class StreamLineBuffer:
 
 @dataclass
 class _DeferredInlineState:
-    pending_inlines: list[tuple[list[Node], str, SourceMap | None]] = field(default_factory=list)
+    pending_inlines: list[tuple[list[Node], str, SourceMap | None, int]] = field(default_factory=list)
     pending_inline_callbacks: list[Callable[[], None]] = field(default_factory=list)
     inline_sources: list[SourceMap] = field(default_factory=list)
-    inline_parse_depth: int = 0
+    active_depth: int | None = None
+    in_inline: bool = False
 
 
 @dataclass
@@ -174,11 +176,36 @@ class BlockState:
         """Return a line by absolute index."""
         return self.lines[index]
 
-    def defer_inline_parse(self, nodes: list[Node], text: str, source: SourceMap | None) -> None:
-        """Queue an inline parse target until document-wide state is ready."""
-        self._deferred.pending_inlines.append((nodes, text, source))
+    @property
+    def content_depth(self) -> int:
+        """Effective semantic depth across block and inline parser transitions."""
+        active_depth = self._deferred.active_depth
+        if active_depth is None or self.depth > active_depth:
+            return self.depth
+        return active_depth
 
-    def take_pending_inlines(self) -> list[tuple[list[Node], str, SourceMap | None]]:
+    @contextmanager
+    def nested_content(self) -> Iterator[None]:
+        """Enter container content that does not create a child block state."""
+        context = self._deferred
+        previous_depth, previous_inline = context.active_depth, context.in_inline
+        context.active_depth, context.in_inline = self.content_depth + 1, False
+        try:
+            yield
+        finally:
+            context.active_depth, context.in_inline = previous_depth, previous_inline
+
+    def defer_inline_parse(
+        self, nodes: list[Node], text: str, source: SourceMap | None, depth: int | None = None
+    ) -> None:
+        """Queue an inline parse target until document-wide state is ready."""
+        if depth is None:
+            depth = self.content_depth
+            if self._deferred.in_inline:
+                depth += 1
+        self._deferred.pending_inlines.append((nodes, text, source, depth))
+
+    def take_pending_inlines(self) -> list[tuple[list[Node], str, SourceMap | None, int]]:
         """Remove and return queued inline parse targets."""
         pending = list(self._deferred.pending_inlines)
         self._deferred.pending_inlines.clear()

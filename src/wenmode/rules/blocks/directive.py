@@ -45,7 +45,8 @@ class LeafDirective(BlockRule):
 
         state.advance()
         if label is not None:
-            children = parser.parse_inlines(label, state)
+            with state.nested_content():
+                children = parser.parse_inlines(label, state)
         else:
             children = []
         return LeafDirectiveNode(name=name, attributes=attributes, children=children)
@@ -91,7 +92,8 @@ class ContainerDirective(BlockRule):
 def directive_label_children(parser: Parser, label: str | None, state: BlockState) -> list[Node]:
     if label is None:
         return []
-    return [Paragraph(children=parser.parse_inlines(label, state), data={'directiveLabel': True})]
+    with state.nested_content():
+        return [Paragraph(children=parser.parse_inlines(label, state), data={'directiveLabel': True})]
 
 
 def parse_leaf_directive_head(line: str) -> str | None:

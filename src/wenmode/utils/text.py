@@ -11,6 +11,7 @@ ESCAPABLE_CHARS = set(string.punctuation)
 BACKSLASH_ESCAPE_RE = re.compile(rf'\\([{ESCAPABLE}])')
 WHITESPACE_RE = re.compile(r'\s+')
 CHARACTER_REFERENCE_RE = re.compile(r'&(?:#[xX][0-9A-Fa-f]+|#\d+|[A-Za-z][A-Za-z0-9]{1,31});')
+MAX_DESTINATION_DEPTH = 20
 BARE_DESTINATION_FAST_RE = re.compile(r'[^ \t\r\n()\\]+')
 
 
@@ -71,6 +72,8 @@ def parse_bare_destination_result(text: str, start: int) -> tuple[str | None, in
             continue
         if char == '(':
             depth += 1
+            if depth > MAX_DESTINATION_DEPTH:
+                return None, start, None
         elif char == ')':
             has_closing_paren = True
             if depth == 0:

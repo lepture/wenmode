@@ -835,12 +835,12 @@
     "html": "<p><span class=\"spoiler\">!&lt;a</span></p>\n"
   },
   {
-    "name": "inline spoiler allows indented newline before closer",
+    "name": "inline spoiler rejects indented newline before closer",
     "rules": [
       "inline_spoiler"
     ],
     "markdown": ">!a\n !<\n",
-    "html": "<p><span class=\"spoiler\">a</span></p>\n"
+    "html": "<p>&gt;!a\n!&lt;</p>\n"
   },
   {
     "name": "inline spoiler rejects plain multiline content",

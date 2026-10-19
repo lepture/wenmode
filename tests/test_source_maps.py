@@ -375,3 +375,18 @@ def test_wenmode_iterable_source_positions_use_stream_tracker() -> None:
         ('probe_a', 0, 1),
         ('probe_b', 2, 3),
     ]
+
+
+def test_single_segment_offset_fast_path_clamps_both_source_boundaries() -> None:
+    source = SourceMap.contiguous('abcd', 100)
+    assert [source.source_offset(offset) for offset in [-3, 0, 1, 4, 8]] == [100, 100, 101, 104, 104]
+
+
+def test_single_partial_segment_uses_boundary_mapping_instead_of_contiguous_arithmetic() -> None:
+    source = SourceMap('abcd', [SourceSegment(2, 4, 100)])
+    assert [source.source_offset(offset) for offset in [-3, 0, 1, 2, 3, 4, 8]] == [100, 100, 100, 100, 101, 102, 102]
+
+
+def test_zero_width_single_segment_maps_every_offset_to_its_source_boundary() -> None:
+    for source in [SourceMap.contiguous('', 100), SourceMap('abcd', [SourceSegment(1, 1, 100)])]:
+        assert [source.source_offset(offset) for offset in [-3, 0, 1, 4, 8]] == [100] * 5

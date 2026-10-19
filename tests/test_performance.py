@@ -327,3 +327,39 @@ def test_html_container_nested_same_name_tags_scale_nearly_linearly() -> None:
     assert_scales_nearly_linearly(
         lambda size: '<div>\n' * size + '</div>\n' * size, [], 64, 128, plugins=[html_container]
     )
+
+
+def test_invalid_parenthesized_link_titles_stop_at_nested_openers() -> None:
+    assert_scales_nearly_linearly(lambda size: '[a](u (' * size, commonmark(), 1000, 2000)
+
+
+def test_unbalanced_destinations_with_some_closing_parentheses_stop_at_lexical_limit() -> None:
+    assert_scales_nearly_linearly(lambda size: '[a](()' * size, commonmark(), 1000, 2000)
+
+
+def test_unclosed_reference_labels_stop_at_syntax_or_length_limit() -> None:
+    assert_scales_nearly_linearly(lambda size: '[a\n# h\n' * size, commonmark(), 1000, 2000)
+
+
+def test_unclosed_inline_spoilers_use_shared_closer_index() -> None:
+    assert_scales_nearly_linearly(lambda size: 'x >!a ' * size, [], 4000, 8000, plugins=[inline_spoiler])
+
+
+def test_spoiler_openers_before_cross_line_closer_use_shared_line_index() -> None:
+    assert_scales_nearly_linearly(lambda size: 'x >!a ' * size + '\nlate !<', [], 4000, 8000, plugins=[inline_spoiler])
+
+
+def test_unique_unmatched_backticks_scale_with_source_bytes() -> None:
+    def markdown(size: int) -> str:
+        return 'x ' + 'x '.join('`' * length for length in range(1, size))
+
+    # Doubling the number of distinct lengths quadruples the input bytes.
+    small_source, large_source = markdown(800), markdown(1600)
+    byte_ratio = len(large_source.encode()) / len(small_source.encode())
+    assert_scales_nearly_linearly(markdown, commonmark(), 800, 1600, ratio=byte_ratio * 1.5)
+
+
+def test_nested_reference_candidates_reject_lengths_before_copying_source_suffixes() -> None:
+    assert_scales_nearly_linearly(
+        lambda size: '[' * size + 'a' + ']' * size + '\n\n[x]: /u\n', commonmark(), 4000, 8000
+    )

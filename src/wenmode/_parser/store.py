@@ -35,9 +35,13 @@ class StateStore:
         :param key: State key to read.
         :returns: Stored value for this parse.
         """
-        if key.name not in self._values:
-            self._values[key.name] = key.factory()
-        return cast(T, self._values[key.name])
+        try:
+            return cast(T, self._values[key.name])
+        except KeyError:
+            pass
+        value = key.factory()
+        self._values[key.name] = value
+        return value
 
     def set(self, key: StateKey[T], value: T) -> None:
         """Store a value for a key in this parse."""

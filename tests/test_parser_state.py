@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import re
 
+import pytest
+
 from wenmode import Parser, Wenmode
 from wenmode.nodes import Node, Root
 from wenmode.rules import (
@@ -156,3 +158,42 @@ def test_parser_reuses_footnote_state_per_parse() -> None:
 
     assert 'data-footnote-ref' in app.render('[^one]: note\n\na[^one]\n')
     assert app.render('a[^one]\n') == '<p>a[^one]</p>\n'
+
+
+@pytest.mark.parametrize('initial', [None, False, [], {}])
+def test_state_store_initializes_falsey_values_once_per_store_and_returns_updates(initial: object) -> None:
+    calls = 0
+
+    def factory() -> object:
+        nonlocal calls
+        calls += 1
+        return initial
+
+    store = StateStore()
+    key = StateKey('tests.cached_falsey', factory)
+    assert store.get(key) is initial
+    assert store.get(key) is initial
+    assert calls == 1
+    store.set(key, 'updated')
+    assert store.get(key) == 'updated'
+    assert calls == 1
+    assert StateStore().get(key) is initial
+    assert calls == 2
+
+
+def test_state_store_factory_key_error_propagates_without_caching_failure() -> None:
+    calls = 0
+    failure = KeyError('factory failure')
+
+    def factory() -> int:
+        nonlocal calls
+        calls += 1
+        raise failure
+
+    store = StateStore()
+    key = StateKey('tests.factory_failure', factory)
+    for _ in range(2):
+        with pytest.raises(KeyError, match='factory failure') as raised:
+            store.get(key)
+        assert raised.value is failure
+    assert calls == 2

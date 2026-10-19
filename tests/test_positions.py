@@ -113,12 +113,11 @@ def test_inline_depth_boundary_preserves_literal_position() -> None:
 
     paragraph = app.parse(':x[:x[:x[a]]]\n').children[0]
     outer = paragraph.children[0]
-    inner = outer.children[0]
-    literal = inner.children[0]
+    literal = outer.children[0]
 
     assert isinstance(literal, Text)
-    assert literal.value == ':x[a]'
-    assert literal.position == Position(6, 11)
+    assert literal.value == ':x[:x[a]]'
+    assert literal.position == Position(3, 12)
 
 
 @pytest.mark.parametrize('preset', [commonmark, github, streaming], ids=lambda preset: preset.__name__)

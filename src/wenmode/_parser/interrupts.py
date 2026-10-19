@@ -81,7 +81,7 @@ def html_block_interrupts_paragraph(line: str) -> bool:
 def container_depth_exceeded(name: str, state: BlockState | None, max_container_depth: int) -> bool:
     if name not in {'blockquote', 'list'} or state is None:
         return False
-    return state.depth >= max_container_depth
+    return state.content_depth >= max_container_depth
 
 
 def is_plain_paragraph_start(rule_set: RuleSet, line: str) -> bool:

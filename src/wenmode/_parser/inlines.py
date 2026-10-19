@@ -37,24 +37,38 @@ class InlineParser:
         self._rule_set = rule_set
 
     def parse(self, text: str, state: BlockState, source: SourceMap | None = None) -> list[Node]:
-        if state.defer_inlines:
-            return self._defer_inline_parse(text, state, source)
-
         inline_source = source if self._parser.positions else None
-        inline_state = state._deferred
-        depth = inline_state.inline_parse_depth
-        if depth > 0 and depth > self._parser.max_container_depth:
+        context = state._deferred
+        depth = state.content_depth
+        if context.in_inline:
+            depth += 1
+        if state.defer_inlines:
+            return self._defer_inline_parse(text, state, inline_source, depth)
+        if depth >= self._parser.max_container_depth:
             return _literal_inline_nodes(text, inline_source)
-        inline_state.inline_parse_depth = depth + 1
+        previous_depth, previous_inline = context.active_depth, context.in_inline
+        context.active_depth, context.in_inline = depth, True
         try:
-            return self._parse_inline_nodes(text, state, inline_source)
+            return self._parse_inline_nodes(text, state, inline_source, depth)
         finally:
-            inline_state.inline_parse_depth = depth
+            context.active_depth, context.in_inline = previous_depth, previous_inline
 
     def resolve_pending(self, state: BlockState) -> None:
         state.defer_inlines = False
-        for nodes, text, source in state.take_pending_inlines():
-            nodes[:] = self.parse(text, state, source=source)
+        context = state._deferred
+        previous_depth, previous_inline = context.active_depth, context.in_inline
+        try:
+            for nodes, text, source, depth in state.take_pending_inlines():
+                if state.depth > depth:
+                    depth = state.depth
+                inline_source = source if self._parser.positions else None
+                if depth >= self._parser.max_container_depth:
+                    nodes[:] = _literal_inline_nodes(text, inline_source)
+                else:
+                    context.active_depth, context.in_inline = depth, True
+                    nodes[:] = self._parse_inline_nodes(text, state, inline_source, depth)
+        finally:
+            context.active_depth, context.in_inline = previous_depth, previous_inline
         for callback in state.take_pending_inline_callbacks():
             callback()
 
@@ -66,16 +80,16 @@ class InlineParser:
             return None
         return source.slice(start, end)
 
-    def _defer_inline_parse(self, text: str, state: BlockState, source: SourceMap | None) -> list[Node]:
+    def _defer_inline_parse(self, text: str, state: BlockState, source: SourceMap | None, depth: int) -> list[Node]:
         pending_nodes: list[Node] = []
         if self._parser.positions:
             pending_source = source
         else:
             pending_source = None
-        state.defer_inline_parse(pending_nodes, text, pending_source)
+        state.defer_inline_parse(pending_nodes, text, pending_source, depth)
         return pending_nodes
 
-    def _parse_inline_nodes(self, text: str, state: BlockState, source: SourceMap | None) -> list[Node]:
+    def _parse_inline_nodes(self, text: str, state: BlockState, source: SourceMap | None, depth: int) -> list[Node]:
         nodes: list[Node] = []
         search_cache = InlineSearchCache()
         pos = 0
@@ -109,17 +123,17 @@ class InlineParser:
                         node._source_position = source.slice(start, end).position
                     nodes.append(node)
                     pos = end
-            return self._finalize_inline_nodes(nodes)
+            return self._finalize_inline_nodes(nodes, depth)
         finally:
             if source is not None:
                 state.pop_inline_source()
 
-    def _finalize_inline_nodes(self, nodes: list[Node]) -> list[Node]:
+    def _finalize_inline_nodes(self, nodes: list[Node], depth: int) -> list[Node]:
         # Emphasis can split text across noncontiguous source segments, so it
         # must consume each text node's source mapper before adjacent text merges.
         if self._rule_set.emphasis_rule is not None and contains_emphasis_marker(nodes):
             nodes = self._rule_set.emphasis_rule.parse_emphasis_sequence(
-                nodes, max_depth=self._parser.max_container_depth
+                nodes, max_depth=max(0, self._parser.max_container_depth - depth)
             )
         nodes = merge_text(nodes)
         for node in nodes:

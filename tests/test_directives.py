@@ -109,7 +109,7 @@ def test_text_directive_respects_max_container_depth() -> None:
                     {
                         'type': 'textDirective',
                         'children': [
-                            {'type': 'textDirective', 'children': [{'type': 'text', 'value': ':x[a]'}], 'name': 'x'}
+                            {'type': 'text', 'value': ':x[:x[a]]'}
                         ],
                         'name': 'x',
                     }

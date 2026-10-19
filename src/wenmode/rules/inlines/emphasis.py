@@ -168,7 +168,7 @@ class _EmphasisSequence:
 
     Part and delimiter indices never change. Active parts form a forward chain;
     retired parts may remain in the opener index but never become active again.
-    Each part caches its subtree's emphasis depth, updated only when wrapping it.
+    Each part caches its subtree's semantic depth, updated only when wrapping it.
     """
 
     def __init__(self, nodes: list[Node], cjk_friendly: bool, max_depth: int) -> None:
@@ -187,7 +187,7 @@ class _EmphasisSequence:
                     self._append(_Part(node, self.part_count, 0))
                 offset += len(node.value)
             else:
-                depth = _node_emphasis_depth(node) if isinstance(node, Parent) else 0
+                depth = _node_content_depth(node) if isinstance(node, Parent) else 0
                 self._append(_Part(node, self.part_count, depth))
                 offset += len(_PLACEHOLDER_TEXT)
 
@@ -318,12 +318,12 @@ def _text_position(node: TextNode, start: int, end: int) -> Position | None:
     return Position(start=node.position.start + start, end=node.position.start + end)
 
 
-def _node_emphasis_depth(node: Node) -> int:
+def _node_content_depth(node: Node) -> int:
     max_depth = 0
     stack = [(node, 0)]
     while stack:
         node, parent_depth = stack.pop()
-        depth = parent_depth + 1 if isinstance(node, (EmphasisNode, StrongNode)) else parent_depth
+        depth = parent_depth + int(isinstance(node, Parent) and node.type not in {'paragraph', 'heading', 'listItem'})
         max_depth = max(max_depth, depth)
         if isinstance(node, Parent):
             stack.extend((child, depth) for child in node.children)

@@ -52,7 +52,7 @@ class List(BlockRule):
 
     def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> ListNode:
         first = cast('re.Match[str]', MARKER_RE.match(state.line.rstrip('\r\n')))
-        if state.depth >= parser.max_container_depth - 1:
+        if state.content_depth >= parser.max_container_depth - 1:
             return parse_shallow_list(parser, state, first, task=self.task)
 
         style = list_marker_style(first)
@@ -266,7 +266,8 @@ def collect_shallow_item_text(state: BlockState, marker: re.Match[str]) -> str:
 
 def shallow_list_item(parser: Parser, state: BlockState, text: str) -> ListItem:
     if text:
-        children: list[Node] = [Paragraph(children=parser.parse_inlines(text, state))]
+        with state.nested_content():
+            children: list[Node] = [Paragraph(children=parser.parse_inlines(text, state))]
     else:
         children = []
     return ListItem(children=children)

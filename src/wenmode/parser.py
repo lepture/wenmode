@@ -37,6 +37,7 @@ class Parser:
     :param positions: Attach source positions to parsed nodes when ``True``.
     """
 
+    # Root content is depth 0; block and inline containers share this budget.
     max_container_depth = 20
 
     def __init__(self, rules: Iterable[type[Rule] | Rule] | PresetFactory, positions: bool = False) -> None:

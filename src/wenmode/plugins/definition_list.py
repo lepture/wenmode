@@ -78,11 +78,12 @@ def create_terms(parser: Parser, lines: list[str], state: BlockState, start_inde
             continue
         text = line.strip()
         leading = len(line) - len(line.lstrip())
-        term = DefinitionTermNode(
-            children=parser.parse_inlines(
-                text, state, source=state.source.line_text(start_index + offset, leading, text)
+        with state.nested_content():
+            term = DefinitionTermNode(
+                children=parser.parse_inlines(
+                    text, state, source=state.source.line_text(start_index + offset, leading, text)
+                )
             )
-        )
         term.position = state.source.position_between(start_index + offset, start_index + offset + 1)
         terms.append(term)
     return terms

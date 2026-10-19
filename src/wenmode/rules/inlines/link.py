@@ -15,13 +15,14 @@ from ..._parser.source import SourceMap
 from ..._parser.state import BlockState
 from ..._parser.store import StateKey
 from ..references import REFERENCES_KEY, ReferenceDefinition, ReferenceTransform, resolve_state_reference
-from .code import find_matching_backtick_run
+from .code import BACKTICK_RUNS, BacktickCache, find_matching_backtick_run
 from .html import EMAIL_RE, HTML_RE, URI_RE
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
 
 
+TITLE_BLANK_LINE_RE = re.compile(r'(?:\r\n|\n|\r(?!\n))[ \t]*(?:\r\n|\n|\r(?!\n))')
 ANGLE_SPAN_RE = re.compile(rf'{URI_RE}|{EMAIL_RE}|{HTML_RE}')
 ClosingBracketCache = dict[int, tuple[str, dict[int, int]]]
 LinkContainmentCache = dict[tuple[int, bool, int, int], tuple[str, list[int], list[int]]]
@@ -123,7 +124,7 @@ def parse_link_or_image(
     text: str, start: int, image: bool, state: BlockState, references: bool = True
 ) -> tuple[str, str, str | None, int, int, int] | None:
     bracket_cache = state.store.get(CLOSING_BRACKET_CACHE)
-    bracket_pairs = closing_bracket_map(text, bracket_cache)
+    bracket_pairs = closing_bracket_map(text, bracket_cache, state)
     if image:
         label_start = start + 2
     else:
@@ -146,12 +147,11 @@ def parse_link_or_image(
     if not reference_cache:
         return None
 
-    label = text[label_start:label_end]
-    reference_label = label
+    reference_label: str | None = None
     end = after_label
     if after_label < len(text) and text[after_label] == '[':
         ref_end = bracket_pairs.get(after_label + 1)
-        if ref_end is None:
+        if ref_end is None or ref_end - after_label - 1 > 1998:
             return None
         explicit = text[after_label + 1 : ref_end]
         if invalid_reference_label(explicit):
@@ -159,29 +159,37 @@ def parse_link_or_image(
         if explicit:
             reference_label = explicit
         end = ref_end + 1
-    elif invalid_reference_label(reference_label):
-        return None
+    if reference_label is None:
+        # Full references can have arbitrary display text. Shortcut/collapsed
+        # references use that text as their label, so reject impossible lengths
+        # before copying it (CRLF normalization can at most halve the length).
+        if label_end - label_start > 1998:
+            return None
+        reference_label = text[label_start:label_end]
+        if invalid_reference_label(reference_label):
+            return None
 
     reference = resolve_state_reference(state, reference_label)
     if reference is not None:
         if not image and label_contains_link(text, label_start, label_end, state, references):
             return None
-        return label, reference.url, reference.title, end, label_start, label_end
+        return text[label_start:label_end], reference.url, reference.title, end, label_start, label_end
     return None
 
 
-def closing_bracket_map(text: str, cache: ClosingBracketCache) -> dict[int, int]:
+def closing_bracket_map(text: str, cache: ClosingBracketCache, state: BlockState | None = None) -> dict[int, int]:
     key = id(text)
     cached = cache.get(key)
     if cached is not None and cached[0] is text:
         return cached[1]
 
-    pairs = build_closing_bracket_map(text)
+    pairs = build_closing_bracket_map(text, state)
     cache[key] = (text, pairs)
     return pairs
 
 
-def build_closing_bracket_map(text: str) -> dict[int, int]:
+def build_closing_bracket_map(text: str, state: BlockState | None = None) -> dict[int, int]:
+    backtick_cache = state.store.get(BACKTICK_RUNS) if state is not None else {}
     pairs: dict[int, int] = {}
     stack: list[int] = []
     index = 0
@@ -191,7 +199,7 @@ def build_closing_bracket_map(text: str) -> dict[int, int]:
             index += 2
             continue
         if char == '`':
-            code_end = find_code_span_end(text, index)
+            code_end = find_code_span_end(text, index, backtick_cache)
             if code_end is not None:
                 index = code_end
                 continue
@@ -213,7 +221,7 @@ def build_closing_bracket_map(text: str) -> dict[int, int]:
 
 def label_contains_link(text: str, label_start: int, label_end: int, state: BlockState, references: bool) -> bool:
     bracket_cache = state.store.get(CLOSING_BRACKET_CACHE)
-    pairs = closing_bracket_map(text, bracket_cache)
+    pairs = closing_bracket_map(text, bracket_cache, state)
     starts, suffix_min_ends = link_containment_index(text, state, pairs, references)
     index = bisect_left(starts, label_start)
     return index < len(starts) and starts[index] < label_end and suffix_min_ends[index] <= label_end
@@ -266,13 +274,19 @@ def link_destination_or_reference_end(
         ref_end = pairs.get(after_label + 1)
         if ref_end is None:
             return None
+        if ref_end - after_label - 1 > 1998:
+            return None
         explicit = text[after_label + 1 : ref_end]
         if invalid_reference_label(explicit):
             return None
+        if not explicit and label_end - label_start > 1998:
+            return None
         reference_label = explicit or text[label_start:label_end]
-        if resolve_state_reference(state, reference_label) is None:
+        if invalid_reference_label(reference_label) or resolve_state_reference(state, reference_label) is None:
             return None
         return ref_end + 1
+    if label_end - label_start > 1998:
+        return None
     reference_label = text[label_start:label_end]
     if invalid_reference_label(reference_label) or resolve_state_reference(state, reference_label) is None:
         return None
@@ -280,8 +294,12 @@ def link_destination_or_reference_end(
 
 
 def invalid_reference_label(label: str) -> bool:
+    if len(label) - label.count('\r\n') > 999:
+        return True
     index = 0
     while index < len(label):
+        if label[index] in '[]':
+            return True
         if label[index] != '\\':
             index += 1
             continue
@@ -361,10 +379,14 @@ def parse_title(text: str, start: int) -> tuple[str, int] | None:
     escaped = False
     while index < len(text):
         char = text[index]
+        if char in '\r\n' and TITLE_BLANK_LINE_RE.match(text, index):
+            return None
         if escaped:
             escaped = False
         elif char == '\\':
             escaped = True
+        elif opener == '(' and char == '(':
+            return None
         elif char == closer:
             return normalize_label_text(text[start + 1 : index]), index + 1
         index += 1
@@ -385,12 +407,12 @@ def plain_text(nodes: list[Node]) -> str:
     return ''.join(values)
 
 
-def find_code_span_end(text: str, start: int) -> int | None:
+def find_code_span_end(text: str, start: int, cache: BacktickCache | None = None) -> int | None:
     end = start
     while end < len(text) and text[end] == '`':
         end += 1
     marker_length = end - start
-    closer = find_matching_backtick_run(text, end, marker_length)
+    closer = find_matching_backtick_run(text, end, marker_length, cache)
     if closer is None:
         return None
     return closer + marker_length

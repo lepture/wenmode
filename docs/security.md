@@ -58,6 +58,38 @@ Choose the profile that permits only the syntax required by the Markdown source.
 For untrusted content, do not use `escape=False` or `sanitize_urls=False` unless
 a separate sanitizer or policy check has accepted the HTML and URLs.
 
+## Markdown parsing limits
+
+`Parser.max_container_depth` defaults to `20`. Root content has depth `0`;
+entering nested block or inline content consumes one level of the same budget.
+Changing from a block rule to an inline rule, or back again, does not reset it.
+Deferred inline parsing retains the depth at which its content was collected.
+Emphasis also counts existing inline containers when deciding whether another
+wrapper fits. Paragraphs, headings, and list-item scaffolding do not consume an
+additional level.
+
+At the boundary, nested Markdown is preserved as literal text or shallow blocks,
+including source offsets when positions are enabled. A limit of `1` permits one
+container and leaves its content literal; `0` disables inline interpretation and
+recursive container content. Custom rules should use `parse_blocks()` and
+`parse_inlines()` for nested content. A block extension parsing a container label
+without a nested block state can use `with state.nested_content():` around its
+`parse_inlines()` call.
+
+Lexical limits follow [CommonMark 0.31.2](https://spec.commonmark.org/0.31.2/):
+reference labels contain at most 999 characters before escape/entity decoding,
+with line endings normalized. Unescaped opening brackets invalidate a label,
+and the first unescaped closing bracket ends it. Parenthesized link titles reject
+unescaped opening parentheses; titles cannot contain blank lines. Bare link
+and reference destinations permit at most 20 nested unescaped parentheses;
+escaped parentheses do not consume this separate lexical limit. These checks
+stop invalid candidates early without discarding later valid Markdown.
+
+Inline spoilers are single-line syntax, including whitespace around their content.
+Code-span backtick lengths have no arbitrary limit; per-source indexes prevent
+repeated scans for matching runs. Parser caches belong to one document parse,
+so reusing a parser does not retain old source strings.
+
 ## Restoring serialized AST data
 
 Treat mappings passed to `wenmode.ast.from_ast()` as input, even when they

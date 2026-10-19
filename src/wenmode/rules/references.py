@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
@@ -15,11 +14,6 @@ if TYPE_CHECKING:
     from wenmode.parser import Parser
 
     from .._parser.state import BlockState
-
-
-REFERENCE_START_RE = re.compile(r'^[ \t]{0,3}\[(?P<label>(?:\\.|[^\[\]\\\n]){1,999})\]:[ \t]*')
-MULTILINE_LABEL_START_RE = re.compile(r'^[ \t]{0,3}\[[^\]\n]*$')
-MULTILINE_LABEL_END_RE = re.compile(r'^(?P<label_end>[^\]]*)\]:[ \t]*')
 
 
 @dataclass
@@ -57,13 +51,6 @@ class ReferenceDefinition(BlockRule):
     pattern = r'[ \t]{0,3}\[(?!\^)'
 
     def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> None:
-        multiline_label = parse_multiline_label_reference(state, state.index)
-        if multiline_label is not None:
-            next_index, label, url, title = multiline_label
-            state.store.get(REFERENCES_KEY).setdefault(normalize_label(label), ReferenceState(url=url, title=title))
-            state.index = next_index
-            return None
-
         parsed = parse_reference(state, state.index)
         if parsed is None:
             return None
@@ -84,16 +71,13 @@ def resolve_state_reference(state: BlockState, label: str) -> ReferenceState | N
 
 
 def parse_reference(state: BlockState, index: int) -> tuple[int, str, str, str | None] | None:
-    line = state.line_at(index).rstrip('\r\n')
-    match = REFERENCE_START_RE.match(line)
-    if match is None:
+    parsed_label = parse_reference_label(state, index)
+    if parsed_label is None:
         return None
-
-    label = normalize_label_text(match.group('label'))
-    if label.startswith('^'):
+    label, rest, index = parsed_label
+    label = normalize_label_text(label)
+    if label.startswith('^') or not normalize_label(label):
         return None
-    rest = line[match.end() :]
-    index += 1
 
     while rest == '' and state.has_index(index):
         continuation = state.line_at(index).rstrip('\r\n')
@@ -158,6 +142,8 @@ def parse_reference_title(text: str) -> tuple[str, str] | None:
             escaped = False
         elif char == '\\':
             escaped = True
+        elif opener == '(' and char == '(':
+            return None
         elif char == closer:
             return normalize_label_text(text[1:index]), text[index + 1 :]
         index += 1
@@ -192,6 +178,8 @@ def parse_multiline_reference_title(
                 escaped = False
             elif char == '\\':
                 escaped = True
+            elif opener == '(' and char == '(':
+                return None, index
             elif char == closer:
                 title = ''.join(title_parts[:-1])
                 return (normalize_label_text(title), line[position + 1 :]), index
@@ -218,34 +206,37 @@ def parse_multiline_reference_title(
         index += 1
 
 
-def parse_multiline_label_reference(state: BlockState, index: int) -> tuple[int, str, str, str | None] | None:
-    if not MULTILINE_LABEL_START_RE.match(state.line_at(index).rstrip('\r\n')):
+def parse_reference_label(state: BlockState, index: int) -> tuple[str, str, int] | None:
+    """Read at most 999 source characters, stopping at the first unescaped bracket."""
+    line = state.line_at(index).replace('\r\n', '\n').replace('\r', '\n')
+    start = len(line) - len(line.lstrip(' \t'))
+    if start > 3 or not line.startswith('[', start):
         return None
-    label_lines = [state.line_at(index).strip()[1:]]
-    cursor = index + 1
-    while state.has_index(cursor):
-        line = state.line_at(cursor).rstrip('\r\n')
-        end = MULTILINE_LABEL_END_RE.match(line)
-        if end is not None:
-            label_lines.append(end.group('label_end'))
-            label = normalize_label_text('\n'.join(label_lines))
-            if label.startswith('^') or normalize_label(label) == '':
-                return None
-            destination, rest_after_destination = parse_reference_destination(line[end.end() :])
-            if destination is None:
-                return None
-            title: str | None = None
-            remainder = rest_after_destination.strip()
-            if remainder:
-                parsed_title = parse_reference_title(remainder)
-                if parsed_title is None:
+    parts: list[str] = []
+    length = 0
+    position = start + 1
+    escaped = False
+    while True:
+        while position < len(line):
+            char = line[position]
+            if not escaped:
+                if char == '[':
                     return None
-                title, remainder = parsed_title
-                if remainder.strip():
+                if char == ']':
+                    if position + 1 < len(line) and line[position + 1] == ':' and length:
+                        return ''.join(parts), line[position + 2 :].rstrip('\r\n').lstrip(' \t'), index + 1
                     return None
-            return cursor + 1, label, normalize_uri_text(destination), title
-        if line.strip() == '':
+            length += 1
+            if length > 999:
+                return None
+            parts.append(char)
+            escaped = char == '\\' and not escaped
+            position += 1
+        index += 1
+        if not state.has_index(index):
             return None
-        label_lines.append(line)
-        cursor += 1
-    return None
+        line = state.line_at(index).replace('\r\n', '\n').replace('\r', '\n')
+        if not line.strip():
+            return None
+        position = 0
+        escaped = False
