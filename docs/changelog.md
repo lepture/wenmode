@@ -15,7 +15,9 @@ releases.
 This page records notable changes for released versions. Add unreleased entries
 here while preparing a release, then move them under the final version heading.
 
-## Unreleased
+## 0.15.3
+
+Released **Oct 19, 2026**.
 
 - Apply CommonMark label/title constraints and a bare-destination parenthesis
   limit to stop malformed link and reference scans early.
@@ -23,7 +25,8 @@ here while preparing a release, then move them under the final version heading.
   emphasis and custom rules. Boundary content remains literal or shallow.
 - Index backtick runs and spoiler closers to avoid repeated suffix scans, and
   reject line endings in inline spoilers even when trimming whitespace.
-
+- Speed up source-position mapping, deferred inline parsing, and per-parse
+  state cache lookups.
 - Reduce runtime type construction in parsing, source-position tracking, rendering,
   and setup by using string type arguments in casts.
 
