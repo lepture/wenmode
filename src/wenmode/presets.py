@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import warnings
 from collections.abc import Callable, Iterable
-from typing import cast
 
 from .rules import (
     AtxHeading,
@@ -120,29 +118,8 @@ def github() -> tuple[RuleSpec, ...]:
     )
 
 
-def _resolve_builtin_preset(value: Iterable[RuleSpec] | PresetFactory, /, *, stacklevel: int) -> Iterable[RuleSpec]:
-    factory: PresetFactory | None = None
-    if value is commonmark:
-        factory = commonmark
-    elif value is github:
-        factory = github
-    elif value is streaming:
-        factory = streaming
-
-    if factory is None:
-        return cast('Iterable[RuleSpec]', value)
-
-    warnings.warn(
-        f'Passing {factory.__name__} without calling it is deprecated and will be removed in 1.0; '
-        f'use {factory.__name__}() instead.',
-        DeprecationWarning,
-        stacklevel=stacklevel,
-    )
-    return factory()
-
-
 def create_preset(
-    base: Iterable[RuleSpec] | PresetFactory,
+    base: Iterable[RuleSpec],
     *,
     prepend: Iterable[RuleSpec] = (),
     remove: Iterable[RuleSpec] = (),
@@ -153,12 +130,9 @@ def create_preset(
 
     Rules are matched by their stable ``name``. Replacement rules keep the
     position of the rule they replace. Use ``append`` for rules that are not
-    present in the base preset. Passing a built-in preset function without
-    calling it is deprecated; pass the result of ``commonmark()``, ``github()``,
-    or ``streaming()`` instead.
+    present in the base preset. Pass the result of ``commonmark()``,
+    ``github()``, or ``streaming()`` to use a built-in preset.
     """
-    base = _resolve_builtin_preset(base, stacklevel=3)
-
     remove_names = {rule.name for rule in remove}
     replacements = _replacement_map(replace)
     replaced: set[str] = set()

@@ -35,7 +35,7 @@ def parse_args() -> argparse.Namespace:
 
 def build_pypi_readme(markdown: str, title: str = 'Wenmode') -> str:
     badges, body = split_github_header(markdown)
-    rendered_body = Wenmode(github, renderer=RSTRenderer()).render(body).lstrip()
+    rendered_body = Wenmode(github(), renderer=RSTRenderer()).render(body).lstrip()
     return rst_header(title, badges) + rendered_body
 
 

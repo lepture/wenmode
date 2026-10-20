@@ -72,22 +72,10 @@ def test_preset_factories_create_isolated_parser_rules(factory) -> None:
     assert all(first[name] is not second[name] for name in first)
 
 
-def test_wenmode_accepts_deprecated_preset_factory() -> None:
-    with pytest.warns(DeprecationWarning, match=r'use github\(\) instead') as caught:
-        Wenmode(github)
+@pytest.mark.parametrize('factory', [commonmark, github, streaming])
+@pytest.mark.parametrize('consumer', [Wenmode, Parser, create_preset])
+def test_preset_consumers_require_called_factories(consumer, factory) -> None:
+    with pytest.raises(TypeError):
+        consumer(factory)
 
-    assert caught[0].filename == __file__
-
-
-def test_parser_accepts_deprecated_preset_factory() -> None:
-    with pytest.warns(DeprecationWarning, match=r'use commonmark\(\) instead') as caught:
-        Parser(commonmark)
-
-    assert caught[0].filename == __file__
-
-
-def test_create_preset_accepts_deprecated_preset_factory() -> None:
-    with pytest.warns(DeprecationWarning, match=r'use streaming\(\) instead') as caught:
-        create_preset(streaming)
-
-    assert caught[0].filename == __file__
+    consumer(factory())

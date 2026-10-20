@@ -39,15 +39,15 @@ class Result:
 
 
 def commonmark_app(positions: bool) -> Wenmode:
-    return Wenmode(commonmark, positions=positions)
+    return Wenmode(commonmark(), positions=positions)
 
 
 def github_app(positions: bool) -> Wenmode:
-    return Wenmode(github, positions=positions)
+    return Wenmode(github(), positions=positions)
 
 
 def streaming_app(positions: bool) -> Wenmode:
-    return Wenmode(streaming, positions=positions)
+    return Wenmode(streaming(), positions=positions)
 
 
 def directive_app(positions: bool) -> Wenmode:
@@ -55,11 +55,11 @@ def directive_app(positions: bool) -> Wenmode:
 
 
 def block_spoiler_app(positions: bool) -> Wenmode:
-    return Wenmode(commonmark, plugins=[block_spoiler], positions=positions)
+    return Wenmode(commonmark(), plugins=[block_spoiler], positions=positions)
 
 
 def streaming_block_spoiler_app(positions: bool) -> Wenmode:
-    return Wenmode(streaming, plugins=[block_spoiler], positions=positions)
+    return Wenmode(streaming(), plugins=[block_spoiler], positions=positions)
 
 
 def spoiler_app(positions: bool) -> Wenmode:
@@ -79,11 +79,11 @@ def footnote_app(positions: bool) -> Wenmode:
 
 
 def html_container_app(positions: bool) -> Wenmode:
-    return Wenmode(commonmark, plugins=[html_container], positions=positions)
+    return Wenmode(commonmark(), plugins=[html_container], positions=positions)
 
 
 def streaming_html_container_app(positions: bool) -> Wenmode:
-    return Wenmode(streaming, plugins=[html_container], positions=positions)
+    return Wenmode(streaming(), plugins=[html_container], positions=positions)
 
 
 def fenced_directive_app(positions: bool) -> Wenmode:

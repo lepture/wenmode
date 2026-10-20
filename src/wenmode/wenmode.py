@@ -10,7 +10,7 @@ from .nodes import Node, Root
 from .parser import Parser
 from .plugins import RendererHandlers
 from .plugins.types import PluginModule
-from .presets import PresetFactory, _resolve_builtin_preset, commonmark
+from .presets import commonmark
 from .renderers import BaseRenderer, DirectiveHtmlRenderer, HTMLRenderer
 from .rules import Rule
 
@@ -23,8 +23,8 @@ class Wenmode:
     renderer.
 
     :param rules: Rule classes or configured rule instances. When omitted, the
-        CommonMark-style preset is used. Passing a built-in preset function
-        without calling it is deprecated.
+        CommonMark-style preset is used. Call built-in preset functions before
+        passing their rules, for example ``github()``.
     :param renderer: Renderer instance used by :meth:`render` and
         :meth:`render_node`. When omitted, :class:`~wenmode.HTMLRenderer` is
         used.
@@ -37,7 +37,7 @@ class Wenmode:
 
     def __init__(
         self,
-        rules: Iterable[type[Rule] | Rule] | PresetFactory | None = None,
+        rules: Iterable[type[Rule] | Rule] | None = None,
         renderer: BaseRenderer | None = None,
         directives: Iterable[DirectiveHtmlRenderer] = (),
         plugins: Iterable[PluginModule | ModuleType] = (),
@@ -47,7 +47,7 @@ class Wenmode:
         if rules is None:
             parser_rules = commonmark()
         else:
-            parser_rules = _resolve_builtin_preset(rules, stacklevel=3)
+            parser_rules = rules
         self.parser = Parser(parser_rules, positions=positions)
         if renderer is not None:
             self.renderer = renderer
