@@ -15,7 +15,20 @@ releases.
 This page records notable changes for released versions. Add unreleased entries
 here while preparing a release, then move them under the final version heading.
 
-## Unreleased
+## 1.0.0rc1
+
+Released **Oct 20, 2026**.
+
+This is the first release candidate for 1.0. The documented public API and AST
+compatibility policy is described in {ref}`compatibility`.
+
+- Remove deprecated support for passing preset functions directly to `Wenmode`,
+  `Parser`, and `create_preset`. Call the factory instead: `Wenmode(github())`,
+  `Parser(commonmark())`, or `create_preset(streaming())`.
+- Update the PyPI README and maintenance scripts to use called preset factories.
+- Gate publication on linting, type checks, the supported Python/platform test
+  matrices, integration examples, strict documentation builds, README freshness,
+  and an installed-wheel smoke test.
 
 - Skip impossible autolink searches early and reduce container-depth scope overhead.
 
@@ -98,9 +111,10 @@ Released **Aug 31, 2026**.
   temporarily supported with a deprecation warning and will be removed in 1.0.
 - Test Python 3.13 on macOS and Windows, continuously verify the DOCX integration
   example, and align the documented PyPy support with the PyPy 3.11 CI job.
-- Narrow the `wenmode.state` public facade to extension-facing state and source
-  mapping types. Former concrete tracker and streaming implementation exports
-  remain available temporarily with deprecation warnings.
+- Expose extension-facing state and source mapping types through
+  `wenmode.state`. Concrete source tracker implementations are private;
+  `StreamBlockState` and `StreamLineBuffer` remain importable implementation
+  details outside the supported extension API.
 - Apply `from_ast()` depth budgets to nested mappings and lists in node `data`
   and extension fields, rejecting deeply nested metadata before Python's
   recursion limit.

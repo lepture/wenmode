@@ -222,7 +222,7 @@ separately:
    from wenmode import HTMLRenderer, Parser
    from wenmode.presets import commonmark
 
-   parser = Parser(commonmark)
+   parser = Parser(commonmark())
    text = '# Hello'
 
    tree = parser.parse(text)
@@ -237,7 +237,7 @@ task lists, strikethrough, extended autolinks, and footnotes:
    from wenmode import Wenmode
    from wenmode.presets import github
 
-   wen = Wenmode(github)
+   wen = Wenmode(github())
 
 Use built-in plugins for non-standard syntax, document metadata, and rendering
 behavior such as front matter, math, definition lists, abbreviations, spoilers,
@@ -265,8 +265,8 @@ libraries covered by the migration guides:
 
    uv run --locked --group benchmark python scripts/benchmark.py --case all
 
-``wenmode-core`` uses CommonMark-style rules plus pipe tables. It disables raw HTML
-passthrough and URL sanitization to match the other HTML renderers. Mistune,
+``wenmode-core`` uses CommonMark-style rules plus pipe tables. It allows raw HTML
+passthrough and disables URL sanitization to match the other HTML renderers. Mistune,
 Python-Markdown, markdown-it-py, and markdown2 enable table support. Marko uses
 its broader GFM helper. ``commonmark.py`` is a CommonMark-only baseline because it
 does not support pipe tables.
@@ -281,57 +281,60 @@ All benchmark targets are created once before warmup and timed iterations, then
 reused for every render call. Python-Markdown resets the same reusable
 ``Markdown`` instance before each conversion.
 
-Versions used in these snapshots:
+Versions used in this snapshot:
 
-===============  =======
+===============  ========
 Library          Version
-===============  =======
-wenmode          0.14.0
+===============  ========
+wenmode          1.0.0rc1
 mistune          3.3.4
 mistletoe        1.6.0
-python-markdown  3.10.2
+python-markdown  3.10.3
 markdown-it-py   4.2.0
 markdown2        2.5.5
-marko            2.2.3
+marko            2.2.4
 commonmark.py    0.9.2
-===============  =======
+===============  ========
 
-Mean time from one local Python 3.12.9 ``--case all`` run:
+Results from one local Python 3.12.9 run on an Apple M1 Pro (macOS arm64),
+using ``--case all --iterations 5 --warmup 2``. Mean times cover the five timed
+iterations; MB/s uses the best time, and ``vs core`` compares mean times:
 
 =========  =========  ===============  ========  =====  =======
 Case       Bytes      Library          Mean      MB/s   vs core
 =========  =========  ===============  ========  =====  =======
-docs       138,514    wenmode-core     21.05ms   6.91   1.00x
-docs       138,514    wenmode-all      24.74ms   5.81   0.85x
-docs       138,514    mistune          25.26ms   5.54   0.83x
-docs       138,514    mistletoe        53.46ms   2.60   0.39x
-docs       138,514    python-markdown  78.48ms   1.84   0.27x
-docs       138,514    markdown-it-py   42.04ms   3.44   0.50x
-docs       138,514    markdown2        181.37ms  0.78   0.12x
-docs       138,514    marko            173.29ms  0.87   0.12x
-docs       138,514    commonmark.py    115.60ms  1.39   0.18x
-rust-book  1,226,057  wenmode-core     168.42ms  7.54   1.00x
-rust-book  1,226,057  wenmode-all      187.55ms  6.72   0.90x
-rust-book  1,226,057  mistune          224.58ms  5.60   0.75x
-rust-book  1,226,057  mistletoe        468.09ms  2.63   0.36x
-rust-book  1,226,057  python-markdown  588.85ms  2.10   0.29x
-rust-book  1,226,057  markdown-it-py   337.24ms  3.71   0.50x
-rust-book  1,226,057  markdown2        4.117s    0.30   0.04x
-rust-book  1,226,057  marko            1.092s    1.12   0.15x
-rust-book  1,226,057  commonmark.py    9.831s    0.13   0.02x
-progit     502,090    wenmode-core     29.05ms   17.30  1.00x
-progit     502,090    wenmode-all      38.04ms   14.70  0.76x
-progit     502,090    mistune          46.85ms   11.87  0.62x
-progit     502,090    mistletoe        147.81ms  3.53   0.20x
-progit     502,090    python-markdown  139.58ms  3.73   0.21x
-progit     502,090    markdown-it-py   74.58ms   7.73   0.39x
-progit     502,090    markdown2        1.452s    0.35   0.02x
-progit     502,090    marko            331.42ms  1.54   0.09x
-progit     502,090    commonmark.py    338.07ms  1.61   0.09x
+docs       153,629    wenmode-core     24.73ms   6.70   1.00x
+docs       153,629    wenmode-all      34.21ms   4.75   0.72x
+docs       153,629    mistune          29.74ms   5.26   0.83x
+docs       153,629    mistletoe        65.52ms   2.47   0.38x
+docs       153,629    python-markdown  86.46ms   1.81   0.29x
+docs       153,629    markdown-it-py   48.81ms   3.40   0.51x
+docs       153,629    markdown2        209.02ms  0.75   0.12x
+docs       153,629    marko            179.56ms  0.87   0.14x
+docs       153,629    commonmark.py    113.47ms  1.39   0.22x
+rust-book  1,226,057  wenmode-core     168.57ms  7.56   1.00x
+rust-book  1,226,057  wenmode-all      221.57ms  5.64   0.76x
+rust-book  1,226,057  mistune          230.55ms  5.44   0.73x
+rust-book  1,226,057  mistletoe        478.09ms  2.60   0.35x
+rust-book  1,226,057  python-markdown  596.68ms  2.08   0.28x
+rust-book  1,226,057  markdown-it-py   343.31ms  3.62   0.49x
+rust-book  1,226,057  markdown2        4.155s    0.30   0.04x
+rust-book  1,226,057  marko            1.199s    1.03   0.14x
+rust-book  1,226,057  commonmark.py    10.123s   0.12   0.02x
+progit     502,090    wenmode-core     33.45ms   17.16  1.00x
+progit     502,090    wenmode-all      40.22ms   12.53  0.83x
+progit     502,090    mistune          41.95ms   11.99  0.80x
+progit     502,090    mistletoe        149.99ms  3.52   0.22x
+progit     502,090    python-markdown  134.98ms  3.73   0.25x
+progit     502,090    markdown-it-py   72.07ms   7.79   0.46x
+progit     502,090    markdown2        1.437s    0.35   0.02x
+progit     502,090    marko            340.23ms  1.51   0.10x
+progit     502,090    commonmark.py    338.51ms  1.58   0.10x
 =========  =========  ===============  ========  =====  =======
 
-In this run, ``wenmode-all`` remains faster than the other parsers even after
-loading many extra rules that the benchmark inputs mostly do not use.
+In this run, ``wenmode-core`` has the lowest mean time in every case.
+``wenmode-all`` is faster than the other parsers on Rust Book and Pro Git;
+Mistune is faster than ``wenmode-all`` on the docs corpus.
 
 Benchmark numbers depend on hardware, Python version, corpus, and parser
 configuration. See the full methodology in the
@@ -348,7 +351,7 @@ parsed and rendered:
    from wenmode import Wenmode
    from wenmode.presets import streaming
 
-   wen = Wenmode(streaming)
+   wen = Wenmode(streaming())
 
    text = '''
    # Hello

@@ -194,7 +194,7 @@ def make_targets() -> list[Target]:
     # wenmode-all intentionally enables many extra Wenmode plugins that are mostly
     # unused by these corpora, so it measures dispatch overhead under a broad
     # rule set rather than a syntax-equivalent comparison.
-    wenmode_core = Wenmode([Table, *commonmark], HTMLRenderer(escape=False, sanitize_urls=False))
+    wenmode_core = Wenmode([Table, *commonmark()], HTMLRenderer(escape=False, sanitize_urls=False))
     wenmode_all = make_wenmode_all()
 
     mistune_renderer = mistune.create_markdown(renderer='html', plugins=['table', 'speedup'])
@@ -226,7 +226,7 @@ def make_targets() -> list[Target]:
 
 def make_wenmode_all() -> Wenmode:
     wen = Wenmode(
-        [*github, LeafDirective, ContainerDirective, TextDirective],
+        [*github(), LeafDirective, ContainerDirective, TextDirective],
         HTMLRenderer(escape=False, sanitize_urls=False),
         plugins=[
             fenced_directive,

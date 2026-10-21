@@ -58,6 +58,28 @@ uv run --directory examples/wenmode-mkdocs --locked --group test pytest -q
 uv run --directory examples/wenmode-myst --locked --group test pytest -q
 ```
 
+## Release validation
+
+Tag pushes and manual runs of `.github/workflows/pypi.yml` first call the shared
+Test workflow, including the Python and platform matrices and integration
+examples. Publication waits for those checks, a fresh PyPI README, a strict docs
+build, distribution metadata checks, and an installed-wheel smoke test in an
+isolated environment outside the checkout. Tag names must match the package
+version exactly, including prerelease suffixes such as `1.0.0rc1`.
+
+Before tagging a release, regenerate and verify the PyPI README:
+
+```bash
+uv run --locked python scripts/build_pypi_readme.py
+uv run --locked python scripts/build_pypi_readme.py --check
+uv build
+uv run --locked --group release twine check dist/*
+```
+
+Update `src/wenmode/__init__.py`, refresh the root and example lockfiles, and
+move the unreleased changelog entries under the version being released. Follow
+{ref}`compatibility` when deciding whether a change needs a new major version.
+
 ## Documentation workflow
 
 Wenmode's own documentation is built through the local `wenmode_myst` example

@@ -7,8 +7,16 @@ on:
   workflow_dispatch:
 
 jobs:
+  validate:
+    name: validate release
+    uses: ./.github/workflows/test.yml
+    permissions:
+      contents: read
+      pull-requests: read
+
   build:
-    name: build dist files
+    name: build and verify dist files
+    needs: validate
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -23,11 +31,53 @@ jobs:
     - name: install uv
       run: python -m pip install --upgrade uv
 
+    - name: check PyPI README freshness
+      run: uv run --locked python scripts/build_pypi_readme.py --check
+
+    - name: build documentation with warnings as errors
+      run: uv run --locked --group docs sphinx-build -b dirhtml docs "${{ runner.temp }}/wenmode-docs" -W --keep-going
+
+    - name: verify release tag matches package version
+      if: github.ref_type == 'tag'
+      run: |
+        uv run --locked python - <<'PY'
+        import os
+        from wenmode import __version__
+        assert os.environ['GITHUB_REF_NAME'] == __version__, 'release tag must match package version'
+        PY
+
     - name: build dist
       run: uv build
 
     - name: check dist metadata
       run: uv run --locked --group release twine check dist/*
+
+    - name: smoke test installed wheel
+      run: |
+        uv venv "${{ runner.temp }}/wenmode-smoke"
+        uv pip install --python "${{ runner.temp }}/wenmode-smoke/bin/python" dist/*.whl
+        cd "${{ runner.temp }}"
+        "${{ runner.temp }}/wenmode-smoke/bin/python" - <<'PY'
+        import subprocess
+        import sys
+        from importlib.metadata import version
+        from importlib.resources import files
+        from pathlib import Path
+        from wenmode import Wenmode, __version__
+        from wenmode.presets import github
+
+        assert version('wenmode') == __version__
+        assert files('wenmode').joinpath('py.typed').is_file()
+        assert Wenmode().render('# Hello\n') == '<h1>Hello</h1>\n'
+        assert Wenmode(github()).render('~~old~~\n') == '<p><del>old</del></p>\n'
+        cli_version = subprocess.check_output([str(Path(sys.executable).with_name('wenmode')), '--version'], text=True).strip()
+        assert cli_version == f'wenmode {__version__}'
+        result = subprocess.run(
+            [sys.executable, '-m', 'wenmode', 'render', '--preset', 'github'],
+            input='~~old~~\n', text=True, capture_output=True, check=True,
+        )
+        assert result.stdout == '<p><del>old</del></p>\n'
+        PY
 
     - uses: actions/upload-artifact@v7
       with:
