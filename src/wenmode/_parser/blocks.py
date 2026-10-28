@@ -233,7 +233,9 @@ class BlockParser:
                 parsed = self._parse_paragraph_continuation(state, lines, line)
                 if parsed is not None:
                     return lines, parsed
-            if lines and self.is_paragraph_interrupt(line, state):
+            if lines and (
+                self.is_paragraph_interrupt(line, state) or interrupts.table_interrupts_paragraph(self._rule_set, state)
+            ):
                 break
             _append_paragraph_line(state, source, lines, line)
         return lines, None

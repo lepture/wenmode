@@ -10,7 +10,7 @@ from wenmode import HTMLRenderer, MarkdownRenderer, Parser, Wenmode
 from wenmode.directives import Figure
 from wenmode.nodes import Node, Parent, Text
 from wenmode.presets import github
-from wenmode.rules import AtxHeading, InlineCandidate, InlineRule, RawHtml
+from wenmode.rules import AtxHeading, InlineCandidate, InlineRule, RawHtml, Table
 from wenmode.state import BlockState
 
 
@@ -144,6 +144,44 @@ def test_github_table_candidate_does_not_mask_list_interrupt() -> None:
     markdown = 'a\n- b | c\n'
 
     assert Wenmode(github()).render(markdown) == '<p>a</p>\n<ul>\n<li>b | c</li>\n</ul>\n'
+
+
+@pytest.mark.parametrize(
+    ('markdown', 'html'),
+    [
+        (
+            'text\n| a | b |\n|---|---|\n| 1 | 2 |\n',
+            '<p>text</p>\n<table>\n<thead>\n<tr>\n<th>a</th>\n<th>b</th>\n</tr>\n</thead>\n'
+            '<tbody>\n<tr>\n<td>1</td>\n<td>2</td>\n</tr>\n</tbody>\n</table>\n',
+        ),
+        (
+            'one\ntwo\n| a |\n|---|\n',
+            '<p>one\ntwo</p>\n<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>\n',
+        ),
+        ('text\n| a | b |\n|---|\n', '<p>text\n| a | b |\n|---|</p>\n'),
+        (
+            '> text\n> | a |\n> |---|\n',
+            '<blockquote>\n<p>text</p>\n<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>\n</blockquote>\n',
+        ),
+        (
+            '- text\n  | a |\n  |---|\n',
+            '<ul>\n<li>text\n<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>\n</li>\n</ul>\n',
+        ),
+        ('> text\n> | a |\n|---|\n', '<blockquote>\n<p>text\n| a |\n|---|</p>\n</blockquote>\n'),
+        ('- text\n  | a |\n|---|\n', '<ul>\n<li>text\n| a |\n|---|</li>\n</ul>\n'),
+    ],
+)
+def test_github_table_interrupts_paragraph(markdown: str, html: str) -> None:
+    assert Wenmode(github()).render(markdown) == html
+
+
+def test_table_after_paragraph_ends_at_row_without_pipe() -> None:
+    markdown = 'text\n| a |\n|---|\n| 1 |\nprose\n'
+
+    assert Wenmode([Table]).render(markdown) == (
+        '<p>text</p>\n<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n'
+        '<tbody>\n<tr>\n<td>1</td>\n</tr>\n</tbody>\n</table>\n<p>prose</p>\n'
+    )
 
 
 def test_github_overlapping_list_and_table_opener_keeps_table_precedence() -> None:

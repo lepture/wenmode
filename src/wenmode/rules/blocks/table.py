@@ -43,16 +43,10 @@ class Table(BlockRule):
             return None
 
         header_line = state.line.rstrip('\r\n')
-        delimiter_line = state.peek(1).rstrip('\r\n')
-        if count_indent_from(header_line) >= 4 or count_indent_from(delimiter_line) >= 4 or not has_unescaped_pipe(header_line):
+        parsed_header = parse_table_header(header_line, state.peek(1).rstrip('\r\n'))
+        if parsed_header is None:
             return None
-
-        align = parse_delimiter_row(delimiter_line)
-        if align is None:
-            return None
-        header_cells = split_table_row_spans(header_line)
-        if len(header_cells) != len(align):
-            return None
+        header_cells, align = parsed_header
 
         header = TableRow(children=parse_cells(parser, header_cells, state, state.index))
         header.position = state.source.position_between(state.index, state.index + 1)
@@ -78,6 +72,26 @@ class Table(BlockRule):
         return TableNode(children=rows, align=align)
 
 
+def starts_table(state: BlockState) -> bool:
+    """Return whether the current line is a header row followed by a matching delimiter row."""
+    if not state.has(1) or '|' not in state.line:
+        return False
+    return parse_table_header(state.line.rstrip('\r\n'), state.peek(1).rstrip('\r\n')) is not None
+
+
+def parse_table_header(header_line: str, delimiter_line: str) -> tuple[list[CellSpan], list[str | None]] | None:
+    if count_indent_from(header_line) >= 4 or count_indent_from(delimiter_line) >= 4 or not has_unescaped_pipe(header_line):
+        return None
+
+    align = parse_delimiter_row(delimiter_line)
+    if align is None:
+        return None
+    header_cells = split_table_row_spans(header_line)
+    if len(header_cells) != len(align):
+        return None
+    return header_cells, align
+
+
 def parse_cells(parser: Parser, cells: list[CellSpan], state: BlockState, line_index: int) -> list[Node]:
     parsed: list[Node] = []
     with state.nested_content():
@@ -90,6 +104,10 @@ def parse_cells(parser: Parser, cells: list[CellSpan], state: BlockState, line_i
             cell.position = state.source.line_position(line_index, start, end)
             parsed.append(cell)
     return parsed
+
+
+def is_delimiter_row(line: str) -> bool:
+    return parse_delimiter_row(line.rstrip('\r\n')) is not None
 
 
 def parse_delimiter_row(line: str) -> list[str | None] | None:

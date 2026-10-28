@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 import string
 
+from wenmode.rules.blocks.table import Table, starts_table
 from wenmode.utils import is_html_block_tag
 
 from .ruleset import RuleSet
@@ -76,6 +77,15 @@ def html_block_interrupts_paragraph(line: str) -> bool:
     if HTML_TAG_START_RE.match(stripped) and not HTML_PARAGRAPH_INTERRUPT_RE.match(stripped):
         return False
     return True
+
+
+def table_interrupts_paragraph(rule_set: RuleSet, state: BlockState) -> bool:
+    """Return whether a GFM table header row and its delimiter row end the paragraph.
+
+    Only paragraph parsing asks this: as in cmark-gfm, a lazy continuation line or
+    a table body row never starts a table.
+    """
+    return isinstance(rule_set.rules.get('table'), Table) and starts_table(state)
 
 
 def container_depth_exceeded(name: str, state: BlockState | None, max_container_depth: int) -> bool:

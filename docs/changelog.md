@@ -15,6 +15,12 @@ releases.
 This page records notable changes for released versions. Add unreleased entries
 here while preparing a release, then move them under the final version heading.
 
+## Unreleased
+
+- Let a GFM table interrupt a paragraph, as in cmark-gfm: a header row followed
+  by a matching delimiter row ends the paragraph above it. A delimiter row on a
+  lazy continuation line still stays paragraph text.
+
 ## 1.0.0rc1
 
 Released **Oct 20, 2026**.

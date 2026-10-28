@@ -12,6 +12,7 @@ from ..._parser.rule_base import BlockCandidate, BlockRule, Rule
 from ..._parser.source import SourceCollector, SourceMap
 from ..._parser.state import BlockState
 from ._util import starts_nonparagraph_block
+from .table import is_delimiter_row
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
@@ -187,8 +188,10 @@ def collect_list_item(
             state.advance()
             continue
         if is_lazy_list_continuation(parser, state, can_lazy_continue):
-            source.add(state.index, 0, line)
-            lines.append(line)
+            # A lazy line cannot close a table header.
+            text = '    ' + line if is_delimiter_row(line) else line
+            source.add(state.index, 0, text)
+            lines.append(text)
             item_has_nested_marker = item_has_nested_marker or line_has_list_marker(line)
             fence_char, fence_size = update_open_fence(line, fence_char, fence_size)
             state.advance()
