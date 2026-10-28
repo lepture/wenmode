@@ -10,7 +10,7 @@ from wenmode import HTMLRenderer, MarkdownRenderer, Parser, Wenmode
 from wenmode.directives import Figure
 from wenmode.nodes import Node, Parent, Text
 from wenmode.presets import github
-from wenmode.rules import AtxHeading, InlineCandidate, InlineRule, RawHtml, Table
+from wenmode.rules import AtxHeading, Blockquote, InlineCandidate, InlineRule, RawHtml, Table
 from wenmode.state import BlockState
 
 
@@ -192,6 +192,34 @@ def test_github_table_interrupts_paragraph(markdown: str, html: str) -> None:
 )
 def test_lazy_delimiter_row_outside_a_paragraph_is_not_indented_code(markdown: str) -> None:
     assert '<pre>' not in Wenmode(github()).render(markdown)
+
+
+@pytest.mark.parametrize(
+    ('markdown', 'html'),
+    [
+        (
+            '> | a |\n> |---|\n> # h\n> | b |\n|---|\n',
+            '<blockquote>\n<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>\n<h1>h</h1>\n'
+            '<p>| b |\n|---|</p>\n</blockquote>\n',
+        ),
+        (
+            '- | a |\n  |---|\n  # h\n  | b |\n|---|\n',
+            '<ul>\n<li>\n<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>\n<h1>h</h1>\n'
+            '| b |\n|---|</li>\n</ul>\n',
+        ),
+    ],
+)
+def test_lazy_delimiter_row_after_an_ended_table_stays_paragraph_text(markdown: str, html: str) -> None:
+    assert Wenmode(github()).render(markdown) == html
+
+
+def test_lazy_delimiter_row_after_a_table_ended_by_prose_stays_paragraph_text() -> None:
+    markdown = '> | a |\n> |---|\n> prose\n> | b |\n|---|\n'
+
+    assert Wenmode([Blockquote, Table]).render(markdown) == (
+        '<blockquote>\n<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>\n'
+        '<p>prose\n| b |\n|---|</p>\n</blockquote>\n'
+    )
 
 
 def test_table_after_paragraph_ends_at_row_without_pipe() -> None:

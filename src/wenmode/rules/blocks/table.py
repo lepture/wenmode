@@ -115,6 +115,20 @@ def completes_table_header(lines: list[str], line: str) -> bool:
     return bool(lines) and parse_table_header(lines[-1].rstrip('\r\n'), line.rstrip('\r\n')) is not None
 
 
+def table_open_after(parser: Parser, table_open: bool, lines: list[str], line: str) -> bool:
+    """Return whether container content has an open table once ``line`` follows ``lines``."""
+    return completes_table_header(lines, line) or (table_open and continues_table_body(parser, line))
+
+
+def continues_table_body(parser: Parser, line: str) -> bool:
+    """Return whether ``line`` continues an open table, as :meth:`Table.parse` decides."""
+    text = line.rstrip('\r\n')
+    if text.strip() == '' or count_indent_from(text) >= 4 or parser.is_paragraph_interrupt(text):
+        return False
+    table = parser.rules.get('table')
+    return not (isinstance(table, Table) and table.require_body_pipe) or has_unescaped_pipe(text)
+
+
 def parse_delimiter_row(line: str) -> list[str | None] | None:
     align: list[str | None] = []
     for cell, _, _ in split_table_row_spans(line):

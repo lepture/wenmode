@@ -9,7 +9,7 @@ from wenmode.utils import expand_leading_tabs
 from ..._parser.rule_base import BlockCandidate, BlockRule
 from ..._parser.state import BlockState
 from ._util import starts_nonparagraph_block
-from .table import completes_table_header
+from .table import completes_table_header, continues_table_body, table_open_after
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
@@ -54,6 +54,7 @@ class Blockquote(BlockRule):
                     else:
                         prefix = ''
                     text = prefix + line
+                    table_open = table_open and continues_table_body(parser, line)
                     lines.append(text)
                     source.add(state.index, 0, text)
                     lazy_used = True
@@ -62,7 +63,7 @@ class Blockquote(BlockRule):
                 break
             content = expand_leading_tabs(line[quote.end() :], 2)
             text = content
-            table_open = content.strip() != '' and (table_open or completes_table_header(lines, content))
+            table_open = table_open_after(parser, table_open, lines, content)
             lines.append(text)
             source.add(state.index, quote.end(), text)
             paragraph_open = content.strip() != '' and (
