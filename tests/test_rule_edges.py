@@ -169,10 +169,29 @@ def test_github_table_candidate_does_not_mask_list_interrupt() -> None:
         ),
         ('> text\n> | a |\n|---|\n', '<blockquote>\n<p>text\n| a |\n|---|</p>\n</blockquote>\n'),
         ('- text\n  | a |\n|---|\n', '<ul>\n<li>text\n| a |\n|---|</li>\n</ul>\n'),
+        ('x | y\n|---|\n| c |\n|---|\n', '<p>x | y\n|---|\n| c |\n|---|</p>\n'),
+        ('text\n|---|---|\n| a | b |\n|---|---|\n', '<p>text\n|---|---|\n| a | b |\n|---|---|</p>\n'),
+        (
+            'text\n| a |\n    |---|\n| b |\n|---|\n',
+            '<p>text\n| a |\n|---|</p>\n<table>\n<thead>\n<tr>\n<th>b</th>\n</tr>\n</thead>\n</table>\n',
+        ),
+        ('| a | b |\n|---|\n---\n', '<h2>| a | b |\n|---|</h2>\n'),
+        ('text\n| a |\n---\n', '<h2>text\n| a |</h2>\n'),
+        (
+            'text\n| a |\n:---\n',
+            '<p>text</p>\n<table>\n<thead>\n<tr>\n<th align="left">a</th>\n</tr>\n</thead>\n</table>\n',
+        ),
     ],
 )
 def test_github_table_interrupts_paragraph(markdown: str, html: str) -> None:
     assert Wenmode(github()).render(markdown) == html
+
+
+@pytest.mark.parametrize(
+    'markdown', ['> text\n===\n|---|\n', '> | a | b |\n> |---|---|\n|---|---|\n', '- | a |\n  |---|\n|---|\n']
+)
+def test_lazy_delimiter_row_outside_a_paragraph_is_not_indented_code(markdown: str) -> None:
+    assert '<pre>' not in Wenmode(github()).render(markdown)
 
 
 def test_table_after_paragraph_ends_at_row_without_pipe() -> None:

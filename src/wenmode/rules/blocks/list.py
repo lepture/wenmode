@@ -12,7 +12,7 @@ from ..._parser.rule_base import BlockCandidate, BlockRule, Rule
 from ..._parser.source import SourceCollector, SourceMap
 from ..._parser.state import BlockState
 from ._util import starts_nonparagraph_block
-from .table import is_delimiter_row
+from .table import completes_table_header
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
@@ -149,6 +149,7 @@ def collect_list_item(
     item_has_nested_marker = line_has_list_marker(first_line)
     fence_char, fence_size = update_open_fence(first_line, '', 0)
     can_lazy_continue = first_line.strip() != '' and not starts_nonparagraph_block(parser, first_line)
+    table_open = False
 
     while not state.done:
         line = state.line
@@ -170,10 +171,12 @@ def collect_list_item(
             )
             if consumed:
                 can_lazy_continue = False
+                table_open = False
                 continue
             break
         if has_continuation_indent(line, content_indent):
             text = strip_continuation_indent(line, content_indent)
+            table_open = table_open or completes_table_header(lines, text)
             source.add(state.index, continuation_source_offset(line, content_indent), text)
             lines.append(text)
             item_has_nested_marker = item_has_nested_marker or line_has_list_marker(text)
@@ -189,7 +192,7 @@ def collect_list_item(
             continue
         if is_lazy_list_continuation(parser, state, can_lazy_continue):
             # A lazy line cannot close a table header.
-            text = '    ' + line if is_delimiter_row(line) else line
+            text = '    ' + line if not table_open and completes_table_header(lines, line) else line
             source.add(state.index, 0, text)
             lines.append(text)
             item_has_nested_marker = item_has_nested_marker or line_has_list_marker(line)

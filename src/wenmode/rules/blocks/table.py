@@ -110,6 +110,11 @@ def is_delimiter_row(line: str) -> bool:
     return parse_delimiter_row(line.rstrip('\r\n')) is not None
 
 
+def completes_table_header(lines: list[str], line: str) -> bool:
+    """Return whether ``line`` is a delimiter row matching the last of ``lines`` as a header row."""
+    return bool(lines) and parse_table_header(lines[-1].rstrip('\r\n'), line.rstrip('\r\n')) is not None
+
+
 def parse_delimiter_row(line: str) -> list[str | None] | None:
     align: list[str | None] = []
     for cell, _, _ in split_table_row_spans(line):

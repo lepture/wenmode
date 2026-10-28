@@ -225,6 +225,7 @@ class BlockParser:
         self, state: BlockState, source: SourceCollector | None = None
     ) -> tuple[list[str], Node | None]:
         lines: list[str] = []
+        table_tried = False
         while not state.done:
             line = state.line
             if line.strip() == '':
@@ -233,8 +234,12 @@ class BlockParser:
                 parsed = self._parse_paragraph_continuation(state, lines, line)
                 if parsed is not None:
                     return lines, parsed
+                # A delimiter row reached here did not match the line above it; as in
+                # cmark-gfm, a paragraph tries to open a table only once.
+                table_tried = table_tried or interrupts.is_table_delimiter_attempt(line)
             if lines and (
-                self.is_paragraph_interrupt(line, state) or interrupts.table_interrupts_paragraph(self._rule_set, state)
+                self.is_paragraph_interrupt(line, state)
+                or (not table_tried and interrupts.table_interrupts_paragraph(self._rule_set, state))
             ):
                 break
             _append_paragraph_line(state, source, lines, line)
