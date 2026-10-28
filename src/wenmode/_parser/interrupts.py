@@ -80,13 +80,17 @@ def html_block_interrupts_paragraph(line: str) -> bool:
     return True
 
 
+def has_table_rule(rule_set: RuleSet) -> bool:
+    return isinstance(rule_set.rules.get('table'), Table)
+
+
 def table_interrupts_paragraph(rule_set: RuleSet, state: BlockState) -> bool:
     """Return whether a GFM table header row and its delimiter row end the paragraph.
 
-    Only paragraph parsing asks this: a lazy continuation line or a table body row
-    never starts a table.
+    Only paragraph parsing asks this, once it knows a table rule is configured: a
+    lazy continuation line or a table body row never starts a table.
     """
-    if not isinstance(rule_set.rules.get('table'), Table) or not starts_table(state):
+    if not starts_table(state):
         return False
     # A setext underline takes precedence over a delimiter row without pipes.
     return 'setext_heading' not in rule_set.rules or SETEXT_DASHES_RE.match(state.peek(1).rstrip('\r\n')) is None

@@ -9,7 +9,7 @@ from tests.plugin_helpers import configured_app
 from wenmode import HTMLRenderer, MarkdownRenderer, Parser, Wenmode
 from wenmode.directives import Figure
 from wenmode.nodes import Node, Parent, Text
-from wenmode.presets import github
+from wenmode.presets import commonmark, github
 from wenmode.rules import AtxHeading, Blockquote, InlineCandidate, InlineRule, RawHtml, Table
 from wenmode.state import BlockState
 
@@ -229,6 +229,17 @@ def test_table_after_paragraph_ends_at_row_without_pipe() -> None:
         '<p>text</p>\n<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n'
         '<tbody>\n<tr>\n<td>1</td>\n</tr>\n</tbody>\n</table>\n<p>prose</p>\n'
     )
+
+
+@pytest.mark.parametrize('markdown', ['> | a |\n|---|\n', '- | a |\n|---|\n'])
+def test_lazy_delimiter_row_without_table_rule_keeps_its_position(markdown: str) -> None:
+    root = Parser(commonmark(), positions=True).parse(markdown).to_ast()
+    container = root['children'][0]
+    paragraph = container['children'][0]
+    if paragraph['type'] != 'paragraph':
+        paragraph = paragraph['children'][0]
+
+    assert paragraph['children'][0]['position']['end'] == {'line': 2, 'column': 6, 'offset': 13}
 
 
 def test_github_overlapping_list_and_table_opener_keeps_table_precedence() -> None:

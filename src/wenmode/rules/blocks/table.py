@@ -16,6 +16,8 @@ if TYPE_CHECKING:
 
 
 DELIMITER_CELL_RE = re.compile(r'^:?-+:?$')
+DELIMITER_ROW_CHARS_RE = re.compile(r'[ \t|:-]+')
+DELIMITER_ROW_START_RE = re.compile(r'\s*[|:-]')
 CellSpan = tuple[str, int, int]
 
 
@@ -80,11 +82,13 @@ def starts_table(state: BlockState) -> bool:
 
 
 def parse_table_header(header_line: str, delimiter_line: str) -> tuple[list[CellSpan], list[str | None]] | None:
-    if count_indent_from(header_line) >= 4 or count_indent_from(delimiter_line) >= 4 or not has_unescaped_pipe(header_line):
-        return None
-
     align = parse_delimiter_row(delimiter_line)
-    if align is None:
+    if (
+        align is None
+        or count_indent_from(header_line) >= 4
+        or count_indent_from(delimiter_line) >= 4
+        or not has_unescaped_pipe(header_line)
+    ):
         return None
     header_cells = split_table_row_spans(header_line)
     if len(header_cells) != len(align):
@@ -106,13 +110,19 @@ def parse_cells(parser: Parser, cells: list[CellSpan], state: BlockState, line_i
     return parsed
 
 
+def has_table_rule(parser: Parser) -> bool:
+    return isinstance(parser.rules.get('table'), Table)
+
+
 def is_delimiter_row(line: str) -> bool:
     return parse_delimiter_row(line.rstrip('\r\n')) is not None
 
 
 def completes_table_header(lines: list[str], line: str) -> bool:
     """Return whether ``line`` is a delimiter row matching the last of ``lines`` as a header row."""
-    return bool(lines) and parse_table_header(lines[-1].rstrip('\r\n'), line.rstrip('\r\n')) is not None
+    if not lines or '-' not in line or DELIMITER_ROW_START_RE.match(line) is None:
+        return False
+    return parse_table_header(lines[-1].rstrip('\r\n'), line.rstrip('\r\n')) is not None
 
 
 def table_open_after(parser: Parser, table_open: bool, lines: list[str], line: str) -> bool:
@@ -130,6 +140,9 @@ def continues_table_body(parser: Parser, line: str) -> bool:
 
 
 def parse_delimiter_row(line: str) -> list[str | None] | None:
+    # Reject most lines before splitting: a delimiter row holds only these characters.
+    if DELIMITER_ROW_CHARS_RE.fullmatch(line.strip()) is None:
+        return None
     align: list[str | None] = []
     for cell, _, _ in split_table_row_spans(line):
         value = cell.strip(' \t')
