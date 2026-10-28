@@ -17,9 +17,11 @@ here while preparing a release, then move them under the final version heading.
 
 ## Unreleased
 
-- Let a GFM table interrupt a paragraph, as in cmark-gfm: a header row followed
-  by a matching delimiter row ends the paragraph above it. A delimiter row on a
-  lazy continuation line still stays paragraph text.
+- Let a GFM table interrupt a paragraph, as GitHub renders it: a header row
+  followed by a matching delimiter row ends the paragraph above it. A paragraph
+  tries this only at its first delimiter row, a setext underline (`---`) still
+  makes a heading, and a delimiter row on a lazy continuation line stays
+  paragraph text.
 
 ## 1.0.0rc1
 

@@ -83,8 +83,8 @@ def html_block_interrupts_paragraph(line: str) -> bool:
 def table_interrupts_paragraph(rule_set: RuleSet, state: BlockState) -> bool:
     """Return whether a GFM table header row and its delimiter row end the paragraph.
 
-    Only paragraph parsing asks this: as in cmark-gfm, a lazy continuation line or
-    a table body row never starts a table.
+    Only paragraph parsing asks this: a lazy continuation line or a table body row
+    never starts a table.
     """
     if not isinstance(rule_set.rules.get('table'), Table) or not starts_table(state):
         return False
@@ -93,7 +93,7 @@ def table_interrupts_paragraph(rule_set: RuleSet, state: BlockState) -> bool:
 
 
 def is_table_delimiter_attempt(line: str) -> bool:
-    """Return whether a paragraph line is a delimiter row that cmark-gfm tries against the line above."""
+    """Return whether a paragraph line is a delimiter row tried against the line above as a table header."""
     return count_indent_from(line) < 4 and is_delimiter_row(line)
 
 

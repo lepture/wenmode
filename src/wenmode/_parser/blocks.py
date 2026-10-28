@@ -234,8 +234,8 @@ class BlockParser:
                 parsed = self._parse_paragraph_continuation(state, lines, line)
                 if parsed is not None:
                     return lines, parsed
-                # A delimiter row reached here did not match the line above it; as in
-                # cmark-gfm, a paragraph tries to open a table only once.
+                # A delimiter row reached here did not match the line above it; a
+                # paragraph tries to open a table only once.
                 table_tried = table_tried or interrupts.is_table_delimiter_attempt(line)
             if lines and (
                 self.is_paragraph_interrupt(line, state)
