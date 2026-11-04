@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 DELIMITER_CELL_RE = re.compile(r'^:?-+:?$')
 DELIMITER_ROW_CHARS_RE = re.compile(r'[ \t|:-]+')
 DELIMITER_ROW_START_RE = re.compile(r'\s*[|:-]')
+SETEXT_DASHES_RE = re.compile(r' {0,3}-+[ \t]*$')
 CellSpan = tuple[str, int, int]
 
 
@@ -72,6 +73,26 @@ class Table(BlockRule):
             state.advance()
 
         return TableNode(children=rows, align=align)
+
+    def interrupts_paragraph(self, parser: Parser, state: BlockState) -> bool:
+        """Return whether a paragraph line and the delimiter row below it start a table.
+
+        Only paragraph parsing asks this: a lazy continuation line or a table body
+        row never starts a table.
+        """
+        if '|' not in state.line or not state.has(1):
+            return False
+        delimiter_line = state.peek(1)
+        if DELIMITER_ROW_START_RE.match(delimiter_line) is None or not starts_table(state):
+            return False
+        # A setext underline takes precedence over a delimiter row without pipes.
+        return 'setext_heading' not in parser.rules or SETEXT_DASHES_RE.match(delimiter_line.rstrip('\r\n')) is None
+
+    def is_delimiter_attempt(self, line: str) -> bool:
+        """Return whether a paragraph line is a delimiter row tried against the line above as a table header."""
+        if '-' not in line or DELIMITER_ROW_START_RE.match(line) is None:
+            return False
+        return count_indent_from(line) < 4 and is_delimiter_row(line)
 
 
 def starts_table(state: BlockState) -> bool:

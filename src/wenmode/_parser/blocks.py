@@ -5,7 +5,6 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, cast
 
 from wenmode.nodes import Node, Paragraph
-from wenmode.rules.blocks.table import DELIMITER_ROW_START_RE
 
 from . import interrupts
 from .ruleset import RuleSet
@@ -25,11 +24,9 @@ class BlockParser:
     def __init__(self, parser: Parser, rule_set: RuleSet) -> None:
         self._parser = parser
         self._rule_set = rule_set
-        self._has_table = interrupts.has_table_rule(rule_set)
 
     def update_rule_set(self, rule_set: RuleSet) -> None:
         self._rule_set = rule_set
-        self._has_table = interrupts.has_table_rule(rule_set)
 
     def parse_blocks(self, text: str, parent_state: BlockState, source: SourceMap | None = None) -> list[Node]:
         lines = text.splitlines(keepends=True)
@@ -228,8 +225,7 @@ class BlockParser:
         self, state: BlockState, source: SourceCollector | None = None
     ) -> tuple[list[str], Node | None]:
         lines: list[str] = []
-        # Without a table rule there is no table to try.
-        table_tried = not self._has_table
+        table = self._rule_set.paragraph_table
         while not state.done:
             line = state.line
             if line.strip() == '':
@@ -238,21 +234,15 @@ class BlockParser:
                 parsed = self._parse_paragraph_continuation(state, lines, line)
                 if parsed is not None:
                     return lines, parsed
-                # A delimiter row reached here did not match the line above it; a
-                # paragraph tries to open a table only once.
-                if not table_tried and '-' in line and DELIMITER_ROW_START_RE.match(line) is not None:
-                    table_tried = interrupts.is_table_delimiter_attempt(line)
-            if lines and (
-                self.is_paragraph_interrupt(line, state)
-                or (
-                    not table_tried
-                    and '|' in line
-                    and state.has(1)
-                    and DELIMITER_ROW_START_RE.match(state.peek(1)) is not None
-                    and interrupts.table_interrupts_paragraph(self._rule_set, state)
-                )
-            ):
+            if lines and self.is_paragraph_interrupt(line, state):
                 break
+            if lines and table is not None:
+                if table.is_delimiter_attempt(line):
+                    # The delimiter row did not match the line above it: a paragraph
+                    # tries to open a table only once.
+                    table = None
+                elif table.interrupts_paragraph(self._parser, state):
+                    break
             _append_paragraph_line(state, source, lines, line)
         return lines, None
 
