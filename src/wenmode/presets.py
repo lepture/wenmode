@@ -69,7 +69,7 @@ def commonmark() -> tuple[RuleSpec, ...]:
 def streaming() -> tuple[RuleSpec, ...]:
     """Create the streaming-compatible rule preset."""
     return (
-        Table(require_body_pipe=False),
+        Table(require_body_pipe=False, interrupt_paragraph=True),
         ThematicBreak,
         FencedCode,
         IndentedCode,
@@ -94,7 +94,7 @@ def streaming() -> tuple[RuleSpec, ...]:
 def github() -> tuple[RuleSpec, ...]:
     """Create the GitHub-flavored Markdown rule preset."""
     return (
-        Table(require_body_pipe=False),
+        Table(require_body_pipe=False, interrupt_paragraph=True),
         ThematicBreak,
         FencedCode,
         IndentedCode,

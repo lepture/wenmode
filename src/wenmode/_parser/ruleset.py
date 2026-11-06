@@ -27,6 +27,8 @@ class EmphasisRule(Protocol):
 class ParagraphTableRule(Protocol):
     """Rule protocol for a table that can interrupt a paragraph."""
 
+    interrupt_paragraph: bool
+
     def interrupts_paragraph(self, parser: Parser, state: BlockState) -> bool: ...
 
     def is_delimiter_attempt(self, line: str) -> bool: ...
@@ -91,6 +93,8 @@ def has_emphasis_parser(rule: Rule | None) -> bool:
 
 
 def has_paragraph_table(rule: Rule | None) -> bool:
+    if getattr(rule, 'interrupt_paragraph', False) is not True:
+        return False
     return all(callable(getattr(rule, name, None)) for name in ('interrupts_paragraph', 'is_delimiter_attempt'))
 
 

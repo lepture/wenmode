@@ -222,10 +222,19 @@ def test_lazy_delimiter_row_after_a_table_ended_by_prose_stays_paragraph_text() 
     )
 
 
+def test_table_interrupts_paragraph_only_when_configured() -> None:
+    markdown = 'text\n| a |\n|---|\n'
+
+    assert Wenmode([Table]).render(markdown) == '<p>text\n| a |\n|---|</p>\n'
+    assert Wenmode([Table(interrupt_paragraph=True)]).render(markdown) == (
+        '<p>text</p>\n<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>\n'
+    )
+
+
 def test_table_after_paragraph_ends_at_row_without_pipe() -> None:
     markdown = 'text\n| a |\n|---|\n| 1 |\nprose\n'
 
-    assert Wenmode([Table]).render(markdown) == (
+    assert Wenmode([Table(interrupt_paragraph=True)]).render(markdown) == (
         '<p>text</p>\n<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n'
         '<tbody>\n<tr>\n<td>1</td>\n</tr>\n</tbody>\n</table>\n<p>prose</p>\n'
     )

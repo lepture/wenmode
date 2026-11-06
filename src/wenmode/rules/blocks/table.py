@@ -37,9 +37,10 @@ class Table(BlockRule):
     name = 'table'
     pattern = r' {0,3}[^|\r\n]*\|'
 
-    def __init__(self, require_body_pipe: bool = True) -> None:
+    def __init__(self, require_body_pipe: bool = True, interrupt_paragraph: bool = False) -> None:
         super().__init__()
         self.require_body_pipe = require_body_pipe
+        self.interrupt_paragraph = interrupt_paragraph
 
     def parse(self, parser: Parser, state: BlockState, candidate: BlockCandidate) -> TableNode | None:
         if not state.has(1):
