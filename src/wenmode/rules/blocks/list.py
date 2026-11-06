@@ -12,6 +12,7 @@ from ..._parser.rule_base import BlockCandidate, BlockRule, Rule
 from ..._parser.source import SourceCollector, SourceMap
 from ..._parser.state import BlockState
 from ._util import starts_nonparagraph_block
+from .table import completes_table_header, continues_table_body, has_table_rule, table_open_after
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
@@ -148,6 +149,8 @@ def collect_list_item(
     item_has_nested_marker = line_has_list_marker(first_line)
     fence_char, fence_size = update_open_fence(first_line, '', 0)
     can_lazy_continue = first_line.strip() != '' and not starts_nonparagraph_block(parser, first_line)
+    tables = has_table_rule(parser)
+    table_open = False
 
     while not state.done:
         line = state.line
@@ -169,10 +172,12 @@ def collect_list_item(
             )
             if consumed:
                 can_lazy_continue = False
+                table_open = False
                 continue
             break
         if has_continuation_indent(line, content_indent):
             text = strip_continuation_indent(line, content_indent)
+            table_open = tables and table_open_after(parser, table_open, lines, text)
             source.add(state.index, continuation_source_offset(line, content_indent), text)
             lines.append(text)
             item_has_nested_marker = item_has_nested_marker or line_has_list_marker(text)
@@ -187,8 +192,11 @@ def collect_list_item(
             state.advance()
             continue
         if is_lazy_list_continuation(parser, state, can_lazy_continue):
-            source.add(state.index, 0, line)
-            lines.append(line)
+            # A lazy line cannot close a table header.
+            text = '    ' + line if tables and not table_open and completes_table_header(lines, line) else line
+            table_open = table_open and continues_table_body(parser, line)
+            source.add(state.index, 0, text)
+            lines.append(text)
             item_has_nested_marker = item_has_nested_marker or line_has_list_marker(line)
             fence_char, fence_size = update_open_fence(line, fence_char, fence_size)
             state.advance()

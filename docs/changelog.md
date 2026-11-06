@@ -15,6 +15,16 @@ releases.
 This page records notable changes for released versions. Add unreleased entries
 here while preparing a release, then move them under the final version heading.
 
+## Unreleased
+
+- Add `Table(interrupt_paragraph=True)` to let a GFM table interrupt a
+  paragraph, as GitHub renders it: a header row followed by a matching
+  delimiter row ends the paragraph above it. A paragraph tries this only at its
+  first delimiter row, a setext underline (`---`) still makes a heading, and a
+  delimiter row on a lazy continuation line stays paragraph text. The `github`
+  and `streaming` presets enable it; a plain `Table` keeps the previous
+  behavior.
+
 ## 1.0.0rc1
 
 Released **Oct 20, 2026**.

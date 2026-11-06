@@ -9,8 +9,8 @@ from tests.plugin_helpers import configured_app
 from wenmode import HTMLRenderer, MarkdownRenderer, Parser, Wenmode
 from wenmode.directives import Figure
 from wenmode.nodes import Node, Parent, Text
-from wenmode.presets import github
-from wenmode.rules import AtxHeading, InlineCandidate, InlineRule, RawHtml
+from wenmode.presets import commonmark, github
+from wenmode.rules import AtxHeading, Blockquote, InlineCandidate, InlineRule, RawHtml, Table
 from wenmode.state import BlockState
 
 
@@ -144,6 +144,111 @@ def test_github_table_candidate_does_not_mask_list_interrupt() -> None:
     markdown = 'a\n- b | c\n'
 
     assert Wenmode(github()).render(markdown) == '<p>a</p>\n<ul>\n<li>b | c</li>\n</ul>\n'
+
+
+@pytest.mark.parametrize(
+    ('markdown', 'html'),
+    [
+        (
+            'text\n| a | b |\n|---|---|\n| 1 | 2 |\n',
+            '<p>text</p>\n<table>\n<thead>\n<tr>\n<th>a</th>\n<th>b</th>\n</tr>\n</thead>\n'
+            '<tbody>\n<tr>\n<td>1</td>\n<td>2</td>\n</tr>\n</tbody>\n</table>\n',
+        ),
+        (
+            'one\ntwo\n| a |\n|---|\n',
+            '<p>one\ntwo</p>\n<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>\n',
+        ),
+        ('text\n| a | b |\n|---|\n', '<p>text\n| a | b |\n|---|</p>\n'),
+        (
+            '> text\n> | a |\n> |---|\n',
+            '<blockquote>\n<p>text</p>\n<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>\n</blockquote>\n',
+        ),
+        (
+            '- text\n  | a |\n  |---|\n',
+            '<ul>\n<li>text\n<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>\n</li>\n</ul>\n',
+        ),
+        ('> text\n> | a |\n|---|\n', '<blockquote>\n<p>text\n| a |\n|---|</p>\n</blockquote>\n'),
+        ('- text\n  | a |\n|---|\n', '<ul>\n<li>text\n| a |\n|---|</li>\n</ul>\n'),
+        ('x | y\n|---|\n| c |\n|---|\n', '<p>x | y\n|---|\n| c |\n|---|</p>\n'),
+        ('text\n|---|---|\n| a | b |\n|---|---|\n', '<p>text\n|---|---|\n| a | b |\n|---|---|</p>\n'),
+        (
+            'text\n| a |\n    |---|\n| b |\n|---|\n',
+            '<p>text\n| a |\n|---|</p>\n<table>\n<thead>\n<tr>\n<th>b</th>\n</tr>\n</thead>\n</table>\n',
+        ),
+        ('| a | b |\n|---|\n---\n', '<h2>| a | b |\n|---|</h2>\n'),
+        ('text\n| a |\n---\n', '<h2>text\n| a |</h2>\n'),
+        (
+            'text\n| a |\n:---\n',
+            '<p>text</p>\n<table>\n<thead>\n<tr>\n<th align="left">a</th>\n</tr>\n</thead>\n</table>\n',
+        ),
+    ],
+)
+def test_github_table_interrupts_paragraph(markdown: str, html: str) -> None:
+    assert Wenmode(github()).render(markdown) == html
+
+
+@pytest.mark.parametrize(
+    'markdown', ['> text\n===\n|---|\n', '> | a | b |\n> |---|---|\n|---|---|\n', '- | a |\n  |---|\n|---|\n']
+)
+def test_lazy_delimiter_row_outside_a_paragraph_is_not_indented_code(markdown: str) -> None:
+    assert '<pre>' not in Wenmode(github()).render(markdown)
+
+
+@pytest.mark.parametrize(
+    ('markdown', 'html'),
+    [
+        (
+            '> | a |\n> |---|\n> # h\n> | b |\n|---|\n',
+            '<blockquote>\n<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>\n<h1>h</h1>\n'
+            '<p>| b |\n|---|</p>\n</blockquote>\n',
+        ),
+        (
+            '- | a |\n  |---|\n  # h\n  | b |\n|---|\n',
+            '<ul>\n<li>\n<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>\n<h1>h</h1>\n'
+            '| b |\n|---|</li>\n</ul>\n',
+        ),
+    ],
+)
+def test_lazy_delimiter_row_after_an_ended_table_stays_paragraph_text(markdown: str, html: str) -> None:
+    assert Wenmode(github()).render(markdown) == html
+
+
+def test_lazy_delimiter_row_after_a_table_ended_by_prose_stays_paragraph_text() -> None:
+    markdown = '> | a |\n> |---|\n> prose\n> | b |\n|---|\n'
+
+    assert Wenmode([Blockquote, Table]).render(markdown) == (
+        '<blockquote>\n<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>\n'
+        '<p>prose\n| b |\n|---|</p>\n</blockquote>\n'
+    )
+
+
+def test_table_interrupts_paragraph_only_when_configured() -> None:
+    markdown = 'text\n| a |\n|---|\n'
+
+    assert Wenmode([Table]).render(markdown) == '<p>text\n| a |\n|---|</p>\n'
+    assert Wenmode([Table(interrupt_paragraph=True)]).render(markdown) == (
+        '<p>text</p>\n<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>\n'
+    )
+
+
+def test_table_after_paragraph_ends_at_row_without_pipe() -> None:
+    markdown = 'text\n| a |\n|---|\n| 1 |\nprose\n'
+
+    assert Wenmode([Table(interrupt_paragraph=True)]).render(markdown) == (
+        '<p>text</p>\n<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n'
+        '<tbody>\n<tr>\n<td>1</td>\n</tr>\n</tbody>\n</table>\n<p>prose</p>\n'
+    )
+
+
+@pytest.mark.parametrize('markdown', ['> | a |\n|---|\n', '- | a |\n|---|\n'])
+def test_lazy_delimiter_row_without_table_rule_keeps_its_position(markdown: str) -> None:
+    root = Parser(commonmark(), positions=True).parse(markdown).to_ast()
+    container = root['children'][0]
+    paragraph = container['children'][0]
+    if paragraph['type'] != 'paragraph':
+        paragraph = paragraph['children'][0]
+
+    assert paragraph['children'][0]['position']['end'] == {'line': 2, 'column': 6, 'offset': 13}
 
 
 def test_github_overlapping_list_and_table_opener_keeps_table_precedence() -> None:

@@ -9,6 +9,7 @@ from wenmode.utils import expand_leading_tabs
 from ..._parser.rule_base import BlockCandidate, BlockRule
 from ..._parser.state import BlockState
 from ._util import starts_nonparagraph_block
+from .table import completes_table_header, continues_table_body, has_table_rule, table_open_after
 
 if TYPE_CHECKING:
     from wenmode.parser import Parser
@@ -39,16 +40,22 @@ class Blockquote(BlockRule):
         lines: list[str] = []
         paragraph_open = False
         lazy_used = False
+        tables = has_table_rule(parser)
+        table_open = False
         while not state.done:
             line = state.line
             quote = BLOCKQUOTE_RE.match(line)
             if quote is None:
                 if paragraph_open and line.strip() != '' and not parser.is_paragraph_interrupt(line, state):
-                    if lazy_used and SETEXT_MARKER_RE.match(line) is not None:
+                    # A lazy line cannot close a setext heading or a table header.
+                    if (lazy_used and SETEXT_MARKER_RE.match(line) is not None) or (
+                        tables and not table_open and completes_table_header(lines, line)
+                    ):
                         prefix = '    '
                     else:
                         prefix = ''
                     text = prefix + line
+                    table_open = table_open and continues_table_body(parser, line)
                     lines.append(text)
                     source.add(state.index, 0, text)
                     lazy_used = True
@@ -57,6 +64,7 @@ class Blockquote(BlockRule):
                 break
             content = expand_leading_tabs(line[quote.end() :], 2)
             text = content
+            table_open = tables and table_open_after(parser, table_open, lines, content)
             lines.append(text)
             source.add(state.index, quote.end(), text)
             paragraph_open = content.strip() != '' and (

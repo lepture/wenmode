@@ -38,7 +38,7 @@ rules to enable. For syntax examples and default HTML output, use the
 | `Link` | inline | yes | yes | configured | `link` | `references=True` |
 | `InlineCode` | inline | yes | yes | yes | `inlineCode` | none |
 | `Emphasis` | inline | yes | yes | yes | `emphasis`, `strong` | none |
-| `Table` | block | no | configured | configured | `table`, `tableRow`, `tableCell` | `require_body_pipe=True` |
+| `Table` | block | no | configured | configured | `table`, `tableRow`, `tableCell` | `require_body_pipe=True`, `interrupt_paragraph=False` |
 | `Footnote` | inline + transform | no | yes | no | `footnoteReference`, `footnoteDefinition` | none |
 | `Strikethrough` | inline | no | yes | yes | `delete` | `allow_single_tilde=True` |
 | `ExtendedAutolink` | inline | no | yes | no | `link` | none |
@@ -46,13 +46,13 @@ rules to enable. For syntax examples and default HTML output, use the
 | `ContainerDirective` | block | no | no | no | `containerDirective` | none |
 | `TextDirective` | inline | no | no | no | `textDirective` | none |
 
-`github` configures `Table(require_body_pipe=False)`, configures `HtmlBlock`
-and `RawHtml` with the GFM disallowed tag list, uses
+`github` configures `Table(require_body_pipe=False, interrupt_paragraph=True)`,
+configures `HtmlBlock` and `RawHtml` with the GFM disallowed tag list, uses
 `RawHtml(comment_style="gfm")`, and configures `List(task=True)` so task list
 markers become `listItem.checked` values. `streaming` configures
-`Table(require_body_pipe=False)`, `Image(references=False)`, and
-`Link(references=False)` to keep tables GFM-compatible while avoiding
-document-wide reference resolution.
+`Table(require_body_pipe=False, interrupt_paragraph=True)`,
+`Image(references=False)`, and `Link(references=False)` to keep tables
+GFM-compatible while avoiding document-wide reference resolution.
 
 `ReferenceDefinition` is enabled automatically by `Link(references=True)` and
 `Image(references=True)`. `FootnoteDefinition` is enabled automatically by

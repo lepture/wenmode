@@ -3,12 +3,16 @@ from __future__ import annotations
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Protocol, TypeVar, cast
+from typing import TYPE_CHECKING, Protocol, TypeVar, cast
 
 from wenmode.nodes import Node
 
 from .rule_base import BlockRule, ContinueRule, InlineRule, Rule
+from .state import BlockState
 from .transforms import RootTransform
+
+if TYPE_CHECKING:
+    from wenmode.parser import Parser
 
 T = TypeVar('T', bound=Rule)
 InlineOpenerRules = dict[str, list[InlineRule]]
@@ -18,6 +22,16 @@ class EmphasisRule(Protocol):
     """Rule protocol for deferred emphasis delimiter processing."""
 
     def parse_emphasis_sequence(self, nodes: list[Node], max_depth: int = 20) -> list[Node]: ...
+
+
+class ParagraphTableRule(Protocol):
+    """Rule protocol for a table that can interrupt a paragraph."""
+
+    interrupt_paragraph: bool
+
+    def interrupts_paragraph(self, parser: Parser, state: BlockState) -> bool: ...
+
+    def is_delimiter_attempt(self, line: str) -> bool: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -30,6 +44,7 @@ class RuleSet:
     root_transforms: list[RootTransform]
     paragraph_continuations: list[ContinueRule]
     emphasis_rule: EmphasisRule | None
+    paragraph_table: ParagraphTableRule | None
     defer_inlines: bool
     streaming_blockers: tuple[str, ...]
     block_rule_order: dict[str, int]
@@ -52,6 +67,8 @@ class RuleSet:
         streaming_blockers = tuple(transform.name for transform in root_transforms)
         emphasis = rules.get('emphasis')
         emphasis_rule = cast('EmphasisRule | None', emphasis) if has_emphasis_parser(emphasis) else None
+        table = rules.get('table')
+        paragraph_table = cast('ParagraphTableRule | None', table) if has_paragraph_table(table) else None
         return cls(
             rules=rules,
             block_rules=block_rules,
@@ -59,6 +76,7 @@ class RuleSet:
             root_transforms=root_transforms,
             paragraph_continuations=[rule for rule in resolved_rules if isinstance(rule, ContinueRule)],
             emphasis_rule=emphasis_rule,
+            paragraph_table=paragraph_table,
             defer_inlines=bool(deferred_inline_transforms),
             streaming_blockers=streaming_blockers,
             block_rule_order={rule.name: index for index, rule in enumerate(block_rules)},
@@ -72,6 +90,12 @@ class RuleSet:
 
 def has_emphasis_parser(rule: Rule | None) -> bool:
     return callable(getattr(rule, 'parse_emphasis_sequence', None))
+
+
+def has_paragraph_table(rule: Rule | None) -> bool:
+    if getattr(rule, 'interrupt_paragraph', False) is not True:
+        return False
+    return all(callable(getattr(rule, name, None)) for name in ('interrupts_paragraph', 'is_delimiter_attempt'))
 
 
 def resolve_rule(rule: type[Rule] | Rule) -> Rule:

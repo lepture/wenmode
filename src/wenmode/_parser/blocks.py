@@ -225,6 +225,7 @@ class BlockParser:
         self, state: BlockState, source: SourceCollector | None = None
     ) -> tuple[list[str], Node | None]:
         lines: list[str] = []
+        table = self._rule_set.paragraph_table
         while not state.done:
             line = state.line
             if line.strip() == '':
@@ -235,6 +236,13 @@ class BlockParser:
                     return lines, parsed
             if lines and self.is_paragraph_interrupt(line, state):
                 break
+            if lines and table is not None:
+                if table.is_delimiter_attempt(line):
+                    # The delimiter row did not match the line above it: a paragraph
+                    # tries to open a table only once.
+                    table = None
+                elif table.interrupts_paragraph(self._parser, state):
+                    break
             _append_paragraph_line(state, source, lines, line)
         return lines, None
 

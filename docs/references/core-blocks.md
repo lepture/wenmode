@@ -383,6 +383,11 @@ unescaped pipe; this keeps a following plain paragraph from being padded into
 the table body. Use `Table(require_body_pipe=False)` for GFM-compatible short
 body rows, as the `github` preset does.
 
+By default a table starts only where a block can start, so a header row directly
+after a paragraph line stays paragraph text. Use `Table(interrupt_paragraph=True)`
+to let a header row and its delimiter row end the paragraph above them, as GFM
+does; the `github` and `streaming` presets configure it.
+
 ```markdown
 | A    | B    |
 | :--- | ---: |
